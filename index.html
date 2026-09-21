@@ -1411,15 +1411,13 @@ function secondaryCatalogHtml(side){
    let cls='secondary-catalog-card';
    if(activeNow)cls+=' tracked';
    else if(scoredNow)cls+=' completed';
-   else if(!allowed||discardedNow||fixedFull)cls+=' unavailable';
+   else if(discardedNow||fixedFull)cls+=' unavailable';
    let action='';
    if(scoredNow){
      action=`<button type="button" class="btn" onclick="resetSecondaryScore('${side}','${esc(n)}');return false;">Unscore</button>`;
    }else if(activeNow){
      action=`<button type="button" class="btn" onclick="undoSecondarySelection('${side}','${esc(n)}');return false;">Untrack</button>`;
      if(mode==='tactical')action+=`<button type="button" class="btn danger" onclick="discardTactical('${side}','${esc(n)}');return false;">Discard</button>`;
-   }else if(!allowed){
-     action=`<button type="button" class="btn" disabled>${c.fixed?'Fixed only':'Tactical only'}</button>`;
    }else if(discardedNow){
      action=`<button type="button" class="btn" disabled>Discarded</button>`;
    }else if(fixedFull){
@@ -1434,7 +1432,7 @@ function secondaryCatalogHtml(side){
    return `<div class="${cls}">
      <div class="secondary-catalog-head"><span class="secondary-catalog-name">${esc(n)}</span><span class="secondary-catalog-number">#${c.cardNumber}</span></div>
      <div class="secondary-catalog-type"><span class="pill">${c.fixed?'Fixed':'Tactical'}</span> ${esc(c.type||'Secondary Mission')}</div>
-     <div class="secondary-catalog-status">${scoredNow?'✓ Completed':activeNow?'● Tracked':discardedNow?'Discarded':allowed?'Available':'Not available in '+modeLabel+' mode'}</div>
+     <div class="secondary-catalog-status">${scoredNow?'✓ Completed':activeNow?'● Tracked':discardedNow?'Discarded':fixedFull?'2 Fixed tracked':'Available'}</div>
      <div class="secondary-catalog-actions">${action}</div>
      ${score}
      ${activeNow?secondaryScoringHtml(n):''}
