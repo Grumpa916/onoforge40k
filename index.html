@@ -170,7 +170,21 @@
 }
 <style>
 .compact-battle-menu select{width:35%!important;max-width:160px!important;min-width:120px}
-.primary-score-quantity{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:10px;color:#9ca8b8}.primary-score-quantity input{width:58px;padding:5px 6px;background:#0b1018;color:#eef2f7;border:1px solid #344052;border-radius:6px}.primary-detail-main{cursor:pointer;display:grid;grid-template-columns:150px 58px 1fr auto;gap:8px;align-items:start;width:100%}.primary-score-box{display:block}.primary-score-box.scored .primary-score-status{color:#aee2bf}@media(max-width:700px){.primary-detail-main{grid-template-columns:1fr}.primary-score-quantity{margin-top:4px}}</style>
+.primary-score-quantity{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:10px;color:#9ca8b8}.primary-score-quantity input{width:58px;padding:5px 6px;background:#0b1018;color:#eef2f7;border:1px solid #344052;border-radius:6px}.primary-detail-main{cursor:pointer;display:grid;grid-template-columns:150px 58px 1fr auto;gap:8px;align-items:start;width:100%}.primary-score-box{display:block}.primary-score-box.scored .primary-score-status{color:#aee2bf}@media(max-width:700px){.primary-detail-main{grid-template-columns:1fr}.primary-score-quantity{margin-top:4px}}/* v280 readable battle cards */
+.primary-mission-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.primary-mission-panel{min-width:0}
+.primary-detail-list{display:grid;gap:7px}
+.primary-score-box{display:block!important;width:100%;box-sizing:border-box}
+.primary-detail-main{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:5px 9px!important;align-items:start!important}
+.primary-detail-timing{grid-column:1;grid-row:1;font-size:10px;line-height:1.25}
+.primary-detail-points{grid-column:2;grid-row:1;white-space:nowrap;text-align:right;font-size:13px}
+.primary-detail-text{grid-column:1/-1;grid-row:2;font-size:11px;line-height:1.35;color:#d2deea}
+.primary-score-status{grid-column:1/-1;grid-row:3;font-size:10px;line-height:1.2;white-space:normal;color:#8fc8ff}
+.primary-score-quantity{grid-column:1/-1;margin-top:5px}
+.primary-score-box.scored{opacity:.72}
+@media(max-width:850px){.primary-mission-pair{grid-template-columns:1fr}}
+.unit-identity-badge{display:inline-block;margin-left:6px;padding:2px 5px;border:1px solid #45627d;border-radius:5px;font-size:9px;color:#9fcfff;text-transform:uppercase;font-weight:800}
+</style>
 </style>
 </style>
 </style>
@@ -1720,7 +1734,7 @@ function secondaryCatalogHtml(side){
    }else if(fixedFull){
      action=`<button type="button" class="btn" disabled>2 Fixed tracked</button>`;
    }else{
-     action=`<button type="button" class="btn primary" onclick="chooseSecondary('${side}','${esc(n)}');return false;">Track</button>`;
+     action=`<button type="button" class="btn primary" data-secondary-track="1" data-secondary-track-side="${side}" data-secondary-track-name="${esc(n)}">Track</button>`;
    }
    let score='';
    if(activeNow){
@@ -3609,6 +3623,8 @@ document.addEventListener('click',function(ev){
     }
     return;
   }
+  const tr=ev.target.closest('[data-secondary-track]');
+  if(tr){ev.preventDefault();ev.stopPropagation();chooseSecondary(tr.dataset.secondaryTrackSide,tr.dataset.secondaryTrackName);return;}
   const sc=ev.target.closest('[data-secondary-side]');
   if(sc){
     ev.preventDefault();ev.stopPropagation();
