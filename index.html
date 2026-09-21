@@ -2733,6 +2733,8 @@ function unitRules(u){
    const nums=Object.keys(sizes).map(Number).sort((a,b)=>a-b);
    if(nums.length>1)r={minModels:nums[0],maxModels:nums[nums.length-1],step:nums[1]-nums[0],maxUnits:3};
  }
+ // Epic Heroes are unique datasheets and may only be included once per army.
+ if(Array.isArray(u?.keywords)&&u.keywords.some(k=>String(k).toUpperCase()==='EPIC HERO'))r.maxUnits=1;
  // Tyranid Battleline units may be taken up to 6 times. Keep this explicit
  // because the compact catalogue does not consistently carry the Battleline keyword.
  if(u?.faction==='Tyranids'&&['Gargoyles','Hormagaunts','Termagants'].includes(u?.name)){
