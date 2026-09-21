@@ -2068,7 +2068,7 @@ function load(){
     }
     const x=raw?JSON.parse(raw):null;
     if(x?.state)state={...state,...x.state};
-    if(Array.isArray(x?.DEMO)&&x.DEMO.length){DEMO.splice(0,DEMO.length,...x.DEMO);for(const u of EXPANDED_CATALOGUE){const i=DEMO.findIndex(x=>x.id===u.id);if(i>=0)DEMO[i]=u;else DEMO.push(u);}}
+    if(Array.isArray(x?.DEMO)&&x.DEMO.length){DEMO.splice(0,DEMO.length,...x.DEMO);for(const u of EXPANDED_CATALOGUE){const i=DEMO.findIndex(v=>v.id===u.id|| (v.name===u.name&&v.faction===u.faction));if(i>=0){const legacyId=DEMO[i].id;DEMO[i]={...DEMO[i],...u,id:legacyId};}else DEMO.push(u);}}
     if(usedLegacy){
       for(const key of ['battleforge-v50','battleforge-v47','battleforge-v46','battleforge-v45','battleforge-v44','battleforge-v43','battleforge-v42','battleforge-v41','battleforge-v40']){
         try{localStorage.removeItem(key)}catch(_){}
