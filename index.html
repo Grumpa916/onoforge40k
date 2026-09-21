@@ -2731,7 +2731,11 @@ function unitRules(u){
    const nums=Object.keys(sizes).map(Number).sort((a,b)=>a-b);
    if(nums.length>1)r={minModels:nums[0],maxModels:nums[nums.length-1],step:nums[1]-nums[0],maxUnits:3};
  }
- if(u.name==='Hormagaunts')r={minModels:10,maxModels:20,step:10,maxUnits:6};
+ // Tyranid Battleline units may be taken up to 6 times. Keep this explicit
+ // because the compact catalogue does not consistently carry the Battleline keyword.
+ if(u?.faction==='Tyranids'&&['Gargoyles','Hormagaunts','Termagants'].includes(u?.name)){
+   r.maxUnits=6;
+ }
  return r
 }
 function issues(side){let out=[];let seen={};for(const e of state[side]){const u=get(e.unitId),r=unitRules(u);seen[e.unitId]=(seen[e.unitId]||0)+e.qty;if(e.models<r.minModels||e.models>r.maxModels||((e.models-r.minModels)%r.step))out.push(u.name+': invalid model count');if(e.qty>r.maxUnits)out.push(u.name+': too many units');if((u.weapons||[]).length&&!activeWeaponNames(e,u).length)out.push(u.name+': no active weapons selected');if(side==='my'&&u.faction!==state.faction)out.push(u.name+': faction mismatch')}for(const id in seen){const u=get(id);if(seen[id]>unitRules(u).maxUnits)out.push(u.name+': duplicate limit exceeded')}if(total(side)>state.limit)out.push('Points limit exceeded');return [...new Set(out)]}
