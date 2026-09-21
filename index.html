@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OnoForge 40K v291</title><style>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OnoForge 40K v292</title><style>
 *{box-sizing:border-box}body{margin:0;background:#0b0f15;color:#e9edf3;font-family:Arial,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}.top{padding:18px 22px;background:#111722;border-bottom:1px solid #273142}.brand{font-size:25px;font-weight:800}.sub,.muted{color:#9ca8b8;font-size:13px}.nav{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:10px 16px;background:#0e141e;border-bottom:1px solid #273142}.nav-main{display:flex;gap:6px;flex-wrap:wrap}.nav button,.nav-tools summary{background:#171e2a;color:#cbd5e1;border:1px solid #2c3748;border-radius:7px;padding:9px 13px;font-size:14px;cursor:pointer}.nav button.active{background:#24334b;color:#fff;border-color:#49678f}.nav-tools{position:relative;margin-left:auto}.nav-tools summary{list-style:none}.nav-tools summary::-webkit-details-marker{display:none}.nav-tools summary:after{content:' ▾';font-size:11px}.nav-tools[open] summary{background:#24334b;color:#fff;border-color:#49678f}.nav-tools-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:1200;min-width:170px;padding:6px;background:#111722;border:1px solid #344052;border-radius:8px;box-shadow:0 12px 30px rgba(0,0,0,.4);display:grid;gap:4px}.nav-tools-menu button{width:100%;text-align:left}.wrap{max-width:1250px;margin:auto;padding:18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.card{background:#111722;border:1px solid #273142;border-radius:10px;padding:15px;margin-bottom:14px}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.split{display:flex;justify-content:space-between;gap:10px;align-items:center}.field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:150px}.field label{font-size:12px;color:#9ca8b8}.field input,.field select,.field textarea,input[type=text]{width:100%;background:#0b1018;color:#eef2f7;border:1px solid #344052;border-radius:7px;padding:9px}.btn{background:#1b2432;color:#e8edf4;border:1px solid #354255;border-radius:7px;padding:8px 11px}.btn.primary{background:#27598b;border-color:#3975b6}.btn.danger{background:#5b252c;border-color:#82404a}.pill{display:inline-block;border:1px solid #3a4658;border-radius:999px;padding:4px 8px;font-size:12px;margin:2px}.status,.warn,.ok{border-radius:7px;padding:9px;margin-top:8px}.status{background:#17202d;border:1px solid #304057}.warn{background:#38261b;border:1px solid #78512d;color:#f4c58f}.ok{background:#183022;border:1px solid #356747;color:#aee2bf}.big{font-size:24px;font-weight:800}.unit{padding:11px 0;border-top:1px solid #26303e}.empty{padding:25px;text-align:center;color:#8995a5}.bar{height:8px;background:#242d3a;border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;background:#4d86bd}.mono{font-family:monospace;font-size:12px;white-space:pre-wrap}.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.tabs button{background:#171e2a;color:#cbd5e1;border:1px solid #2c3748;border-radius:7px;padding:8px 11px}.tabs button.active{background:#315174}.logrow{border-top:1px solid #273142;padding:10px 0}.metric{font-size:20px;font-weight:700}.modal{position:fixed;inset:0;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;padding:18px;z-index:50}.modal>.card{width:min(850px,100%);max-height:92vh;overflow:auto}.tiny{font-size:11px;color:#8290a1}@media(max-width:850px){.grid,.grid3,.grid2{grid-template-columns:1fr}.wrap{padding:10px}}
 
 .wargear-box{background:#0d1722;border:1px solid #3f6f99;border-radius:10px;padding:12px;margin:14px 0}
@@ -3136,13 +3136,34 @@ function gameUnitReferenceHtml(u,phase){
  if(!refs.length)return '';
  return '<div class="game-unit-reference">'+refs.map(r=>`<span class="game-unit-reference-pill"><b>${esc(r.tag)}</b> ${esc(r.text)}</span>`).join('')+'</div>';
 }
-function gameRow(side,e){const u=get(e.unitId),displayName=unitDisplayName(side,e);const g=e.game||{models:e.models,wounds:e.models*u.wounds,status:'Alive',battleshocked:false};if(g.battleshocked==null)g.battleshocked=false;const modelControls=e.models>1?`<button class="btn" type="button" onclick="changeUnit('${side}','${e.uid}',-1,0);return false;">M−</button><button class="btn" type="button" onclick="changeUnit('${side}','${e.uid}',1,0);return false;">M+</button>`:'';const shockControl=`<button class="btn${g.battleshocked?' danger':''}" type="button" onclick="toggleBattleshocked('${side}','${e.uid}');return false;">${g.battleshocked?'✓ Shocked':'Shock'}</button>`;const destroyedControl=`<button class="btn${g.status==='Destroyed'?' danger':''}" type="button" onclick="setUnitDestroyed('${side}','${e.uid}');return false;">${g.status==='Destroyed'?'✓ Dead':'Dead'}</button>`;return `<div class="game-unit-row ${g.battleshocked?'is-battleshocked':''}" data-entry-id="${esc(e.uid)}"><div class="game-unit-name"><strong>${esc(displayName)}</strong>${g.battleshocked?'<span class="battleshock-badge">BATTLESHOCKED</span>':''}</div><div class="game-unit-controls">
-<div class="game-unit-stats">${e.models>1?`${g.models}/${e.models} models • `:''}${g.wounds}/${e.models*u.wounds} wounds • ${g.status}</div>
-<div class="row game-unit-actions game-status-actions">${shockControl}${destroyedControl}</div>
-<div class="row game-unit-actions game-modifier-actions">${modelControls}<button class="btn" type="button" onclick="changeUnit('${side}','${e.uid}',0,-1);return false;">W−</button><button class="btn" type="button" onclick="changeUnit('${side}','${e.uid}',0,1);return false;">W+</button></div>
-</div>${gameUnitReferenceHtml(u,state.phase)}</div></div>`}
-function setUnitDestroyed(side,id){const fullBefore=snapshotForUndo();const e=entry(side,id);if(!e)return;const u=get(e.unitId);if(!u)return;if(!e.game)e.game={entryId:e.uid,models:e.models,wounds:e.models*u.wounds,status:'Alive',battleshocked:false};
-if(e.game.entryId!==e.uid)e.game={...e.game,entryId:e.uid};const before=JSON.parse(JSON.stringify(e.game));if(e.game.status==='Destroyed'){e.game.status=e.game.wounds>0?'Damaged':'Alive';if(e.game.wounds<=0)e.game.wounds=Math.min(1,e.models*u.wounds);if(e.game.models<=0)e.game.models=Math.min(e.models,1)}else{e.game.models=0;e.game.wounds=0;e.game.status='Destroyed'};event('UNIT_STATE_CHANGED',{side,unitId:e.unitId,entryId:id,unit:u.name,action:e.game.status==='Destroyed'?'Destroyed':'Destroyed cleared',modelsBefore:before.models,modelsAfter:e.game.models,woundsBefore:before.wounds,woundsAfter:e.game.wounds,statusBefore:before.status,statusAfter:e.game.status,before,after:e.game},fullBefore);save();render()}
+function gameRow(side,e){
+  const u=get(e.unitId),displayName=unitDisplayName(side,e),perModelWounds=Math.max(1,Number(u.wounds)||1);
+  const g=e.game||{models:e.models,wounds:e.models*perModelWounds,status:'Alive',battleshocked:false};
+  if(g.battleshocked==null)g.battleshocked=false;
+  const maxWounds=Math.max(0,e.models*perModelWounds);
+  g.wounds=Math.max(0,Math.min(maxWounds,Number(g.wounds)||0));
+  if(perModelWounds>1)g.models=Math.max(0,Math.min(e.models,g.wounds>0?Math.ceil(g.wounds/perModelWounds):0));
+  else g.models=Math.max(0,Math.min(e.models,Number(g.models)||0));
+  if(g.models<=0||g.wounds<=0)g.status='Destroyed';
+  else if(g.wounds<maxWounds)g.status='Damaged';
+  else g.status='Alive';
+  const modelControls=e.models>1?'<button class="btn" type="button" onclick="changeUnit(\''+side+'\',\''+e.uid+'\',-1,0);return false;">M−</button><button class="btn" type="button" onclick="changeUnit(\''+side+'\',\''+e.uid+'\',1,0);return false;">M+</button>':'';
+  const shockControl='<button class="btn'+(g.battleshocked?' danger':'')+'" type="button" onclick="toggleBattleshocked(\''+side+'\',\''+e.uid+'\');return false;">'+(g.battleshocked?'✓ Shocked':'Shock')+'</button>';
+  const destroyedControl='<button class="btn'+(g.status==='Destroyed'?' danger':'')+'" type="button" onclick="setUnitDestroyed(\''+side+'\',\''+e.uid+'\');return false;">'+(g.status==='Destroyed'?'✓ Dead':'Dead')+'</button>';
+  const stats=perModelWounds===1
+    ? (e.models>1?(g.models+'/'+e.models+' models'):'1 model')+' • '+g.status
+    : (e.models>1?(g.models+'/'+e.models+' models • '):'')+g.wounds+'/'+maxWounds+' wounds • '+g.status;
+  const woundControls=perModelWounds>1?'<button class="btn" type="button" onclick="changeUnit(\''+side+'\',\''+e.uid+'\',0,-1);return false;">W−</button><button class="btn" type="button" onclick="changeUnit(\''+side+'\',\''+e.uid+'\',0,1);return false;">W+</button>':'';
+  return '<div class="game-unit-row '+(g.battleshocked?'is-battleshocked':'')+'" data-entry-id="'+esc(e.uid)+'"><div class="game-unit-name"><strong>'+esc(displayName)+'</strong>'+(g.battleshocked?'<span class="battleshock-badge">BATTLESHOCKED</span>':'')+'</div><div class="game-unit-controls"><div class="game-unit-stats">'+stats+'</div><div class="row game-unit-actions game-status-actions">'+shockControl+destroyedControl+'</div><div class="row game-unit-actions game-modifier-actions">'+modelControls+woundControls+'</div></div>'+gameUnitReferenceHtml(u,state.phase)+'</div></div>';
+}
+function setUnitDestroyed(side,id){
+  const fullBefore=snapshotForUndo();const e=entry(side,id);if(!e)return;const u=get(e.unitId);if(!u)return;const perModelWounds=Math.max(1,Number(u.wounds)||1);
+  if(!e.game)e.game={entryId:e.uid,models:e.models,wounds:e.models*perModelWounds,status:'Alive',battleshocked:false};
+  if(e.game.entryId!==e.uid)e.game={...e.game,entryId:e.uid};const before=JSON.parse(JSON.stringify(e.game));
+  if(e.game.status==='Destroyed'){e.game.wounds=Math.min(perModelWounds,e.models*perModelWounds);e.game.models=Math.max(1,Math.min(e.models,Math.ceil(e.game.wounds/perModelWounds)));e.game.status='Damaged';}
+  else{e.game.models=0;e.game.wounds=0;e.game.status='Destroyed';}
+  event('UNIT_STATE_CHANGED',{side,unitId:e.unitId,entryId:id,unit:u.name,action:e.game.status==='Destroyed'?'Destroyed':'Destroyed cleared',modelsBefore:before.models,modelsAfter:e.game.models,woundsBefore:before.wounds,woundsAfter:e.game.wounds,statusBefore:before.status,statusAfter:e.game.status,before,after:e.game},fullBefore);save();render();
+}
 function toggleBattleshocked(side,id){const fullBefore=snapshotForUndo();const e=entry(side,id);if(!e)return;const u=get(e.unitId);if(!u)return;if(!e.game)e.game={entryId:e.uid,models:e.models,wounds:e.models*u.wounds,status:'Alive',battleshocked:false};
 if(e.game.entryId!==e.uid)e.game={...e.game,entryId:e.uid};const before=!!e.game.battleshocked;e.game.battleshocked=!before;event('BATTLESHOCK_CHANGED',{side,unit:e?u.name:'Unit',entryId:id,action:e.game.battleshocked?'Battleshocked':'Battleshock cleared',battleshockedBefore:before,battleshockedAfter:e.game.battleshocked},fullBefore);save();render()}
 function setCurrentTurn(side){
@@ -3162,8 +3183,25 @@ function setCurrentTurn(side){
   render();
 }
 window.setCurrentTurn=setCurrentTurn;
-function changeUnit(side,id,dm,dw){const fullBefore=snapshotForUndo();const e=entry(side,id);if(!e)return;const u=get(e.unitId);if(!u)return;if(!e.game)e.game={entryId:e.uid,models:e.models,wounds:e.models*u.wounds,status:'Alive',battleshocked:false};
-if(e.game.entryId!==e.uid)e.game={...e.game,entryId:e.uid};if(e.game.battleshocked==null)e.game.battleshocked=false;const before=JSON.parse(JSON.stringify(e.game));const oldModels=e.game.models,oldWounds=e.game.wounds;if(dm)e.game.models=Math.max(0,Math.min(e.models,e.game.models+dm));if(dw)e.game.wounds=Math.max(0,Math.min(e.models*u.wounds,e.game.wounds+dw));e.game.status=e.game.models<=0?'Destroyed':(e.game.wounds>0?(e.game.wounds<e.models*u.wounds?'Damaged':'Alive'):'Destroyed');if(e.game.models===oldModels&&e.game.wounds===oldWounds)return;const action=dm?('Models '+(dm>0?'+':'')+dm):('Wounds '+(dw>0?'+':'')+dw);event('UNIT_STATE_CHANGED',{side,unitId:e.unitId,entryId:id,unit:u.name,action,modelsBefore:oldModels,modelsAfter:e.game.models,woundsBefore:oldWounds,woundsAfter:e.game.wounds,statusBefore:before.status,statusAfter:e.game.status,before,after:e.game},fullBefore);save();render()}
+function changeUnit(side,id,dm,dw){
+  const fullBefore=snapshotForUndo();const e=entry(side,id);if(!e)return;const u=get(e.unitId);if(!u)return;
+  const perModelWounds=Math.max(1,Number(u.wounds)||1);
+  if(!e.game)e.game={entryId:e.uid,models:e.models,wounds:e.models*perModelWounds,status:'Alive',battleshocked:false};
+  if(e.game.entryId!==e.uid)e.game={...e.game,entryId:e.uid};if(e.game.battleshocked==null)e.game.battleshocked=false;
+  const before=JSON.parse(JSON.stringify(e.game));const oldModels=e.game.models,oldWounds=e.game.wounds;const maxWounds=e.models*perModelWounds;
+  let wounds=Math.max(0,Math.min(maxWounds,Number(e.game.wounds)||0));let models=Math.max(0,Math.min(e.models,Number(e.game.models)||0));
+  if(dm){
+    const nextModels=Math.max(0,Math.min(e.models,models+dm));
+    if(perModelWounds===1){models=nextModels;wounds=models;}
+    else if(dm<0){models=nextModels;wounds=Math.min(wounds,models*perModelWounds);models=wounds>0?Math.min(models,Math.ceil(wounds/perModelWounds)):0;}
+    else{models=nextModels;wounds=Math.min(maxWounds,wounds+perModelWounds);models=wounds>0?Math.min(models,Math.ceil(wounds/perModelWounds)):0;}
+  }
+  if(dw&&perModelWounds>1){wounds=Math.max(0,Math.min(maxWounds,wounds+dw));models=wounds>0?Math.min(e.models,Math.ceil(wounds/perModelWounds)):0;}
+  e.game.models=models;e.game.wounds=wounds;e.game.status=models<=0||wounds<=0?'Destroyed':(wounds<maxWounds?'Damaged':'Alive');
+  if(e.game.models===oldModels&&e.game.wounds===oldWounds)return;
+  const action=dm?('Models '+(dm>0?'+':'')+dm):('Wounds '+(dw>0?'+':'')+dw);
+  event('UNIT_STATE_CHANGED',{side,unitId:e.unitId,entryId:id,unit:u.name,action,modelsBefore:oldModels,modelsAfter:e.game.models,woundsBefore:oldWounds,woundsAfter:e.game.wounds,statusBefore:before.status,statusAfter:e.game.status,before,after:e.game},fullBefore);save();render();
+}
 function changeVP(side,d){d=Number(d)||0;const fullBefore=snapshotForUndo();const before=side==='my'?Number(state.myVP)||0:Number(state.oppVP)||0;const after=Math.max(0,before+d);if(side==='my')state.myVP=after;else state.oppVP=after;event('VP_CHANGED',{side,unit:side==='my'?'My Score':'Opponent Score',action:'VP '+(d>0?'+':'')+d,before,after,delta:d},fullBefore);save();render()}
 function objectivePrompt(){const n=prompt('Objective name');if(!n)return;const owner=prompt('Controlled by: my / opp / contested','my');if(!owner)return;const fullBefore=snapshotForUndo();const previous=state.objectives[n]||'none';state.objectives[n]=owner;event('OBJECTIVE_CHANGED',{name:n,unit:'Objective '+n,action:'Control → '+owner,owner,previous,after:owner},fullBefore);save();render()}
 function changeCP(side,d){d=Number(d)||0;const fullBefore=snapshotForUndo();const before=side==='my'?Number(state.myCP)||0:Number(state.oppCP)||0;const after=Math.max(0,before+d);if(side==='my')state.myCP=after;else state.oppCP=after;event('CP_CHANGED',{side,unit:side==='my'?'My CP':'Opponent CP',action:'CP '+(d>0?'+':'')+d,before,after,delta:d},fullBefore);save();render()}
@@ -3731,7 +3769,7 @@ async function cloudDeleteBattle(id){
   }catch(e){state.cloud.status='Error';state.cloud.error=e.message||String(e);save();render()}
 }
 function dataManagementPage(){const cfg=getCloudConfig();const battles=Array.isArray(state.cloudBattles)?state.cloudBattles:[];return `<div class="card">
-  <div class="split"><div><h2 style="margin:0">Data Management</h2><div class="muted" style="margin-top:4px">Back up and restore your OnoForge data on this device, or connect it to your Supabase account.</div></div><span class="pill">v291 Backup + Cloud</span></div>
+  <div class="split"><div><h2 style="margin:0">Data Management</h2><div class="muted" style="margin-top:4px">Back up and restore your OnoForge data on this device, or connect it to your Supabase account.</div></div><span class="pill">v292 Backup + Cloud</span></div>
 
   <div class="card cloud-card" style="margin-top:12px">
     <div class="split">
@@ -3889,7 +3927,7 @@ async function load40kAppSourceManifest(){
   render();
 }
 
-function render(){const pages={builder,saved:savedListsPage,battle,setup,math,rules,data:dataPage,manage:dataManagementPage,log:logPage,scorelog:scoringLogPage};document.getElementById('app').innerHTML=`<div class="top"><div class="brand">ONOFORGE 40K</div><div class="sub">11th Edition • v291 • 40k.app v925 data source • Army-linked Mathhammer Engine</div></div>${nav()}<main class="wrap">
+function render(){const pages={builder,saved:savedListsPage,battle,setup,math,rules,data:dataPage,manage:dataManagementPage,log:logPage,scorelog:scoringLogPage};document.getElementById('app').innerHTML=`<div class="top"><div class="brand">ONOFORGE 40K</div><div class="sub">11th Edition • v292 • 40k.app v925 data source • Army-linked Mathhammer Engine</div></div>${nav()}<main class="wrap">
   
 <div class="status">✓ Browser app loaded locally • Source: ${esc(state.source)} • ${esc(state.revision)} • 40k.app v${esc(String(ONOFORGE_40KAPP_SOURCE?.source?.revision||'925'))}</div>${dataSyncStatusHtml()}<div style="height:12px"></div>${(pages[state.page]||builder)()}${secondaryPlanEditorModal()}</main></div>`
   ensureLiveGameTimerDisplay();
