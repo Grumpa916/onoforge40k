@@ -2606,6 +2606,13 @@ function bodyguardAttachmentModal(){
 }
 
 function entry(side,id){return state[side].find(e=>e.uid===id)}
+const UNIT_COMPOSITION_11E={
+  'Tyranids|Tyranid Warriors with Ranged Bio-Weapons':{requiredModels:{'Tyranid Prime':1,'Tyranid Warrior':{min:2,max:5}},totalMatchesModels:true,notes:'1 Tyranid Prime plus 2-5 Tyranid Warriors.'},
+  'Tyranids|Tyranid Warriors with Melee Bio-Weapons':{requiredModels:{'Tyranid Prime':1,'Tyranid Warrior':{min:2,max:5}},totalMatchesModels:true,notes:'1 Tyranid Prime plus 2-5 Tyranid Warriors.'},
+  'Tyranids|Zoanthropes':{requiredModels:{'Neurothrope':1,'Zoanthrope':{min:2,max:5}},totalMatchesModels:true,notes:'1 Neurothrope plus 2-5 Zoanthropes.'},
+  'Tyranids|Neurogaunts':{allowedCombinations:[{nodebeasts:1,neurogaunts:10},{nodebeasts:2,neurogaunts:20}],totalMatchesModels:true,notes:'10 Neurogaunts require 1 Nodebeast; 20 Neurogaunts require 2 Nodebeasts.'},
+  'Tyranids|Hyperadapted Raveners':{requiredModels:{'Ravener Prime':1,'Ravener':4},fixedSubtypes:{'Ravener w/ Venom bolt':1},totalMatchesModels:true,notes:'1 Ravener Prime, 4 Raveners; exactly 1 Ravener carries the Venom bolt.'}
+};
 const UNIT_SIZE_POINTS_11E={
   // Tyranids
   'Tyranids|Hormagaunts':{10:70,20:120},
@@ -2616,7 +2623,7 @@ const UNIT_SIZE_POINTS_11E={
   'Tyranids|Venomthropes':{3:55,6:110},
   'Tyranids|Von Ryan\'s Leapers':{3:55,6:105},
   'Tyranids|Neurogaunts':{11:45,22:90},
-  'Tyranids|Zoanthropes':{3:90,6:200},
+  'Tyranids|Zoanthropes':{3:90,6:190},
   'Tyranids|Ripper Swarms':{1:30,2:40,3:50},
   'Tyranids|Spore Mines':{3:55,6:110},
   'Tyranids|Tyrant Guard':{3:80,6:170},
@@ -2845,6 +2852,15 @@ function unitRules(u){
  }
  return r
 }
+function compositionRule(u){return UNIT_COMPOSITION_11E[(u?.faction||'')+'|'+(u?.name||'')]||null}
+function compositionSummary(u){const c=compositionRule(u);return c?.notes||''}
+function compositionIssues(e,u){
+ const c=compositionRule(u);if(!c)return [];
+ const out=[];
+ if(u?.name==='Neurogaunts' && ![11,22].includes(Number(e?.models)||0))out.push(u.name+': invalid Nodebeast/Neurogaunt composition');
+ if(u?.name==='Hyperadapted Raveners' && Number(e?.models)!==5)out.push(u.name+': must contain exactly 5 models');
+ return out;
+}
 function issues(side){
  let out=[],seen={};
  for(const e of state[side]){
@@ -2853,6 +2869,7 @@ function issues(side){
    if(e.models<r.minModels||e.models>r.maxModels||((e.models-r.minModels)%r.step))out.push(u.name+': invalid model count');
    if(e.qty>r.maxUnits)out.push(u.name+': too many units');
    if((u.weapons||[]).length&&!activeWeaponNames(e,u).length)out.push(u.name+': no active weapons selected');
+   compositionIssues(e,u).forEach(x=>out.push(x));
    for(const g of wargearGroups(u)){
      if(g.type==='allocation'){
        const total=allocationTotal(e,g),models=Math.max(1,Math.floor(Number(e.models)||1));
@@ -2952,7 +2969,7 @@ function configureModal(){
       return `<label class="wargear-option" for="${esc(id)}"><input id="${esc(id)}" type="${inputType}" name="wg-${esc(e.uid)}-${esc(g.key)}" ${checked?'checked':''} onchange="setWargear('${side}','${e.uid}','${esc(g.key).replace(/'/g,"\'")}','${esc(opt).replace(/'/g,"\'")}')"><span class="wargear-option-text"><span>${esc(opt)} <span class="wargear-cost">${wargearCostLabel(wargearOptionPoints(u,g,opt))}</span></span>${wargearOptionStats(u,opt)}</span></label>`;
     }).join('')}</div>${g.help?`<div class="wargear-note">${esc(g.help)}</div>`:''}</div>`;
   }).join('');
-  return `<div class="modal"><div class="card"><div class="split"><h2>Configure ${esc(unitDisplayName(side,e))}</h2><button class="btn" onclick="state.configure=null;render()">Close</button></div><div class="grid3"><div class="field"><label>Models per unit</label><input type="number" min="${r.minModels}" max="${r.maxModels}" step="${r.step}" value="${e.models}" onchange="entry('${side}','${e.uid}').models=+this.value||${r.minModels};save();render()"></div><div class="field"><label>Enhancement</label><input value="${esc(e.enhancement)}" onchange="entry('${side}','${e.uid}').enhancement=this.value;save()"></div></div><div class="wargear-box"><div class="split"><h3 style="margin:0">11th Edition Wargear</h3><span class="detachment-dp">Wargear: ${selectedWargearCost(e,u)?'+'+selectedWargearCost(e,u)+' pts':'Free'}</span></div><div class="wargear-source">Each option shows its current point cost and weapon profile when available. Selected costs are added to the unit total.</div>${wg}</div><div class="status" style="margin-top:10px"><strong>Unit Total:</strong> Base ${unitBasePoints(e,u)} pts + Wargear ${selectedWargearCost(e,u)} pts = <b>${pts(e)} pts</b></div><h3>Active Weapons</h3><div class="muted">These profiles are derived from the selected wargear and model count. Weapon alternatives are not independently toggled here.</div><div style="margin-top:8px">${activeWeaponNames(e,u).map(name=>{const w=(u.weapons||[]).find(x=>x.name===name);return '<div style="display:block;margin:8px 0"><span class="pill">'+esc(name)+'</span> <span class="muted">A '+esc(w?.A??'—')+' • '+esc(w?.BS||w?.WS||'—')+' • S'+esc(w?.S??'—')+' • AP'+esc(w?.AP??'—')+' • D'+esc(w?.D??'—')+'</span></div>';}).join('')}</div><div class="field"><label>Personal notes</label><textarea onchange="entry('${side}','${e.uid}').notes=this.value;save()">${esc(e.notes)}</textarea></div><button class="btn primary" onclick="state.configure=null;save();render()">Save Configuration</button></div></div>`
+  return `<div class="modal"><div class="card"><div class="split"><h2>Configure ${esc(unitDisplayName(side,e))}</h2><button class="btn" onclick="state.configure=null;render()">Close</button></div><div class="grid3"><div class="field"><label>Models per unit</label><input type="number" min="${r.minModels}" max="${r.maxModels}" step="${r.step}" value="${e.models}" onchange="entry('${side}','${e.uid}').models=+this.value||${r.minModels};save();render()"></div><div class="field"><label>Enhancement</label><input value="${esc(e.enhancement)}" onchange="entry('${side}','${e.uid}').enhancement=this.value;save()"></div></div>${compositionSummary(u)?'<div class="status" style="margin-top:10px"><strong>Unit Composition:</strong> '+esc(compositionSummary(u))+'</div>':''}<div class="wargear-box"><div class="split"><h3 style="margin:0">11th Edition Wargear</h3><span class="detachment-dp">Wargear: ${selectedWargearCost(e,u)?'+'+selectedWargearCost(e,u)+' pts':'Free'}</span></div><div class="wargear-source">Each option shows its current point cost and weapon profile when available. Selected costs are added to the unit total.</div>${wg}</div><div class="status" style="margin-top:10px"><strong>Unit Total:</strong> Base ${unitBasePoints(e,u)} pts + Wargear ${selectedWargearCost(e,u)} pts = <b>${pts(e)} pts</b></div><h3>Active Weapons</h3><div class="muted">These profiles are derived from the selected wargear and model count. Weapon alternatives are not independently toggled here.</div><div style="margin-top:8px">${activeWeaponNames(e,u).map(name=>{const w=(u.weapons||[]).find(x=>x.name===name);return '<div style="display:block;margin:8px 0"><span class="pill">'+esc(name)+'</span> <span class="muted">A '+esc(w?.A??'—')+' • '+esc(w?.BS||w?.WS||'—')+' • S'+esc(w?.S??'—')+' • AP'+esc(w?.AP??'—')+' • D'+esc(w?.D??'—')+'</span></div>';}).join('')}</div><div class="field"><label>Personal notes</label><textarea onchange="entry('${side}','${e.uid}').notes=this.value;save()">${esc(e.notes)}</textarea></div><button class="btn primary" onclick="state.configure=null;save();render()">Save Configuration</button></div></div>`
 }
 function changeMyFaction(value){
   state.saveListMessage='';
