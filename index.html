@@ -1408,12 +1408,12 @@ function gameAssistantHtml(){
  const checkHtml=groups.map(g=>`<div class="game-assistant-group"><div class="game-assistant-group-title">${esc(g.group)}</div>${g.items.map((it,i)=>{
    const key=phase+'|'+g.group+'|'+i;
    const checked=!!state.gameAssistantChecks[key];
-   return \`<label class="game-assistant-item ${checked?'checked':''}"><input type="checkbox" ${checked?'checked':''} onchange="toggleGameAssistantCheck('${esc(key)}',this.checked)"><span><b>${esc(it[1])}</b> ${esc(it[0])}</span></label>\`;
+   return `<label class="game-assistant-item ${checked?'checked':''}"><input type="checkbox" ${checked?'checked':''} onchange="toggleGameAssistantCheck('${esc(key)}',this.checked)"><span><b>${esc(it[1])}</b> ${esc(it[0])}</span></label>`;
  }).join('')}</div>`).join('');
  const quick=GAME_REFERENCE_QUICK.map(x=>`<div class="game-assistant-quick"><b>${esc(x[0])}</b><span>${esc(x[1])}</span></div>`).join('');
  const second=GAME_REFERENCE_SECONDARIES.map(x=>`<div class="game-assistant-secondary"><b>${esc(x[0])}</b><span>${esc(x[1])}</span><em>${esc(x[2]||'')}</em></div>`).join('');
  const primary=GAME_REFERENCE_PRIMARY.map(x=>`<div class="game-assistant-primary"><b>${esc(x[0])}</b><span>${esc(x[1])}</span></div>`).join('');
- return \`<details class="card game-assistant-card" ${state.gameAssistantOpen!==false?'open':''} ontoggle="state.gameAssistantOpen=this.open;save()">
+ return `<details class="card game-assistant-card" ${state.gameAssistantOpen!==false?'open':''} ontoggle="state.gameAssistantOpen=this.open;save()">
   <summary><div class="split"><div><h3>Game Assistant</h3><div class="muted">Your imported game reminders • ${esc(phase)} Phase</div></div><div class="pill">${esc(phase)}</div></div></summary>
   <div class="game-assistant-body">
    <div class="game-assistant-current"><h4>${esc(phase)} Phase Reminders</h4>${checkHtml||'<div class="empty">No imported reminders for this phase.</div>'}</div>
@@ -1423,7 +1423,7 @@ function gameAssistantHtml(){
    </div>
    <div class="field" style="margin-top:12px"><label>Live Game Notes</label><textarea rows="4" placeholder="Add a reminder, opponent action, target, CP plan, or anything you want to remember..." onchange="state.gameAssistantNotes=this.value;save()">${esc(state.gameAssistantNotes||'')}</textarea></div>
   </div>
- </details>\`;
+ </details>`;
 }
 function toggleGameAssistantCheck(key,checked){
  if(!state.gameAssistantChecks||typeof state.gameAssistantChecks!=='object')state.gameAssistantChecks={};
