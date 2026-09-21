@@ -587,6 +587,34 @@ function bsCharacteristics(profile){
   return out;
 }
 
+function bsAbilities(entry){
+  const out=[],seen=new Set();
+  function walk(x){
+    if(!x||typeof x!=='object')return;
+    if(Array.isArray(x.profiles)){
+      x.profiles.forEach(p=>{
+        if(String(p.typeName||'').toLowerCase()!=='abilities')return;
+        const description=(p.characteristics||[]).find(c=>c.name==='Description')?.$text||'';
+        if(!p.name||!description||seen.has(p.name))return;
+        seen.add(p.name);
+        out.push({name:p.name,description});
+      });
+    }
+    if(Array.isArray(x.selectionEntries))x.selectionEntries.forEach(walk);
+    if(Array.isArray(x.selectionEntryGroups))x.selectionEntryGroups.forEach(walk);
+    if(Array.isArray(x.entryLinks)){
+      x.entryLinks.forEach(link=>{
+        const targetId=link.targetId||link.id;
+        if(window.__BS_OBJECT_MAP&&targetId){
+          const target=window.__BS_OBJECT_MAP.get(targetId);
+          if(target)walk(target);
+        }
+      });
+    }
+  }
+  walk(entry);
+  return out;
+}
 function bsWeapons(entry){
   const out=[], seen=new Set(), visited=new Set();
   const objectMap=(typeof window!=='undefined' && window.__BS_OBJECT_MAP && typeof window.__BS_OBJECT_MAP.get==='function')?window.__BS_OBJECT_MAP:null;
@@ -656,7 +684,7 @@ function bsUnitFromEntry(entry,faction){
     wounds:Number(stats.W)||1,
     profile:stats,
     keywords:categories,
-    abilities:[],
+    abilities:bsAbilities(entry),
     weapons,
     weaponOptions:bsWargearOptions(entry),
     dataSource:'BSData 11e',
