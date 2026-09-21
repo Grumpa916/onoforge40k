@@ -1395,6 +1395,12 @@ function secondaryPlanEditorHtml(){
 }
 
 const GAME_REFERENCE_PRIMARY=[
+ ['Inescapable Dominion','Command: 2obj - 5vp; 4obj -9vp; Turn: 3+obj - 4vp; End of game: enemy home 5vp'],
+ ['Secure Asset','Command: 1 exp obj - 4vp; any 3obj - 4vp; Turn: 1 obj action - 4vp'],
+ ['Purge and Secure','Command: non-home obj 4vp each; Turn: On objective, kill a unit 3vp OR kill an enemy off an objective 3vp; Control a new objective 3vp'],
+ ['Reconnaissance Sweep','Command: 1 non-home obj 3vp; Turn: 3 quarters 3vp :: 4 quarters 6vp; Destroy unit 1vp']
+];
+
 function defaultGameReferencePersonal(){return {phases:JSON.parse(JSON.stringify(GAME_REFERENCE_PHASES)),quick:JSON.parse(JSON.stringify(GAME_REFERENCE_QUICK)),primary:JSON.parse(JSON.stringify(GAME_REFERENCE_PRIMARY)),custom:''};}
 function ensureGameReferencePersonal(){
  const d=defaultGameReferencePersonal(),cur=state.gameReferencePersonal;
@@ -1428,11 +1434,7 @@ function gameReferenceEditorHtml(){
  return '<div class="card game-reference-editor"><div class="split"><div><h3 style="margin:0">My Game Notes</h3><div class="muted" style="margin-top:4px">Editable copy of the Triple Norn Word-document notes used by Game Assistant.</div></div><button class="btn" type="button" onclick="resetGameReferencePersonal()">Reset to Word Notes</button></div><div class="game-reference-note">Edit any reminder below. Changes save immediately and are used in Battle Mode. Saved army lists keep their own copy.</div><h4 style="margin-top:14px">Phase Reminders</h4>'+phaseHtml+'<h4 style="margin-top:14px">Quick Reference</h4>'+quick+'<h4 style="margin-top:14px">Primary Mission Notes</h4>'+primary+'<h4 style="margin-top:14px">Custom General Notes</h4><textarea rows="4" placeholder="Add your own notes from the Word document or new reminders..." onchange="updateGameReferenceCustom(this.value)">'+esc(r.custom||'')+'</textarea></div>';
 }
 
- ['Inescapable Dominion','Command: 2obj - 5vp; 4obj -9vp; Turn: 3+obj - 4vp; End of game: enemy home 5vp'],
- ['Secure Asset','Command: 1 exp obj - 4vp; any 3obj - 4vp; Turn: 1 obj action - 4vp'],
- ['Purge and Secure','Command: non-home obj 4vp each; Turn: On objective, kill a unit 3vp OR kill an enemy off an objective 3vp; Control a new objective 3vp'],
- ['Reconnaissance Sweep','Command: 1 non-home obj 3vp; Turn: 3 quarters 3vp :: 4 quarters 6vp; Destroy unit 1vp']
-];
+
 
 const SECONDARY_CARDS=[
  {name:'A Grievous Blow',fixed:true,type:'Destroy enemy units with Starting Strength 13+',cardNumber:1},
