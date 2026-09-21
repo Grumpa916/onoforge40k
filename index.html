@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OnoForge 40K v276</title><style>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OnoForge 40K v277</title><style>
 *{box-sizing:border-box}body{margin:0;background:#0b0f15;color:#e9edf3;font-family:Arial,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}.top{padding:18px 22px;background:#111722;border-bottom:1px solid #273142}.brand{font-size:25px;font-weight:800}.sub,.muted{color:#9ca8b8;font-size:13px}.nav{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:10px 16px;background:#0e141e;border-bottom:1px solid #273142}.nav-main{display:flex;gap:6px;flex-wrap:wrap}.nav button,.nav-tools summary{background:#171e2a;color:#cbd5e1;border:1px solid #2c3748;border-radius:7px;padding:9px 13px;font-size:14px;cursor:pointer}.nav button.active{background:#24334b;color:#fff;border-color:#49678f}.nav-tools{position:relative;margin-left:auto}.nav-tools summary{list-style:none}.nav-tools summary::-webkit-details-marker{display:none}.nav-tools summary:after{content:' ▾';font-size:11px}.nav-tools[open] summary{background:#24334b;color:#fff;border-color:#49678f}.nav-tools-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:1200;min-width:170px;padding:6px;background:#111722;border:1px solid #344052;border-radius:8px;box-shadow:0 12px 30px rgba(0,0,0,.4);display:grid;gap:4px}.nav-tools-menu button{width:100%;text-align:left}.wrap{max-width:1250px;margin:auto;padding:18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.card{background:#111722;border:1px solid #273142;border-radius:10px;padding:15px;margin-bottom:14px}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.split{display:flex;justify-content:space-between;gap:10px;align-items:center}.field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:150px}.field label{font-size:12px;color:#9ca8b8}.field input,.field select,.field textarea,input[type=text]{width:100%;background:#0b1018;color:#eef2f7;border:1px solid #344052;border-radius:7px;padding:9px}.btn{background:#1b2432;color:#e8edf4;border:1px solid #354255;border-radius:7px;padding:8px 11px}.btn.primary{background:#27598b;border-color:#3975b6}.btn.danger{background:#5b252c;border-color:#82404a}.pill{display:inline-block;border:1px solid #3a4658;border-radius:999px;padding:4px 8px;font-size:12px;margin:2px}.status,.warn,.ok{border-radius:7px;padding:9px;margin-top:8px}.status{background:#17202d;border:1px solid #304057}.warn{background:#38261b;border:1px solid #78512d;color:#f4c58f}.ok{background:#183022;border:1px solid #356747;color:#aee2bf}.big{font-size:24px;font-weight:800}.unit{padding:11px 0;border-top:1px solid #26303e}.empty{padding:25px;text-align:center;color:#8995a5}.bar{height:8px;background:#242d3a;border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;background:#4d86bd}.mono{font-family:monospace;font-size:12px;white-space:pre-wrap}.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.tabs button{background:#171e2a;color:#cbd5e1;border:1px solid #2c3748;border-radius:7px;padding:8px 11px}.tabs button.active{background:#315174}.logrow{border-top:1px solid #273142;padding:10px 0}.metric{font-size:20px;font-weight:700}.modal{position:fixed;inset:0;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;padding:18px;z-index:50}.modal>.card{width:min(850px,100%);max-height:92vh;overflow:auto}.tiny{font-size:11px;color:#8290a1}@media(max-width:850px){.grid,.grid3,.grid2{grid-template-columns:1fr}.wrap{padding:10px}}
 
 .wargear-box{background:#0d1722;border:1px solid #3f6f99;border-radius:10px;padding:12px;margin:14px 0}
@@ -179,6 +179,7 @@
 @media(max-width:1000px){.army-state-grid{grid-template-columns:1fr}}
 
 .secondary-army-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}.secondary-army-heading h4{margin:0}.new-orders-indicator{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:999px;background:#243b57;border:1px solid #4e8ac7;color:#dceeff;font-size:11px;font-weight:800;letter-spacing:.3px;white-space:nowrap}.new-orders-indicator.completed{background:#5b252c;border-color:#d45b68;color:#ffd8dd}
+.secondary-personal-plan{margin-top:8px;padding:8px 9px;border:1px solid #36506a;border-radius:8px;background:#101c29}.secondary-personal-plan .plan-title{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#8fb9df;font-weight:800;margin-bottom:5px}.secondary-personal-plan-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;font-size:11px}.secondary-personal-plan-grid b{color:#dcecff}.secondary-personal-plan .plan-action{margin-top:6px;font-size:11px;color:#f0d89b}.secondary-personal-plan .plan-unit{margin-top:3px;font-size:11px;color:#b7c7d8}@media(max-width:700px){.secondary-personal-plan-grid{grid-template-columns:1fr}}
 .secondary-scoring{margin-top:8px;font-size:12px;background:#0b1220;border:1px solid #26364d;border-radius:8px;padding:7px 9px;color:#d7e2ef}.secondary-scoring summary{cursor:pointer;font-weight:800;color:#9ecbff}.secondary-score-mode{margin-top:6px}.secondary-score-option{display:flex;gap:7px;align-items:flex-start;padding:3px 0;color:#b9c6d5}.secondary-vp{min-width:42px;font-weight:900;color:#72b7ff}.secondary-active-card>div:first-child{min-width:0}.secondary-card-controls{display:flex;justify-content:flex-start;align-items:center;gap:6px;flex-wrap:wrap;border-bottom:1px solid #26364d;padding-bottom:6px}.secondary-card-controls .secondary-score-entry{margin-top:0}.secondary-card-controls input{width:54px} .secondary-chooser{display:flex;gap:8px;align-items:center;margin:8px 0 10px;flex-wrap:wrap}.secondary-chooser select{width:320px;min-width:320px;max-width:100%;flex:0 1 320px;height:104px;box-sizing:border-box;background:#111827;color:#f3f7fb;border:1px solid #40546b;border-radius:7px;padding:5px 6px;font-size:13px;line-height:1.25}.secondary-chooser select option{color:#f3f7fb;background:#111827;padding:3px 4px}.secondary-chooser .btn{padding:7px 10px;font-size:12px}.secondary-score-entry{display:flex;gap:6px;align-items:center;margin-top:8px}.secondary-score-entry label{font-size:11px;color:#aebdcd}.secondary-score-entry input{width:58px;padding:5px 6px;background:#0b1220;border:1px solid #40546b;color:#f1f5f9;border-radius:6px}.secondary-score-entry .btn{padding:5px 8px;font-size:11px}
 </style>
 
@@ -1468,6 +1469,16 @@ function secondaryCompletedRoundLabel(mission){
   return Number.isFinite(r)&&r>0 ? `Completed R${r}` : '';
 }
 
+function secondaryPersonalPlanHtml(name){
+ const entry=Object.entries(GAME_REFERENCE_SECONDARY_DETAILS).find(([k])=>k.toLowerCase()===String(name||'').toLowerCase());
+ const d=GAME_REFERENCE_SECONDARY_DETAILS[name]||(entry?entry[1]:null);
+ if(!d)return '';
+ const when=d.when||''; const task=d.task||''; const vp=d.vp||'';
+ const opp=d.oppVP?(' • Opp '+d.oppVP+(d.oppWhen?' ('+d.oppWhen+')':'')):'';
+ const action=d.action||''; const unit=d.unit||'';
+ return '<div class="secondary-personal-plan"><div class="plan-title">Your Secondary Plan</div><div class="secondary-personal-plan-grid"><div><b>When:</b> '+esc(when)+'</div><div><b>VP:</b> '+esc(vp)+esc(opp)+'</div></div><div style="margin-top:5px"><b>Do:</b> '+esc(task)+'</div>'+(action?'<div class="plan-action"><b>Plan:</b> '+esc(action)+'</div>':'')+(unit?'<div class="plan-unit"><b>Unit/Note:</b> '+esc(unit)+'</div>':'')+'</div>';
+}
+
 function secondaryScoringHtml(name){
  const c=secondaryByName(name);
  const data=SECONDARY_SCORING[name]||SECONDARY_SCORING[c?.name]||null;
@@ -1637,7 +1648,7 @@ function secondaryCatalogHtml(side){
      <div class="secondary-catalog-status">${scoredNow?'✓ Completed':activeNow?'● Tracked':discardedNow?'Discarded':fixedFull?'2 Fixed tracked':'Available'}</div>
      <div class="secondary-catalog-actions">${action}</div>
      ${score}
-     ${activeNow?secondaryScoringHtml(n):''}
+     ${activeNow?secondaryPersonalPlanHtml(n)+secondaryScoringHtml(n):''}
    </div>`;
  }).join('');
  return `<div class="secondary-player-panel">
@@ -3465,7 +3476,7 @@ async function load40kAppSourceManifest(){
   }
   render();
 }
-function render(){const pages={builder,saved:savedListsPage,battle,setup,math,rules,data:dataPage,manage:dataManagementPage,log:logPage,scorelog:scoringLogPage};document.getElementById('app').innerHTML=`<div class="top"><div class="brand">ONOFORGE 40K</div><div class="sub">11th Edition • v276 • 40k.app v925 data source • Army-linked Mathhammer Engine</div></div>${nav()}<main class="wrap">
+function render(){const pages={builder,saved:savedListsPage,battle,setup,math,rules,data:dataPage,manage:dataManagementPage,log:logPage,scorelog:scoringLogPage};document.getElementById('app').innerHTML=`<div class="top"><div class="brand">ONOFORGE 40K</div><div class="sub">11th Edition • v277 • 40k.app v925 data source • Army-linked Mathhammer Engine</div></div>${nav()}<main class="wrap">
   
 <div class="status">✓ Browser app loaded locally • Source: ${esc(state.source)} • ${esc(state.revision)} • 40k.app v${esc(String(ONOFORGE_40KAPP_SOURCE?.source?.revision||'925'))}</div><div style="height:12px"></div>${(pages[state.page]||builder)()}</main></div>`
   ensureLiveGameTimerDisplay();
