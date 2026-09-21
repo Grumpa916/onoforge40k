@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OnoForge 40K v283</title><style>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OnoForge 40K v284</title><style>
 *{box-sizing:border-box}body{margin:0;background:#0b0f15;color:#e9edf3;font-family:Arial,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}.top{padding:18px 22px;background:#111722;border-bottom:1px solid #273142}.brand{font-size:25px;font-weight:800}.sub,.muted{color:#9ca8b8;font-size:13px}.nav{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:10px 16px;background:#0e141e;border-bottom:1px solid #273142}.nav-main{display:flex;gap:6px;flex-wrap:wrap}.nav button,.nav-tools summary{background:#171e2a;color:#cbd5e1;border:1px solid #2c3748;border-radius:7px;padding:9px 13px;font-size:14px;cursor:pointer}.nav button.active{background:#24334b;color:#fff;border-color:#49678f}.nav-tools{position:relative;margin-left:auto}.nav-tools summary{list-style:none}.nav-tools summary::-webkit-details-marker{display:none}.nav-tools summary:after{content:' ▾';font-size:11px}.nav-tools[open] summary{background:#24334b;color:#fff;border-color:#49678f}.nav-tools-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:1200;min-width:170px;padding:6px;background:#111722;border:1px solid #344052;border-radius:8px;box-shadow:0 12px 30px rgba(0,0,0,.4);display:grid;gap:4px}.nav-tools-menu button{width:100%;text-align:left}.wrap{max-width:1250px;margin:auto;padding:18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.card{background:#111722;border:1px solid #273142;border-radius:10px;padding:15px;margin-bottom:14px}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.split{display:flex;justify-content:space-between;gap:10px;align-items:center}.field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:150px}.field label{font-size:12px;color:#9ca8b8}.field input,.field select,.field textarea,input[type=text]{width:100%;background:#0b1018;color:#eef2f7;border:1px solid #344052;border-radius:7px;padding:9px}.btn{background:#1b2432;color:#e8edf4;border:1px solid #354255;border-radius:7px;padding:8px 11px}.btn.primary{background:#27598b;border-color:#3975b6}.btn.danger{background:#5b252c;border-color:#82404a}.pill{display:inline-block;border:1px solid #3a4658;border-radius:999px;padding:4px 8px;font-size:12px;margin:2px}.status,.warn,.ok{border-radius:7px;padding:9px;margin-top:8px}.status{background:#17202d;border:1px solid #304057}.warn{background:#38261b;border:1px solid #78512d;color:#f4c58f}.ok{background:#183022;border:1px solid #356747;color:#aee2bf}.big{font-size:24px;font-weight:800}.unit{padding:11px 0;border-top:1px solid #26303e}.empty{padding:25px;text-align:center;color:#8995a5}.bar{height:8px;background:#242d3a;border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;background:#4d86bd}.mono{font-family:monospace;font-size:12px;white-space:pre-wrap}.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.tabs button{background:#171e2a;color:#cbd5e1;border:1px solid #2c3748;border-radius:7px;padding:8px 11px}.tabs button.active{background:#315174}.logrow{border-top:1px solid #273142;padding:10px 0}.metric{font-size:20px;font-weight:700}.modal{position:fixed;inset:0;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;padding:18px;z-index:50}.modal>.card{width:min(850px,100%);max-height:92vh;overflow:auto}.tiny{font-size:11px;color:#8290a1}@media(max-width:850px){.grid,.grid3,.grid2{grid-template-columns:1fr}.wrap{padding:10px}}
 
 .wargear-box{background:#0d1722;border:1px solid #3f6f99;border-radius:10px;padding:12px;margin:14px 0}
@@ -398,7 +398,7 @@
 .secondary-detail-hint{margin-top:5px;font-size:9px;color:#8297aa}
 @media(max-width:700px){.secondary-detail-main{grid-template-columns:1fr}.secondary-detail-score{text-align:left}.secondary-score-buttons{justify-content:flex-start}}
 
-/* v283 approved Primary Mission UI */
+/* v284 approved Primary Mission UI */
 .primary-approved-card{overflow:hidden}
 .primary-approved-title{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 2px 10px}
 .primary-approved-title h3{margin:0;font-size:15px}
@@ -447,6 +447,8 @@
 .primary-rule-timing{color:#8fb6d7}
 @media(max-width:850px){.primary-approved-pair{grid-template-columns:1fr}}
 @media(max-width:600px){.primary-approved-header{align-items:flex-start}.primary-approved-score-row{grid-template-columns:30px minmax(0,1fr)}.primary-approved-control{grid-column:2;justify-self:start}.primary-rule-line{grid-template-columns:1fr;gap:2px}}
+/* v284 per-round scoring cap */
+.primary-scoring-round{font-weight:800}
 </style>
 </head><body><div id="app"></div><script>
 window.addEventListener('error',function(ev){var a=document.getElementById('app');if(a&&!a.innerHTML.includes('battleforge-error'))a.insertAdjacentHTML('afterbegin','<div id="battleforge-error" style="margin:12px;padding:12px;background:#5b252c;border:1px solid #a44;color:#fff;border-radius:8px"><b>OnoForge error:</b> '+String(ev.error?.message||ev.message||'Unknown error')+'</div>');});
@@ -986,6 +988,13 @@ function primaryScoringExclusiveGroup(mission,index){
   if(mission==='Triangulation' && index>=1 && index<=3)return 'triangulation-tier';
   return '';
 }
+function primaryRoundScoredVP(side){
+  const roundKey=String(Math.max(1,Number(state.round)||1));
+  const valueKey=side==='my'?'primaryScoringValuesByRoundMy':'primaryScoringValuesByRoundOpp';
+  const values=state[valueKey]?.[roundKey]||{};
+  return Object.values(values).reduce((sum,v)=>sum+Math.max(0,Number(v)||0),0);
+}
+function primaryRoundCapRemaining(side){return Math.max(0,15-primaryRoundScoredVP(side));}
 function scorePrimaryItem(side,index,mission,amountOverride){
   syncPrimaryScoringRound();
   const round=Math.max(1,Number(state.round)||1);
@@ -1037,8 +1046,11 @@ function scorePrimaryItem(side,index,mission,amountOverride){
       state[byRoundKey][roundKey]=scored.filter(i=>primaryScoringExclusiveGroup(mission,i)!==group);
     }
 
+    const roundTotalBefore=primaryRoundScoredVP(side);
+    const allowedVP=Math.min(requestedVP,Math.max(0,15-roundTotalBefore));
+    if(allowedVP<=0){alert('Primary scoring is capped at 15 VP for this round.');return;}
     const before=Number(state[vpKey])||0;
-    const after=Math.min(45,before+requestedVP);
+    const after=Math.min(45,before+allowedVP);
     const actual=after-before;
     state[vpKey]=after;
     state[overallKey]=Math.max(0,(Number(state[overallKey])||0)+actual);
@@ -1046,7 +1058,7 @@ function scorePrimaryItem(side,index,mission,amountOverride){
     state[valueKey][roundKey][index]=actual;
     state[amountKey][roundKey][index]=amount;
     state[listKey]=state[byRoundKey][roundKey];
-    event('PRIMARY_SCORED',{side,unit:side==='my'?'Primary Mission':'Opponent Primary Mission',action:actual>0?'Primary scored +'+actual+' VP':'Primary scoring condition completed (VP cap reached)',before,after,delta:actual,mission,round,scoringItem:row[2],scoringTiming:row[0],amount},fullBefore);
+    event('PRIMARY_SCORED',{side,unit:side==='my'?'Primary Mission':'Opponent Primary Mission',action:'Primary scored +'+actual+' VP',before,after,delta:actual,mission,round,scoringItem:row[2],scoringTiming:row[0],amount,roundCap:15,roundTotal:roundTotalBefore+actual},fullBefore);
   }
   save();
   render();
@@ -1118,7 +1130,7 @@ function primaryMissionPanel(mode='battle'){
       (mission?'<div class="primary-mission-select-like"><strong>'+esc(mission)+'</strong><span>⌄</span></div>'+primaryMissionDetailsHtml(mission,side):'<div class="primary-mission-select-like"><strong>Not resolved</strong></div>')+
       '</div></div>';
   };
-  return '<div class="card primary-mission-card primary-approved-card"><div class="primary-approved-title"><div><h3>Primary Mission</h3><div class="muted">Configure and track each player’s Primary Mission.</div></div><div class="pill">11th Edition</div></div>'+
+  return '<div class="card primary-mission-card primary-approved-card"><div class="primary-approved-title"><div><h3>Primary Mission</h3><div class="muted">Configure and track each player’s Primary Mission • 15 VP round maximum.</div></div><div class="pill">11th Edition</div></div>'+
     '<div class="primary-missions-body"><div class="primary-approved-pair">'+tracker('my',myPM,myVP)+tracker('opp',oppPM,oppVP)+'</div></div></div>';
 }
 
@@ -1309,7 +1321,7 @@ function stratagemsUI(){
 }
 let state={
   savedArmyLists:[],
-  stratagemsMy:[], stratagemsOpp:[], stratagemsOpen:false,primaryMissionsOpen:false,secondaryMissionsOpen:false,page:'builder',myName:'My Army',oppName:'Opponent Army',faction:'Tyranids',detachment:'Invasion Fleet',detachmentSelections:['Invasion Fleet'],oppFaction:'Ultramarines',oppDetachment:'Gladius Task Force',oppDetachmentSelections:['Gladius Task Force'],limit:2000,my:[],opp:[],searchMy:'',searchOpp:'',configure:null,attacker:'norn',weapon:'Rupture Cannon',target:'marine',round:1,phase:'Command',myVP:0,oppVP:0,myCP:0,oppCP:0,battleReadyMy:false,battleReadyOpp:false,secondaryMy:'tactical',secondaryOpp:'tactical',secondaryMyCards:[],secondaryOppCards:[],secondaryMyDeck:[],secondaryOppDeck:[],secondaryMyDiscard:[],secondaryOppDiscard:[],newOrdersCompletedMy:false,newOrdersCompletedOpp:false,secondaryMyScored:[],secondaryOppScored:[],secondaryMyScoredVP:{},secondaryOppScoredVP:{},secondaryPersonalPlans:{},secondaryPlanEdit:'',secondaryDetailSide:'',secondaryDetailName:'',gameReferencePersonal:{},myForceDisposition:'',oppForceDisposition:'',attackerSide:'my',firstTurn:'my',currentTurn:'my',objectives:{},events:[],gameAssistantChecks:{},gameAssistantNotes:'',lists:[],activeRosterId:'',activeOpponentRosterId:'',dataStatus:'Expanded Tyranid + Ultramarines community catalogue',source:'BSData wh40k-11e (community)',revision:'current-community-catalogue',cloud:{email:'',userId:'',status:'Not connected',lastSync:'',error:''},cloudBattles:[],rulesLog:[],mathRules:{},gameTimer:{elapsedMs:0,running:false,paused:false,startedAt:0,pausedAt:0,finishedAt:0,turnMyMs:0,turnOppMs:0,turnStartedGameMs:0,turnPaused:false}};
+  stratagemsMy:[], stratagemsOpp:[], stratagemsOpen:false,primaryMissionsOpen:false,secondaryMissionsOpen:false,page:'builder',myName:'My Army',oppName:'Opponent Army',faction:'Tyranids',detachment:'Invasion Fleet',detachmentSelections:['Invasion Fleet'],oppFaction:'Ultramarines',oppDetachment:'Gladius Task Force',oppDetachmentSelections:['Gladius Task Force'],limit:2000,my:[],opp:[],searchMy:'',searchOpp:'',configure:null,attacker:'norn',weapon:'Rupture Cannon',target:'marine',round:1,phase:'Command',myVP:0,oppVP:0,myCP:0,oppCP:0,battleReadyMy:false,battleReadyOpp:false,secondaryMy:'tactical',secondaryOpp:'tactical',secondaryMyCards:[],secondaryOppCards:[],secondaryMyDeck:[],secondaryOppDeck:[],secondaryMyDiscard:[],secondaryOppDiscard:[],newOrdersCompletedMy:false,newOrdersCompletedOpp:false,secondaryMyScored:[],secondaryOppScored:[],secondaryMyScoredVP:{},secondaryOppScoredVP:{},secondaryMyScoredVPByRound:{},secondaryOppScoredVPByRound:{},secondaryPersonalPlans:{},secondaryPlanEdit:'',secondaryDetailSide:'',secondaryDetailName:'',gameReferencePersonal:{},myForceDisposition:'',oppForceDisposition:'',attackerSide:'my',firstTurn:'my',currentTurn:'my',objectives:{},events:[],gameAssistantChecks:{},gameAssistantNotes:'',lists:[],activeRosterId:'',activeOpponentRosterId:'',dataStatus:'Expanded Tyranid + Ultramarines community catalogue',source:'BSData wh40k-11e (community)',revision:'current-community-catalogue',cloud:{email:'',userId:'',status:'Not connected',lastSync:'',error:''},cloudBattles:[],rulesLog:[],mathRules:{},gameTimer:{elapsedMs:0,running:false,paused:false,startedAt:0,pausedAt:0,finishedAt:0,turnMyMs:0,turnOppMs:0,turnStartedGameMs:0,turnPaused:false}};
 
 const GAME_REFERENCE_PHASES={
  Command:[
@@ -1923,6 +1935,30 @@ function replenishTactical(side){
  if(!secDeck(side).length)initTacticalDeck(side);
  return drawTactical(side,2,false);
 }
+function ensureSecondaryRoundLedger(){
+  if(!state.secondaryMyScoredVPByRound||typeof state.secondaryMyScoredVPByRound!=='object')state.secondaryMyScoredVPByRound={};
+  if(!state.secondaryOppScoredVPByRound||typeof state.secondaryOppScoredVPByRound!=='object')state.secondaryOppScoredVPByRound={};
+}
+function secondaryRoundScoredVP(side,round=state.round){
+  ensureSecondaryRoundLedger();
+  const key=side==='my'?'secondaryMyScoredVPByRound':'secondaryOppScoredVPByRound';
+  const roundKey=String(Math.max(1,Number(round)||1));
+  const bucket=state[key]?.[roundKey]||{};
+  return Object.values(bucket).reduce((sum,v)=>sum+Math.max(0,Number(v)||0),0);
+}
+function recordSecondaryRoundVP(side,name,actual,round=state.round){
+  ensureSecondaryRoundLedger();
+  const key=side==='my'?'secondaryMyScoredVPByRound':'secondaryOppScoredVPByRound';
+  const roundKey=String(Math.max(1,Number(round)||1));
+  if(!state[key][roundKey]||typeof state[key][roundKey]!=='object')state[key][roundKey]={};
+  state[key][roundKey][name]=Math.max(0,Number(actual)||0);
+}
+function removeSecondaryRoundVP(side,name,round=state.round){
+  ensureSecondaryRoundLedger();
+  const key=side==='my'?'secondaryMyScoredVPByRound':'secondaryOppScoredVPByRound';
+  const roundKey=String(Math.max(1,Number(round)||1));
+  if(state[key][roundKey])delete state[key][roundKey][name];
+}
 function scoreSecondary(side,name,vpInput){
  const active=secState(side);if(!active.includes(name))return;
  let vp=Number(vpInput);if(!Number.isFinite(vp))vp=0;vp=Math.floor(vp);if(vp<1){alert('Enter at least 1 VP to score.');return;}
@@ -1930,7 +1966,11 @@ function scoreSecondary(side,name,vpInput){
  const max=Number.isFinite(Number(card.maxVP))?Number(card.maxVP):null;
  const fullBefore=snapshotForUndo();
  const before=side==='my'?Number(state.myVP)||0:Number(state.oppVP)||0;
- const after=max?Math.min(before+vp,max):before+vp;
+ const round=Math.max(1,Number(state.round)||1);
+ const roundTotalBefore=secondaryRoundScoredVP(side,round);
+ const allowedVP=Math.min(vp,Math.max(0,15-roundTotalBefore));
+ if(allowedVP<=0){alert('Secondary scoring is capped at 15 VP for this round.');return;}
+ const after=max?Math.min(before+allowedVP,max):before+allowedVP;
  const actual=after-before;
  if(actual<=0)return;
  if(side==='my')state.myVP=after;else state.oppVP=after;
@@ -1939,7 +1979,8 @@ function scoreSecondary(side,name,vpInput){
  if(mode==='tactical' && !secDiscard(side).includes(name))secDiscard(side).push(name);
  if(!secScored(side).includes(name))secScored(side).push(name);
  const vk=side==='my'?'secondaryMyScoredVP':'secondaryOppScoredVP';if(!state[vk]||typeof state[vk]!=='object')state[vk]={};state[vk][name]=actual;
- event('SECONDARY_SCORED',{side,unit:name,action:`Secondary scored +${actual} VP`,secondary:name,before,after,delta:actual,mode,discarded:mode==='tactical'},fullBefore);
+ recordSecondaryRoundVP(side,name,actual,round);
+ event('SECONDARY_SCORED',{side,unit:name,action:`Secondary scored +${actual} VP`,secondary:name,before,after,delta:actual,mode,discarded:mode==='tactical',round,roundCap:15,roundTotal:roundTotalBefore+actual},fullBefore);
  save();render();
 }
 function secondaryInputId(side,name){return 'score-'+side+'-'+String(name).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}
@@ -1956,6 +1997,7 @@ function resetSecondaryScore(side,name){
  const sk=side==='my'?'secondaryMyScored':'secondaryOppScored';
  state[sk]=state[sk].filter(x=>x!==name);
  if(state[vk])delete state[vk][name];
+ removeSecondaryRoundVP(side,name,state.round);
  const k=side==='my'?'secondaryMyCards':'secondaryOppCards';
  if(!secState(side).includes(name)){state[k]=[...secState(side),name];}
  if(mode==='tactical'){const dk=side==='my'?'secondaryMyDeck':'secondaryOppDeck';const rk=side==='my'?'secondaryMyDiscard':'secondaryOppDiscard';if(Array.isArray(state[rk]))state[rk]=state[rk].filter(x=>x!==name);if(Array.isArray(state[dk])&&!state[dk].includes(name)){} }
@@ -1982,6 +2024,7 @@ function returnSecondaryToList(side,name){
  state[deckKey]=Array.isArray(state[deckKey])?state[deckKey].filter(x=>x!==name):[];
  state[discardKey]=Array.isArray(state[discardKey])?state[discardKey].filter(x=>x!==name):[];
  if(state[vk])delete state[vk][name];
+ removeSecondaryRoundVP(side,name,state.round);
  event('SECONDARY_RETURNED',{side,unit:name,action:'Secondary returned to selection list',secondary:name,mode,removedVP:scoredVP,beforeScored:!!scoredVP},fullBefore);
  save();render();
 }
@@ -2052,6 +2095,7 @@ function load(){
   state.secondaryOppScored=Array.isArray(state.secondaryOppScored)?state.secondaryOppScored:[];
   state.secondaryMyScoredVP=state.secondaryMyScoredVP&&typeof state.secondaryMyScoredVP==='object'?state.secondaryMyScoredVP:{};
   state.secondaryOppScoredVP=state.secondaryOppScoredVP&&typeof state.secondaryOppScoredVP==='object'?state.secondaryOppScoredVP:{};
+  ensureSecondaryRoundLedger();
   state.objectives=state.objectives&&typeof state.objectives==='object'?state.objectives:{};state.mathRules=state.mathRules&&typeof state.mathRules==='object'?state.mathRules:{};
   state.lists=Array.isArray(state.lists)?state.lists:[];
   state.newOrdersCompletedMy=!!state.newOrdersCompletedMy;state.newOrdersCompletedOpp=!!state.newOrdersCompletedOpp;
@@ -3546,7 +3590,7 @@ async function cloudDeleteBattle(id){
   }catch(e){state.cloud.status='Error';state.cloud.error=e.message||String(e);save();render()}
 }
 function dataManagementPage(){const cfg=getCloudConfig();const battles=Array.isArray(state.cloudBattles)?state.cloudBattles:[];return `<div class="card">
-  <div class="split"><div><h2 style="margin:0">Data Management</h2><div class="muted" style="margin-top:4px">Back up and restore your OnoForge data on this device, or connect it to your Supabase account.</div></div><span class="pill">v283 Backup + Cloud</span></div>
+  <div class="split"><div><h2 style="margin:0">Data Management</h2><div class="muted" style="margin-top:4px">Back up and restore your OnoForge data on this device, or connect it to your Supabase account.</div></div><span class="pill">v284 Backup + Cloud</span></div>
 
   <div class="card cloud-card" style="margin-top:12px">
     <div class="split">
@@ -3682,7 +3726,7 @@ async function load40kAppSourceManifest(){
   }
   render();
 }
-function render(){const pages={builder,saved:savedListsPage,battle,setup,math,rules,data:dataPage,manage:dataManagementPage,log:logPage,scorelog:scoringLogPage};document.getElementById('app').innerHTML=`<div class="top"><div class="brand">ONOFORGE 40K</div><div class="sub">11th Edition • v283 • 40k.app v925 data source • Army-linked Mathhammer Engine</div></div>${nav()}<main class="wrap">
+function render(){const pages={builder,saved:savedListsPage,battle,setup,math,rules,data:dataPage,manage:dataManagementPage,log:logPage,scorelog:scoringLogPage};document.getElementById('app').innerHTML=`<div class="top"><div class="brand">ONOFORGE 40K</div><div class="sub">11th Edition • v284 • 40k.app v925 data source • Army-linked Mathhammer Engine</div></div>${nav()}<main class="wrap">
   
 <div class="status">✓ Browser app loaded locally • Source: ${esc(state.source)} • ${esc(state.revision)} • 40k.app v${esc(String(ONOFORGE_40KAPP_SOURCE?.source?.revision||'925'))}</div><div style="height:12px"></div>${(pages[state.page]||builder)()}${secondaryPlanEditorModal()}</main></div>`
   ensureLiveGameTimerDisplay();
