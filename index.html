@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OnoForge 40K v303</title><style>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OnoForge 40K v304</title><style>
 *{box-sizing:border-box}body{margin:0;background:#0b0f15;color:#e9edf3;font-family:Arial,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}.top{padding:18px 22px;background:#111722;border-bottom:1px solid #273142}.brand{font-size:25px;font-weight:800}.sub,.muted{color:#9ca8b8;font-size:13px}.nav{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:10px 16px;background:#0e141e;border-bottom:1px solid #273142}.nav-main{display:flex;gap:6px;flex-wrap:wrap}.nav button,.nav-tools summary{background:#171e2a;color:#cbd5e1;border:1px solid #2c3748;border-radius:7px;padding:9px 13px;font-size:14px;cursor:pointer}.nav button.active{background:#24334b;color:#fff;border-color:#49678f}.nav-tools{position:relative;margin-left:auto}.nav-tools summary{list-style:none}.nav-tools summary::-webkit-details-marker{display:none}.nav-tools summary:after{content:' ▾';font-size:11px}.nav-tools[open] summary{background:#24334b;color:#fff;border-color:#49678f}.nav-tools-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:1200;min-width:170px;padding:6px;background:#111722;border:1px solid #344052;border-radius:8px;box-shadow:0 12px 30px rgba(0,0,0,.4);display:grid;gap:4px}.nav-tools-menu button{width:100%;text-align:left}.wrap{max-width:1250px;margin:auto;padding:18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.card{background:#111722;border:1px solid #273142;border-radius:10px;padding:15px;margin-bottom:14px}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.split{display:flex;justify-content:space-between;gap:10px;align-items:center}.field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:150px}.field label{font-size:12px;color:#9ca8b8}.field input,.field select,.field textarea,input[type=text]{width:100%;background:#0b1018;color:#eef2f7;border:1px solid #344052;border-radius:7px;padding:9px}.btn{background:#1b2432;color:#e8edf4;border:1px solid #354255;border-radius:7px;padding:8px 11px}.btn.primary{background:#27598b;border-color:#3975b6}.btn.danger{background:#5b252c;border-color:#82404a}.pill{display:inline-block;border:1px solid #3a4658;border-radius:999px;padding:4px 8px;font-size:12px;margin:2px}.status,.warn,.ok{border-radius:7px;padding:9px;margin-top:8px}.status{background:#17202d;border:1px solid #304057}.warn{background:#38261b;border:1px solid #78512d;color:#f4c58f}.ok{background:#183022;border:1px solid #356747;color:#aee2bf}.big{font-size:24px;font-weight:800}.unit{padding:11px 0;border-top:1px solid #26303e}.empty{padding:25px;text-align:center;color:#8995a5}.bar{height:8px;background:#242d3a;border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;background:#4d86bd}.mono{font-family:monospace;font-size:12px;white-space:pre-wrap}.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.tabs button{background:#171e2a;color:#cbd5e1;border:1px solid #2c3748;border-radius:7px;padding:8px 11px}.tabs button.active{background:#315174}.logrow{border-top:1px solid #273142;padding:10px 0}.metric{font-size:20px;font-weight:700}.modal{position:fixed;inset:0;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;padding:18px;z-index:50}.modal>.card{width:min(850px,100%);max-height:92vh;overflow:auto}.tiny{font-size:11px;color:#8290a1}@media(max-width:850px){.grid,.grid3,.grid2{grid-template-columns:1fr}.wrap{padding:10px}}
 
 
@@ -2154,14 +2154,14 @@ Tyranids_tervigon:[
  {key:'main',label:'Massive scything talons loadout',type:'single',options:['Massive scything talons','Massive crushing claws']}
 ],
 Tyranids_tyrant_guard:[
- {key:'melee',label:'Melee loadout',type:'single',options:['Scything talons and rending claws','Bone cleaver, lash whip and rending claws','Crushing claws and rending claws']}
+ {key:'melee',label:'Melee weapon by model',type:'allocation',required:true,options:['Scything talons and rending claws','Bone cleaver, lash whip and rending claws','Crushing claws and rending claws'],help:'Any number of models can independently replace their standard melee weapon.'}
 ],
 Tyranids_tyranid_warriors_with_ranged_bio_weapons:[
- {key:'base',label:'Base ranged weapon',type:'single',options:['Devourer','Deathspitter','Spinefists']},
+ {key:'base',label:'Ranged weapon by model',type:'allocation',required:true,options:['Devourer','Deathspitter','Spinefists'],help:'Allocate the ranged weapon on each model. Any number of models may take Deathspitters or Spinefists.'},
  {key:'special',label:'Per 3 models: special ranged weapon',type:'count',per:3,options:['None','Barbed strangler','Venom cannon'],help:'One model in each group of 3 can replace its devourer with a barbed strangler or venom cannon.'}
 ],
 Tyranids_termagants:[
- {key:'base',label:'Base ranged weapon',type:'single',options:['Fleshborer','Termagant devourer','Termagant spinefists']},
+ {key:'base',label:'Ranged weapon by model',type:'allocation',required:true,options:['Fleshborer','Termagant devourer','Termagant spinefists'],help:'Allocate the ranged weapon on each model. Devourers and Spinefists can be mixed freely across the unit.'},
  {key:'special',label:'Per 10 models: special ranged weapon',type:'count',per:10,options:['None','Shardlauncher','Spike rifle','Strangleweb'],help:'One model in each group of 10 can take one of these special weapons.'}
 ],
 Tyranids_biovores:[
@@ -2176,9 +2176,9 @@ Tyranids_norn_emissary:[{key:'fixed',label:'Standard Wargear',type:'fixed',optio
 Tyranids_norn_assimilator:[{key:'fixed',label:'Standard Wargear',type:'fixed',options:['Monstrous scything talons','Toxinjector harpoon']}],
 Tyranids_raveners:[{key:'fixed',label:'Wargear Options',type:'fixed',options:['None — standard Ravener claws and talons']}],
 Tyranids_carnifexes:[
- {key:'slot1',label:'Replace extra scything talons',type:'single',options:['Keep extra scything talons','Deathspitters with slimer maggots','Devourers with brainleech worms','Heavy venom cannon','Stranglethorn cannon','Carnifex crushing claws']},
- {key:'slot2',label:'Replace scything talons',type:'single',options:['Keep scything talons','Deathspitters with slimer maggots','Devourers with brainleech worms','Carnifex crushing claws']},
- {key:'extras',label:'Additional options',type:'multi',options:['Bio-plasma','Spine banks']}
+ {key:'slot1',label:'Extra scything talons by model',type:'allocation',required:true,options:['Keep extra scything talons','Deathspitters with slimer maggots','Devourers with brainleech worms','Heavy venom cannon','Stranglethorn cannon','Carnifex crushing claws'],help:'Each Carnifex independently chooses how to replace its extra scything talons.'},
+ {key:'slot2',label:'Scything talons by model',type:'allocation',required:true,options:['Keep scything talons','Deathspitters with slimer maggots','Devourers with brainleech worms','Carnifex crushing claws'],help:'Each Carnifex independently chooses how to replace its scything talons.'},
+ {key:'extras',label:'Additional options by model',type:'allocation',required:false,options:['Bio-plasma','Spine banks'],help:'Each Carnifex can independently take Bio-plasma and/or Spine banks.'}
 ],
 Tyranids_tyrannofex:[
  {key:'main',label:'Main weapon',type:'single',options:['Fleshborer hive','Acid spray','Rupture cannon']},
@@ -2189,7 +2189,7 @@ Tyranids_harpy:[
  {key:'fixed',label:'Standard Wargear',type:'fixed',options:['Scything wings','Stinger salvoes']}
 ],
 Tyranids_tyrannocyte:[{key:'fixed',label:'Standard Wargear',type:'fixed',options:['Flensing whips','Tyrannocyte bio-weapons']}],
-Tyranids_hive_guard:[{key:'ranged',label:'Ranged weapon',type:'single',options:['Shockcannon','Impaler cannon']}],
+Tyranids_hive_guard:[{key:'ranged',label:'Ranged weapon by model',type:'allocation',required:true,options:['Shockcannon','Impaler cannon'],help:'Any number of models can independently replace their shockcannon with an impaler cannon.'}],
 Ultramarines_intercessor_squad:[
  {key:'sergeant_ranged',label:'Intercessor Sergeant ranged weapon',type:'single',options:['Bolt rifle','Astartes chainsword','Hand flamer','Plasma pistol','Power weapon']},
  {key:'sergeant_melee',label:'Intercessor Sergeant melee weapon',type:'single',options:['Close combat weapon','Astartes chainsword','Power fist','Power weapon','Thunder hammer']},
@@ -2255,13 +2255,75 @@ function activeWeaponNames(e,u){
     }else if(g.type==='count'){
       const sel=e.wargearSelections[g.key]||{},v=sel.option,count=Math.max(0,Math.floor(Number(sel.count)||0));
       if(v&&v!=='None'&&count)add.push(v);
+    }else if(g.type==='allocation'){
+      const counts=e.wargearSelections[g.key]?.counts||{};
+      Object.entries(counts).forEach(([v,count])=>{if(v&&v!=='None'&&Number(count)>0)add.push(v)});
     }
   }
   return Array.from(new Set(names.filter(n=>!remove.has(n)).concat(add)));
 }
+function normalizeAllocation(e,g){
+  const models=Math.max(1,Math.floor(Number(e?.models)||1));
+  let cur=e.wargearSelections[g.key];
+  let counts=(cur&&typeof cur==='object'&&!Array.isArray(cur)&&cur.counts&&typeof cur.counts==='object')?{...cur.counts}:{};
+  // Migrate old single/multi selections into model counts.
+  if(Object.keys(counts).length===0){
+    if(typeof cur==='string'&&cur&&cur!=='None') counts[cur]=models;
+    else if(Array.isArray(cur)){
+      cur.filter(v=>v&&v!=='None').forEach(v=>counts[v]=models);
+    }
+  }
+  const clean={};
+  let total=0;
+  for(const opt of g.options||[]){
+    const n=Math.max(0,Math.floor(Number(counts[opt])||0));
+    if(n){clean[opt]=n;total+=n;}
+  }
+  if(g.required){
+    if(total===0){clean[g.options?.[0]||'']=models;total=models;}
+    if(total>models){
+      let over=total-models;
+      for(const opt of [...(g.options||[])].reverse()){
+        if(over<=0)break;
+        const take=Math.min(over,clean[opt]||0);
+        if(take){clean[opt]-=take;over-=take;if(clean[opt]===0)delete clean[opt];}
+      }
+    }else if(total<models){
+      const def=g.options?.[0];
+      if(def)clean[def]=(clean[def]||0)+(models-total);
+    }
+  }
+  e.wargearSelections[g.key]={counts:clean};
+  return clean;
+}
+function allocationCounts(e,g){ensureWargear(e,get(e.unitId));return e.wargearSelections[g.key]?.counts||{}}
+function allocationTotal(e,g){return Object.values(allocationCounts(e,g)).reduce((n,v)=>n+Math.max(0,Math.floor(Number(v)||0)),0)}
+function allocationMaxForOption(e,g,opt){
+  const models=Math.max(1,Math.floor(Number(e?.models)||1));
+  const others=allocationTotal(e,g)-(Number(e.wargearSelections[g.key]?.counts?.[opt])||0);
+  return Math.max(0,models-others);
+}
+function setWargearAllocationCount(side,id,key,opt,count){
+  const e=entry(side,id);if(!e)return;
+  const u=get(e.unitId),g=wargearGroups(u).find(x=>x.key===key);if(!g||g.type!=='allocation')return;
+  const counts=normalizeAllocation(e,g);
+  const max=allocationMaxForOption(e,g,opt);
+  counts[opt]=Math.min(max,Math.max(0,Math.floor(Number(count)||0)));
+  if(!counts[opt])delete counts[opt];
+  if(g.required){
+    const total=allocationTotal(e,g);
+    if(total<e.models){
+      const def=g.options?.[0];
+      if(def)counts[def]=(counts[def]||0)+(e.models-total);
+    }
+  }
+  e.wargearSelections[g.key]={counts};
+  save();render();
+}
 function ensureWargear(e,u){
   e.wargearSelections=e.wargearSelections&&typeof e.wargearSelections==='object'?e.wargearSelections:{};
   for(const g of wargearGroups(u)){
+    if(g.type==='allocation'){normalizeAllocation(e,g);continue;}
     if(g.type==='single' && !(g.key in e.wargearSelections)) e.wargearSelections[g.key]=g.options[0]||'';
     if(g.type==='multi' && !Array.isArray(e.wargearSelections[g.key])) e.wargearSelections[g.key]=[];
     if(g.type==='count'){
@@ -2316,6 +2378,9 @@ function wargearOptionStats(u,opt){const name=String(opt||'').trim();if(!name||n
     } else if(g.type==='count'){
       const sel=e.wargearSelections[g.key]||{},v=sel.option,count=Math.max(0,Math.floor(Number(sel.count)||0));
       if(v && v!=='None') total+=wargearOptionPoints(u,g,v)*count;
+    } else if(g.type==='allocation'){
+      const counts=e.wargearSelections[g.key]?.counts||{};
+      for(const [v,count] of Object.entries(counts)) if(v&&v!=='None') total+=wargearOptionPoints(u,g,v)*Math.max(0,Math.floor(Number(count)||0));
     }
   }
   return total;
@@ -2328,6 +2393,14 @@ function selectedWargearDetails(e,u){
     if(g.type==='count'){
       const sel=e.wargearSelections[g.key]||{},v=sel.option,count=Math.max(0,Math.floor(Number(sel.count)||0));
       if(v && v!=='None' && count) out.push({name:count+'× '+v,points:wargearOptionPoints(u,g,v)*count});
+      continue;
+    }
+    if(g.type==='allocation'){
+      const counts=e.wargearSelections[g.key]?.counts||{};
+      for(const [v,count] of Object.entries(counts)){
+        const n=Math.max(0,Math.floor(Number(count)||0));
+        if(v&&v!=='None'&&n)out.push({name:n+'× '+v,points:wargearOptionPoints(u,g,v)*n});
+      }
       continue;
     }
     const vals=g.type==='multi'?(e.wargearSelections[g.key]||[]):[e.wargearSelections[g.key]];
@@ -2544,7 +2617,7 @@ const UNIT_SIZE_POINTS_11E={
   'Tyranids|Zoanthropes':{3:90,6:200},
   'Tyranids|Ripper Swarms':{1:30,2:40,3:50},
   'Tyranids|Spore Mines':{3:55,6:110},
-  'Tyranids|Tyrant Guard':{3:80,6:160},
+  'Tyranids|Tyrant Guard':{3:80,6:170},
   'Tyranids|Hyperadapted Raveners':{5:165},
   'Tyranids|Genestealers':{5:75,10:140},
   'Tyranids|Barbgaunts':{5:55,10:110},
@@ -2778,6 +2851,13 @@ function issues(side){
    if(e.models<r.minModels||e.models>r.maxModels||((e.models-r.minModels)%r.step))out.push(u.name+': invalid model count');
    if(e.qty>r.maxUnits)out.push(u.name+': too many units');
    if((u.weapons||[]).length&&!activeWeaponNames(e,u).length)out.push(u.name+': no active weapons selected');
+   for(const g of wargearGroups(u)){
+     if(g.type==='allocation'){
+       const total=allocationTotal(e,g),models=Math.max(1,Math.floor(Number(e.models)||1));
+       if(g.required&&total!==models)out.push(u.name+': '+g.label+' must allocate exactly '+models+' models');
+       if(total>models)out.push(u.name+': '+g.label+' allocates too many models');
+     }
+   }
    if(side==='my'&&u.faction!==state.faction)out.push(u.name+': faction mismatch');
    if(e.attachedTo){
      const parent=entry(side,e.attachedTo);
@@ -2849,6 +2929,17 @@ function configureModal(){
       const sel=e.wargearSelections[g.key]||{option:g.options[0]||'None',count:0},max=countWargearMax(e,g);
       return `<div class="wargear-group"><h4>${esc(g.label)}</h4><div class="field"><label>Weapon option</label><select onchange="setWargear('${side}','${e.uid}','${esc(g.key).replace(/'/g,"\\'")}',this.value)">${g.options.map(opt=>`<option value="${esc(opt)}" ${sel.option===opt?'selected':''}>${esc(opt)} — ${wargearCostLabel(wargearOptionPoints(u,g,opt))}</option>`).join('')}</select></div><div class="field" style="margin-top:8px"><label>Number of models with this option (0–${max})</label><input type="number" min="0" max="${max}" step="1" value="${Math.min(max,Math.max(0,Number(sel.count)||0))}" onchange="setWargearCount('${side}','${e.uid}','${esc(g.key).replace(/'/g,"\\'")}',this.value)"></div>${g.help?`<div class="wargear-note">${esc(g.help)}</div>`:''}</div>`;
     }
+    if(g.type==='allocation'){
+      const counts=e.wargearSelections[g.key]?.counts||{};
+      const total=Object.values(counts).reduce((n,v)=>n+Math.max(0,Math.floor(Number(v)||0)),0);
+      const required=g.required!==false;
+      return `<div class="wargear-group"><h4>${esc(g.label)}</h4><div class="muted" style="margin-bottom:7px">${required?'Allocate all '+e.models+' models.':'Optional — allocate 0 to '+e.models+' models.'} Current: ${total}/${e.models}</div>${g.options.map(opt=>{
+        const value=Math.max(0,Math.floor(Number(counts[opt])||0));
+        const max=allocationMaxForOption(e,g,opt);
+        const aid=(`alloc-${e.uid}-${g.key}-${opt}`).replace(/[^A-Za-z0-9_-]/g,'-');
+        return `<div class="field" style="margin-top:6px"><label for="${esc(aid)}">${esc(opt)} — ${wargearCostLabel(wargearOptionPoints(u,g,opt))}</label><input id="${esc(aid)}" type="number" min="0" max="${max}" step="1" value="${value}" onchange="setWargearAllocationCount('${side}','${e.uid}','${esc(g.key).replace(/'/g,"\\'")}','${esc(opt).replace(/'/g,"\\'")}',this.value)"></div>${wargearOptionStats(u,opt)}`;
+      }).join('')}${g.help?`<div class="wargear-note">${esc(g.help)}</div>`:''}</div>`;
+    }
     const vals=g.type==='multi'?(e.wargearSelections[g.key]||[]):[e.wargearSelections[g.key]];
     const inputType=g.type==='multi'?'checkbox':'radio';
     return `<div class="wargear-group"><h4>${esc(g.label)}</h4><div class="wargear-options">${g.options.map((opt,i)=>{
@@ -2876,7 +2967,7 @@ function unitDisplayName(side,e){const arr=Array.isArray(state[side])?state[side
 function rosterCreatedLabel(value){if(!value)return '';const d=new Date(value);if(Number.isNaN(d.getTime()))return '';return d.toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});}
 function savedRosterDisplayName(x){const stamp=rosterCreatedLabel(x?.created);return (x?.name||'Unnamed Roster')+(stamp?' • '+stamp:'');}
 function activeArmyDisplayName(side){const name=side==='my'?state.myName:state.oppName,id=side==='my'?state.activeRosterId:state.activeOpponentRosterId,list=(state.savedArmyLists||[]).find(x=>x.id===id);return savedRosterDisplayName({name,created:list?.created});}
-function unitHasSelectableWargear(u){return wargearGroups(u).some(g=>((g.type==='single'||g.type==='multi'||g.type==='count')&&Array.isArray(g.options)&&g.options.length>1))}
+function unitHasSelectableWargear(u){return wargearGroups(u).some(g=>((g.type==='single'||g.type==='multi'||g.type==='count'||g.type==='allocation')&&Array.isArray(g.options)&&g.options.length>1))}
 function unitRow(side,e){
  const u=get(e.unitId),displayName=unitDisplayName(side,e),wg=selectedWargearSummary(e,u),hasSelectableWargear=unitHasSelectableWargear(u),activeWeapons=activeWeaponNames(e,u);
  if(e.attachedTo)return '';
