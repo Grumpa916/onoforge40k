@@ -1978,6 +1978,11 @@ function ensureSecondaryRoundLedger(){
   if(!state.secondaryMyScoredVPByRound||typeof state.secondaryMyScoredVPByRound!=='object')state.secondaryMyScoredVPByRound={};
   if(!state.secondaryOppScoredVPByRound||typeof state.secondaryOppScoredVPByRound!=='object')state.secondaryOppScoredVPByRound={};
 }
+function secondaryTotalScoredVP(side){
+  const key=side==='my'?'secondaryMyScoredVP':'secondaryOppScoredVP';
+  const bucket=state[key]&&typeof state[key]==='object'?state[key]:{};
+  return Math.min(45,Object.values(bucket).reduce((sum,v)=>sum+Math.max(0,Number(v)||0),0));
+}
 function secondaryRoundScoredVP(side,round=state.round){
   ensureSecondaryRoundLedger();
   const key=side==='my'?'secondaryMyScoredVPByRound':'secondaryOppScoredVPByRound';
