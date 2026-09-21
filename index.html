@@ -3014,6 +3014,16 @@ function modelRosterIssues(e,u){
     if(nodes!==expected)out.push(u.name+': Nodebeast count does not match unit size');
   }else if(u.name==='Hyperadapted Raveners'){
     if(roles.filter(x=>x==='Ravener Prime').length!==1||roles.filter(x=>x==='Ravener w/ Venom bolt').length!==1||roles.filter(x=>x==='Ravener').length!==3)out.push(u.name+': specialist model composition is invalid');
+  }else if(['Space Marines','Ultramarines'].includes(u.faction)){
+    const rule=modelRosterRule(u);
+    if(rule?.kind==='company-heroes'){
+      const expected=['Ancient','Company Champion','Company Veteran w/ Heavy Bolter','Company Veteran w/ Master-crafted Bolt Rifle'];
+      if(e.models!==4||expected.some(role=>roles.filter(x=>x===role).length!==1))out.push(u.name+': fixed four-model composition is invalid');
+    }else if(rule?.kind==='sergeant-squad'||rule?.kind==='specialist-squad'||rule?.kind==='outrider-squad'){
+      const sgt=roles.filter(x=>/Sergeant|Leader/.test(x)).length;
+      if(sgt!==1)out.push(u.name+': must contain exactly 1 Sergeant/Leader model');
+      if(roles.length!==Number(e.models)||roles.filter(x=>!/Sergeant|Leader/.test(x)).length!==Math.max(0,Number(e.models)-1))out.push(u.name+': model-role count does not match unit size');
+    }
   }
   return out;
 }
