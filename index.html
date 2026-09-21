@@ -2248,7 +2248,12 @@ function selectedWargearDetails(e,u){
   }
   return out;
 }
-function selectedWargearSummary(e,u){return selectedWargearDetails(e,u).map(x=>`${x.name} (+${x.points} pts)`)}
+function selectedWargearSummary(e,u){return selectedWargearDetails(e,u).map(x=>x.name+' (+'+x.points+' pts)')}
+function unitPointsDisplay(e,u){
+  const base=Number(u?.points)||0;
+  const wargear=selectedWargearCost(e,u);
+  return wargear>0 ? 'Base '+base+' + Wargear '+wargear+' = <b>'+pts(e)+' pts</b>' : '<b>'+base+' pts</b>';
+}
 
 function makeEntry(u){return {uid:uid(),unitId:u.id,qty:1,models:u.models,wargear:[],wargearSelections:{},weapons:(u.weapons||[]).map(w=>w.name),enhancement:'',notes:'',attachedTo:null,leaderUid:null}}
 const LEADER_ATTACHMENTS_11E={
@@ -2400,7 +2405,7 @@ function unitRow(side,e){
  const addLeaderButton=!isLeader&&leaderAttachmentNamesForBodyguardFix(u).length?'<button class="btn" type="button" onclick="openLeaderAttachment(\''+side+'\',\''+e.uid+'\')">＋ Add Leader</button>':'';
  const addBodyguardButton=isLeader&&!attachedBodyguard&&bodyguardCandidatesForLeader(side,e.uid).length?'<button class="btn" type="button" onclick="openBodyguardAttachment(\''+side+'\',\''+e.uid+'\')">＋ Add Bodyguard</button>':'';
  const attachButton=isLeader?addBodyguardButton:addLeaderButton;
- return '<div class="unit"><div class="split"><div><strong>'+esc(displayName)+'</strong><span class="pill" style="margin-left:6px">'+(isLeader?'Leader':'')+'</span><div class="muted">'+esc(u.faction)+' • Base '+u.points+' + Wargear '+selectedWargearCost(e,u)+' = <b>'+pts(e)+' pts</b> • '+e.models+' models/unit</div></div><div class="row">'+attachButton+'<button class="btn" onclick="configure(\''+side+'\',\''+e.uid+'\')">Configure</button><button class="btn danger" onclick="removeUnit(\''+side+'\',\''+e.uid+'\')">Remove</button></div></div><div>'+e.weapons.map(w=>'<span class="pill">'+esc(w)+'</span>').join('')+'</div>'+(wg.length?'<div class="muted">Wargear: '+wg.map(esc).join(' • ')+'</div>':'')+(e.enhancement?'<div class="muted">Enhancement: '+esc(e.enhancement)+'</div>':'')+(e.notes?'<div class="muted">Note: '+esc(e.notes)+'</div>':'')+issues(side).filter(x=>x.startsWith(u.name+':')).map(x=>'<div class="warn">⚠ '+esc(x)+'</div>').join('')+(isLeader?bodyguardBox:leaderBox)+'</div>';
+ return '<div class="unit"><div class="split"><div><strong>'+esc(displayName)+'</strong><span class="pill" style="margin-left:6px">'+(isLeader?'Leader':'')+'</span><div class="muted">'+esc(u.faction)+' • '+unitPointsDisplay(e,u)+' • '+e.models+' models/unit</div></div><div class="row">'+attachButton+'<button class="btn" onclick="configure(\''+side+'\',\''+e.uid+'\')">Configure</button><button class="btn danger" onclick="removeUnit(\''+side+'\',\''+e.uid+'\')">Remove</button></div></div><div>'+e.weapons.map(w=>'<span class="pill">'+esc(w)+'</span>').join('')+'</div>'+(wg.length?'<div class="muted">Wargear: '+wg.map(esc).join(' • ')+'</div>':'')+(e.enhancement?'<div class="muted">Enhancement: '+esc(e.enhancement)+'</div>':'')+(e.notes?'<div class="muted">Note: '+esc(e.notes)+'</div>':'')+issues(side).filter(x=>x.startsWith(u.name+':')).map(x=>'<div class="warn">⚠ '+esc(x)+'</div>').join('')+(isLeader?bodyguardBox:leaderBox)+'</div>';
 }
 function leaderAttachmentNamesForBodyguardFix(u){return leaderNamesForBodyguard(u)}
 function unitListCategory(u){const k=(Array.isArray(u.keywords)?u.keywords:[]).map(x=>String(x).toUpperCase());if(k.includes('CHARACTER'))return 0;if(k.includes('INFANTRY'))return 1;if(k.includes('MONSTER')||k.includes('VEHICLE'))return 2;return 3}
