@@ -668,7 +668,7 @@ function bsWargearOptions(entry){
 }
 
 function bsUnitFromEntry(entry,faction){
-  if(!entry||entry.type!=='model')return null;
+  if(!entry||entry.type!=='unit')return null;
   const p=bsProfile(entry,'Unit');
   if(!p)return null;
   const stats=bsCharacteristics(p);
@@ -708,11 +708,8 @@ async function refreshCurrentUnitDatabase(showMessage=true){
         const u=bsUnitFromEntry(entry,faction);
         if(u&&!seen.has(u.name)){seen.add(u.name);all.push(u);}
       });
-      // Also include direct model entries that may not be root-linked.
-      map.forEach(entry=>{
-        const u=bsUnitFromEntry(entry,faction);
-        if(u&&!seen.has(u.name)){seen.add(u.name);all.push(u);}
-      });
+      // Only catalogue-linked unit entries are eligible for supplemental import.
+      // Direct model entries include weapon/model variants and must not become units.
     }
 
     if(!all.length)throw new Error('No unit data was found.');
@@ -2544,17 +2541,17 @@ const UNIT_SIZE_POINTS_11E={
   'Tyranids|Venomthropes':{3:55,6:110},
   'Tyranids|Von Ryan\'s Leapers':{3:55,6:105},
   'Tyranids|Neurogaunts':{11:45,22:90},
-  'Tyranids|'Tyranids|Zoanthropes':{3:90,6:200},
+  'Tyranids|Zoanthropes':{3:90,6:200},
   'Tyranids|Ripper Swarms':{1:30,2:40,3:50},
   'Tyranids|Spore Mines':{3:55,6:110},
-  'Tyranids|'Tyranids|Tyrant Guard':{3:80,6:160},
+  'Tyranids|Tyrant Guard':{3:80,6:160},
   'Tyranids|Hyperadapted Raveners':{5:165},
   'Tyranids|Genestealers':{5:75,10:140},
   'Tyranids|Barbgaunts':{5:55,10:110},
   'Tyranids|Biovores':{1:60,2:100,3:140},
   'Tyranids|Carnifexes':{1:90,2:180},
   'Tyranids|Mucolid Spores':{1:30,2:60},
-  'Tyranids|'Tyranids|Pyrovores':{1:45,2:65,3:95},
+  'Tyranids|Pyrovores':{1:45,2:65,3:95},
   // Space Marines
   'Space Marines|Aggressor Squad':{3:90,6:180},
   'Space Marines|Assault Intercessor Squad':{5:75,10:150},
