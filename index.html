@@ -3220,19 +3220,37 @@ async function cloudSyncSavedLists(){
     state.cloud.status='Error';state.cloud.error=e.message||String(e);save();render();
   }
 }
-async function cloudSaveCurrentBattle(){
+async function cloudSaveCurrentBattle(opts={}){
   if(!state.cloud?.userId){alert('Sign in to Supabase first.');return}
+  if(state.cloudBattleSaving)return;
+  state.cloudBattleSaving=true; state.cloudBattleSaveError='';
+  save();render();
   try{
     const client=await ensureSupabaseClient();
     const snapshot=JSON.parse(JSON.stringify(state));
-    delete snapshot.cloudBattles;delete snapshot._undoSnapshot;
+    delete snapshot.cloudBattles;delete snapshot._undoSnapshot;delete snapshot.cloudBattleSaving;delete snapshot.cloudBattleSaveError;
     const name=`${state.myName||'My Army'} vs ${state.oppName||'Opponent'} • Round ${state.round||1}`;
-    const {data,error}=await client.from('battle_records').insert({user_id:state.cloud.userId,name,battle_data:snapshot}).select('id,name,created_at,updated_at').single();
-    if(error)throw error;
-    alert('Current battle saved to Supabase.');
-    await cloudRefreshBattles();
+    let data=null;
+    if(state.cloudBattleId){
+      const result=await client.from('battle_records').update({name,battle_data:snapshot,updated_at:new Date().toISOString()}).eq('id',state.cloudBattleId).eq('user_id',state.cloud.userId).select('id,name,created_at,updated_at').single();
+      if(result.error)throw result.error;
+      data=result.data;
+    }else{
+      const result=await client.from('battle_records').insert({user_id:state.cloud.userId,name,battle_data:snapshot}).select('id,name,created_at,updated_at').single();
+      if(result.error)throw result.error;
+      data=result.data; state.cloudBattleId=data?.id||'';
+    }
+    state.cloudBattleSavedAt=data?.updated_at||new Date().toISOString();
+    state.cloudBattleSaving=false; state.cloud.status='Connected'; state.cloud.error='';
+    save(); await cloudRefreshBattles(); render();
+    if(!opts.silent)alert('Battle saved to Supabase.');
     return data;
-  }catch(e){state.cloud.status='Error';state.cloud.error=e.message||String(e);save();render();alert('Battle save failed: '+(e.message||e))}
+  }catch(e){
+    state.cloudBattleSaving=false; state.cloudBattleSaveError=e.message||String(e);
+    state.cloud.status='Error'; state.cloud.error=e.message||String(e);
+    save();render();
+    if(!opts.silent)alert('Battle save failed: '+(e.message||e));
+  }
 }
 async function cloudRefreshBattles(){
   if(!state.cloud?.userId)return;
@@ -3255,9 +3273,17 @@ async function cloudLoadBattle(id){
     state={...state,...cloudData};
     state.cloud=state.cloud||{email:'',userId:'',status:'Connected',lastSync:'',error:''};
     state.cloud.userId=state.cloud.userId||'';
+    state.cloudBattleId=id;
+    state.cloudBattleSavedAt=new Date().toISOString();
+    state.cloudBattleSaving=false;
+    state.cloudBattleSaveError='';
     ensureGameTimer();save();render();
     alert('Cloud battle loaded.');
   }catch(e){alert('Battle load failed: '+(e.message||e))}
+}
+function cloudNewBattle(){
+  state.cloudBattleId=''; state.cloudBattleSavedAt=''; state.cloudBattleSaveError=''; state.cloudBattleSaving=false;
+  save();render();
 }
 function cloudBattleDeleteConfirm(id){
   if(!id||!state.cloud?.userId)return;
@@ -3287,7 +3313,7 @@ function dataManagementPage(){const cfg=getCloudConfig();const battles=Array.isA
     </div>
     <div class="cloud-actions">
       <button class="btn primary" type="button" onclick="connectCloudFromInputs()">Save &amp; Connect</button>
-      ${state.cloud?.userId?`<button class="btn" type="button" onclick="cloudSyncSavedLists()">Sync Saved Lists</button><button class="btn" type="button" onclick="cloudSaveCurrentBattle()">Save Current Battle</button><button class="btn" type="button" onclick="cloudSignOut()">Sign Out</button>`:''}
+      ${state.cloud?.userId?`<button class="btn" type="button" onclick="cloudSyncSavedLists()">Sync Saved Lists</button><button class="btn primary" type="button" onclick="cloudSaveCurrentBattle()">${state.cloudBattleSaving?'Saving…':'Save Battle'}</button><button class="btn" type="button" onclick="cloudNewBattle()">New Battle</button><button class="btn" type="button" onclick="cloudSignOut()">Sign Out</button>`:''}
       ${cfg.url||cfg.key?`<button class="btn danger" type="button" onclick="clearCloudConfiguration()">Forget Connection</button>`:''}
     </div>
     <div class="cloud-help">Use only the <b>Publishable key</b> in this browser. Never put an <b>sb_secret_...</b> key or database password here. Your Supabase RLS policies control which records your signed-in account can access.</div>
