@@ -169,7 +169,7 @@
 }
 <style>
 .compact-battle-menu select{width:35%!important;max-width:160px!important;min-width:120px}
-</style>
+.primary-score-quantity{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:10px;color:#9ca8b8}.primary-score-quantity input{width:58px;padding:5px 6px;background:#0b1018;color:#eef2f7;border:1px solid #344052;border-radius:6px}.primary-detail-main{cursor:pointer;display:grid;grid-template-columns:150px 58px 1fr auto;gap:8px;align-items:start;width:100%}.primary-score-box{display:block}.primary-score-box.scored .primary-score-status{color:#aee2bf}@media(max-width:700px){.primary-detail-main{grid-template-columns:1fr}.primary-score-quantity{margin-top:4px}}</style>
 </style>
 </style>
 </style>
@@ -810,6 +810,13 @@ function resetPrimary(side){
   if(actual<=0)return;
   const fullBefore=snapshotForUndo();
   state[key]=0;
+  const byRoundKey=side==='my'?'primaryScoringByRoundMy':'primaryScoringByRoundOpp';
+  const amountKey=side==='my'?'primaryScoringAmountsByRoundMy':'primaryScoringAmountsByRoundOpp';
+  const valueKey=side==='my'?'primaryScoringValuesByRoundMy':'primaryScoringValuesByRoundOpp';
+  state[byRoundKey]={};
+  state[amountKey]={};
+  state[valueKey]={};
+  state[side==='my'?'primaryScoredItemsMy':'primaryScoredItemsOpp']=[];
   if(side==='my')state.myVP=Math.max(0,(Number(state.myVP)||0)-actual);
   else state.oppVP=Math.max(0,(Number(state.oppVP)||0)-actual);
   event('PRIMARY_SCORE_RESET',{
@@ -843,8 +850,16 @@ function syncPrimaryScoringRound(){
   state.primaryScoringRound=round;
   if(!state.primaryScoringByRoundMy || typeof state.primaryScoringByRoundMy!=='object') state.primaryScoringByRoundMy={};
   if(!state.primaryScoringByRoundOpp || typeof state.primaryScoringByRoundOpp!=='object') state.primaryScoringByRoundOpp={};
+  if(!state.primaryScoringAmountsByRoundMy || typeof state.primaryScoringAmountsByRoundMy!=='object') state.primaryScoringAmountsByRoundMy={};
+  if(!state.primaryScoringAmountsByRoundOpp || typeof state.primaryScoringAmountsByRoundOpp!=='object') state.primaryScoringAmountsByRoundOpp={};
+  if(!state.primaryScoringValuesByRoundMy || typeof state.primaryScoringValuesByRoundMy!=='object') state.primaryScoringValuesByRoundMy={};
+  if(!state.primaryScoringValuesByRoundOpp || typeof state.primaryScoringValuesByRoundOpp!=='object') state.primaryScoringValuesByRoundOpp={};
   if(!Array.isArray(state.primaryScoringByRoundMy[roundKey])) state.primaryScoringByRoundMy[roundKey]=[];
   if(!Array.isArray(state.primaryScoringByRoundOpp[roundKey])) state.primaryScoringByRoundOpp[roundKey]=[];
+  if(!state.primaryScoringAmountsByRoundMy[roundKey] || typeof state.primaryScoringAmountsByRoundMy[roundKey]!=='object') state.primaryScoringAmountsByRoundMy[roundKey]={};
+  if(!state.primaryScoringAmountsByRoundOpp[roundKey] || typeof state.primaryScoringAmountsByRoundOpp[roundKey]!=='object') state.primaryScoringAmountsByRoundOpp[roundKey]={};
+  if(!state.primaryScoringValuesByRoundMy[roundKey] || typeof state.primaryScoringValuesByRoundMy[roundKey]!=='object') state.primaryScoringValuesByRoundMy[roundKey]={};
+  if(!state.primaryScoringValuesByRoundOpp[roundKey] || typeof state.primaryScoringValuesByRoundOpp[roundKey]!=='object') state.primaryScoringValuesByRoundOpp[roundKey]={};
   state.primaryScoredItemsMy=[...state.primaryScoringByRoundMy[roundKey]];
   state.primaryScoredItemsOpp=[...state.primaryScoringByRoundOpp[roundKey]];
 }
@@ -864,103 +879,111 @@ function primaryScoringVP(value){
   const m=String(value||'').match(/\d+/);
   return m?Math.max(0,Number(m[0])||0):0;
 }
-function scorePrimaryItem(side,index,mission){
+function primaryScoringIsPer(row){
+  const text=String(row?.[2]||'').toLowerCase();
+  return /\bper\b|\bfor each\b/.test(text);
+}
+function primaryScoringExclusiveGroup(mission,index){
+  if(mission==='Purge and Secure' && index<=1)return 'purge-secure-kill';
+  if(mission==='Consecrate' && index<=1)return 'consecrate-tier';
+  if(mission==='Reconnaissance Sweep' && index<=1)return 'recon-sweep-tier';
+  if(mission==='Triangulation' && index>=1 && index<=3)return 'triangulation-tier';
+  return '';
+}
+function scorePrimaryItem(side,index,mission,amountOverride){
   syncPrimaryScoringRound();
-
   const round=Math.max(1,Number(state.round)||1);
+  const roundKey=String(round);
   const listKey=side==='my'?'primaryScoredItemsMy':'primaryScoredItemsOpp';
   const byRoundKey=side==='my'?'primaryScoringByRoundMy':'primaryScoringByRoundOpp';
+  const amountKey=side==='my'?'primaryScoringAmountsByRoundMy':'primaryScoringAmountsByRoundOpp';
+  const valueKey=side==='my'?'primaryScoringValuesByRoundMy':'primaryScoringValuesByRoundOpp';
   const vpKey=side==='my'?'primaryMyScoredVP':'primaryOppScoredVP';
   const overallKey=side==='my'?'myVP':'oppVP';
-
-  if(!state[byRoundKey] || typeof state[byRoundKey]!=='object'){
-    state[byRoundKey]={};
-  }
-
   const rows=primaryScoringRowsForRound(mission);
   const row=rows[index];
   if(!row)return;
-
-  const vp=primaryScoringVP(row[1]);
-  if(vp<=0)return;
-
-  const roundKey=String(round);
-  const scored=Array.isArray(state[byRoundKey][roundKey])
-    ? state[byRoundKey][roundKey].slice()
-    : [];
-
+  const scored=Array.isArray(state[byRoundKey][roundKey])?state[byRoundKey][roundKey].slice():[];
+  const values=state[valueKey][roundKey]||{};
+  const amounts=state[amountKey][roundKey]||{};
   const wasScored=scored.includes(index);
-  const before=Number(state[vpKey])||0;
   const fullBefore=snapshotForUndo();
 
   if(wasScored){
-    const after=Math.max(0,before-vp);
-    const actual=after-before;
-
+    const actual=Math.max(0,Number(values[index])||0);
+    const before=Number(state[vpKey])||0;
+    const after=Math.max(0,before-actual);
+    const delta=after-before;
     state[vpKey]=after;
-    state[overallKey]=Math.max(0,(Number(state[overallKey])||0)+actual);
-
+    state[overallKey]=Math.max(0,(Number(state[overallKey])||0)+delta);
     state[byRoundKey][roundKey]=scored.filter(i=>i!==index);
+    delete values[index];
+    delete amounts[index];
     state[listKey]=state[byRoundKey][roundKey];
-
-    event('PRIMARY_UNSCORED',{
-      side,
-      unit:side==='my'?'Primary Mission':'Opponent Primary Mission',
-      action:'Primary scoring condition removed -'+Math.abs(actual)+' VP',
-      before,after,delta:actual,
-      mission,
-      round,
-      scoringItem:row[2],
-      scoringTiming:row[0]
-    },fullBefore);
+    event('PRIMARY_UNSCORED',{side,unit:side==='my'?'Primary Mission':'Opponent Primary Mission',action:'Primary scoring condition removed -'+Math.abs(delta)+' VP',before,after,delta,mission,round,scoringItem:row[2],scoringTiming:row[0]},fullBefore);
   }else{
-    const after=Math.min(45,before+vp);
-    const actual=after-before;
+    const per=primaryScoringIsPer(row);
+    const amount=per?Math.max(1,Math.min(50,Math.floor(Number(amountOverride??amounts[index]??1)||1))):1;
+    const baseVP=primaryScoringVP(row[1]);
+    const requestedVP=baseVP*amount;
+    const group=primaryScoringExclusiveGroup(mission,index);
 
+    if(group){
+      for(const otherIndex of [...scored]){
+        if(primaryScoringExclusiveGroup(mission,otherIndex)===group){
+          const otherActual=Math.max(0,Number(values[otherIndex])||0);
+          state[vpKey]=Math.max(0,(Number(state[vpKey])||0)-otherActual);
+          state[overallKey]=Math.max(0,(Number(state[overallKey])||0)-otherActual);
+          delete values[otherIndex];
+          delete amounts[otherIndex];
+        }
+      }
+      state[byRoundKey][roundKey]=scored.filter(i=>primaryScoringExclusiveGroup(mission,i)!==group);
+    }
+
+    const before=Number(state[vpKey])||0;
+    const after=Math.min(45,before+requestedVP);
+    const actual=after-before;
     state[vpKey]=after;
     state[overallKey]=Math.max(0,(Number(state[overallKey])||0)+actual);
-
-    state[byRoundKey][roundKey]=[...scored,index];
+    state[byRoundKey][roundKey]=[...state[byRoundKey][roundKey],index];
+    state[valueKey][roundKey][index]=actual;
+    state[amountKey][roundKey][index]=amount;
     state[listKey]=state[byRoundKey][roundKey];
-
-    event('PRIMARY_SCORED',{
-      side,
-      unit:side==='my'?'Primary Mission':'Opponent Primary Mission',
-      action:actual>0?'Primary scored +'+actual+' VP':'Primary scoring condition completed (VP cap reached)',
-      before,after,delta:actual,
-      mission,
-      round,
-      scoringItem:row[2],
-      scoringTiming:row[0]
-    },fullBefore);
+    event('PRIMARY_SCORED',{side,unit:side==='my'?'Primary Mission':'Opponent Primary Mission',action:actual>0?'Primary scored +'+actual+' VP':'Primary scoring condition completed (VP cap reached)',before,after,delta:actual,mission,round,scoringItem:row[2],scoringTiming:row[0],amount},fullBefore);
   }
-
   save();
   render();
 }
 function primaryMissionDetailsHtml(mission,side){
   syncPrimaryScoringRound();
   const rows=primaryScoringRowsForRound(mission);
-  const listKey=side==='my'?'primaryScoredItemsMy':'primaryScoredItemsOpp';
   const byRoundKey=side==='my'?'primaryScoringByRoundMy':'primaryScoringByRoundOpp';
+  const amountKey=side==='my'?'primaryScoringAmountsByRoundMy':'primaryScoringAmountsByRoundOpp';
   const roundKey=String(Math.max(1,Number(state.round)||1));
-  const scored=state[byRoundKey] && Array.isArray(state[byRoundKey][roundKey])
-    ? state[byRoundKey][roundKey]
-    : [];
+  const scored=state[byRoundKey]&&Array.isArray(state[byRoundKey][roundKey])?state[byRoundKey][roundKey]:[];
+  const amounts=state[amountKey]?.[roundKey]||{};
   const disposition=side?forceDisposition(side):'';
   const opponentDisposition=side?forceDisposition(side==='my'?'opp':'my'):'';
-  if(!rows.length)return `<div class="primary-mission-inline-details"><div class="muted small">No scoring available this round.</div></div>`;
+  if(!rows.length)return '<div class="primary-mission-inline-details"><div class="muted small">No scoring available this round.</div></div>';
   return `<div class="primary-mission-inline-details">
     ${disposition?`<div class="muted small" style="margin-bottom:7px">${esc(disposition)} vs ${esc(opponentDisposition)}</div>`:''}
-    <div class="muted primary-scoring-title">Scoring — Round ${Math.max(1,Number(state.round)||1)} <span class="tiny">Click a scoring box to add/remove its VP</span></div>
+    <div class="muted primary-scoring-title">Scoring — Round ${Math.max(1,Number(state.round)||1)} <span class="tiny">Enter quantities for "per" conditions, then click the scoring row</span></div>
     <div class="primary-detail-list">${rows.map((r,i)=>({r,i,done:scored.includes(i)})).sort((a,b)=>Number(a.done)-Number(b.done)).map(({r,i,done})=>{
       const vp=primaryScoringVP(r[1]);
-      return `<button type="button" class="primary-detail-row primary-score-box ${done?'scored':''}" ${vp<=0?'disabled':''} data-primary-score="1" data-primary-side="${side}" data-primary-index="${i}" data-primary-mission="${esc(mission)}">
-        <span class="primary-detail-timing">${esc(r[0])}</span>
-        <strong class="primary-detail-points">${esc(r[1])}</strong>
-        <span class="primary-detail-text">${esc(r[2])}</span>
-        <span class="primary-score-status">${done?'':'+'+vp+' VP'}</span>
-      </button>`;
+      const per=primaryScoringIsPer(r);
+      const group=primaryScoringExclusiveGroup(mission,i);
+      const otherInGroup=group&&scored.some(x=>primaryScoringExclusiveGroup(mission,x)===group&&x!==i);
+      const amount=Number(amounts[i])||1;
+      return `<div class="primary-detail-row primary-score-box ${done?'scored':''}">
+        <div class="primary-detail-main" data-primary-score="1" data-primary-side="${side}" data-primary-index="${i}" data-primary-mission="${esc(mission)}">
+          <span class="primary-detail-timing">${esc(r[0])}</span>
+          <strong class="primary-detail-points">${esc(r[1])}${per?' × '+amount:''}</strong>
+          <span class="primary-detail-text">${esc(r[2])}</span>
+          <span class="primary-score-status">${done?'Scored':(otherInGroup?'Replace current OR score':'+'+(per?vp*amount:vp)+' VP')}</span>
+        </div>
+        ${per?`<label class="primary-score-quantity">Count <input type="number" min="1" max="50" value="${amount}" data-primary-amount="1" data-primary-side="${side}" data-primary-index="${i}" data-primary-mission="${esc(mission)}" ${done?'disabled':''}></label>`:''}
+      </div>`;
     }).join('')}</div>
   </div>`;
 }
@@ -2209,6 +2232,10 @@ function startBattle(){
   state.primaryOppScoredVP=0;
   state.primaryScoringByRoundMy={1:[]};
   state.primaryScoringByRoundOpp={1:[]};
+  state.primaryScoringAmountsByRoundMy={1:{}};
+  state.primaryScoringAmountsByRoundOpp={1:{}};
+  state.primaryScoringValuesByRoundMy={1:{}};
+  state.primaryScoringValuesByRoundOpp={1:{}};
   state.primaryScoredItemsMy=[];
   state.primaryScoredItemsOpp=[];
 
@@ -3105,8 +3132,24 @@ document.addEventListener('click',function(ev){
     const side=pm.dataset.primarySide;
     const index=Number(pm.dataset.primaryIndex);
     const mission=pm.dataset.primaryMission||'';
-    if(side && Number.isInteger(index) && mission){
-      scorePrimaryItem(side,index,mission);
+    const amountInput=pm.parentElement?.querySelector('[data-primary-amount]');
+    const amount=amountInput?Number(amountInput.value):undefined;
+    if(side && Number.isInteger(index) && mission)scorePrimaryItem(side,index,mission,amount);
+    return;
+  }
+  const pa=ev.target.closest('[data-primary-amount]');
+  if(pa){
+    ev.stopPropagation();
+    const side=pa.dataset.primarySide;
+    const index=Number(pa.dataset.primaryIndex);
+    const roundKey=String(Math.max(1,Number(state.round)||1));
+    const key=side==='my'?'primaryScoringAmountsByRoundMy':'primaryScoringAmountsByRoundOpp';
+    if(side && Number.isInteger(index)){
+      if(!state[key]||typeof state[key]!=='object')state[key]={};
+      if(!state[key][roundKey]||typeof state[key][roundKey]!=='object')state[key][roundKey]={};
+      state[key][roundKey][index]=Math.max(1,Math.min(50,Math.floor(Number(pa.value)||1)));
+      pa.value=state[key][roundKey][index];
+      save();
     }
     return;
   }
