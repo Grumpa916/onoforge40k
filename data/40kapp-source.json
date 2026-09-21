@@ -222,6 +222,14 @@
       "pages": 93,
       "baseSizeGuideLastUpdated": "June 2026",
       "purpose": "Event procedures, CP/VP limits, Secondary Mission timing, Primary Mission layout pairings, FAQs, terrain footprints, and selected base-size reference."
+    },
+    {
+      "name": "MathHammer",
+      "url": "https://www.mathhammer.io/",
+      "currentVersion": "2.1.17",
+      "currentVersionDate": "2026-09-18",
+      "purpose": "Supplemental 11th Edition combat-calculation source with unit, weapon-profile, ability and combat-interaction reference. Candidate source for weapon-profile enrichment and Mathhammer validation.",
+      "notes": "Unit data is reference-only on MathHammer; verify against authoritative 40K sources before treating values as canonical."
     }
   ]
 }
