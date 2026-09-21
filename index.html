@@ -1142,39 +1142,25 @@ function primaryMissionDetailsHtml(mission,side){
 
 function primaryMissionPanel(mode='battle'){
   const myPM=primaryMission('my'),oppPM=primaryMission('opp');
-  const myAvail=availableForceDispositions('my'),oppAvail=availableForceDispositions('opp');
-  const myVP=Number(state.primaryMyScoredVP)||0,oppVP=Number(state.primaryOppScoredVP)||0;
-  const tracker=(side,mission,score)=>{
+  const tracker=(side,mission)=>{
     const label=activeArmyDisplayName(side);
-    const color=side==='my'?'my':'opp';
-    return '<div class="primary-approved-panel '+color+'">'+
-      '<div class="primary-approved-header"><div><h4>'+esc(label)+'</h4><div class="primary-created-label">'+esc(rosterCreatedLabel(side==='my'?state.activeRosterCreatedAt:state.activeOppRosterCreatedAt)||'')+'</div></div>'+
-      '<div class="primary-total-score"><strong>'+score+' / 45 VP</strong><span>Primary Mission</span></div></div>'+
-      '<div class="primary-approved-body"><div class="primary-approved-label">Primary Mission</div>'+
-      (mission?'<div class="primary-mission-select-like"><strong>'+esc(mission)+'</strong><span>⌄</span></div>'+primaryMissionDetailsHtml(mission,side):'<div class="primary-mission-select-like"><strong>Not resolved</strong></div>')+
-      '</div></div>';
-  };
-  return '<div class="card primary-mission-card primary-approved-card"><div class="primary-approved-title"><div><h3>Primary Mission</h3><div class="muted">Configure and track each player’s Primary Mission • 15 VP round maximum.</div></div><div class="pill">11th Edition</div></div>'+
-    '<div class="primary-missions-body"><div class="primary-approved-pair">'+tracker('my',myPM,myVP)+tracker('opp',oppPM,oppVP)+'</div></div></div>';
-}
-
-function primaryMissionPanel(mode='battle'){
-  const myPM=primaryMission('my'),oppPM=primaryMission('opp');
-  const myAvail=availableForceDispositions('my'),oppAvail=availableForceDispositions('opp');
-  const msg=(myAvail.length&&oppAvail.length)?"Primary missions are resolved automatically from each army's selected detachment.":"Select detachments in the List Builder for both armies to resolve Primary Missions.";
-  const myVP=Number(state.primaryMyScoredVP)||0, oppVP=Number(state.primaryOppScoredVP)||0;
-  const tracker=(side,mission,score)=>{
-    const label=activeArmyDisplayName(side);
+    const disposition=forceDisposition(side);
+    const opponentDisposition=forceDisposition(side==='my'?'opp':'my');
     return `
 <div class="setup-panel primary-mission-panel">
-      <div class="split"><h4>${esc(label)}</h4><span class="pill">${score}/45 VP</span></div>
-      <div class="primary-mission-result"><span class="muted">Primary Mission</span>${mission
-        ? `<strong>${esc(mission)}</strong>${primaryMissionDetailsHtml(mission,side)}`
-        : `<strong>Not resolved</strong>`}</div>
+      <div class="split"><h4>${esc(label)}</h4><span class="pill">Primary Mission</span></div>
+      <div class="primary-mission-result">
+        <span class="muted">Primary Mission</span>
+        ${mission
+          ? `<strong>${esc(mission)}</strong>
+             ${disposition&&opponentDisposition?`<div class="primary-disposition">${esc(disposition)} vs ${esc(opponentDisposition)}</div>`:''}
+          `
+          : `<strong>Not resolved</strong>`}
+      </div>
     </div>`;
   };
-  return `<div class="card primary-mission-card"><div class="primary-missions-header" style="font-weight:800;font-size:14px;margin:0 0 8px">Primary Mission</div><div class="primary-missions-body">
-    <div class="primary-mission-pair">${tracker('my',myPM,myVP)}${tracker('opp',oppPM,oppVP)}</div>
+  return `<div class="card primary-mission-card"><div class="primary-missions-header" style="font-weight:800;font-size:14px;margin:0 0 4px">Primary Mission</div><div class="muted small" style="margin-bottom:8px">Primary scoring is tracked during Battle Mode.</div><div class="primary-missions-body">
+    <div class="primary-mission-pair">${tracker('my',myPM)}${tracker('opp',oppPM)}</div>
   </div></div>`;
 }
 
