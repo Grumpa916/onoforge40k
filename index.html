@@ -2255,7 +2255,7 @@ function selectedWargearDetails(e,u){
 }
 function selectedWargearSummary(e,u){return selectedWargearDetails(e,u).map(x=>x.name+' (+'+x.points+' pts)')}
 function unitPointsDisplay(e,u){
-  const base=Number(u?.points)||0;
+  const base=unitBasePoints(e,u);
   const wargear=selectedWargearCost(e,u);
   const side=state.my.includes(e)?'my':(state.opp.includes(e)?'opp':null);
   const tax=unitPointSurcharge(e,u,side);
@@ -2269,7 +2269,7 @@ function unitPointsDisplay(e,u){
 function makeEntry(u){return {uid:uid(),unitId:u.id,qty:1,models:u.models,wargear:[],wargearSelections:{},weapons:(u.weapons||[]).map(w=>w.name),enhancement:'',notes:'',attachedTo:null,leaderUid:null}}
 const LEADER_ATTACHMENTS_11E={
   'Tyranid Prime with Lash Whip':['Hormagaunts','Termagants','Tyranid Warriors with Ranged Bio-Weapons','Tyranid Warriors with Melee Bio-Weapons'],
- 'Winged Tyranid Prime':['Tyranid Warriors with Ranged Bio-Weapons','Tyranid Warriors with Melee Bio-Weapons'],
+ 'Winged Tyranid Prime':['Gargoyles','Tyranid Warriors with Ranged Bio-Weapons','Tyranid Warriors with Melee Bio-Weapons'],
   'Winged Tyranid Prime':['Tyranid Warriors with Ranged Bio-Weapons','Tyranid Warriors with Melee Bio-Weapons'],
   'Neurotyrant':['Neurogaunts','Tyrant Guard','Zoanthropes'],
   'Hive Tyrant':['Tyrant Guard'],
@@ -2282,8 +2282,9 @@ const LEADER_ATTACHMENTS_11E={
   'Captain in Terminator Armour':['Terminator Squad'],
   'Chaplain in Terminator Armour':['Terminator Squad'],
   'Librarian in Terminator Armour':['Terminator Squad'],
-  'Uriel Ventris':['Assault Intercessor Squad','Bladeguard Veteran Squad','Company Heroes','Intercessor Squad','Sternguard Veteran Squad','Tactical Squad','Victrix Honour Guard'],
-  'Marneus Calgar in Armour of Antilochus':['Aggressor Squad','Assault Intercessor Squad','Bladeguard Veteran Squad','Company Heroes','Eradicator Squad','Heavy Intercessor Squad','Infernus Squad','Intercessor Squad','Sternguard Veteran Squad','Tactical Squad','Terminator Squad','Victrix Honour Guard']
+  'Uriel Ventris':['Assault Intercessor Squad','Assault Squad','Bladeguard Veteran Squad','Company Heroes','Command Squad','Intercessor Squad','Sternguard Veteran Squad','Tactical Squad','Vanguard Veteran Squad','Victrix Honour Guard'],
+  'Marneus Calgar in Armour of Antilochus':['Aggressor Squad','Assault Intercessor Squad','Bladeguard Veteran Squad','Company Heroes','Eradicator Squad','Heavy Intercessor Squad','Infernus Squad','Intercessor Squad','Sternguard Veteran Squad','Tactical Squad','Terminator Squad','Victrix Honour Guard'],
+  'Cato Sicarius':['Victrix Honour Guard']
 };
 function leaderNamesForBodyguard(u){return LEADER_ATTACHMENTS_11E[u?.name]||[]}
 function isLeaderUnit(u){return !!u&&Object.prototype.hasOwnProperty.call(LEADER_ATTACHMENTS_11E,u.name)}
@@ -2341,6 +2342,64 @@ function bodyguardAttachmentModal(){
 }
 
 function entry(side,id){return state[side].find(e=>e.uid===id)}
+const UNIT_SIZE_POINTS_11E={
+  // Tyranids
+  'Tyranids|Hormagaunts':{10:70,20:120},
+  'Tyranids|Termagants':{10:60,20:110},
+  'Tyranids|Gargoyles':{10:80,20:155},
+  'Tyranids|Tyranid Warriors with Ranged Bio-Weapons':{3:60,6:120},
+  'Tyranids|Tyranid Warriors with Melee Bio-Weapons':{3:75,6:150},
+  'Tyranids|Venomthropes':{3:55,6:110},
+  'Tyranids|Von Ryan\'s Leapers':{3:60,6:120},
+  'Tyranids|Neurogaunts':{11:45,22:90},
+  'Tyranids|Zoanthropes':{3:100,6:200},
+  'Tyranids|Ripper Swarms':{3:30,6:60},
+  'Tyranids|Spore Mines':{3:55,6:110},
+  'Tyranids|Tyrant Guard':{3:80,6:160},
+  'Tyranids|Hyperadapted Raveners':{5:165,10:330},
+  'Tyranids|Genestealers':{5:75,10:140},
+  // Space Marines
+  'Space Marines|Aggressor Squad':{3:90,6:180},
+  'Space Marines|Assault Intercessor Squad':{5:75,10:150},
+  'Space Marines|Assault Intercessors with Jump Packs':{5:85,10:160},
+  'Space Marines|Bladeguard Veteran Squad':{3:80,6:160},
+  'Space Marines|Centurion Assault Squad':{3:150,6:300},
+  'Space Marines|Centurion Devastator Squad':{3:175,6:350},
+  'Space Marines|Devastator Squad':{5:120,10:200},
+  'Space Marines|Eradicator Squad':{3:90,6:180},
+  'Space Marines|Heavy Intercessor Squad':{5:100,10:200},
+  'Space Marines|Hellblaster Squad':{5:110,10:220},
+  'Space Marines|Inceptor Squad':{3:120,6:240},
+  'Space Marines|Incursor Squad':{5:85,10:150},
+  'Space Marines|Infernus Squad':{5:85,10:170},
+  'Space Marines|Infiltrator Squad':{5:110,10:180},
+  'Space Marines|Intercessor Squad':{5:80,10:150},
+  'Space Marines|Sternguard Veteran Squad':{5:100,10:190},
+  'Space Marines|Terminator Assault Squad':{5:155,10:310},
+  'Space Marines|Terminator Squad':{5:160,10:320},
+  'Space Marines|Vanguard Veteran Squad with Jump Packs':{5:100,10:200},
+  'Space Marines|Firestrike Servo-turrets':{1:75,2:150},
+  // Ultramarines shared units
+  'Ultramarines|Aggressor Squad':{3:90,6:180},
+  'Ultramarines|Assault Intercessor Squad':{5:75,10:150},
+  'Ultramarines|Assault Intercessors with Jump Packs':{5:85,10:160},
+  'Ultramarines|Bladeguard Veteran Squad':{3:80,6:160},
+  'Ultramarines|Centurion Assault Squad':{3:150,6:300},
+  'Ultramarines|Centurion Devastator Squad':{3:175,6:350},
+  'Ultramarines|Devastator Squad':{5:120,10:200},
+  'Ultramarines|Eradicator Squad':{3:90,6:180},
+  'Ultramarines|Heavy Intercessor Squad':{5:100,10:200},
+  'Ultramarines|Hellblaster Squad':{5:110,10:220},
+  'Ultramarines|Inceptor Squad':{3:120,6:240},
+  'Ultramarines|Incursor Squad':{5:85,10:150},
+  'Ultramarines|Infernus Squad':{5:85,10:170},
+  'Ultramarines|Infiltrator Squad':{5:110,10:180},
+  'Ultramarines|Intercessor Squad':{5:80,10:150},
+  'Ultramarines|Sternguard Veteran Squad':{5:100,10:190},
+  'Ultramarines|Terminator Assault Squad':{5:155,10:310},
+  'Ultramarines|Terminator Squad':{5:160,10:320},
+  'Ultramarines|Vanguard Veteran Squad with Jump Packs':{5:100,10:200}
+};
 const UNIT_POINT_RULES_11E={
   // Tyranids
   Tyranids_norn_emissary:{threshold:2,surcharge:20},
@@ -2470,13 +2529,31 @@ function unitPointSurcharge(e,u,side){
   const idx=state[side].filter(x=>x.unitId===e.unitId).indexOf(e)+1;
   return idx>=rule.threshold ? rule.surcharge : 0;
 }
+function unitBasePoints(e,u){
+  const side=state.my.includes(e)?'my':(state.opp.includes(e)?'opp':null);
+  const bySize=UNIT_SIZE_POINTS_11E[(u?.faction||'')+'|'+(u?.name||'')];
+  if(bySize){
+    const models=Number(e.models)||Number(u.models)||1;
+    if(Number.isFinite(bySize[models]))return bySize[models];
+  }
+  return Number(u?.points)||0;
+}
 function pts(e){
   const u=get(e.unitId);
   const side=state.my.includes(e)?'my':(state.opp.includes(e)?'opp':null);
-  return (u.points+selectedWargearCost(e,u)+unitPointSurcharge(e,u,side))*e.qty
+  return (unitBasePoints(e,u)+selectedWargearCost(e,u)+unitPointSurcharge(e,u,side))*e.qty
 }
 function total(side){return state[side].reduce((n,e)=>n+pts(e),0)}
-function unitRules(u){let r={minModels:u.models,maxModels:u.models,step:1,maxUnits:3};if(u.name==='Hormagaunts')r={minModels:10,maxModels:20,step:10,maxUnits:6};if(u.name==='Intercessor Squad')r={minModels:5,maxModels:10,step:5,maxUnits:6};if(u.name==='Terminator Squad')r={minModels:5,maxModels:10,step:5,maxUnits:3};return r}
+function unitRules(u){
+ let r={minModels:u.models,maxModels:u.models,step:1,maxUnits:3};
+ const sizes=UNIT_SIZE_POINTS_11E[(u?.faction||'')+'|'+(u?.name||'')];
+ if(sizes){
+   const nums=Object.keys(sizes).map(Number).sort((a,b)=>a-b);
+   if(nums.length>1)r={minModels:nums[0],maxModels:nums[nums.length-1],step:nums[1]-nums[0],maxUnits:3};
+ }
+ if(u.name==='Hormagaunts')r={minModels:10,maxModels:20,step:10,maxUnits:6};
+ return r
+}
 function issues(side){let out=[];let seen={};for(const e of state[side]){const u=get(e.unitId),r=unitRules(u);seen[e.unitId]=(seen[e.unitId]||0)+e.qty;if(e.models<r.minModels||e.models>r.maxModels||((e.models-r.minModels)%r.step))out.push(u.name+': invalid model count');if(e.qty>r.maxUnits)out.push(u.name+': too many units');if((u.weapons||[]).length&&!e.weapons.length)out.push(u.name+': no weapons selected');if(side==='my'&&u.faction!==state.faction)out.push(u.name+': faction mismatch')}for(const id in seen){const u=get(id);if(seen[id]>unitRules(u).maxUnits)out.push(u.name+': duplicate limit exceeded')}if(total(side)>state.limit)out.push('Points limit exceeded');return [...new Set(out)]}
 function localDataSavedLabel(){
   if(!state.localSavedAt)return 'Not saved yet';
