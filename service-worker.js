@@ -1,4 +1,4 @@
-const CACHE_NAME = 'onoforge40k-v284';
+const CACHE_NAME = 'onoforge40k-v291';
 const APP_SHELL = [
   './',
   './index.html',
@@ -31,12 +31,12 @@ self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
 
-  if (event.request.mode === 'navigate') {
+  if (event.request.mode === 'navigate' || url.pathname.endsWith('/index.html')) {
     event.respondWith(
-      fetch(event.request)
+      fetch(event.request, {cache:'no-store'})
         .then(response => {
           const copy = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put('./index.html', copy));
+          caches.open(CACHE_NAME).then(cache => cache.put('./index.html', copy)).catch(() => {});
           return response;
         })
         .catch(() => caches.match('./index.html'))
@@ -50,7 +50,7 @@ self.addEventListener('fetch', event => {
       return fetch(event.request).then(response => {
         if (response && response.ok) {
           const copy = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy)).catch(() => {});
         }
         return response;
       });
