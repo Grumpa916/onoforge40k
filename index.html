@@ -2373,8 +2373,8 @@ function battle(){const recent=state.events.slice(0,12);return `${gameTimerHtml(
           <div class="cp-box"><div class="cp-label">CP</div><div class="cp-number">${state.myCP}</div></div>
         </div>
         <div class="score-controls">
-          <button type="button" class="btn" data-score="vp" data-side="my" data-delta="-1" onclick="changeVP('my',-1);return false;">VP −1</button><button type="button" class="btn" data-score="vp" data-side="my" data-delta="1" onclick="changeVP('my',1);return false;">VP +1</button>
-          <button type="button" class="btn" data-score="cp" data-side="my" data-delta="-1" onclick="changeCP('my',-1);return false;">CP −1</button><button type="button" class="btn" data-score="cp" data-side="my" data-delta="1" onclick="changeCP('my',1);return false;">CP +1</button>
+          <button type="button" class="btn" onclick="changeVP('my',-1);return false;">VP −1</button><button type="button" class="btn" onclick="changeVP('my',1);return false;">VP +1</button>
+          <button type="button" class="btn" onclick="changeCP('my',-1);return false;">CP −1</button><button type="button" class="btn" onclick="changeCP('my',1);return false;">CP +1</button>
         </div>
       </div>
       <div class="score-card opp-score">
@@ -2384,8 +2384,8 @@ function battle(){const recent=state.events.slice(0,12);return `${gameTimerHtml(
           <div class="cp-box"><div class="cp-label">CP</div><div class="cp-number">${state.oppCP}</div></div>
         </div>
         <div class="score-controls">
-          <button type="button" class="btn" data-score="vp" data-side="opp" data-delta="-1" onclick="changeVP('opp',-1);return false;">VP −1</button><button type="button" class="btn" data-score="vp" data-side="opp" data-delta="1" onclick="changeVP('opp',1);return false;">VP +1</button>
-          <button type="button" class="btn" data-score="cp" data-side="opp" data-delta="-1" onclick="changeCP('opp',-1);return false;">CP −1</button><button type="button" class="btn" data-score="cp" data-side="opp" data-delta="1" onclick="changeCP('opp',1);return false;">CP +1</button>
+          <button type="button" class="btn" onclick="changeVP('opp',-1);return false;">VP −1</button><button type="button" class="btn" onclick="changeVP('opp',1);return false;">VP +1</button>
+          <button type="button" class="btn" onclick="changeCP('opp',-1);return false;">CP −1</button><button type="button" class="btn" onclick="changeCP('opp',1);return false;">CP +1</button>
         </div>
       </div>
     </div>
