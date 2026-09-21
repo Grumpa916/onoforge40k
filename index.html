@@ -2628,8 +2628,8 @@ function currentArmyDisplay(){
  </div>`;
 }
 function builder(){
- if(state.builderView==='my-only'){return `<div class="card"><div class="split"><h2>My List <span class="big">${total('my')} pts</span></h2><button class="btn" onclick="state.page='battle';state.builderView='full';render()">Back to Battle Mode</button></div>${state.my.length?state.my.map(e=>unitRow('my',e)).join(''):'<div class="empty">No units added.</div>'}</div>`}
- if(state.builderView==='opp-only'){return `<div class="card"><div class="split"><h2>Opponent List <span class="big">${total('opp')} pts</span></h2><button class="btn" onclick="state.page='battle';state.builderView='full';render()">Back to Battle Mode</button></div>${state.opp.length?state.opp.map(e=>unitRow('opp',e)).join(''):'<div class="empty">No opponent units added.</div>'}</div>`}
+ if(state.builderView==='my-only'){return `<div class="card"><div class="split"><h2>My List <span class="big">${total('my')} pts</span></h2><button class="btn" onclick="state.page='battle';state.builderView='full';render()">Back to Battle Mode</button></div>${state.my.length?state.my.map(e=>unitRow('my',e)).join(''):'<div class="empty">No units added.</div>'}</div>${leaderAttachmentModal()}`}
+ if(state.builderView==='opp-only'){return `<div class="card"><div class="split"><h2>Opponent List <span class="big">${total('opp')} pts</span></h2><button class="btn" onclick="state.page='battle';state.builderView='full';render()">Back to Battle Mode</button></div>${state.opp.length?state.opp.map(e=>unitRow('opp',e)).join(''):'<div class="empty">No opponent units added.</div>'}</div>${leaderAttachmentModal()}`}
  const myQ=state.searchMy.toLowerCase();
  const myCat=sortUnitList(DEMO.filter(u=>u.faction===state.faction&&u.name.toLowerCase().includes(myQ)));
  const mi=issues('my'),oi=issues('opp');
@@ -2641,7 +2641,7 @@ function builder(){
    <div class="row" style="margin-top:10px"><div class="field"><label>Points Limit</label><input type="number" value="${state.limit}" onchange="state.limit=+this.value||2000;save();render()"></div><div class="field"><label>My Points</label><div class="metric">${total('my')} / ${state.limit}</div></div></div>
  </div>
  <div class="card"><h2>My List <span class="big">${total('my')} pts</span></h2>${state.my.length?state.my.map(e=>unitRow('my',e)).join(''):'<div class="empty">No units added.</div>'}</div>
- <div class="card"><div class="split"><h3 style="margin:0">Add My Units</h3><button class="btn" type="button" onclick="refreshCurrentUnitDatabase(true)">Update Current Unit Data</button></div><div id="my-unit-results">${renderUnitSections(myCat,'my')}</div></div>${configureModal()}`
+ <div class="card"><div class="split"><h3 style="margin:0">Add My Units</h3><button class="btn" type="button" onclick="refreshCurrentUnitDatabase(true)">Update Current Unit Data</button></div><div id="my-unit-results">${renderUnitSections(myCat,'my')}</div></div>${configureModal()}${leaderAttachmentModal()}`
 }
 function currentMyListSnapshot(){
   return JSON.stringify({
