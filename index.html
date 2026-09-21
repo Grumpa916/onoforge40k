@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OnoForge 40K v290</title><style>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OnoForge 40K v291</title><style>
 *{box-sizing:border-box}body{margin:0;background:#0b0f15;color:#e9edf3;font-family:Arial,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}.top{padding:18px 22px;background:#111722;border-bottom:1px solid #273142}.brand{font-size:25px;font-weight:800}.sub,.muted{color:#9ca8b8;font-size:13px}.nav{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:10px 16px;background:#0e141e;border-bottom:1px solid #273142}.nav-main{display:flex;gap:6px;flex-wrap:wrap}.nav button,.nav-tools summary{background:#171e2a;color:#cbd5e1;border:1px solid #2c3748;border-radius:7px;padding:9px 13px;font-size:14px;cursor:pointer}.nav button.active{background:#24334b;color:#fff;border-color:#49678f}.nav-tools{position:relative;margin-left:auto}.nav-tools summary{list-style:none}.nav-tools summary::-webkit-details-marker{display:none}.nav-tools summary:after{content:' ▾';font-size:11px}.nav-tools[open] summary{background:#24334b;color:#fff;border-color:#49678f}.nav-tools-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:1200;min-width:170px;padding:6px;background:#111722;border:1px solid #344052;border-radius:8px;box-shadow:0 12px 30px rgba(0,0,0,.4);display:grid;gap:4px}.nav-tools-menu button{width:100%;text-align:left}.wrap{max-width:1250px;margin:auto;padding:18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.card{background:#111722;border:1px solid #273142;border-radius:10px;padding:15px;margin-bottom:14px}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.split{display:flex;justify-content:space-between;gap:10px;align-items:center}.field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:150px}.field label{font-size:12px;color:#9ca8b8}.field input,.field select,.field textarea,input[type=text]{width:100%;background:#0b1018;color:#eef2f7;border:1px solid #344052;border-radius:7px;padding:9px}.btn{background:#1b2432;color:#e8edf4;border:1px solid #354255;border-radius:7px;padding:8px 11px}.btn.primary{background:#27598b;border-color:#3975b6}.btn.danger{background:#5b252c;border-color:#82404a}.pill{display:inline-block;border:1px solid #3a4658;border-radius:999px;padding:4px 8px;font-size:12px;margin:2px}.status,.warn,.ok{border-radius:7px;padding:9px;margin-top:8px}.status{background:#17202d;border:1px solid #304057}.warn{background:#38261b;border:1px solid #78512d;color:#f4c58f}.ok{background:#183022;border:1px solid #356747;color:#aee2bf}.big{font-size:24px;font-weight:800}.unit{padding:11px 0;border-top:1px solid #26303e}.empty{padding:25px;text-align:center;color:#8995a5}.bar{height:8px;background:#242d3a;border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;background:#4d86bd}.mono{font-family:monospace;font-size:12px;white-space:pre-wrap}.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.tabs button{background:#171e2a;color:#cbd5e1;border:1px solid #2c3748;border-radius:7px;padding:8px 11px}.tabs button.active{background:#315174}.logrow{border-top:1px solid #273142;padding:10px 0}.metric{font-size:20px;font-weight:700}.modal{position:fixed;inset:0;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;padding:18px;z-index:50}.modal>.card{width:min(850px,100%);max-height:92vh;overflow:auto}.tiny{font-size:11px;color:#8290a1}@media(max-width:850px){.grid,.grid3,.grid2{grid-template-columns:1fr}.wrap{padding:10px}}
 
 .wargear-box{background:#0d1722;border:1px solid #3f6f99;border-radius:10px;padding:12px;margin:14px 0}
@@ -492,6 +492,19 @@
 .game-unit-reference{gap:5px!important;margin-top:7px!important}
 .game-unit-reference-pill{padding:4px 6px!important;font-size:10px!important;line-height:1.25!important}
 .battleshock-badge{margin-left:6px!important;padding:2px 6px!important;font-size:10px!important}
+</style><style>
+/* v291: local/cloud data status */
+.data-sync-status{margin:10px 0 0;padding:9px 11px;background:#0d1722;border:1px solid #2d4359;border-radius:9px}
+.data-sync-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:7px}
+.data-sync-title strong{font-size:12px;color:#eef6ff}
+.data-sync-title .tiny{font-size:9px}
+.data-sync-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.data-sync-item{min-width:0;padding:6px 8px;background:#111d2a;border:1px solid #293c50;border-radius:7px;display:flex;flex-direction:column;gap:2px}
+.data-sync-item.ok{border-color:#356747;background:#112217}.data-sync-item.warn{border-color:#78512d;background:#261b12}
+.data-sync-label{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#8fa3b6}
+.data-sync-item strong{font-size:11px;color:#edf5fc}
+.data-sync-note{margin-top:7px;font-size:9px;line-height:1.3;color:#9fb2c4}
+@media(max-width:700px){.data-sync-grid{grid-template-columns:1fr}.data-sync-title{align-items:flex-start;flex-direction:column;gap:2px}}
 </style></head><body><div id="app"></div><script>
 window.addEventListener('error',function(ev){var a=document.getElementById('app');if(a&&!a.innerHTML.includes('battleforge-error'))a.insertAdjacentHTML('afterbegin','<div id="battleforge-error" style="margin:12px;padding:12px;background:#5b252c;border:1px solid #a44;color:#fff;border-radius:8px"><b>OnoForge error:</b> '+String(ev.error?.message||ev.message||'Unknown error')+'</div>');});
 'use strict';
@@ -1363,7 +1376,7 @@ function stratagemsUI(){
 }
 let state={
   savedArmyLists:[],
-  stratagemsMy:[], stratagemsOpp:[], stratagemsOpen:false,primaryMissionsOpen:false,secondaryMissionsOpen:false,page:'builder',myName:'My Army',oppName:'Opponent Army',faction:'Tyranids',detachment:'Invasion Fleet',detachmentSelections:['Invasion Fleet'],oppFaction:'Ultramarines',oppDetachment:'Gladius Task Force',oppDetachmentSelections:['Gladius Task Force'],limit:2000,my:[],opp:[],searchMy:'',searchOpp:'',configure:null,attacker:'norn',weapon:'Rupture Cannon',target:'marine',round:1,phase:'Command',myVP:0,oppVP:0,myCP:0,oppCP:0,battleReadyMy:false,battleReadyOpp:false,secondaryMy:'tactical',secondaryOpp:'tactical',secondaryMyCards:[],secondaryOppCards:[],secondaryMyDeck:[],secondaryOppDeck:[],secondaryMyDiscard:[],secondaryOppDiscard:[],newOrdersCompletedMy:false,newOrdersCompletedOpp:false,secondaryMyScored:[],secondaryOppScored:[],secondaryMyScoredVP:{},secondaryOppScoredVP:{},secondaryMyScoredVPByRound:{},secondaryOppScoredVPByRound:{},secondaryMyScoredRound:{},secondaryOppScoredRound:{},secondaryPersonalPlans:{},secondaryPlanEdit:'',secondaryDetailSide:'',secondaryDetailName:'',gameReferencePersonal:{},myForceDisposition:'',oppForceDisposition:'',attackerSide:'my',firstTurn:'my',currentTurn:'my',objectives:{},events:[],gameAssistantChecks:{},gameAssistantNotes:'',lists:[],activeRosterId:'',activeOpponentRosterId:'',dataStatus:'Expanded Tyranid + Ultramarines community catalogue',source:'BSData wh40k-11e (community)',revision:'current-community-catalogue',cloud:{email:'',userId:'',status:'Not connected',lastSync:'',error:''},cloudBattles:[],rulesLog:[],mathRules:{},gameTimer:{elapsedMs:0,running:false,paused:false,startedAt:0,pausedAt:0,finishedAt:0,turnMyMs:0,turnOppMs:0,turnStartedGameMs:0,turnPaused:false},cloudPasswordRecovery:false};
+  stratagemsMy:[], stratagemsOpp:[], stratagemsOpen:false,primaryMissionsOpen:false,secondaryMissionsOpen:false,page:'builder',myName:'My Army',oppName:'Opponent Army',faction:'Tyranids',detachment:'Invasion Fleet',detachmentSelections:['Invasion Fleet'],oppFaction:'Ultramarines',oppDetachment:'Gladius Task Force',oppDetachmentSelections:['Gladius Task Force'],limit:2000,my:[],opp:[],searchMy:'',searchOpp:'',configure:null,attacker:'norn',weapon:'Rupture Cannon',target:'marine',round:1,phase:'Command',myVP:0,oppVP:0,myCP:0,oppCP:0,battleReadyMy:false,battleReadyOpp:false,secondaryMy:'tactical',secondaryOpp:'tactical',secondaryMyCards:[],secondaryOppCards:[],secondaryMyDeck:[],secondaryOppDeck:[],secondaryMyDiscard:[],secondaryOppDiscard:[],newOrdersCompletedMy:false,newOrdersCompletedOpp:false,secondaryMyScored:[],secondaryOppScored:[],secondaryMyScoredVP:{},secondaryOppScoredVP:{},secondaryMyScoredVPByRound:{},secondaryOppScoredVPByRound:{},secondaryMyScoredRound:{},secondaryOppScoredRound:{},secondaryPersonalPlans:{},secondaryPlanEdit:'',secondaryDetailSide:'',secondaryDetailName:'',gameReferencePersonal:{},myForceDisposition:'',oppForceDisposition:'',attackerSide:'my',firstTurn:'my',currentTurn:'my',objectives:{},events:[],gameAssistantChecks:{},gameAssistantNotes:'',lists:[],activeRosterId:'',activeOpponentRosterId:'',dataStatus:'Expanded Tyranid + Ultramarines community catalogue',source:'BSData wh40k-11e (community)',revision:'current-community-catalogue',cloud:{email:'',userId:'',status:'Not connected',lastSync:'',error:''},cloudBattles:[],rulesLog:[],mathRules:{},gameTimer:{elapsedMs:0,running:false,paused:false,startedAt:0,pausedAt:0,finishedAt:0,turnMyMs:0,turnOppMs:0,turnStartedGameMs:0,turnPaused:false},cloudPasswordRecovery:false,localSavedAt:''};
 
 const GAME_REFERENCE_PHASES={
  Command:[
@@ -2096,6 +2109,7 @@ function get(id){return DEMO.find(u=>u.id===id)||DEMO[0]}
 const STORAGE_KEY='onoforge-v58';
 function save(){
   try{
+    state.localSavedAt=new Date().toISOString();
     const safeState=JSON.parse(JSON.stringify(state));
     safeState.events=(Array.isArray(safeState.events)?safeState.events:[]).slice(0,100);
     localStorage.setItem(STORAGE_KEY,JSON.stringify({state:safeState,DEMO}));
@@ -2160,6 +2174,7 @@ function load(){
   state.cloud=state.cloud&&typeof state.cloud==='object'?state.cloud:{email:'',userId:'',status:'Not connected',lastSync:'',error:''};
   state.cloud.email=String(state.cloud.email||'');state.cloud.userId=String(state.cloud.userId||'');state.cloud.status=String(state.cloud.status||'Not connected');state.cloud.lastSync=String(state.cloud.lastSync||'');state.cloud.error=String(state.cloud.error||'');
   state.cloudBattles=Array.isArray(state.cloudBattles)?state.cloudBattles:[];
+  state.localSavedAt=String(state.localSavedAt||'');
   state.activeRosterId=typeof state.activeRosterId==='string'?state.activeRosterId:'';
   state.phase=state.phase||'Command';
   state.currentTurn=(state.currentTurn==='opp'||state.currentTurn==='my')?state.currentTurn:(state.firstTurn==='opp'?'opp':'my');
@@ -2326,6 +2341,28 @@ function pts(e){const u=get(e.unitId);return (u.points+selectedWargearCost(e,u))
 function total(side){return state[side].reduce((n,e)=>n+pts(e),0)}
 function unitRules(u){let r={minModels:u.models,maxModels:u.models,step:1,maxUnits:3};if(u.name==='Hormagaunts')r={minModels:10,maxModels:20,step:10,maxUnits:6};if(u.name==='Intercessor Squad')r={minModels:5,maxModels:10,step:5,maxUnits:6};if(u.name==='Terminator Squad')r={minModels:5,maxModels:10,step:5,maxUnits:3};return r}
 function issues(side){let out=[];let seen={};for(const e of state[side]){const u=get(e.unitId),r=unitRules(u);seen[e.unitId]=(seen[e.unitId]||0)+e.qty;if(e.models<r.minModels||e.models>r.maxModels||((e.models-r.minModels)%r.step))out.push(u.name+': invalid model count');if(e.qty>r.maxUnits)out.push(u.name+': too many units');if(!e.weapons.length)out.push(u.name+': no weapons selected');if(side==='my'&&u.faction!==state.faction)out.push(u.name+': faction mismatch')}for(const id in seen){const u=get(id);if(seen[id]>unitRules(u).maxUnits)out.push(u.name+': duplicate limit exceeded')}if(total(side)>state.limit)out.push('Points limit exceeded');return [...new Set(out)]}
+function localDataSavedLabel(){
+  if(!state.localSavedAt)return 'Not saved yet';
+  const d=new Date(state.localSavedAt);
+  return Number.isNaN(d.getTime())?'Saved locally':formatSavedListDate(state.localSavedAt);
+}
+function dataSyncStatusHtml(){
+  const cloudReady=cloudConfigReady();
+  const connected=!!state.cloud?.userId;
+  const localLabel=localDataSavedLabel();
+  const cloudLabel=state.cloud?.lastSync?formatSavedListDate(state.cloud.lastSync):'Not synced yet';
+  const battleLabel=state.cloudBattleSavedAt?formatSavedListDate(state.cloudBattleSavedAt):'Not saved';
+  const cloudClass=connected?'ok':cloudReady?'warn':'';
+  return `<div class="data-sync-status">
+    <div class="data-sync-title"><strong>Data Status</strong><span class="tiny">Local-first • Cloud Sync optional</span></div>
+    <div class="data-sync-grid">
+      <div class="data-sync-item"><span class="data-sync-label">This Computer</span><strong>Saved locally</strong><span class="tiny">${esc(localLabel)}</span></div>
+      <div class="data-sync-item ${cloudClass}"><span class="data-sync-label">Cloud Sync</span><strong>${connected?'Connected':'Not connected'}</strong><span class="tiny">${connected?'Last sync: '+esc(cloudLabel):cloudReady?'Connection configured • sign in to sync':'Connect a Supabase account to sync'}</span></div>
+      <div class="data-sync-item"><span class="data-sync-label">Battle Snapshot</span><strong>${state.cloudBattleSavedAt?'Saved to cloud':'Local only'}</strong><span class="tiny">${esc(battleLabel)}</span></div>
+    </div>
+    <div class="data-sync-note">Moving computers: sign into the same Cloud Sync account to bring over saved army lists. Use <b>Save Battle</b> to copy your current battle state to the cloud.</div>
+  </div>`;
+}
 function nav(){const tools=[['rules','Rules Engine'],['data','Data Sources'],['manage','Data Management'],['log','Action Log']];const toolOpen=tools.some(([id])=>state.page===id);return '<div class="nav"><div class="nav-main">'+[['builder','List Builder'],['saved','Saved Lists'],['setup','Battle Setup'],['battle','Battle Mode'],['math','Mathhammer']].map(([id,n])=>`<button class="${state.page===id?'active':''}" onclick="state.page='${id}';state.builderView='full';render()">${n}</button>`).join('')+'</div><details class="nav-tools" ${toolOpen?"open":""}><summary>Tools</summary><div class="nav-tools-menu">'+tools.map(([id,n])=>`<button class="${state.page===id?'active':''}" onclick="state.page='${id}';state.builderView='full';render()">${n}</button>`).join('')+'</div></details></div>'}
 function addUnit(side,id){if(side!=='my'&&side!=='opp')return;const u=get(id);if(!u)return;state[side].push(makeEntry(u));save();render()}
 function removeUnit(side,id){state[side]=state[side].filter(e=>e.uid!==id);save();render()}
@@ -3854,7 +3891,7 @@ async function load40kAppSourceManifest(){
 
 function render(){const pages={builder,saved:savedListsPage,battle,setup,math,rules,data:dataPage,manage:dataManagementPage,log:logPage,scorelog:scoringLogPage};document.getElementById('app').innerHTML=`<div class="top"><div class="brand">ONOFORGE 40K</div><div class="sub">11th Edition • v285 • 40k.app v925 data source • Army-linked Mathhammer Engine</div></div>${nav()}<main class="wrap">
   
-<div class="status">✓ Browser app loaded locally • Source: ${esc(state.source)} • ${esc(state.revision)} • 40k.app v${esc(String(ONOFORGE_40KAPP_SOURCE?.source?.revision||'925'))}</div><div style="height:12px"></div>${(pages[state.page]||builder)()}${secondaryPlanEditorModal()}</main></div>`
+<div class="status">✓ Browser app loaded locally • Source: ${esc(state.source)} • ${esc(state.revision)} • 40k.app v${esc(String(ONOFORGE_40KAPP_SOURCE?.source?.revision||'925'))}</div>${dataSyncStatusHtml()}<div style="height:12px"></div>${(pages[state.page]||builder)()}${secondaryPlanEditorModal()}</main></div>`
   ensureLiveGameTimerDisplay();
 }
 
