@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OnoForge 40K v282</title><style>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OnoForge 40K v283</title><style>
 *{box-sizing:border-box}body{margin:0;background:#0b0f15;color:#e9edf3;font-family:Arial,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}.top{padding:18px 22px;background:#111722;border-bottom:1px solid #273142}.brand{font-size:25px;font-weight:800}.sub,.muted{color:#9ca8b8;font-size:13px}.nav{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:10px 16px;background:#0e141e;border-bottom:1px solid #273142}.nav-main{display:flex;gap:6px;flex-wrap:wrap}.nav button,.nav-tools summary{background:#171e2a;color:#cbd5e1;border:1px solid #2c3748;border-radius:7px;padding:9px 13px;font-size:14px;cursor:pointer}.nav button.active{background:#24334b;color:#fff;border-color:#49678f}.nav-tools{position:relative;margin-left:auto}.nav-tools summary{list-style:none}.nav-tools summary::-webkit-details-marker{display:none}.nav-tools summary:after{content:' ▾';font-size:11px}.nav-tools[open] summary{background:#24334b;color:#fff;border-color:#49678f}.nav-tools-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:1200;min-width:170px;padding:6px;background:#111722;border:1px solid #344052;border-radius:8px;box-shadow:0 12px 30px rgba(0,0,0,.4);display:grid;gap:4px}.nav-tools-menu button{width:100%;text-align:left}.wrap{max-width:1250px;margin:auto;padding:18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.card{background:#111722;border:1px solid #273142;border-radius:10px;padding:15px;margin-bottom:14px}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.split{display:flex;justify-content:space-between;gap:10px;align-items:center}.field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:150px}.field label{font-size:12px;color:#9ca8b8}.field input,.field select,.field textarea,input[type=text]{width:100%;background:#0b1018;color:#eef2f7;border:1px solid #344052;border-radius:7px;padding:9px}.btn{background:#1b2432;color:#e8edf4;border:1px solid #354255;border-radius:7px;padding:8px 11px}.btn.primary{background:#27598b;border-color:#3975b6}.btn.danger{background:#5b252c;border-color:#82404a}.pill{display:inline-block;border:1px solid #3a4658;border-radius:999px;padding:4px 8px;font-size:12px;margin:2px}.status,.warn,.ok{border-radius:7px;padding:9px;margin-top:8px}.status{background:#17202d;border:1px solid #304057}.warn{background:#38261b;border:1px solid #78512d;color:#f4c58f}.ok{background:#183022;border:1px solid #356747;color:#aee2bf}.big{font-size:24px;font-weight:800}.unit{padding:11px 0;border-top:1px solid #26303e}.empty{padding:25px;text-align:center;color:#8995a5}.bar{height:8px;background:#242d3a;border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;background:#4d86bd}.mono{font-family:monospace;font-size:12px;white-space:pre-wrap}.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.tabs button{background:#171e2a;color:#cbd5e1;border:1px solid #2c3748;border-radius:7px;padding:8px 11px}.tabs button.active{background:#315174}.logrow{border-top:1px solid #273142;padding:10px 0}.metric{font-size:20px;font-weight:700}.modal{position:fixed;inset:0;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;padding:18px;z-index:50}.modal>.card{width:min(850px,100%);max-height:92vh;overflow:auto}.tiny{font-size:11px;color:#8290a1}@media(max-width:850px){.grid,.grid3,.grid2{grid-template-columns:1fr}.wrap{padding:10px}}
 
 .wargear-box{background:#0d1722;border:1px solid #3f6f99;border-radius:10px;padding:12px;margin:14px 0}
@@ -397,6 +397,56 @@
 .secondary-detail-plan .secondary-personal-plan{margin-top:4px;padding:5px 6px}
 .secondary-detail-hint{margin-top:5px;font-size:9px;color:#8297aa}
 @media(max-width:700px){.secondary-detail-main{grid-template-columns:1fr}.secondary-detail-score{text-align:left}.secondary-score-buttons{justify-content:flex-start}}
+
+/* v283 approved Primary Mission UI */
+.primary-approved-card{overflow:hidden}
+.primary-approved-title{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 2px 10px}
+.primary-approved-title h3{margin:0;font-size:15px}
+.primary-approved-pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.primary-approved-panel{min-width:0;border:1px solid #315879;border-radius:10px;background:#071421;overflow:hidden}
+.primary-approved-panel.my{border-color:#1b91ed}
+.primary-approved-panel.opp{border-color:#e44b5b}
+.primary-approved-header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 11px;border-bottom:1px solid #25435c;background:linear-gradient(90deg,rgba(11,96,172,.2),rgba(5,19,31,.05))}
+.primary-approved-panel.opp .primary-approved-header{background:linear-gradient(90deg,rgba(163,36,50,.18),rgba(5,19,31,.05))}
+.primary-approved-header h4{margin:0;font-size:14px}
+.primary-created-label{margin-top:2px;font-size:9px;color:#8da5ba}
+.primary-total-score{min-width:82px;text-align:center;border:1px solid #1b91ed;border-radius:7px;padding:5px 7px}
+.primary-approved-panel.opp .primary-total-score{border-color:#e44b5b}
+.primary-total-score strong{display:block;font-size:13px}
+.primary-total-score span{display:block;font-size:8px;color:#9fb2c5;margin-top:2px}
+.primary-approved-body{padding:10px}
+.primary-approved-label{font-size:10px;color:#9ecbff;font-weight:800;margin-bottom:5px}
+.primary-mission-select-like{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 10px;border:1px solid #315879;border-radius:7px;background:#06101b;margin-bottom:9px}
+.primary-mission-select-like strong{font-size:13px}
+.primary-mission-select-like span{font-size:16px;color:#cce6ff}
+.primary-approved-panel.opp .primary-mission-select-like{border-color:#68404a}
+.primary-disposition{font-size:9px;color:#7f9ab0;margin-bottom:5px}
+.primary-scoring-round{font-size:9px;color:#89a6be;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+.primary-approved-score-row{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:8px;align-items:center;padding:8px;border:1px solid #29465e;border-radius:8px;background:#0a1826;margin:6px 0}
+.primary-approved-score-row.scored{border-color:#2e7e57;background:#0b1d19}
+.primary-approved-icon{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;background:#14283a;color:#eaf4ff;font-size:17px}
+.primary-approved-copy{min-width:0}
+.primary-approved-copy strong{display:block;font-size:11px;line-height:1.2}
+.primary-approved-copy span{display:block;margin-top:3px;font-size:9px;line-height:1.3;color:#aebfd0}
+.primary-approved-control{text-align:center}
+.primary-approved-control>label{display:block;font-size:8px;color:#9db1c4;margin-bottom:3px}
+.primary-score-stepper{display:grid;grid-template-columns:27px 34px 27px;gap:2px;align-items:stretch}
+.primary-score-stepper .btn{min-height:27px;padding:2px;font-size:13px}
+.primary-score-stepper output{display:flex;align-items:center;justify-content:center;border:1px solid #334c64;background:#06101a;border-radius:5px;font-size:12px;font-weight:800}
+.primary-score-quantity{grid-column:2/-1;font-size:9px;color:#9db1c4;display:flex;align-items:center;gap:5px}
+.primary-score-quantity input{width:45px;padding:3px 4px;font-size:10px}
+.primary-full-rules{margin-top:8px;border:1px solid #29465e;border-radius:7px;background:#081522}
+.primary-full-rules>summary{display:flex;align-items:center;gap:7px;padding:8px 9px;cursor:pointer;list-style:none}
+.primary-full-rules>summary::-webkit-details-marker{display:none}
+.primary-full-rules>summary strong{font-size:11px}
+.primary-rules-toggle{margin-left:auto;font-size:9px;color:#9ecbff}
+.primary-full-rules-body{padding:8px 9px;border-top:1px solid #263d53}
+.primary-rules-title{font-size:13px;font-weight:800;margin-bottom:2px}
+.primary-rules-list{display:grid;gap:4px;margin-top:7px}
+.primary-rule-line{display:grid;grid-template-columns:110px 42px minmax(0,1fr);gap:6px;padding:5px 0;border-top:1px solid #1d3042;font-size:9px;line-height:1.25}
+.primary-rule-timing{color:#8fb6d7}
+@media(max-width:850px){.primary-approved-pair{grid-template-columns:1fr}}
+@media(max-width:600px){.primary-approved-header{align-items:flex-start}.primary-approved-score-row{grid-template-columns:30px minmax(0,1fr)}.primary-approved-control{grid-column:2;justify-self:start}.primary-rule-line{grid-template-columns:1fr;gap:2px}}
 </style>
 </head><body><div id="app"></div><script>
 window.addEventListener('error',function(ev){var a=document.getElementById('app');if(a&&!a.innerHTML.includes('battleforge-error'))a.insertAdjacentHTML('afterbegin','<div id="battleforge-error" style="margin:12px;padding:12px;background:#5b252c;border:1px solid #a44;color:#fff;border-radius:8px"><b>OnoForge error:</b> '+String(ev.error?.message||ev.message||'Unknown error')+'</div>');});
@@ -1001,37 +1051,75 @@ function scorePrimaryItem(side,index,mission,amountOverride){
   save();
   render();
 }
+
+function primaryScoreAdjust(side,index,mission,direction){
+  const rows=primaryScoringRowsForRound(mission);
+  if(!rows[index])return;
+  const byRoundKey=side==='my'?'primaryScoringByRoundMy':'primaryScoringByRoundOpp';
+  const roundKey=String(Math.max(1,Number(state.round)||1));
+  const scored=state[byRoundKey]?.[roundKey]||[];
+  if(direction>0){
+    scorePrimaryItem(side,index,mission);
+  }else if(scored.includes(index)){
+    scorePrimaryItem(side,index,mission);
+  }
+}
+function primaryMissionRulesHtml(mission,side){
+  const rows=PRIMARY_SCORING[mission]||[];
+  if(!rows.length)return '<div class="muted small">Full mission rules are not loaded.</div>';
+  return '<details class="primary-full-rules"><summary><span>▣</span><strong>Full Mission Rules</strong><span class="primary-rules-toggle">Show</span></summary>'+
+    '<div class="primary-full-rules-body"><div class="primary-rules-title">'+esc(mission)+'</div>'+
+    '<div class="muted small">All scoring conditions for this Primary Mission.</div>'+
+    '<div class="primary-rules-list">'+rows.map(r=>'<div class="primary-rule-line"><span class="primary-rule-timing">'+esc(r[0])+'</span><strong>'+esc(r[1])+'</strong><span>'+esc(r[2])+'</span></div>').join('')+'</div></div></details>';
+}
 function primaryMissionDetailsHtml(mission,side){
   syncPrimaryScoringRound();
   const rows=primaryScoringRowsForRound(mission);
   const byRoundKey=side==='my'?'primaryScoringByRoundMy':'primaryScoringByRoundOpp';
+  const valueKey=side==='my'?'primaryScoringValuesByRoundMy':'primaryScoringValuesByRoundOpp';
   const amountKey=side==='my'?'primaryScoringAmountsByRoundMy':'primaryScoringAmountsByRoundOpp';
   const roundKey=String(Math.max(1,Number(state.round)||1));
-  const scored=state[byRoundKey]&&Array.isArray(state[byRoundKey][roundKey])?state[byRoundKey][roundKey]:[];
+  const scored=state[byRoundKey]?.[roundKey]||[];
+  const values=state[valueKey]?.[roundKey]||{};
   const amounts=state[amountKey]?.[roundKey]||{};
   const disposition=side?forceDisposition(side):'';
   const opponentDisposition=side?forceDisposition(side==='my'?'opp':'my'):'';
   if(!rows.length)return '<div class="primary-mission-inline-details"><div class="muted small">No scoring available this round.</div></div>';
-  return `<div class="primary-mission-inline-details">
-    ${disposition?`<div class="muted small" style="margin-bottom:7px">${esc(disposition)} vs ${esc(opponentDisposition)}</div>`:''}
-    <div class="muted primary-scoring-title">Scoring — Round ${Math.max(1,Number(state.round)||1)} <span class="tiny">Enter quantities for "per" conditions, then click the scoring row</span></div>
-    <div class="primary-detail-list">${rows.map((r,i)=>({r,i,done:scored.includes(i)})).sort((a,b)=>Number(a.done)-Number(b.done)).map(({r,i,done})=>{
-      const vp=primaryScoringVP(r[1]);
-      const per=primaryScoringIsPer(r);
-      const group=primaryScoringExclusiveGroup(mission,i);
-      const otherInGroup=group&&scored.some(x=>primaryScoringExclusiveGroup(mission,x)===group&&x!==i);
+  return '<div class="primary-mission-inline-details">'+
+    (disposition?'<div class="primary-disposition">'+esc(disposition)+' vs '+esc(opponentDisposition)+'</div>':'')+
+    '<div class="primary-scoring-round">Round '+Math.max(1,Number(state.round)||1)+' scoring</div>'+
+    '<div class="primary-detail-list">'+rows.map((r,i)=>{
+      const vp=primaryScoringVP(r[1]),per=primaryScoringIsPer(r),done=scored.includes(i);
+      const actual=done?Number(values[i])||0:0;
       const amount=Number(amounts[i])||1;
-      return `<div class="primary-detail-row primary-score-box ${done?'scored':''}">
-        <div class="primary-detail-main" data-primary-score="1" data-primary-side="${side}" data-primary-index="${i}" data-primary-mission="${esc(mission)}">
-          <span class="primary-detail-timing">${esc(r[0])}</span>
-          <strong class="primary-detail-points">${esc(r[1])}${per?' × '+amount:''}</strong>
-          <span class="primary-detail-text">${esc(r[2])}</span>
-          <span class="primary-score-status">${done?'Scored':(otherInGroup?'Replace current OR score':'+'+(per?vp*amount:vp)+' VP')}</span>
-        </div>
-        ${per?`<label class="primary-score-quantity">Count <input type="number" min="1" max="50" value="${amount}" data-primary-amount="1" data-primary-side="${side}" data-primary-index="${i}" data-primary-mission="${esc(mission)}" ${done?'disabled':''}></label>`:''}
-      </div>`;
-    }).join('')}</div>
-  </div>`;
+      const displayScore=actual||0;
+      return '<div class="primary-approved-score-row'+(done?' scored':'')+'">'+
+        '<div class="primary-approved-icon">'+(i===0?'⚑':i===1?'⌂':'◆')+'</div>'+
+        '<div class="primary-approved-copy"><strong>'+esc(r[2])+'</strong><span>Score '+esc(r[1])+(per?' × '+amount:'')+'</span></div>'+
+        '<div class="primary-approved-control"><label>Score</label><div class="primary-score-stepper"><button type="button" class="btn" data-primary-adjust="1" data-primary-adjust-side="'+side+'" data-primary-adjust-index="'+i+'" data-primary-adjust-mission="'+esc(mission)+'" data-primary-adjust-direction="-1" '+(done?'':'disabled')+'>−</button><output>'+displayScore+'</output><button type="button" class="btn primary" data-primary-adjust="1" data-primary-adjust-side="'+side+'" data-primary-adjust-index="'+i+'" data-primary-adjust-mission="'+esc(mission)+'" data-primary-adjust-direction="1">+</button></div></div>'+
+        (per&&!done?'<label class="primary-score-quantity">Count <input type="number" min="1" max="50" value="'+amount+'" data-primary-amount="1" data-primary-side="'+side+'" data-primary-index="'+i+'" data-primary-mission="'+esc(mission)+'"></label>':'')+
+      '</div>';
+    }).join('')+'</div>'+
+    primaryMissionRulesHtml(mission,side)+
+  '</div>';
+}
+
+function primaryMissionPanel(mode='battle'){
+  const myPM=primaryMission('my'),oppPM=primaryMission('opp');
+  const myAvail=availableForceDispositions('my'),oppAvail=availableForceDispositions('opp');
+  const myVP=Number(state.primaryMyScoredVP)||0,oppVP=Number(state.primaryOppScoredVP)||0;
+  const tracker=(side,mission,score)=>{
+    const label=activeArmyDisplayName(side);
+    const color=side==='my'?'my':'opp';
+    return '<div class="primary-approved-panel '+color+'">'+
+      '<div class="primary-approved-header"><div><h4>'+esc(label)+'</h4><div class="primary-created-label">'+esc(rosterCreatedLabel(side==='my'?state.activeRosterCreatedAt:state.activeOppRosterCreatedAt)||'')+'</div></div>'+
+      '<div class="primary-total-score"><strong>'+score+' / 45 VP</strong><span>Primary Mission</span></div></div>'+
+      '<div class="primary-approved-body"><div class="primary-approved-label">Primary Mission</div>'+
+      (mission?'<div class="primary-mission-select-like"><strong>'+esc(mission)+'</strong><span>⌄</span></div>'+primaryMissionDetailsHtml(mission,side):'<div class="primary-mission-select-like"><strong>Not resolved</strong></div>')+
+      '</div></div>';
+  };
+  return '<div class="card primary-mission-card primary-approved-card"><div class="primary-approved-title"><div><h3>Primary Mission</h3><div class="muted">Configure and track each player’s Primary Mission.</div></div><div class="pill">11th Edition</div></div>'+
+    '<div class="primary-missions-body"><div class="primary-approved-pair">'+tracker('my',myPM,myVP)+tracker('opp',oppPM,oppVP)+'</div></div></div>';
 }
 
 function primaryMissionPanel(mode='battle'){
@@ -3458,7 +3546,7 @@ async function cloudDeleteBattle(id){
   }catch(e){state.cloud.status='Error';state.cloud.error=e.message||String(e);save();render()}
 }
 function dataManagementPage(){const cfg=getCloudConfig();const battles=Array.isArray(state.cloudBattles)?state.cloudBattles:[];return `<div class="card">
-  <div class="split"><div><h2 style="margin:0">Data Management</h2><div class="muted" style="margin-top:4px">Back up and restore your OnoForge data on this device, or connect it to your Supabase account.</div></div><span class="pill">v282 Backup + Cloud</span></div>
+  <div class="split"><div><h2 style="margin:0">Data Management</h2><div class="muted" style="margin-top:4px">Back up and restore your OnoForge data on this device, or connect it to your Supabase account.</div></div><span class="pill">v283 Backup + Cloud</span></div>
 
   <div class="card cloud-card" style="margin-top:12px">
     <div class="split">
@@ -3594,7 +3682,7 @@ async function load40kAppSourceManifest(){
   }
   render();
 }
-function render(){const pages={builder,saved:savedListsPage,battle,setup,math,rules,data:dataPage,manage:dataManagementPage,log:logPage,scorelog:scoringLogPage};document.getElementById('app').innerHTML=`<div class="top"><div class="brand">ONOFORGE 40K</div><div class="sub">11th Edition • v282 • 40k.app v925 data source • Army-linked Mathhammer Engine</div></div>${nav()}<main class="wrap">
+function render(){const pages={builder,saved:savedListsPage,battle,setup,math,rules,data:dataPage,manage:dataManagementPage,log:logPage,scorelog:scoringLogPage};document.getElementById('app').innerHTML=`<div class="top"><div class="brand">ONOFORGE 40K</div><div class="sub">11th Edition • v283 • 40k.app v925 data source • Army-linked Mathhammer Engine</div></div>${nav()}<main class="wrap">
   
 <div class="status">✓ Browser app loaded locally • Source: ${esc(state.source)} • ${esc(state.revision)} • 40k.app v${esc(String(ONOFORGE_40KAPP_SOURCE?.source?.revision||'925'))}</div><div style="height:12px"></div>${(pages[state.page]||builder)()}${secondaryPlanEditorModal()}</main></div>`
   ensureLiveGameTimerDisplay();
@@ -3621,6 +3709,16 @@ document.addEventListener('click',function(ev){
   }
 });
 document.addEventListener('click',function(ev){
+  const padj=ev.target.closest('[data-primary-adjust]');
+  if(padj){
+    ev.preventDefault();ev.stopPropagation();
+    const side=padj.dataset.primaryAdjustSide;
+    const index=Number(padj.dataset.primaryAdjustIndex);
+    const mission=padj.dataset.primaryAdjustMission||'';
+    const direction=Number(padj.dataset.primaryAdjustDirection)||0;
+    if(side && Number.isInteger(index) && mission)primaryScoreAdjust(side,index,mission,direction);
+    return;
+  }
   const pm=ev.target.closest('[data-primary-score]');
   if(pm){
     ev.preventDefault();
