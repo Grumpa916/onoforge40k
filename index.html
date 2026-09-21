@@ -1311,6 +1311,38 @@ const GAME_REFERENCE_SECONDARIES=[
  ['Secure No Mans Land','now','incorporated into basic strategy']
 ];
 
+const GAME_REFERENCE_SECONDARY_DETAILS={
+ 'A Grievous Blow':{when:'any turn',task:'destroy enemy starting strength 13+',vp:'5',oppVP:'',action:'toss',unit:''},
+ 'Assassination':{when:'any turn',task:'kill character or all characters dead',vp:'5',oppVP:'',action:'hold',unit:'big kill turn'},
+ 'Bring it Down':{when:'any turn',task:'destroy 10W model',vp:'5',oppVP:'',action:'hold',unit:'big kill turn'},
+ 'Display of Might':{when:'my turn',task:'outnumber no mans land (wholly within)',vp:'2',oppVP:'5',oppWhen:'opponents turn',action:'4+',unit:'could push models up quickly'},
+ 'Forward Position':{when:'my turn',task:'opponents home or each expansion',vp:'5',oppVP:'',action:'4+',unit:'expansion capture'},
+ 'No Prisoners':{when:'any turn',task:'destroy a unit (3)',vp:'2 (max 5)',oppVP:'',action:'hold',unit:'big kill turn'},
+ 'Overwhelming Force':{when:'any turn',task:'destroy enemy off of objective (2)',vp:'3 (max 5)',oppVP:'',action:'hold',unit:'big kill turn'},
+ 'A Tempting Target':{when:'my turn',task:'control selected target',vp:'5',oppVP:'',action:'-',unit:''},
+ 'Beacon':{when:'opponents turn',task:'beacon outside deployment (unit on field)',vp:'3',oppVP:'5',oppWhen:'beacon outside territory',action:'hold',unit:''},
+ 'Centre Ground':{when:'my turn',task:'3" center and no enemies 3" center',vp:'3',oppVP:'5',oppWhen:'3" center no enemies 6"',action:'1+',unit:'center assault group'},
+ 'Behind Enemy Lines':{when:'my turn',task:'within enemy deployment (2)',vp:'3 (max 5)',oppVP:'',action:'now',unit:'biovore'},
+ 'Burden of Trust':{when:'opponents turn',task:'guard objectives (3)',vp:'2 (max 5)',oppVP:'',action:'now',unit:'incorporated into basic strategy'},
+ 'Cleanse':{when:'my shooting phase',task:'*action* cleanse 1 objective (non-home)',vp:'2',oppVP:'5',oppWhen:'cleanse 2 objectives',action:'now',unit:'incorporated into basic strategy'},
+ 'Defend Stronghold':{when:'opponents turn',task:'control home objective',vp:'3',oppVP:'2',oppWhen:'no enemy units in deployment',action:'now',unit:'incorporated into basic strategy'},
+ 'Engage on All Fronts':{when:'my turn',task:'4 quarters 6" from center',vp:'5',oppVP:'3',oppWhen:'3 quarters',action:'now',unit:'biovore'},
+ 'Outflank':{when:'my turn',task:'outside territory, 6" from any edge: 1 unit',vp:'3',oppVP:'5',oppWhen:'2 units and opposite edges',action:'now',unit:'biovore'},
+ 'Plunder':{when:'my shooting phase',task:'*action* terrain area outside of territory',vp:'5',oppVP:'',action:'3+',unit:'? Reserves, push hormagaunts'},
+ 'Secure No Man’s Land':{when:'my turn',task:'2 objectives in no mans land',vp:'5',oppVP:'',action:'now',unit:'incorporated into basic strategy'}
+};
+
+function secondaryWorkbookHtml(){
+ const active=[...secState('my'),...secState('opp')].filter((v,i,a)=>v&&a.indexOf(v)===i);
+ const cards=active.map(name=>{
+   const d=GAME_REFERENCE_SECONDARY_DETAILS[name];
+   if(!d)return '';
+   return `<div class="game-assistant-secondary"><b>${esc(name)}</b><span><b>When:</b> ${esc(d.when)}<br><b>Task:</b> ${esc(d.task)}<br><b>VP:</b> ${esc(d.vp)}${d.oppVP?` • Opp: ${esc(d.oppVP)}`:''}</span><em><b>Plan:</b> ${esc(d.action||'')}<br>${esc(d.unit||'')}</em></div>`;
+ }).join('');
+ const all=Object.entries(GAME_REFERENCE_SECONDARY_DETAILS).map(([name,d])=>`<div class="game-assistant-secondary"><b>${esc(name)}</b><span><b>${esc(d.when)}</b> • ${esc(d.task)}<br>VP ${esc(d.vp)}${d.oppVP?` / Opp ${esc(d.oppVP)}`:''}</span><em>${esc(d.action||'')} ${esc(d.unit||'')}</em></div>`).join('');
+ return `<details class="game-assistant-sub"><summary>Active secondary plans (${active.length})</summary>${cards||'<div class="empty">No active secondaries selected.</div>'}</details><details class="game-assistant-sub"><summary>All spreadsheet secondary notes</summary>${all}</details>`;
+}
+
 const GAME_REFERENCE_PRIMARY=[
  ['Inescapable Dominion','Command: 2obj - 5vp; 4obj -9vp; Turn: 3+obj - 4vp; End of game: enemy home 5vp'],
  ['Secure Asset','Command: 1 exp obj - 4vp; any 3obj - 4vp; Turn: 1 obj action - 4vp'],
@@ -1419,7 +1451,7 @@ function gameAssistantHtml(){
    <div class="game-assistant-current"><h4>${esc(phase)} Phase Reminders</h4>${checkHtml||'<div class="empty">No imported reminders for this phase.</div>'}</div>
    <div class="grid2">
     <div><h4>Quick Reference</h4>${quick}</div>
-    <div><h4>Mission Notes</h4><details class="game-assistant-sub"><summary>Secondary notes</summary>${second}</details><details class="game-assistant-sub"><summary>Primary notes</summary>${primary}</details></div>
+    <div><h4>Mission Notes</h4>${secondaryWorkbookHtml()}<details class="game-assistant-sub"><summary>Primary notes</summary>${primary}</details></div>
    </div>
    <div class="field" style="margin-top:12px"><label>Live Game Notes</label><textarea rows="4" placeholder="Add a reminder, opponent action, target, CP plan, or anything you want to remember..." onchange="state.gameAssistantNotes=this.value;save()">${esc(state.gameAssistantNotes||'')}</textarea></div>
   </div>
