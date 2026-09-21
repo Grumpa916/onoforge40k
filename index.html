@@ -19,7 +19,7 @@
 .wargear-stats b{color:#e8f2fb}
 @media(max-width:700px){.wargear-options{grid-template-columns:1fr}}
 
-.game-assistant-card{border-color:#355c7c}.game-assistant-body{margin-top:10px}.game-assistant-current{background:#0d1722;border:1px solid #35516c;border-radius:9px;padding:11px;margin-bottom:12px}.game-assistant-current h4,.game-assistant-body h4{margin:0 0 8px}.game-assistant-group{margin:8px 0}.game-assistant-group-title{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8fb7d8;font-weight:800;margin-bottom:5px}.game-assistant-item{display:flex;align-items:flex-start;gap:8px;padding:7px 8px;border:1px solid #27384b;border-radius:7px;background:#111b27;margin:5px 0;font-size:11px;line-height:1.3}.game-assistant-item.checked{opacity:.55;text-decoration:line-through}.game-assistant-item input{margin-top:2px;accent-color:#4d86bd}.game-assistant-item b{color:#8fc8ff;margin-right:5px}.game-assistant-quick,.game-assistant-primary,.game-assistant-secondary{background:#0b1018;border:1px solid #2c3748;border-radius:7px;padding:7px 8px;margin:5px 0;font-size:10.5px;line-height:1.3}.game-assistant-quick{display:grid;grid-template-columns:100px 1fr;gap:7px}.game-assistant-quick b,.game-assistant-primary b,.game-assistant-secondary b{color:#dce8f4}.game-assistant-secondary{display:grid;grid-template-columns:1fr 48px 1fr;gap:7px}.game-assistant-secondary em{color:#8fa1b5}.game-assistant-sub{margin:7px 0}.game-assistant-sub summary{cursor:pointer;color:#9ecbff;font-size:11px}.game-assistant-sub[open]{margin-bottom:8px}@media(max-width:700px){.game-assistant-quick,.game-assistant-secondary{grid-template-columns:1fr}.game-assistant-secondary em{display:block}}
+.game-unit-reference{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px}.game-unit-reference-pill{display:inline-block;padding:4px 6px;background:#132538;border:1px solid #355d7c;border-radius:6px;color:#cfe5f6;font-size:10px;line-height:1.25}.game-unit-reference-pill b{color:#8fc8ff;margin-right:3px}.game-assistant-card{border-color:#355c7c}.game-assistant-body{margin-top:10px}.game-assistant-current{background:#0d1722;border:1px solid #35516c;border-radius:9px;padding:11px;margin-bottom:12px}.game-assistant-current h4,.game-assistant-body h4{margin:0 0 8px}.game-assistant-group{margin:8px 0}.game-assistant-group-title{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8fb7d8;font-weight:800;margin-bottom:5px}.game-assistant-item{display:flex;align-items:flex-start;gap:8px;padding:7px 8px;border:1px solid #27384b;border-radius:7px;background:#111b27;margin:5px 0;font-size:11px;line-height:1.3}.game-assistant-item.checked{opacity:.55;text-decoration:line-through}.game-assistant-item input{margin-top:2px;accent-color:#4d86bd}.game-assistant-item b{color:#8fc8ff;margin-right:5px}.game-assistant-quick,.game-assistant-primary,.game-assistant-secondary{background:#0b1018;border:1px solid #2c3748;border-radius:7px;padding:7px 8px;margin:5px 0;font-size:10.5px;line-height:1.3}.game-assistant-quick{display:grid;grid-template-columns:100px 1fr;gap:7px}.game-assistant-quick b,.game-assistant-primary b,.game-assistant-secondary b{color:#dce8f4}.game-assistant-secondary{display:grid;grid-template-columns:1fr 48px 1fr;gap:7px}.game-assistant-secondary em{color:#8fa1b5}.game-assistant-sub{margin:7px 0}.game-assistant-sub summary{cursor:pointer;color:#9ecbff;font-size:11px}.game-assistant-sub[open]{margin-bottom:8px}@media(max-width:700px){.game-assistant-quick,.game-assistant-secondary{grid-template-columns:1fr}.game-assistant-secondary em{display:block}}
 .battle-layout{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:16px;align-items:start}.battle-log{position:sticky;top:16px;max-height:calc(100vh - 32px);overflow:auto}.battle-log-entry{padding:10px 0;border-bottom:1px solid #263244}.log-head{display:flex;justify-content:space-between;gap:8px}.btn.danger{background:#7f1d1d;color:#fff}.text-xs{font-size:11px}
 .battle-dashboard{display:grid;grid-template-columns:190px minmax(0,1fr);gap:16px;align-items:stretch;margin-bottom:16px}
 .round-card{background:#0b1018;border:1px solid #344052;border-radius:12px;padding:16px;text-align:center;display:flex;flex-direction:column;justify-content:center;min-height:210px}
@@ -2699,11 +2699,57 @@ ${currentArmyDisplay()}
 `}
 function armyStateCard(side,title){const units=side==='my'?state.my:state.opp;const empty=side==='my'?'<div class="empty">No army. Go to List Builder to add units, then Start / Reset Battle.</div>':'<div class="empty">No army.</div>';return `<div class="card army-state-card"><h3>${esc(title)}</h3>${(units||[]).map(e=>gameRow(side,e)).join('')||empty}</div>`}
 function sortBattleState(arr){return (arr||[]).slice().sort((a,b)=>{const au=get(a.unitId),bu=get(b.unitId);const ag=a.game||{models:a.models,wounds:a.models*(au?.wounds||1),status:'Alive',battleshocked:false};const bg=b.game||{models:b.models,wounds:b.models*(bu?.wounds||1),status:'Alive',battleshocked:false};const aDestroyed=ag.status==='Destroyed'?1:0,bDestroyed=bg.status==='Destroyed'?1:0;if(aDestroyed!==bDestroyed)return aDestroyed-bDestroyed;const aShock=ag.battleshocked?0:1,bShock=bg.battleshocked?0:1;if(aShock!==bShock)return aShock-bShock;const aMax=a.models*(au?.wounds||1),bMax=b.models*(bu?.wounds||1);const aDamaged=Number(ag.wounds)<aMax?0:1,bDamaged=Number(bg.wounds)<bMax?0:1;if(aDamaged!==bDamaged)return aDamaged-bDamaged;if(aDamaged===0&&Number(ag.wounds)!==Number(bg.wounds))return Number(ag.wounds)-Number(bg.wounds);return String(au?.name||'').localeCompare(String(bu?.name||''));});}
+function gameUnitReferenceReminders(u,phase){
+ const n=String(u?.name||'').toLowerCase(), p=String(phase||'');
+ const out=[], add=(text,tag)=>out.push({text,tag});
+ if(n.includes('norn emissary')){
+   if(p==='Command'||p==='Shooting'||p==='Fight') add('Selected objective: OC 15 / FNP 5+ reminder','Norn');
+   if(p==='Shooting'||p==='Fight') add('+4 FNP vs mortal wounds','Norn');
+ }
+ if(n.includes('norn assimilator')){
+   if(p==='Movement') add('Enemy fall back: 2+ → D6 mortal wounds','Norn');
+   if(p==='Charge') add('Previously shot Harpooned unit: +2 to charge','Norn');
+   if(p==='Fight') add('Harpoon Barbs: enemy Fall Back, 2+ → D6 mortal wounds','Norn');
+ }
+ if(n.includes('hormagaunt')){
+   if(p==='Movement'||p==='Fight') add('Advance and charge','Hormagaunt');
+   if(p==='Command') add('Endless Swarm / Predatory Imperative options','Hormagaunt');
+   if(p==='Fight') add('Prime-linked unit: Sustained 1 / +1 Strength reminder','Hormagaunt');
+ }
+ if(n.includes('exocrine')){
+   if(p==='Movement') add('Overwatch reminder','Exocrine');
+   if(p==='Shooting') { add('Reroll 1s at target','Exocrine'); add('Heavy: +1 to Hit after 3" move reminder','Exocrine'); add('Synapse: +1 Strength','Exocrine'); }
+   if(p==='Fight') add('Synapse: +1 Strength','Exocrine');
+ }
+ if(n.includes('tyrannofex')){
+   if(p==='Shooting') { add('Heavy: +1 to Hit after 3" move reminder','Tyrannofex'); add('Rupture Cannon: consider Command Re-roll','Tyrannofex'); add('0 damage ability reminder','Tyrannofex'); add('Synapse: +1 Strength','Tyrannofex'); }
+   if(p==='Fight') add('Synapse: +1 Strength','Tyrannofex');
+ }
+ if(n.includes('tyranid prime')){
+   if(p==='Shooting') add('If shot at: D6 surge move reminder','Tyranid Prime');
+   if(p==='Fight') { add('Prime unit: Sustained 1 / +1 Strength','Tyranid Prime'); add('Adrenal Surge: 5+ Critical Hits','Tyranid Prime'); }
+ }
+ if(n.includes('swarmlord')){
+   if(p==='Movement') add('9" Synapse for Exocrine / Tyrannofex','Swarmlord');
+   if(p==='Shooting'||p==='Fight') add('12" Malign Presence reminder','Swarmlord');
+ }
+ if(n.includes('deathleaper')){
+   if(p==='Command') add('Enemy below Starting Strength within 6": Battleshock at Ld -1','Deathleaper');
+   if(p==='Fight') add('Kill CHARACTER: +1 CP reminder','Deathleaper');
+ }
+ if(n.includes('lictor')&&p==='Movement') add('Rapid Ingress free reminder','Lictor');
+ return out;
+}
+function gameUnitReferenceHtml(u,phase){
+ const refs=gameUnitReferenceReminders(u,phase);
+ if(!refs.length)return '';
+ return '<div class="game-unit-reference">'+refs.map(r=>`<span class="game-unit-reference-pill"><b>${esc(r.tag)}</b> ${esc(r.text)}</span>`).join('')+'</div>';
+}
 function gameRow(side,e){const u=get(e.unitId);const g=e.game||{models:e.models,wounds:e.models*u.wounds,status:'Alive',battleshocked:false};if(g.battleshocked==null)g.battleshocked=false;const modelControls=e.models>1?`<button class="btn" type="button" onclick="changeUnit('${side}','${e.uid}',-1,0);return false;">− Model</button><button class="btn" type="button" onclick="changeUnit('${side}','${e.uid}',1,0);return false;">+ Model</button>`:'';const shockControl=`<button class="btn${g.battleshocked?' danger':''}" type="button" onclick="toggleBattleshocked('${side}','${e.uid}');return false;">${g.battleshocked?'✓ Battleshocked':'Battleshock'}</button>`;const destroyedControl=`<button class="btn${g.status==='Destroyed'?' danger':''}" type="button" onclick="setUnitDestroyed('${side}','${e.uid}');return false;">${g.status==='Destroyed'?'✓ Destroyed':'Destroyed'}</button>`;return `<div class="game-unit-row ${g.battleshocked?'is-battleshocked':''}" data-entry-id="${esc(e.uid)}"><div class="game-unit-name"><strong>${esc(u.name)}</strong>${g.battleshocked?'<span class="battleshock-badge">BATTLESHOCKED</span>':''}</div><div class="game-unit-controls">
 <div class="game-unit-stats">${e.models>1?`${g.models}/${e.models} models • `:''}${g.wounds}/${e.models*u.wounds} wounds • ${g.status}</div>
 <div class="row game-unit-actions game-status-actions">${shockControl}${destroyedControl}</div>
 <div class="row game-unit-actions game-modifier-actions">${modelControls}<button class="btn" type="button" onclick="changeUnit('${side}','${e.uid}',0,-1);return false;">− Wound</button><button class="btn" type="button" onclick="changeUnit('${side}','${e.uid}',0,1);return false;">+ Wound</button></div>
-</div></div>`}
+</div>${gameUnitReferenceHtml(u,state.phase)}</div></div>`}
 function setUnitDestroyed(side,id){const fullBefore=snapshotForUndo();const e=entry(side,id);if(!e)return;const u=get(e.unitId);if(!u)return;if(!e.game)e.game={entryId:e.uid,models:e.models,wounds:e.models*u.wounds,status:'Alive',battleshocked:false};
 if(e.game.entryId!==e.uid)e.game={...e.game,entryId:e.uid};const before=JSON.parse(JSON.stringify(e.game));if(e.game.status==='Destroyed'){e.game.status=e.game.wounds>0?'Damaged':'Alive';if(e.game.wounds<=0)e.game.wounds=Math.min(1,e.models*u.wounds);if(e.game.models<=0)e.game.models=Math.min(e.models,1)}else{e.game.models=0;e.game.wounds=0;e.game.status='Destroyed'};event('UNIT_STATE_CHANGED',{side,unitId:e.unitId,entryId:id,unit:u.name,action:e.game.status==='Destroyed'?'Destroyed':'Destroyed cleared',modelsBefore:before.models,modelsAfter:e.game.models,woundsBefore:before.wounds,woundsAfter:e.game.wounds,statusBefore:before.status,statusAfter:e.game.status,before,after:e.game},fullBefore);save();render()}
 function toggleBattleshocked(side,id){const fullBefore=snapshotForUndo();const e=entry(side,id);if(!e)return;const u=get(e.unitId);if(!u)return;if(!e.game)e.game={entryId:e.uid,models:e.models,wounds:e.models*u.wounds,status:'Alive',battleshocked:false};
