@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OnoForge 40K v285</title><style>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OnoForge 40K v286</title><style>
 *{box-sizing:border-box}body{margin:0;background:#0b0f15;color:#e9edf3;font-family:Arial,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}.top{padding:18px 22px;background:#111722;border-bottom:1px solid #273142}.brand{font-size:25px;font-weight:800}.sub,.muted{color:#9ca8b8;font-size:13px}.nav{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:10px 16px;background:#0e141e;border-bottom:1px solid #273142}.nav-main{display:flex;gap:6px;flex-wrap:wrap}.nav button,.nav-tools summary{background:#171e2a;color:#cbd5e1;border:1px solid #2c3748;border-radius:7px;padding:9px 13px;font-size:14px;cursor:pointer}.nav button.active{background:#24334b;color:#fff;border-color:#49678f}.nav-tools{position:relative;margin-left:auto}.nav-tools summary{list-style:none}.nav-tools summary::-webkit-details-marker{display:none}.nav-tools summary:after{content:' ▾';font-size:11px}.nav-tools[open] summary{background:#24334b;color:#fff;border-color:#49678f}.nav-tools-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:1200;min-width:170px;padding:6px;background:#111722;border:1px solid #344052;border-radius:8px;box-shadow:0 12px 30px rgba(0,0,0,.4);display:grid;gap:4px}.nav-tools-menu button{width:100%;text-align:left}.wrap{max-width:1250px;margin:auto;padding:18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.card{background:#111722;border:1px solid #273142;border-radius:10px;padding:15px;margin-bottom:14px}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.split{display:flex;justify-content:space-between;gap:10px;align-items:center}.field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:150px}.field label{font-size:12px;color:#9ca8b8}.field input,.field select,.field textarea,input[type=text]{width:100%;background:#0b1018;color:#eef2f7;border:1px solid #344052;border-radius:7px;padding:9px}.btn{background:#1b2432;color:#e8edf4;border:1px solid #354255;border-radius:7px;padding:8px 11px}.btn.primary{background:#27598b;border-color:#3975b6}.btn.danger{background:#5b252c;border-color:#82404a}.pill{display:inline-block;border:1px solid #3a4658;border-radius:999px;padding:4px 8px;font-size:12px;margin:2px}.status,.warn,.ok{border-radius:7px;padding:9px;margin-top:8px}.status{background:#17202d;border:1px solid #304057}.warn{background:#38261b;border:1px solid #78512d;color:#f4c58f}.ok{background:#183022;border:1px solid #356747;color:#aee2bf}.big{font-size:24px;font-weight:800}.unit{padding:11px 0;border-top:1px solid #26303e}.empty{padding:25px;text-align:center;color:#8995a5}.bar{height:8px;background:#242d3a;border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;background:#4d86bd}.mono{font-family:monospace;font-size:12px;white-space:pre-wrap}.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.tabs button{background:#171e2a;color:#cbd5e1;border:1px solid #2c3748;border-radius:7px;padding:8px 11px}.tabs button.active{background:#315174}.logrow{border-top:1px solid #273142;padding:10px 0}.metric{font-size:20px;font-weight:700}.modal{position:fixed;inset:0;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;padding:18px;z-index:50}.modal>.card{width:min(850px,100%);max-height:92vh;overflow:auto}.tiny{font-size:11px;color:#8290a1}@media(max-width:850px){.grid,.grid3,.grid2{grid-template-columns:1fr}.wrap{padding:10px}}
 
 .wargear-box{background:#0d1722;border:1px solid #3f6f99;border-radius:10px;padding:12px;margin:14px 0}
@@ -139,7 +139,7 @@
 @media(max-width:700px){
   .primary-mission-pair{grid-template-columns:1fr !important}
 }
-.stratagem-phase-group{margin-top:6px}.stratagem-phase-heading{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#9ecbff;padding:5px 8px;background:#111d2c;border:1px solid #30445e;border-radius:6px}
+.stratagem-type-section{margin-top:10px}.stratagem-type-heading{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:#eaf4ff;padding:6px 9px;border-radius:7px;background:#172131;border:1px solid #40536b}.stratagem-type-heading.army{color:#bfe2ff;border-color:#3974a8;background:#13263a}.stratagem-type-heading.core{color:#d6dee8;border-color:#4a5665;background:#171d27}.stratagem-phase-group{margin-top:6px}.stratagem-phase-heading{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#9ecbff;padding:5px 8px;background:#111d2c;border:1px solid #30445e;border-radius:6px}
 .primary-mission-link{display:block;width:100%;padding:0;border:0;background:none;color:#eaf4ff;text-align:left;font:inherit;font-weight:800;cursor:pointer}.primary-mission-link:hover{text-decoration:underline}.primary-mission-inline-details{margin-top:8px;padding-top:8px;border-top:1px solid #263a52}.primary-detail-list{display:flex;flex-direction:column;gap:7px}.primary-detail-row{display:grid;grid-template-columns:150px 70px minmax(0,1fr);gap:10px;padding:9px 10px;background:#0b1422;border:1px solid #263a52;border-radius:8px;align-items:start}.primary-detail-timing{font-size:11px;color:#9ecbff}.primary-detail-points{font-weight:800;white-space:nowrap}.primary-detail-text{font-size:12px;line-height:1.4}@media(max-width:600px){.primary-detail-row{grid-template-columns:1fr;gap:4px}}
 .primary-score-box{width:100%;display:grid;grid-template-columns:150px 70px minmax(0,1fr) auto;gap:10px;text-align:left;font:inherit;color:#eaf4ff;cursor:pointer;align-items:start}.primary-score-box:hover:not(:disabled){border-color:#6d9bc5;background:#122136}.primary-score-box.scored{opacity:.62;background:#162131;border-color:#36516c;cursor:default}.primary-score-box:disabled{cursor:default}.primary-score-status{font-size:10px;font-weight:800;white-space:nowrap;color:#9ecbff}.primary-scoring-title{margin-bottom:7px}.primary-scoring-title .tiny{margin-left:6px}@media(max-width:700px){.primary-score-box{grid-template-columns:1fr auto}.primary-score-box .primary-detail-text{grid-column:1/-1}.primary-score-box .primary-score-status{grid-column:2;grid-row:1}}
 <style>
@@ -1317,29 +1317,40 @@ function stratagemsUI(){
  const army=(side,title)=>{
   const key=side==='my'?'stratagemsMy':'stratagemsOpp';
   const det=armyStratagemDetachment(side);
-  const groups=stratagemPhaseGroups(state[key]);
+  const all=Array.isArray(state[key])?state[key]:[];
+  const armyStrats=all.map((s,i)=>({s,i})).filter(x=>x.s?.source!=='Core');
+  const coreStrats=all.map((s,i)=>({s,i})).filter(x=>x.s?.source==='Core');
+  const renderType=(items,label,kind)=>{
+   const groups=stratagemPhaseGroups(items);
+   return `<div class="stratagem-type-section">
+      <div class="stratagem-type-heading ${kind}">${esc(label)}</div>
+      <div style="margin-top:5px">${groups.map(g=>`
+        <div class="stratagem-phase-group">
+          <div class="stratagem-phase-heading">${esc(g.phase==='Any Phase'?'Any Phase':g.phase+' Phase')}</div>
+          ${g.items.map(({s,i})=>`<details class="card stratagem-item" style="padding:0;margin-top:2px">
+            <summary style="list-style:none;cursor:pointer;padding:3px 8px;user-select:none;margin:0">
+              <div class="row" style="justify-content:space-between;align-items:center">
+                <b>${esc(s.name)}</b>
+                <button class="pill stratagem-cp-btn ${s.used?'stratagem-cp-used':''}" type="button" aria-pressed="${s.used?'true':'false'}" data-stratagem-use="1" data-stratagem-side="${side}" data-stratagem-index="${i}" title="${s.used?'Stratagem already used':'Use stratagem — '+s.cp+' CP'}" style="background:${s.used?'#22c55e':'#263449'}!important;border-color:${s.used?'#22c55e':'#4b5d75'}!important;color:${s.used?'#fff':'#dbe7f5'}!important;">${s.used?'✓ ':''}${s.cp} CP</button>
+              </div>
+            </summary>
+            <div style="padding:0 8px 8px">
+              <div class="muted small">${esc(s.source)}${s.detachment?' · '+s.detachment:''} · ${esc(s.phase)}</div>
+              <div class="small" style="margin-top:4px">${esc(s.summary||'')}</div>
+            </div>
+          </details>`).join('')}
+        </div>`).join('')}</div>
+    </div>`;
+  };
   return `<div class="card" style="padding:12px"><div class="muted small">${title}</div>
   <div style="margin-top:4px"><b>Detachment: ${esc(det||'None selected')}</b></div>
-  <div style="margin-top:8px">${groups.map(g=>`
-    <div class="stratagem-phase-group">
-      <div class="stratagem-phase-heading">${esc(g.phase==='Any Phase'?'Any Phase':g.phase+' Phase')}</div>
-      ${g.items.map(({s,i})=>`<details class="card stratagem-item" style="padding:0;margin-top:2px">
-        <summary style="list-style:none;cursor:pointer;padding:3px 8px;user-select:none;margin:0">
-          <div class="row" style="justify-content:space-between;align-items:center">
-            <b>${esc(s.name)}</b>
-            <button class="pill stratagem-cp-btn ${s.used?'stratagem-cp-used':''}" type="button" aria-pressed="${s.used?'true':'false'}" data-stratagem-use="1" data-stratagem-side="${side}" data-stratagem-index="${i}" title="${s.used?'Stratagem already used':'Use stratagem — '+s.cp+' CP'}" style="background:${s.used?'#22c55e':'#263449'}!important;border-color:${s.used?'#22c55e':'#4b5d75'}!important;color:${s.used?'#fff':'#dbe7f5'}!important;">${s.used?'✓ ':''}${s.cp} CP</button>
-          </div>
-        </summary>
-        <div style="padding:0 8px 8px">
-          <div class="muted small">${esc(s.source)}${s.detachment?' · '+s.detachment:''} · ${esc(s.phase)}</div>
-          <div class="small" style="margin-top:4px">${esc(s.summary||'')}</div>
-        </div>
-      </details>`).join('')}
-    </div>`).join('')}</div></div>`;
+  ${renderType(armyStrats,'Army Stratagems','army')}
+  ${renderType(coreStrats,'Core Stratagems','core')}
+  </div>`;
  };
  return `<details class="card" ${state.stratagemsOpen===true?'open':''} ontoggle="state.stratagemsOpen=this.open;save()">
  <summary class="sectionTitle">Stratagems <span class="pill">11th Edition</span></summary>
- <div class="muted small" style="margin-top:8px">Core and active detachment stratagems, grouped by phase.</div>
+ <div class="muted small" style="margin-top:8px">Army and Core stratagems, grouped by phase.</div>
  <div class="grid two" style="margin-top:10px">${army('my','My Army')}${army('opp','Opponent Army')}</div>
  </details>`;
 }
@@ -3630,7 +3641,7 @@ async function cloudDeleteBattle(id){
   }catch(e){state.cloud.status='Error';state.cloud.error=e.message||String(e);save();render()}
 }
 function dataManagementPage(){const cfg=getCloudConfig();const battles=Array.isArray(state.cloudBattles)?state.cloudBattles:[];return `<div class="card">
-  <div class="split"><div><h2 style="margin:0">Data Management</h2><div class="muted" style="margin-top:4px">Back up and restore your OnoForge data on this device, or connect it to your Supabase account.</div></div><span class="pill">v285 Backup + Cloud</span></div>
+  <div class="split"><div><h2 style="margin:0">Data Management</h2><div class="muted" style="margin-top:4px">Back up and restore your OnoForge data on this device, or connect it to your Supabase account.</div></div><span class="pill">v286 Backup + Cloud</span></div>
 
   <div class="card cloud-card" style="margin-top:12px">
     <div class="split">
