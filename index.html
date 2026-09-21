@@ -3731,7 +3731,7 @@ async function cloudDeleteBattle(id){
   }catch(e){state.cloud.status='Error';state.cloud.error=e.message||String(e);save();render()}
 }
 function dataManagementPage(){const cfg=getCloudConfig();const battles=Array.isArray(state.cloudBattles)?state.cloudBattles:[];return `<div class="card">
-  <div class="split"><div><h2 style="margin:0">Data Management</h2><div class="muted" style="margin-top:4px">Back up and restore your OnoForge data on this device, or connect it to your Supabase account.</div></div><span class="pill">v290 Backup + Cloud</span></div>
+  <div class="split"><div><h2 style="margin:0">Data Management</h2><div class="muted" style="margin-top:4px">Back up and restore your OnoForge data on this device, or connect it to your Supabase account.</div></div><span class="pill">v291 Backup + Cloud</span></div>
 
   <div class="card cloud-card" style="margin-top:12px">
     <div class="split">
@@ -3889,7 +3889,7 @@ async function load40kAppSourceManifest(){
   render();
 }
 
-function render(){const pages={builder,saved:savedListsPage,battle,setup,math,rules,data:dataPage,manage:dataManagementPage,log:logPage,scorelog:scoringLogPage};document.getElementById('app').innerHTML=`<div class="top"><div class="brand">ONOFORGE 40K</div><div class="sub">11th Edition • v285 • 40k.app v925 data source • Army-linked Mathhammer Engine</div></div>${nav()}<main class="wrap">
+function render(){const pages={builder,saved:savedListsPage,battle,setup,math,rules,data:dataPage,manage:dataManagementPage,log:logPage,scorelog:scoringLogPage};document.getElementById('app').innerHTML=`<div class="top"><div class="brand">ONOFORGE 40K</div><div class="sub">11th Edition • v291 • 40k.app v925 data source • Army-linked Mathhammer Engine</div></div>${nav()}<main class="wrap">
   
 <div class="status">✓ Browser app loaded locally • Source: ${esc(state.source)} • ${esc(state.revision)} • 40k.app v${esc(String(ONOFORGE_40KAPP_SOURCE?.source?.revision||'925'))}</div>${dataSyncStatusHtml()}<div style="height:12px"></div>${(pages[state.page]||builder)()}${secondaryPlanEditorModal()}</main></div>`
   ensureLiveGameTimerDisplay();
