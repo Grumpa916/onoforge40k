@@ -28,57 +28,200 @@
     "missions"
   ],
   "factions": [
-    {"name":"Adepta Sororitas","slug":"adepta-sororitas"},
-    {"name":"Adeptus Custodes","slug":"adeptus-custodes"},
-    {"name":"Adeptus Mechanicus","slug":"adeptus-mechanicus"},
-    {"name":"Astra Militarum","slug":"astra-militarum"},
-    {"name":"Imperial Agents","slug":"imperial-agents"},
-    {"name":"Imperial Knights","slug":"imperial-knights"},
-    {"name":"Titan Legions","slug":"titan-legions"},
-    {"name":"Black Templars","slug":"black-templars"},
-    {"name":"Blood Angels","slug":"blood-angels"},
-    {"name":"Dark Angels","slug":"dark-angels"},
-    {"name":"Deathwatch","slug":"deathwatch"},
-    {"name":"Grey Knights","slug":"grey-knights"},
-    {"name":"Imperial Fists","slug":"imperial-fists"},
-    {"name":"Iron Hands","slug":"iron-hands"},
-    {"name":"Raven Guard","slug":"raven-guard"},
-    {"name":"Salamanders","slug":"salamanders"},
-    {"name":"Space Marines","slug":"space-marines"},
-    {"name":"Space Wolves","slug":"space-wolves"},
-    {"name":"Ultramarines","slug":"ultramarines"},
-    {"name":"White Scars","slug":"white-scars"},
-    {"name":"Chaos Daemons","slug":"chaos-daemons"},
-    {"name":"Chaos Knights","slug":"chaos-knights"},
-    {"name":"Chaos Space Marines","slug":"chaos-space-marines"},
-    {"name":"Chaos Titan Legions","slug":"chaos-titan-legions"},
-    {"name":"Death Guard","slug":"death-guard"},
-    {"name":"Emperor's Children","slug":"emperors-children"},
-    {"name":"Thousand Sons","slug":"thousand-sons"},
-    {"name":"World Eaters","slug":"world-eaters"},
-    {"name":"Aeldari","slug":"aeldari"},
-    {"name":"Drukhari","slug":"drukhari"},
-    {"name":"Genestealer Cults","slug":"genestealer-cults"},
-    {"name":"Leagues of Votann","slug":"leagues-of-votann"},
-    {"name":"Necrons","slug":"necrons"},
-    {"name":"Orks","slug":"orks"},
-    {"name":"T'au Empire","slug":"tau-empire"},
-    {"name":"Tyranids","slug":"tyranids"},
-    {"name":"Harlequins","slug":"harlequins"},
-    {"name":"Ynnari","slug":"ynnari"}
+    {
+      "name": "Adepta Sororitas",
+      "slug": "adepta-sororitas"
+    },
+    {
+      "name": "Adeptus Custodes",
+      "slug": "adeptus-custodes"
+    },
+    {
+      "name": "Adeptus Mechanicus",
+      "slug": "adeptus-mechanicus"
+    },
+    {
+      "name": "Astra Militarum",
+      "slug": "astra-militarum"
+    },
+    {
+      "name": "Imperial Agents",
+      "slug": "imperial-agents"
+    },
+    {
+      "name": "Imperial Knights",
+      "slug": "imperial-knights"
+    },
+    {
+      "name": "Titan Legions",
+      "slug": "titan-legions"
+    },
+    {
+      "name": "Black Templars",
+      "slug": "black-templars"
+    },
+    {
+      "name": "Blood Angels",
+      "slug": "blood-angels"
+    },
+    {
+      "name": "Dark Angels",
+      "slug": "dark-angels"
+    },
+    {
+      "name": "Deathwatch",
+      "slug": "deathwatch"
+    },
+    {
+      "name": "Grey Knights",
+      "slug": "grey-knights"
+    },
+    {
+      "name": "Imperial Fists",
+      "slug": "imperial-fists"
+    },
+    {
+      "name": "Iron Hands",
+      "slug": "iron-hands"
+    },
+    {
+      "name": "Raven Guard",
+      "slug": "raven-guard"
+    },
+    {
+      "name": "Salamanders",
+      "slug": "salamanders"
+    },
+    {
+      "name": "Space Marines",
+      "slug": "space-marines"
+    },
+    {
+      "name": "Space Wolves",
+      "slug": "space-wolves"
+    },
+    {
+      "name": "Ultramarines",
+      "slug": "ultramarines"
+    },
+    {
+      "name": "White Scars",
+      "slug": "white-scars"
+    },
+    {
+      "name": "Chaos Daemons",
+      "slug": "chaos-daemons"
+    },
+    {
+      "name": "Chaos Knights",
+      "slug": "chaos-knights"
+    },
+    {
+      "name": "Chaos Space Marines",
+      "slug": "chaos-space-marines"
+    },
+    {
+      "name": "Chaos Titan Legions",
+      "slug": "chaos-titan-legions"
+    },
+    {
+      "name": "Death Guard",
+      "slug": "death-guard"
+    },
+    {
+      "name": "Emperor's Children",
+      "slug": "emperors-children"
+    },
+    {
+      "name": "Thousand Sons",
+      "slug": "thousand-sons"
+    },
+    {
+      "name": "World Eaters",
+      "slug": "world-eaters"
+    },
+    {
+      "name": "Aeldari",
+      "slug": "aeldari"
+    },
+    {
+      "name": "Drukhari",
+      "slug": "drukhari"
+    },
+    {
+      "name": "Genestealer Cults",
+      "slug": "genestealer-cults"
+    },
+    {
+      "name": "Leagues of Votann",
+      "slug": "leagues-of-votann"
+    },
+    {
+      "name": "Necrons",
+      "slug": "necrons"
+    },
+    {
+      "name": "Orks",
+      "slug": "orks"
+    },
+    {
+      "name": "T'au Empire",
+      "slug": "tau-empire"
+    },
+    {
+      "name": "Tyranids",
+      "slug": "tyranids"
+    },
+    {
+      "name": "Harlequins",
+      "slug": "harlequins"
+    },
+    {
+      "name": "Ynnari",
+      "slug": "ynnari"
+    }
   ],
   "coreRuleSections": [
-    "01-core-concepts","02-datasheets","03-moving","04-making-attacks",
-    "05-attack-sequence","06-other-concepts","07-the-battle-round",
-    "08-command-phase","09-movement-phase","10-shooting-phase",
-    "11-charge-phase","12-fight-phase","13-terrain","14-objectives",
-    "15-stratagems","16-actions","17-monsters-and-vehicles","18-transports",
-    "19-attached-units","20-strategic-reserves","21-flying-and-surging",
-    "22-other-rules-and-abilities","23-aircraft","24-core-abilities","25-muster-armies"
+    "01-core-concepts",
+    "02-datasheets",
+    "03-moving",
+    "04-making-attacks",
+    "05-attack-sequence",
+    "06-other-concepts",
+    "07-the-battle-round",
+    "08-command-phase",
+    "09-movement-phase",
+    "10-shooting-phase",
+    "11-charge-phase",
+    "12-fight-phase",
+    "13-terrain",
+    "14-objectives",
+    "15-stratagems",
+    "16-actions",
+    "17-monsters-and-vehicles",
+    "18-transports",
+    "19-attached-units",
+    "20-strategic-reserves",
+    "21-flying-and-surging",
+    "22-other-rules-and-abilities",
+    "23-aircraft",
+    "24-core-abilities",
+    "25-muster-armies"
   ],
   "notes": [
     "This manifest records the authoritative source and revision independently of saved army data.",
     "Individual datasheet pages remain the source for detailed profiles, weapons, abilities, wargear, composition, leaders and points.",
     "No rules or unit values are invented when the source page is unavailable."
+  ],
+  "supplementalSources": [
+    {
+      "name": "Warhammer Event Companion",
+      "version": "1.1",
+      "file": "data/warhammer-event-companion-v1.1.json",
+      "sourceDocument": "Warhammer Event Companion Version 1.1",
+      "pages": 93,
+      "baseSizeGuideLastUpdated": "June 2026",
+      "purpose": "Event procedures, CP/VP limits, Secondary Mission timing, Primary Mission layout pairings, FAQs, terrain footprints, and selected base-size reference."
+    }
   ]
 }
