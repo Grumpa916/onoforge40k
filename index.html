@@ -2423,7 +2423,7 @@ function unitPointsDisplay(e,u){
   return extra ? parts[0]+' '+extra+' = <b>'+pts(e)+' pts</b>' : '<b>'+base+' pts</b>';
 }
 
-function makeEntry(u){return {uid:uid(),unitId:u.id,qty:1,models:u.models,wargear:[],wargearSelections:{},weapons:(u.weapons||[]).map(w=>w.name),enhancement:'',notes:'',attachedTo:null,leaderUid:null}}
+function makeEntry(u){const e={uid:uid(),unitId:u.id,qty:1,models:u.models,wargear:[],wargearSelections:{},weapons:(u.weapons||[]).map(w=>w.name),enhancement:'',notes:'',attachedTo:null,leaderUid:null};ensureModelRoster(e,u);return e}
 const LEADER_ATTACHMENTS_11E={
   'Tyranid Prime with Lash Whip':['Hormagaunts','Termagants','Tyranid Warriors with Ranged Bio-Weapons','Tyranid Warriors with Melee Bio-Weapons'],
   'Old One Eye':['Carnifexes'],
@@ -2854,12 +2854,108 @@ function unitRules(u){
 }
 function compositionRule(u){return UNIT_COMPOSITION_11E[(u?.faction||'')+'|'+(u?.name||'')]||null}
 function compositionSummary(u){const c=compositionRule(u);return c?.notes||''}
+function modelRosterRule(u){
+  const key=(u?.faction||'')+'|'+(u?.name||'');
+  if(key==='Tyranids|Tyranid Warriors with Ranged Bio-Weapons'||key==='Tyranids|Tyranid Warriors with Melee Bio-Weapons')return {kind:'warriors'};
+  if(key==='Tyranids|Zoanthropes')return {kind:'zoanthropes'};
+  if(key==='Tyranids|Neurogaunts')return {kind:'neurogaunts'};
+  if(key==='Tyranids|Hyperadapted Raveners')return {kind:'hyperadapted-raveners'};
+  return null;
+}
+function allocationModelOptions(e,key){
+  const counts=e?.wargearSelections?.[key]?.counts;
+  return counts&&typeof counts==='object'?counts:{};
+}
+function takeAllocatedModels(counts,roles){
+  const out=[];
+  Object.entries(counts||{}).forEach(([weapon,count])=>{
+    for(let i=0;i<Math.max(0,Math.floor(Number(count)||0));i++)out.push({weapon,index:roles.length+out.length});
+  });
+  return out;
+}
+function buildModelRoster(e,u){
+  const n=Math.max(1,Math.floor(Number(e?.models)||Number(u?.models)||1));
+  const catalog=(u?.weapons||[]).map(w=>w.name).filter(Boolean);
+  const rule=modelRosterRule(u);
+  const rows=[];
+  const add=(role,weapons)=>rows.push({id:e.uid+'-m'+(rows.length+1),index:rows.length+1,role,alive:true,woundsRemaining:Number(u?.wounds)||1,weapons:[...new Set((weapons||[]).filter(Boolean))]});
+  if(rule?.kind==='hyperadapted-raveners'){
+    add('Ravener Prime',['Prime claws and talons']);
+    add('Ravener w/ Venom bolt',['Ravener heavy claws and talons','Venom bolt']);
+    for(let i=0;i<3;i++)add('Ravener',['Ravener heavy claws and talons']);
+    return rows;
+  }
+  if(rule?.kind==='zoanthropes'){
+    add('Neurothrope',catalog);
+    for(let i=1;i<n;i++)add('Zoanthrope',catalog);
+    return rows;
+  }
+  if(rule?.kind==='neurogaunts'){
+    const nodebeasts=n===22?2:1;
+    for(let i=0;i<nodebeasts;i++)add('Neurogaunt Nodebeast',catalog);
+    for(let i=nodebeasts;i<n;i++)add('Neurogaunt',catalog);
+    return rows;
+  }
+  if(rule?.kind==='warriors'){
+    const base=allocationModelOptions(e,'base');
+    const special=allocationModelOptions(e,'special');
+    const basePool=[];
+    Object.entries(base).forEach(([weapon,count])=>{for(let i=0;i<Math.max(0,Math.floor(Number(count)||0));i++)basePool.push(weapon)});
+    while(basePool.length<n)basePool.push(basePool[0]||'Devourer');
+    const specialPool=[];
+    Object.entries(special).forEach(([weapon,count])=>{for(let i=0;i<Math.max(0,Math.floor(Number(count)||0));i++)specialPool.push(weapon)});
+    const specialMap=new Map();
+    specialPool.forEach((weapon,i)=>{if(i<n)specialMap.set(i,weapon)});
+    for(let i=0;i<n;i++){
+      const role=i===0?'Tyranid Prime':'Tyranid Warrior';
+      const ranged=specialMap.get(i)||basePool[i];
+      const melee='Tyranid Warrior claws and talons';
+      add(role,[ranged,melee]);
+    }
+    return rows;
+  }
+  for(let i=0;i<n;i++)add('Model '+(i+1),catalog);
+  return rows;
+}
+function ensureModelRoster(e,u){
+  if(!e||!u)return [];
+  const desired=buildModelRoster(e,u);
+  const prior=Array.isArray(e.modelRoster)?e.modelRoster:[];
+  const byId=new Map(prior.map(m=>[m.id,m]));
+  e.modelRoster=desired.map(m=>{
+    const old=byId.get(m.id);
+    return old?{...m,alive:old.alive!==false,woundsRemaining:old.woundsRemaining==null?m.woundsRemaining:Math.max(0,Number(old.woundsRemaining)||0)}:m;
+  });
+  return e.modelRoster;
+}
+function modelRosterSummary(e,u){
+  return ensureModelRoster(e,u).map(m=>m.role+(m.alive===false?' (destroyed)':'')).join(', ');
+}
 function compositionIssues(e,u){
  const c=compositionRule(u);if(!c)return [];
  const out=[];
  if(u?.name==='Neurogaunts' && ![11,22].includes(Number(e?.models)||0))out.push(u.name+': invalid Nodebeast/Neurogaunt composition');
  if(u?.name==='Hyperadapted Raveners' && Number(e?.models)!==5)out.push(u.name+': must contain exactly 5 models');
  return out;
+}
+function modelRosterIssues(e,u){
+  const c=compositionRule(u);if(!c)return [];
+  const roster=ensureModelRoster(e,u),out=[];
+  const roles=roster.map(m=>m.role);
+  if(u.name==='Tyranid Warriors with Ranged Bio-Weapons'||u.name==='Tyranid Warriors with Melee Bio-Weapons'){
+    if(roles.filter(x=>x==='Tyranid Prime').length!==1)out.push(u.name+': must contain exactly 1 Tyranid Prime model');
+    if(roles.filter(x=>x==='Tyranid Warrior').length!==Math.max(0,Number(e.models)-1))out.push(u.name+': Tyranid Warrior model count does not match unit size');
+  }else if(u.name==='Zoanthropes'){
+    if(roles.filter(x=>x==='Neurothrope').length!==1)out.push(u.name+': must contain exactly 1 Neurothrope model');
+    if(roles.filter(x=>x==='Zoanthrope').length!==Math.max(0,Number(e.models)-1))out.push(u.name+': Zoanthrope model count does not match unit size');
+  }else if(u.name==='Neurogaunts'){
+    const nodes=roles.filter(x=>x==='Neurogaunt Nodebeast').length;
+    const expected=Number(e.models)===22?2:1;
+    if(nodes!==expected)out.push(u.name+': Nodebeast count does not match unit size');
+  }else if(u.name==='Hyperadapted Raveners'){
+    if(roles.filter(x=>x==='Ravener Prime').length!==1||roles.filter(x=>x==='Ravener w/ Venom bolt').length!==1||roles.filter(x=>x==='Ravener').length!==3)out.push(u.name+': specialist model composition is invalid');
+  }
+  return out;
 }
 function issues(side){
  let out=[],seen={};
@@ -2870,6 +2966,7 @@ function issues(side){
    if(e.qty>r.maxUnits)out.push(u.name+': too many units');
    if((u.weapons||[]).length&&!activeWeaponNames(e,u).length)out.push(u.name+': no active weapons selected');
    compositionIssues(e,u).forEach(x=>out.push(x));
+   modelRosterIssues(e,u).forEach(x=>out.push(x));
    for(const g of wargearGroups(u)){
      if(g.type==='allocation'){
        const total=allocationTotal(e,g),models=Math.max(1,Math.floor(Number(e.models)||1));
