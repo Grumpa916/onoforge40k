@@ -1178,46 +1178,87 @@ let state={
   stratagemsMy:[], stratagemsOpp:[], stratagemsOpen:false,primaryMissionsOpen:false,secondaryMissionsOpen:false,page:'builder',myName:'My Army',oppName:'Opponent Army',faction:'Tyranids',detachment:'Invasion Fleet',detachmentSelections:['Invasion Fleet'],oppFaction:'Ultramarines',oppDetachment:'Gladius Task Force',oppDetachmentSelections:['Gladius Task Force'],limit:2000,my:[],opp:[],searchMy:'',searchOpp:'',configure:null,attacker:'norn',weapon:'Rupture Cannon',target:'marine',round:1,phase:'Command',myVP:0,oppVP:0,myCP:0,oppCP:0,battleReadyMy:false,battleReadyOpp:false,secondaryMy:'tactical',secondaryOpp:'tactical',secondaryMyCards:[],secondaryOppCards:[],secondaryMyDeck:[],secondaryOppDeck:[],secondaryMyDiscard:[],secondaryOppDiscard:[],newOrdersCompletedMy:false,newOrdersCompletedOpp:false,secondaryMyScored:[],secondaryOppScored:[],secondaryMyScoredVP:{},secondaryOppScoredVP:{},myForceDisposition:'',oppForceDisposition:'',attackerSide:'my',firstTurn:'my',currentTurn:'my',objectives:{},events:[],lists:[],activeRosterId:'',activeOpponentRosterId:'',dataStatus:'Expanded Tyranid + Ultramarines community catalogue',source:'BSData wh40k-11e (community)',revision:'current-community-catalogue',cloud:{email:'',userId:'',status:'Not connected',lastSync:'',error:''},cloudBattles:[],rulesLog:[],mathRules:{},gameTimer:{elapsedMs:0,running:false,paused:false,startedAt:0,pausedAt:0,finishedAt:0,turnMyMs:0,turnOppMs:0,turnStartedGameMs:0,turnPaused:false}};
 
 const SECONDARY_CARDS=[
- {name:'A Grievous Blow',fixed:true,type:'Eliminate high-Strength enemy units'},
- {name:'Assassination',fixed:true,type:'Destroy enemy CHARACTER models'},
- {name:'Bring It Down',fixed:true,type:'Destroy high-Wounds enemy models'},
- {name:'Engage on All Fronts',fixed:true,type:'Establish board presence across table quarters'},
- {name:'A Tempting Target',fixed:false,type:'Secure the opponent-selected objective'},
- {name:'Beacon',fixed:false,type:'Reach and secure a battlefield location'},
- {name:'Behind Enemy Lines',fixed:false,type:'Operate in the enemy deployment area'},
- {name:'Burden of Trust',fixed:false,type:'Hold objectives while meeting the mission condition'},
- {name:'Centre Ground',fixed:false,type:'Control central battlefield positions'},
- {name:'Cleanse',fixed:false,type:'Perform actions in controlled areas'},
- {name:'Defend Stronghold',fixed:false,type:'Protect a key objective or position'},
- {name:'Display of Might',fixed:false,type:'Demonstrate battlefield dominance with eligible units'},
- {name:'Forward Position',fixed:false,type:'Establish units in advanced positions'},
- {name:'No Prisoners',fixed:false,type:'Destroy enemy units'},
- {name:'Outflank',fixed:false,type:'Operate from a flank of the battlefield'},
- {name:'Overwhelming Force',fixed:false,type:'Destroy enemy units with superior force'},
- {name:'Plunder',fixed:false,type:'Secure and exploit objectives'},
- {name:'Secure No Man’s Land',fixed:false,type:'Control objectives in No Man’s Land'}
+ {name:'A Grievous Blow',fixed:true,type:'Destroy enemy units with Starting Strength 13+',cardNumber:1},
+ {name:'A Tempting Target',fixed:false,type:'Control the opponent-selected No Man’s Land objective',cardNumber:2},
+ {name:'Assassination',fixed:true,type:'Destroy enemy CHARACTER models',cardNumber:3},
+ {name:'Beacon',fixed:false,type:'Keep a selected beacon unit alive in enemy territory',cardNumber:4},
+ {name:'Behind Enemy Lines',fixed:false,type:'Place eligible units wholly within the opponent’s deployment zone',cardNumber:5},
+ {name:'Bring It Down',fixed:true,type:'Destroy enemy models with 10+ Wounds',cardNumber:6},
+ {name:'Burden of Trust',fixed:false,type:'Guard objectives with selected friendly units',cardNumber:7},
+ {name:'Centre Ground',fixed:false,type:'Control the centre of the battlefield',cardNumber:8},
+ {name:'Cleanse',fixed:false,type:'Cleansing objectives with an action',cardNumber:9},
+ {name:'Defend Stronghold',fixed:false,type:'Control your home objective and keep the enemy out',cardNumber:10},
+ {name:'Display of Might',fixed:false,type:'Have more eligible units in No Man’s Land',cardNumber:11},
+ {name:'Engage on All Fronts',fixed:true,type:'Establish presence in table quarters',cardNumber:12},
+ {name:'Forward Position',fixed:false,type:'Control the opponent’s home objective and/or expansion objectives',cardNumber:13},
+ {name:'No Prisoners',fixed:false,type:'Destroy enemy units',cardNumber:14},
+ {name:'Outflank',fixed:false,type:'Position eligible units near battlefield edges',cardNumber:15},
+ {name:'Overwhelming Force',fixed:false,type:'Destroy enemy units that started the turn within range of objectives',cardNumber:16},
+ {name:'Plunder',fixed:false,type:'Plunder a terrain area with an objective action',cardNumber:17},
+ {name:"Secure No Man’s Land",fixed:false,type:'Control two or more No Man’s Land objectives',cardNumber:18}
 ];
+
 const SECONDARY_SCORING={
- 'A Grievous Blow':{Fixed:[['4 VP','per enemy unit with Starting Strength 13+ destroyed this turn']],Tactical:[['5 VP','if 1+ enemy units with Starting Strength 13+ were destroyed this turn']]},
- 'A Tempting Target':{Tactical:[['5 VP','control your tempting target']]},
- 'Assassination':{Fixed:[['4 VP','each enemy CHARACTER with 4+ Wounds destroyed'],['3 VP','each enemy CHARACTER with fewer than 4 Wounds destroyed']],Tactical:[['5 VP','1+ enemy CHARACTER models destroyed this turn'],['5 VP','all enemy CHARACTER models destroyed during the battle']]},
- 'Beacon':{Tactical:[['3 VP','beacon unit is on the battlefield and outside your deployment zone'],['5 VP','beacon unit is on the battlefield and outside your territory']]},
- 'Behind Enemy Lines':{Tactical:[['3 VP','per eligible friendly unit wholly within the opponent’s deployment zone (max 5 VP)']]},
- 'Bring It Down':{Fixed:[['4 VP','per enemy model with 10+ Wounds destroyed this turn']],Tactical:[['5 VP','1+ enemy models with 10+ Wounds destroyed this turn']]},
- 'Bring it Down':{Fixed:[['4 VP','per enemy model with 10+ Wounds destroyed this turn']],Tactical:[['5 VP','1+ enemy models with 10+ Wounds destroyed this turn']]},
- 'Burden of Trust':{Tactical:[['2 VP','per objective guarded by your army (max 5 VP)']]},
- 'Centre Ground':{Tactical:[['3 VP','friendly unit(s) within 3" of centre and no enemy within 3"'],['5 VP','friendly unit(s) within 3" of centre and no enemy within 6"']]},
- 'Cleanse':{Tactical:[['2 VP','1 objective cleansed by your army this turn'],['5 VP','2+ objectives cleansed this turn']]},
- 'Defend Stronghold':{Tactical:[['3 VP','control your home objective'],['5 VP','control your home objective and no enemy units in your deployment zone']]},
- 'Display of Might':{Tactical:[['2 VP','at the end of your turn, more eligible friendly than enemy units are wholly within No Man’s Land'],['5 VP','at the end of the opponent’s turn, more eligible friendly than enemy units are wholly within No Man’s Land']]},
- 'Engage on All Fronts':{Fixed:[['2 VP','presence in three table quarters'],['4 VP','presence in four table quarters']],Tactical:[['3 VP','presence in three table quarters'],['5 VP','presence in four table quarters']]},
- 'Forward Position':{Tactical:[['5 VP','control your opponent’s home objective and/or each expansion objective']]},
- 'No Prisoners':{Tactical:[['2 VP','per enemy unit destroyed this turn (max 5 VP)']]},
- 'Outflank':{Tactical:[['3 VP','eligible friendly unit(s) within 6" of 1+ battlefield edges and not in your territory'],['5 VP','2+ eligible friendly units within 6" of opposite edges, with at least one not in your territory']]},
- 'Overwhelming Force':{Tactical:[['3 VP','per enemy unit that started the turn within range of an objective and is destroyed (max 5 VP)']]},
- 'Plunder':{Tactical:[['5 VP','a terrain area was plundered this turn']]},
- "Secure No Man’s Land":{Tactical:[['5 VP','control 2+ objectives within No Man’s Land, excluding home']]},
+ 'A Grievous Blow':{
+   Fixed:[['4 VP','For each enemy unit with Starting Strength 13+ destroyed this turn']],
+   Tactical:[['5 VP (max 5)','For each enemy unit with Starting Strength 13+ destroyed this turn']]
+ },
+ 'A Tempting Target':{
+   Tactical:[['5 VP','Control your tempting target']]
+ },
+ 'Assassination':{
+   Fixed:[['3 VP','For each enemy CHARACTER model destroyed this turn'],['+1 VP','For each of those CHARACTER models with 4+ Wounds']],
+   Tactical:[['5 VP','One or more enemy CHARACTER models were destroyed this turn, OR all enemy CHARACTER models have been destroyed during the battle']]
+ },
+ 'Beacon':{
+   Tactical:[['3 VP','At the end of the opponent’s turn, or end of the fifth battle round, your beacon unit is on the battlefield and not within your deployment zone'],['5 VP','Your beacon unit is on the battlefield and not within your territory']]
+ },
+ 'Behind Enemy Lines':{
+   Tactical:[['3 VP (max 5)','For each friendly unit, excluding AIRCRAFT and battle-shocked units, wholly within the opponent’s deployment zone']]
+ },
+ 'Bring It Down':{
+   Fixed:[['4 VP','For each enemy model with 10+ Wounds destroyed this turn']],
+   Tactical:[['5 VP (max 5)','For each enemy model with 10+ Wounds destroyed this turn']]
+ },
+ 'Burden of Trust':{
+   Tactical:[['2 VP (max 5)','For each objective guarded by your army']]
+ },
+ 'Centre Ground':{
+   Tactical:[['3 VP','One or more friendly units, excluding AIRCRAFT and battle-shocked units, are within 3" of centre and no enemy units are within 3" of centre'],['5 VP','One or more friendly units, excluding AIRCRAFT and battle-shocked units, are within 3" of centre and no enemy units are within 6" of centre']]
+ },
+ 'Cleanse':{
+   Tactical:[['2 VP','One objective was cleansed by your army this turn'],['5 VP','Two or more objectives were cleansed by your army this turn']]
+ },
+ 'Defend Stronghold':{
+   Tactical:[['3 VP','Control your home objective'],['+2 VP','No enemy units are within your deployment zone']]
+ },
+ 'Display of Might':{
+   Tactical:[['2 VP','At the end of your turn, more eligible friendly units than enemy units are wholly within No Man’s Land'],['5 VP','At the end of your opponent’s turn, more eligible friendly units than enemy units are wholly within No Man’s Land']]
+ },
+ 'Engage on All Fronts':{
+   Fixed:[['2 VP','Presence in three table quarters'],['4 VP','Presence in four table quarters']],
+   Tactical:[['3 VP','Presence in three table quarters'],['5 VP','Presence in four table quarters']]
+ },
+ 'Forward Position':{
+   Tactical:[['5 VP','Control your opponent’s home objective and/or each expansion objective']]
+ },
+ 'No Prisoners':{
+   Tactical:[['2 VP (max 5)','For each enemy unit destroyed this turn']]
+ },
+ 'Outflank':{
+   Tactical:[['3 VP','One or more friendly units, excluding AIRCRAFT and battle-shocked units, are within 6" of one or more battlefield edges and not within your territory'],['5 VP','Two or more eligible friendly units are within 6" of opposite battlefield edges and one or more of those units is not within your territory']]
+ },
+ 'Overwhelming Force':{
+   Tactical:[['3 VP (max 5)','For each enemy unit that started the turn within range of one or more objectives and is destroyed']]
+ },
+ 'Plunder':{
+   Tactical:[['5 VP','A terrain area was plundered this turn']]
+ },
+ "Secure No Man’s Land":{
+   Tactical:[['5 VP','Control two or more objectives within No Man’s Land, excluding your home objective']]
+ }
 };
+
 
 function secondaryCompletedRoundLabel(mission){
   if(!mission)return '';
