@@ -2860,12 +2860,43 @@ function unitRules(u){
 function compositionRule(u){return UNIT_COMPOSITION_11E[(u?.faction||'')+'|'+(u?.name||'')]||null}
 function compositionSummary(u){const c=compositionRule(u);return c?.notes||''}
 function modelRosterRule(u){
-  const key=(u?.faction||'')+'|'+(u?.name||'');
+  const key=(u?.faction||'')+'|'+(u?.name||''),name=u?.name||'';
   if(key==='Tyranids|Tyranid Warriors with Ranged Bio-Weapons'||key==='Tyranids|Tyranid Warriors with Melee Bio-Weapons')return {kind:'warriors'};
   if(key==='Tyranids|Zoanthropes')return {kind:'zoanthropes'};
   if(key==='Tyranids|Neurogaunts')return {kind:'neurogaunts'};
   if(key==='Tyranids|Hyperadapted Raveners')return {kind:'hyperadapted-raveners'};
+  if(['Space Marines','Ultramarines'].includes(u?.faction)){
+    if(['Intercessor Squad','Assault Intercessor Squad','Heavy Intercessor Squad','Sternguard Veteran Squad','Hellblaster Squad','Infernus Squad','Devastator Squad','Tactical Squad','Scout Squad','Reiver Squad','Infiltrator Squad','Incursor Squad'].includes(name))return {kind:'sergeant-squad',sergeant:name==='Sternguard Veteran Squad'?'Sternguard Veteran Sergeant':name==='Tactical Squad'?'Tactical Sergeant':name.replace(' Squad','')+' Sergeant'};
+    if(['Aggressor Squad','Eradicator Squad','Inceptor Squad','Bladeguard Veteran Squad','Terminator Squad','Terminator Assault Squad','Vanguard Veteran Squad with Jump Packs','Centurion Assault Squad','Centurion Devastator Squad','Assault Intercessors with Jump Packs'].includes(name))return {kind:'specialist-squad'};
+    if(name==='Outrider Squad')return {kind:'outrider-squad'};
+    if(name==='Company Heroes')return {kind:'company-heroes'};
+  }
   return null;
+}
+function nameFromUnitRole(u){
+  const n=u?.name||'';
+  return n==='Intercessor Squad'?'Intercessor':
+    n==='Assault Intercessor Squad'?'Assault Intercessor':
+    n==='Heavy Intercessor Squad'?'Heavy Intercessor':
+    n==='Sternguard Veteran Squad'?'Sternguard Veteran':
+    n==='Hellblaster Squad'?'Hellblaster':
+    n==='Infernus Squad'?'Infernus':
+    n==='Devastator Squad'?'Devastator Marine':
+    n==='Tactical Squad'?'Tactical Marine':
+    n==='Scout Squad'?'Scout':
+    n==='Reiver Squad'?'Reiver':
+    n==='Infiltrator Squad'?'Infiltrator':
+    n==='Incursor Squad'?'Incursor':
+    n==='Aggressor Squad'?'Aggressor':
+    n==='Eradicator Squad'?'Eradicator':
+    n==='Inceptor Squad'?'Inceptor':
+    n==='Bladeguard Veteran Squad'?'Bladeguard Veteran':
+    n==='Terminator Squad'?'Terminator':
+    n==='Terminator Assault Squad'?'Assault Terminator':
+    n==='Vanguard Veteran Squad with Jump Packs'?'Vanguard Veteran':
+    n==='Centurion Assault Squad'?'Assault Centurion':
+    n==='Centurion Devastator Squad'?'Devastator Centurion':
+    n==='Assault Intercessors with Jump Packs'?'Assault Intercessor with Jump Pack':n;
 }
 function allocationModelOptions(e,key){
   const counts=e?.wargearSelections?.[key]?.counts;
@@ -2884,10 +2915,34 @@ function buildModelRoster(e,u){
   const rule=modelRosterRule(u);
   const rows=[];
   const add=(role,weapons)=>rows.push({id:e.uid+'-m'+(rows.length+1),index:rows.length+1,role,alive:true,woundsRemaining:Number(u?.wounds)||1,weapons:[...new Set((weapons||[]).filter(Boolean))]});
+  if(rule?.kind==='company-heroes'){
+    add('Ancient',['Bolt Pistol','Bolt rifle','Close combat weapon']);
+    add('Company Champion',['Bolt Pistol','Master-crafted power weapon']);
+    add('Company Veteran w/ Heavy Bolter',['Bolt Pistol','Master-crafted heavy bolter','Close combat weapon']);
+    add('Company Veteran w/ Master-crafted Bolt Rifle',['Bolt Pistol','Master-crafted bolt rifle','Close combat weapon']);
+    return rows;
+  }
   if(rule?.kind==='hyperadapted-raveners'){
     add('Ravener Prime',['Prime claws and talons']);
     add('Ravener w/ Venom bolt',['Ravener heavy claws and talons','Venom bolt']);
     for(let i=0;i<3;i++)add('Ravener',['Ravener heavy claws and talons']);
+    return rows;
+  }
+  if(rule?.kind==='sergeant-squad'){
+    const sergeant=rule.sergeant||'Sergeant';
+    add(sergeant,catalog);
+    for(let i=1;i<n;i++)add(nameFromUnitRole(u),catalog);
+    return rows;
+  }
+  if(rule?.kind==='specialist-squad'){
+    const base=nameFromUnitRole(u);
+    add(base+' Sergeant',catalog);
+    for(let i=1;i<n;i++)add(base,catalog);
+    return rows;
+  }
+  if(rule?.kind==='outrider-squad'){
+    add('Outrider Sergeant',catalog);
+    for(let i=1;i<n;i++)add('Outrider',catalog);
     return rows;
   }
   if(rule?.kind==='zoanthropes'){
