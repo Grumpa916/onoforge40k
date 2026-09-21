@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OnoForge 40K v288</title><style>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OnoForge 40K v289</title><style>
 *{box-sizing:border-box}body{margin:0;background:#0b0f15;color:#e9edf3;font-family:Arial,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}.top{padding:18px 22px;background:#111722;border-bottom:1px solid #273142}.brand{font-size:25px;font-weight:800}.sub,.muted{color:#9ca8b8;font-size:13px}.nav{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:10px 16px;background:#0e141e;border-bottom:1px solid #273142}.nav-main{display:flex;gap:6px;flex-wrap:wrap}.nav button,.nav-tools summary{background:#171e2a;color:#cbd5e1;border:1px solid #2c3748;border-radius:7px;padding:9px 13px;font-size:14px;cursor:pointer}.nav button.active{background:#24334b;color:#fff;border-color:#49678f}.nav-tools{position:relative;margin-left:auto}.nav-tools summary{list-style:none}.nav-tools summary::-webkit-details-marker{display:none}.nav-tools summary:after{content:' ▾';font-size:11px}.nav-tools[open] summary{background:#24334b;color:#fff;border-color:#49678f}.nav-tools-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:1200;min-width:170px;padding:6px;background:#111722;border:1px solid #344052;border-radius:8px;box-shadow:0 12px 30px rgba(0,0,0,.4);display:grid;gap:4px}.nav-tools-menu button{width:100%;text-align:left}.wrap{max-width:1250px;margin:auto;padding:18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.card{background:#111722;border:1px solid #273142;border-radius:10px;padding:15px;margin-bottom:14px}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.split{display:flex;justify-content:space-between;gap:10px;align-items:center}.field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:150px}.field label{font-size:12px;color:#9ca8b8}.field input,.field select,.field textarea,input[type=text]{width:100%;background:#0b1018;color:#eef2f7;border:1px solid #344052;border-radius:7px;padding:9px}.btn{background:#1b2432;color:#e8edf4;border:1px solid #354255;border-radius:7px;padding:8px 11px}.btn.primary{background:#27598b;border-color:#3975b6}.btn.danger{background:#5b252c;border-color:#82404a}.pill{display:inline-block;border:1px solid #3a4658;border-radius:999px;padding:4px 8px;font-size:12px;margin:2px}.status,.warn,.ok{border-radius:7px;padding:9px;margin-top:8px}.status{background:#17202d;border:1px solid #304057}.warn{background:#38261b;border:1px solid #78512d;color:#f4c58f}.ok{background:#183022;border:1px solid #356747;color:#aee2bf}.big{font-size:24px;font-weight:800}.unit{padding:11px 0;border-top:1px solid #26303e}.empty{padding:25px;text-align:center;color:#8995a5}.bar{height:8px;background:#242d3a;border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;background:#4d86bd}.mono{font-family:monospace;font-size:12px;white-space:pre-wrap}.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.tabs button{background:#171e2a;color:#cbd5e1;border:1px solid #2c3748;border-radius:7px;padding:8px 11px}.tabs button.active{background:#315174}.logrow{border-top:1px solid #273142;padding:10px 0}.metric{font-size:20px;font-weight:700}.modal{position:fixed;inset:0;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;padding:18px;z-index:50}.modal>.card{width:min(850px,100%);max-height:92vh;overflow:auto}.tiny{font-size:11px;color:#8290a1}@media(max-width:850px){.grid,.grid3,.grid2{grid-template-columns:1fr}.wrap{padding:10px}}
 
 .wargear-box{background:#0d1722;border:1px solid #3f6f99;border-radius:10px;padding:12px;margin:14px 0}
@@ -1354,7 +1354,7 @@ function stratagemsUI(){
 }
 let state={
   savedArmyLists:[],
-  stratagemsMy:[], stratagemsOpp:[], stratagemsOpen:false,primaryMissionsOpen:false,secondaryMissionsOpen:false,page:'builder',myName:'My Army',oppName:'Opponent Army',faction:'Tyranids',detachment:'Invasion Fleet',detachmentSelections:['Invasion Fleet'],oppFaction:'Ultramarines',oppDetachment:'Gladius Task Force',oppDetachmentSelections:['Gladius Task Force'],limit:2000,my:[],opp:[],searchMy:'',searchOpp:'',configure:null,attacker:'norn',weapon:'Rupture Cannon',target:'marine',round:1,phase:'Command',myVP:0,oppVP:0,myCP:0,oppCP:0,battleReadyMy:false,battleReadyOpp:false,secondaryMy:'tactical',secondaryOpp:'tactical',secondaryMyCards:[],secondaryOppCards:[],secondaryMyDeck:[],secondaryOppDeck:[],secondaryMyDiscard:[],secondaryOppDiscard:[],newOrdersCompletedMy:false,newOrdersCompletedOpp:false,secondaryMyScored:[],secondaryOppScored:[],secondaryMyScoredVP:{},secondaryOppScoredVP:{},secondaryMyScoredVPByRound:{},secondaryOppScoredVPByRound:{},secondaryMyScoredRound:{},secondaryOppScoredRound:{},secondaryPersonalPlans:{},secondaryPlanEdit:'',secondaryDetailSide:'',secondaryDetailName:'',gameReferencePersonal:{},myForceDisposition:'',oppForceDisposition:'',attackerSide:'my',firstTurn:'my',currentTurn:'my',objectives:{},events:[],gameAssistantChecks:{},gameAssistantNotes:'',lists:[],activeRosterId:'',activeOpponentRosterId:'',dataStatus:'Expanded Tyranid + Ultramarines community catalogue',source:'BSData wh40k-11e (community)',revision:'current-community-catalogue',cloud:{email:'',userId:'',status:'Not connected',lastSync:'',error:''},cloudBattles:[],rulesLog:[],mathRules:{},gameTimer:{elapsedMs:0,running:false,paused:false,startedAt:0,pausedAt:0,finishedAt:0,turnMyMs:0,turnOppMs:0,turnStartedGameMs:0,turnPaused:false}};
+  stratagemsMy:[], stratagemsOpp:[], stratagemsOpen:false,primaryMissionsOpen:false,secondaryMissionsOpen:false,page:'builder',myName:'My Army',oppName:'Opponent Army',faction:'Tyranids',detachment:'Invasion Fleet',detachmentSelections:['Invasion Fleet'],oppFaction:'Ultramarines',oppDetachment:'Gladius Task Force',oppDetachmentSelections:['Gladius Task Force'],limit:2000,my:[],opp:[],searchMy:'',searchOpp:'',configure:null,attacker:'norn',weapon:'Rupture Cannon',target:'marine',round:1,phase:'Command',myVP:0,oppVP:0,myCP:0,oppCP:0,battleReadyMy:false,battleReadyOpp:false,secondaryMy:'tactical',secondaryOpp:'tactical',secondaryMyCards:[],secondaryOppCards:[],secondaryMyDeck:[],secondaryOppDeck:[],secondaryMyDiscard:[],secondaryOppDiscard:[],newOrdersCompletedMy:false,newOrdersCompletedOpp:false,secondaryMyScored:[],secondaryOppScored:[],secondaryMyScoredVP:{},secondaryOppScoredVP:{},secondaryMyScoredVPByRound:{},secondaryOppScoredVPByRound:{},secondaryMyScoredRound:{},secondaryOppScoredRound:{},secondaryPersonalPlans:{},secondaryPlanEdit:'',secondaryDetailSide:'',secondaryDetailName:'',gameReferencePersonal:{},myForceDisposition:'',oppForceDisposition:'',attackerSide:'my',firstTurn:'my',currentTurn:'my',objectives:{},events:[],gameAssistantChecks:{},gameAssistantNotes:'',lists:[],activeRosterId:'',activeOpponentRosterId:'',dataStatus:'Expanded Tyranid + Ultramarines community catalogue',source:'BSData wh40k-11e (community)',revision:'current-community-catalogue',cloud:{email:'',userId:'',status:'Not connected',lastSync:'',error:''},cloudBattles:[],rulesLog:[],mathRules:{},gameTimer:{elapsedMs:0,running:false,paused:false,startedAt:0,pausedAt:0,finishedAt:0,turnMyMs:0,turnOppMs:0,turnStartedGameMs:0,turnPaused:false},cloudPasswordRecovery:false};
 
 const GAME_REFERENCE_PHASES={
  Command:[
@@ -3383,6 +3383,7 @@ async function ensureSupabaseClient(){
       supabaseAuthListenerBound=true;
       supabaseClient.auth.onAuthStateChange((event,session)=>{
         const u=session?.user||null;
+        state.cloudPasswordRecovery=event==='PASSWORD_RECOVERY';
         state.cloud=state.cloud||{};
         state.cloud.email=u?.email||'';
         state.cloud.userId=u?.id||'';
@@ -3451,6 +3452,45 @@ async function cloudSignUp(){
     }
   }catch(e){state.cloud.status='Error';state.cloud.error=e.message||String(e);save();render()}
 }
+async function cloudForgotPassword(){
+  const email=(document.getElementById('cloud-email')?.value||'').trim();
+  if(!email){alert('Enter your Cloud Sync email address first.');return}
+  try{
+    const client=await ensureSupabaseClient();
+    state.cloud.status='Connecting';state.cloud.error='';save();render();
+    const redirectTo=location.href.split('#')[0];
+    const {error}=await client.auth.resetPasswordForEmail(email,{redirectTo});
+    if(error)throw error;
+    state.cloud.status='Ready — check your email';state.cloud.error='';
+    save();render();
+    alert('Password reset email sent. Check your email and open the reset link.');
+  }catch(e){
+    state.cloud.status='Error';state.cloud.error=e.message||String(e);save();render();
+  }
+}
+async function cloudUpdatePassword(){
+  const password=document.getElementById('cloud-new-password')?.value||'';
+  const confirmPassword=document.getElementById('cloud-confirm-password')?.value||'';
+  if(!password||!confirmPassword){alert('Enter and confirm your new password.');return}
+  if(password.length<8){alert('Password must be at least 8 characters.');return}
+  if(password!==confirmPassword){alert('The passwords do not match.');return}
+  try{
+    const client=await ensureSupabaseClient();
+    state.cloud.status='Connecting';state.cloud.error='';save();render();
+    const {data,error}=await client.auth.updateUser({password});
+    if(error)throw error;
+    const u=data?.user;
+    state.cloudPasswordRecovery=false;
+    state.cloud.email=u?.email||state.cloud.email||'';
+    state.cloud.userId=u?.id||state.cloud.userId||'';
+    state.cloud.status='Connected';state.cloud.error='';
+    save();render();
+    alert('Password updated. Cloud Sync is ready to use.');
+    await cloudSyncSavedLists();await cloudRefreshBattles();
+  }catch(e){
+    state.cloud.status='Error';state.cloud.error=e.message||String(e);save();render();
+  }
+}
 async function cloudSignIn(){
   const email=(document.getElementById('cloud-email')?.value||'').trim();
   const password=document.getElementById('cloud-password')?.value||'';
@@ -3471,6 +3511,7 @@ async function cloudSignOut(){
   try{
     if(supabaseClient)await supabaseClient.auth.signOut();
   }catch(e){console.warn('Supabase sign out failed',e)}
+  state.cloudPasswordRecovery=false;
   state.cloud={email:'',userId:'',status:'Not signed in',lastSync:state.cloud?.lastSync||'',error:''};
   state.cloudBattles=[];
   save();render();
@@ -3644,7 +3685,7 @@ async function cloudDeleteBattle(id){
   }catch(e){state.cloud.status='Error';state.cloud.error=e.message||String(e);save();render()}
 }
 function dataManagementPage(){const cfg=getCloudConfig();const battles=Array.isArray(state.cloudBattles)?state.cloudBattles:[];return `<div class="card">
-  <div class="split"><div><h2 style="margin:0">Data Management</h2><div class="muted" style="margin-top:4px">Back up and restore your OnoForge data on this device, or connect it to your Supabase account.</div></div><span class="pill">v288 Backup + Cloud</span></div>
+  <div class="split"><div><h2 style="margin:0">Data Management</h2><div class="muted" style="margin-top:4px">Back up and restore your OnoForge data on this device, or connect it to your Supabase account.</div></div><span class="pill">v289 Backup + Cloud</span></div>
 
   <div class="card cloud-card" style="margin-top:12px">
     <div class="split">
@@ -3664,13 +3705,24 @@ function dataManagementPage(){const cfg=getCloudConfig();const battles=Array.isA
     ${state.cloud?.userId&&state.cloudBattleSavedAt?`<div class="tiny" style="margin-top:8px">Battle snapshot: <b>Saved ✓</b> • ${esc(formatSavedListDate(state.cloudBattleSavedAt))}</div>`:''}
     ${state.cloudBattleSaveError?`<div class="warn" style="margin-top:8px">${esc(state.cloudBattleSaveError)}</div>`:''}
     <div class="cloud-help">Use only the <b>Publishable key</b> in this browser. Never put an <b>sb_secret_...</b> key or database password here. Your Supabase RLS policies control which records your signed-in account can access.</div>
-    ${!state.cloud?.userId?`<div class="cloud-auth-grid" style="margin-top:14px">
+    ${state.cloudPasswordRecovery?`<div class="card" style="margin-top:14px;border-color:#3974a8">
+      <h3 style="margin-top:0">Reset Cloud Sync Password</h3>
+      <div class="muted">Enter a new password for this Cloud Sync account.</div>
+      <div class="cloud-auth-grid" style="margin-top:12px">
+        <div class="field"><label>New Password</label><input id="cloud-new-password" type="password" autocomplete="new-password" placeholder="At least 8 characters"></div>
+        <div class="field"><label>Confirm New Password</label><input id="cloud-confirm-password" type="password" autocomplete="new-password" placeholder="Repeat your new password"></div>
+      </div>
+      <div class="cloud-actions" style="margin-top:10px">
+        <button class="btn primary" type="button" onclick="cloudUpdatePassword()">Update Password</button>
+      </div>
+    </div>` : !state.cloud?.userId?`<div class="cloud-auth-grid" style="margin-top:14px">
       <div class="field"><label>Email</label><input id="cloud-email" type="email" autocomplete="email" placeholder="you@example.com"></div>
       <div class="field"><label>Password</label><input id="cloud-password" type="password" autocomplete="current-password" placeholder="At least 8 characters"></div>
     </div>
     <div class="cloud-actions">
       <button class="btn primary" type="button" onclick="cloudSignIn()">Sign In</button>
       <button class="btn" type="button" onclick="cloudSignUp()">Create Account</button>
+      <button class="btn" type="button" onclick="cloudForgotPassword()">Forgot Password?</button>
     </div>
     <div class="cloud-help">Email confirmation is enabled. After creating an account, check your email and use the confirmation link to return to OnoForge.</div>`:
     `<div class="ok" style="margin-top:12px">Cloud account connected. Saved Lists can be synchronized between devices using this account.</div>`}
