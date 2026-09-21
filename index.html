@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OnoForge 40K v284</title><style>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OnoForge 40K v285</title><style>
 *{box-sizing:border-box}body{margin:0;background:#0b0f15;color:#e9edf3;font-family:Arial,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}.top{padding:18px 22px;background:#111722;border-bottom:1px solid #273142}.brand{font-size:25px;font-weight:800}.sub,.muted{color:#9ca8b8;font-size:13px}.nav{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:10px 16px;background:#0e141e;border-bottom:1px solid #273142}.nav-main{display:flex;gap:6px;flex-wrap:wrap}.nav button,.nav-tools summary{background:#171e2a;color:#cbd5e1;border:1px solid #2c3748;border-radius:7px;padding:9px 13px;font-size:14px;cursor:pointer}.nav button.active{background:#24334b;color:#fff;border-color:#49678f}.nav-tools{position:relative;margin-left:auto}.nav-tools summary{list-style:none}.nav-tools summary::-webkit-details-marker{display:none}.nav-tools summary:after{content:' ▾';font-size:11px}.nav-tools[open] summary{background:#24334b;color:#fff;border-color:#49678f}.nav-tools-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:1200;min-width:170px;padding:6px;background:#111722;border:1px solid #344052;border-radius:8px;box-shadow:0 12px 30px rgba(0,0,0,.4);display:grid;gap:4px}.nav-tools-menu button{width:100%;text-align:left}.wrap{max-width:1250px;margin:auto;padding:18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.card{background:#111722;border:1px solid #273142;border-radius:10px;padding:15px;margin-bottom:14px}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.split{display:flex;justify-content:space-between;gap:10px;align-items:center}.field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:150px}.field label{font-size:12px;color:#9ca8b8}.field input,.field select,.field textarea,input[type=text]{width:100%;background:#0b1018;color:#eef2f7;border:1px solid #344052;border-radius:7px;padding:9px}.btn{background:#1b2432;color:#e8edf4;border:1px solid #354255;border-radius:7px;padding:8px 11px}.btn.primary{background:#27598b;border-color:#3975b6}.btn.danger{background:#5b252c;border-color:#82404a}.pill{display:inline-block;border:1px solid #3a4658;border-radius:999px;padding:4px 8px;font-size:12px;margin:2px}.status,.warn,.ok{border-radius:7px;padding:9px;margin-top:8px}.status{background:#17202d;border:1px solid #304057}.warn{background:#38261b;border:1px solid #78512d;color:#f4c58f}.ok{background:#183022;border:1px solid #356747;color:#aee2bf}.big{font-size:24px;font-weight:800}.unit{padding:11px 0;border-top:1px solid #26303e}.empty{padding:25px;text-align:center;color:#8995a5}.bar{height:8px;background:#242d3a;border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;background:#4d86bd}.mono{font-family:monospace;font-size:12px;white-space:pre-wrap}.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.tabs button{background:#171e2a;color:#cbd5e1;border:1px solid #2c3748;border-radius:7px;padding:8px 11px}.tabs button.active{background:#315174}.logrow{border-top:1px solid #273142;padding:10px 0}.metric{font-size:20px;font-weight:700}.modal{position:fixed;inset:0;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;padding:18px;z-index:50}.modal>.card{width:min(850px,100%);max-height:92vh;overflow:auto}.tiny{font-size:11px;color:#8290a1}@media(max-width:850px){.grid,.grid3,.grid2{grid-template-columns:1fr}.wrap{padding:10px}}
 
 .wargear-box{background:#0d1722;border:1px solid #3f6f99;border-radius:10px;padding:12px;margin:14px 0}
@@ -398,7 +398,7 @@
 .secondary-detail-hint{margin-top:5px;font-size:9px;color:#8297aa}
 @media(max-width:700px){.secondary-detail-main{grid-template-columns:1fr}.secondary-detail-score{text-align:left}.secondary-score-buttons{justify-content:flex-start}}
 
-/* v284 approved Primary Mission UI */
+/* v285 approved Primary Mission UI */
 .primary-approved-card{overflow:hidden}
 .primary-approved-title{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 2px 10px}
 .primary-approved-title h3{margin:0;font-size:15px}
@@ -447,8 +447,29 @@
 .primary-rule-timing{color:#8fb6d7}
 @media(max-width:850px){.primary-approved-pair{grid-template-columns:1fr}}
 @media(max-width:600px){.primary-approved-header{align-items:flex-start}.primary-approved-score-row{grid-template-columns:30px minmax(0,1fr)}.primary-approved-control{grid-column:2;justify-self:start}.primary-rule-line{grid-template-columns:1fr;gap:2px}}
-/* v284 per-round scoring cap */
+/* v285 per-round scoring cap */
 .primary-scoring-round{font-weight:800}
+/* v285 secondary mission tracking redesign */
+.secondary-catalog{display:grid;grid-template-columns:1fr 1fr;gap:4px 7px;padding:7px}
+.secondary-compact-row{display:flex;align-items:center;justify-content:space-between;gap:7px;width:100%;box-sizing:border-box;border:1px solid #29445b;border-radius:7px;background:#0d1b29;color:#dcecff;padding:6px 8px;min-height:30px;cursor:pointer;text-align:left}
+.secondary-compact-row:hover{background:#14283a;border-color:#4a79a0}
+.secondary-compact-row.tracked{border-color:#22c77a;background:#0c2b20;color:#effff7}
+.secondary-compact-row.scored{opacity:.62}
+.secondary-compact-row.unavailable{opacity:.35;cursor:not-allowed}
+.secondary-compact-name{font-size:10px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.secondary-toggle-indicator{width:17px;height:17px;display:flex;align-items:center;justify-content:center;border:1px solid #50708c;border-radius:50%;font-size:10px;flex:0 0 auto}
+.secondary-compact-row.tracked .secondary-toggle-indicator{background:#20d77f;border-color:#20d77f;color:#06140e;font-weight:900}
+.secondary-detail-columns{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(180px,1fr) minmax(180px,.8fr);gap:12px;align-items:start}
+.secondary-detail-section-title{display:flex;justify-content:space-between;gap:8px;font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:800;color:#8fc8ff;margin-bottom:6px}
+.secondary-tracked-list{max-height:155px;overflow:auto;border:1px solid #263d52;border-radius:7px;padding:4px;background:#0a1420}
+.secondary-tracked-mission{display:flex;align-items:center;gap:6px;width:100%;border:0;border-bottom:1px solid #1b2b3a;background:transparent;color:#dcecff;text-align:left;padding:5px 6px;font-size:10px;cursor:pointer}
+.secondary-tracked-mission:last-child{border-bottom:0}
+.secondary-tracked-mission:hover,.secondary-tracked-mission.selected{background:#15304a}
+.tracked-dot{color:#28dc87;font-weight:900;width:13px}
+.secondary-cap-note{margin-top:7px;font-size:10px;color:#9fc1dc}
+.secondary-rules-strip{margin-top:9px;padding:6px 8px;border:1px solid #29445b;border-radius:6px;background:#0b1723;color:#9fb6c9;font-size:9px;line-height:1.35}
+@media(max-width:900px){.secondary-detail-columns{grid-template-columns:1fr 1fr}.secondary-detail-info{grid-column:1/-1}}
+@media(max-width:700px){.secondary-catalog{grid-template-columns:1fr}.secondary-detail-columns{grid-template-columns:1fr}}
 </style>
 </head><body><div id="app"></div><script>
 window.addEventListener('error',function(ev){var a=document.getElementById('app');if(a&&!a.innerHTML.includes('battleforge-error'))a.insertAdjacentHTML('afterbegin','<div id="battleforge-error" style="margin:12px;padding:12px;background:#5b252c;border:1px solid #a44;color:#fff;border-radius:8px"><b>OnoForge error:</b> '+String(ev.error?.message||ev.message||'Unknown error')+'</div>');});
@@ -886,7 +907,10 @@ function scorePrimary(side,vpInput){
   if(vp<1)return;
   const key=side==='my'?'primaryMyScoredVP':'primaryOppScoredVP';
   const before=Number(state[key])||0;
-  const after=Math.min(45,before+vp);
+  const roundTotal=primaryRoundScoredVP(side);
+  const allowed=Math.min(vp,Math.max(0,15-roundTotal),Math.max(0,45-before));
+  if(allowed<=0){alert(roundTotal>=15?'Primary scoring is capped at 15 VP for this round.':'Primary Missions are capped at 45 VP for the game.');return;}
+  const after=Math.min(45,before+allowed);
   const actual=after-before;
   if(actual<=0)return;
   const fullBefore=snapshotForUndo();
@@ -1851,30 +1875,34 @@ function setSecondaryDetailScore(side,name,vp){
 }
 function secondaryDetailHtml(side){
  const name=secondaryDetailTarget(side);if(!name)return '';
- const c=secondaryByName(name);
+ const card=secondaryByName(name);
  const active=secState(side).includes(name),scored=secScored(side).includes(name);
  const scoredVP=Number((side==='my'?state.secondaryMyScoredVP:state.secondaryOppScoredVP)?.[name])||0;
- const data=SECONDARY_SCORING[name]||SECONDARY_SCORING[c?.name]||null;
+ const data=SECONDARY_SCORING[name]||SECONDARY_SCORING[card?.name]||null;
  const mode=side==='my'?state.secondaryMy:state.secondaryOpp;
- const scoringText=data?Object.entries(data).filter(([m])=>m===mode.charAt(0).toUpperCase()+mode.slice(1)).flatMap(([,items])=>items.map(x=>x[0]+' VP — '+x[1])).join(' • '):(c?.type||'Secondary mission');
+ const scoringText=data?Object.entries(data).filter(([m])=>m===mode.charAt(0).toUpperCase()+mode.slice(1)).flatMap(([,items])=>items.map(x=>x[0]+' VP — '+x[1])).join(' • '):(card?.type||'Secondary mission');
  const detailPlan=secondaryPersonalPlanHtml(name);
- return '<div class="secondary-detail-panel"><div class="secondary-detail-main">'+
-   '<div><div class="muted small">MISSION DETAILS • '+esc(side==='my'?state.myName:state.oppName)+'</div><h4>'+esc(name)+'</h4><div class="muted small">'+esc(c?.type||'Secondary Mission')+'</div></div>'+
-   '<div class="secondary-detail-score"><div class="muted small">SCORE</div><div class="secondary-score-buttons">'+[0,1,2,3,4,5].map(v=>'<button type="button" class="btn '+(scoredVP===v?'primary':'')+'" data-secondary-score="1" data-secondary-score-side="'+side+'" data-secondary-score-name="'+esc(name)+'" data-secondary-score-value="'+v+'">'+v+'</button>').join('')+'</div><div class="muted small">'+(scored?'Scored '+scoredVP+' VP':'Not scored')+'</div></div>'+
-   '</div><div class="secondary-detail-description"><b>Scoring:</b> '+esc(scoringText)+'</div>'+
-   (detailPlan?'<details class="secondary-detail-plan"><summary>Personal plan / notes</summary>'+detailPlan+'</details>':'')+
-   '<div class="secondary-detail-hint">'+(active?'Use the score buttons above to record this mission.':'Track this mission above before scoring it.')+'</div></div>';
+ const tracked=secState(side),roundVP=secondaryRoundScoredVP(side),totalVP=secondaryTotalScoredVP(side);
+ const trackedList=tracked.map(n=>'<button type="button" class="secondary-tracked-mission '+(n===name?'selected':'')+'" data-secondary-detail="1" data-secondary-detail-side="'+side+'" data-secondary-detail-name="'+esc(n)+'"><span class="tracked-dot">✓</span>'+esc(n)+'</button>').join('');
+ return '<div class="secondary-detail-panel"><div class="secondary-detail-columns">'+
+   '<div class="secondary-detail-info"><div class="muted small">MISSION DETAILS • '+esc(side==='my'?state.myName:state.oppName)+'</div><h4>'+esc(name)+'</h4><div class="muted small">'+esc(card?.type||'Secondary Mission')+'</div><div class="secondary-detail-description"><b>Scoring:</b> '+esc(scoringText)+'</div>'+
+   (detailPlan?'<details class="secondary-detail-plan"><summary>Personal plan / notes</summary>'+detailPlan+'</details>':'')+'</div>'+
+   '<div class="secondary-tracked-list"><div class="secondary-detail-section-title">Tracked Missions <span>'+tracked.length+' / 18</span></div>'+(trackedList||'<div class="muted small">No missions tracked. Click a mission title above to track it.</div>')+'</div>'+
+   '<div class="secondary-detail-score"><div class="secondary-detail-section-title">This Round <span>'+roundVP+' / 15 VP</span></div><div class="secondary-score-buttons">'+[0,1,2,3,4,5].map(v=>'<button type="button" class="btn '+(scoredVP===v?'primary':'')+'" data-secondary-score="1" data-secondary-score-side="'+side+'" data-secondary-score-name="'+esc(name)+'" data-secondary-score-value="'+v+'">'+v+'</button>').join('')+'</div><div class="muted small">'+(scored?'Scored '+scoredVP+' VP':'Not scored')+'</div><div class="secondary-cap-note">Secondary total: '+totalVP+' / 45 VP</div></div>'+
+   '</div><div class="secondary-rules-strip"><b>11th Edition VP limits:</b> Secondary Missions max 15 VP per round and 45 VP total. Primary Missions max 15 VP per round and 45 VP total. Battle Ready adds 10 VP to the final score. Maximum possible game score: 100 VP.</div>'+
+   '<div class="secondary-detail-hint">'+(active?'Use the score buttons to record this mission.':'Click the mission title above to track this mission before scoring it.')+'</div></div>';
 }
+
 function secondaryCatalogHtml(side){
- const isMy=side==='my',active=secState(side),scored=secScored(side),discarded=secDiscard(side);
- const isActivePlayer=secondaryActiveSide()===side,name=esc(isMy?state.myName:state.oppName),mode=isMy?state.secondaryMy:state.secondaryOpp;
- const fixedFull=mode==='fixed'&&active.length>=2;
+ const isMy=side==='my',active=secState(side),scored=secScored(side);
+ const isActivePlayer=secondaryActiveSide()===side,name=esc(isMy?state.myName:state.oppName);
+ const fixedFull=(isMy?state.secondaryMy:state.secondaryOpp)==='fixed'&&active.length>=2;
  const rows=SECONDARY_CARDS.map(c=>{
-   const n=c.name,activeNow=active.includes(n),scoredNow=scored.includes(n),discardedNow=discarded.includes(n);
+   const n=c.name,activeNow=active.includes(n),scoredNow=scored.includes(n);
    const unavailable=fixedFull&&!activeNow&&!scoredNow;
-   let label='Track',disabled=false,cls='';
-   if(activeNow){label='✓ Tracked';cls=' tracked'}else if(scoredNow){label='✓';disabled=true;cls=' scored'}else if(discardedNow||unavailable){label='—';disabled=true;cls=' unavailable'}
-   return '<div class="secondary-compact-row'+cls+'"><button type="button" class="secondary-compact-name" data-secondary-detail="1" data-secondary-detail-side="'+side+'" data-secondary-detail-name="'+esc(n)+'">'+esc(n)+'</button><button type="button" class="btn '+(activeNow?'secondary-tracked-btn':'')+'" '+(disabled?'disabled ':'')+'data-secondary-track="1" data-secondary-track-side="'+side+'" data-secondary-track-name="'+esc(n)+'">'+label+'</button></div>';
+   const cls=activeNow?' tracked':(scoredNow?' scored':(unavailable?' unavailable':''));
+   return '<button type="button" class="secondary-compact-row'+cls+'" data-secondary-toggle="1" data-secondary-toggle-side="'+side+'" data-secondary-toggle-name="'+esc(n)+'" '+(unavailable?'disabled ':'')+'>'+
+     '<span class="secondary-compact-name">'+esc(n)+'</span><span class="secondary-toggle-indicator">'+(activeNow?'✓':'')+'</span></button>';
  }).join('');
  return '<div class="secondary-player-panel'+(isActivePlayer?' active-player':'')+'"><div class="secondary-army-heading"><h4>'+esc(name)+'</h4><span class="pill">'+(isActivePlayer?'ACTIVE PLAYER':'')+'</span></div><div class="secondary-catalog">'+rows+'</div><div class="secondary-player-summary">'+active.length+' tracked'+(scored.length?' • '+scored.length+' scored':'')+'</div></div>';
 }
@@ -1974,8 +2002,8 @@ function scoreSecondary(side,name,vpInput){
  const before=side==='my'?Number(state.myVP)||0:Number(state.oppVP)||0;
  const round=Math.max(1,Number(state.round)||1);
  const roundTotalBefore=secondaryRoundScoredVP(side,round);
- const allowedVP=Math.min(vp,Math.max(0,15-roundTotalBefore));
- if(allowedVP<=0){alert('Secondary scoring is capped at 15 VP for this round.');return;}
+ const allowedVP=Math.min(vp,Math.max(0,15-roundTotalBefore),Math.max(0,45-Number(secondaryTotalScoredVP(side)||0)));
+ if(allowedVP<=0){alert(secondaryTotalScoredVP(side)>=45?'Secondary Missions are capped at 45 VP for the game.':'Secondary scoring is capped at 15 VP for this round.');return;}
  const after=max?Math.min(before+allowedVP,max):before+allowedVP;
  const actual=after-before;
  if(actual<=0)return;
@@ -2798,6 +2826,12 @@ function startBattle(){
   state.secondaryOppVP=0;
   state.secondaryScoredMyVP=0;
   state.secondaryScoredOppVP=0;
+  state.secondaryMyScoredVPByRound={};
+  state.secondaryOppScoredVPByRound={};
+  state.secondaryMyScoredRound={};
+  state.secondaryOppScoredRound={};
+  state.secondaryMyScoredVP={};
+  state.secondaryOppScoredVP={};
 
   if(Array.isArray(state.secondaryMy)){
     state.secondaryMy.forEach(m=>{
@@ -3596,7 +3630,7 @@ async function cloudDeleteBattle(id){
   }catch(e){state.cloud.status='Error';state.cloud.error=e.message||String(e);save();render()}
 }
 function dataManagementPage(){const cfg=getCloudConfig();const battles=Array.isArray(state.cloudBattles)?state.cloudBattles:[];return `<div class="card">
-  <div class="split"><div><h2 style="margin:0">Data Management</h2><div class="muted" style="margin-top:4px">Back up and restore your OnoForge data on this device, or connect it to your Supabase account.</div></div><span class="pill">v284 Backup + Cloud</span></div>
+  <div class="split"><div><h2 style="margin:0">Data Management</h2><div class="muted" style="margin-top:4px">Back up and restore your OnoForge data on this device, or connect it to your Supabase account.</div></div><span class="pill">v285 Backup + Cloud</span></div>
 
   <div class="card cloud-card" style="margin-top:12px">
     <div class="split">
@@ -3732,7 +3766,7 @@ async function load40kAppSourceManifest(){
   }
   render();
 }
-function render(){const pages={builder,saved:savedListsPage,battle,setup,math,rules,data:dataPage,manage:dataManagementPage,log:logPage,scorelog:scoringLogPage};document.getElementById('app').innerHTML=`<div class="top"><div class="brand">ONOFORGE 40K</div><div class="sub">11th Edition • v284 • 40k.app v925 data source • Army-linked Mathhammer Engine</div></div>${nav()}<main class="wrap">
+function render(){const pages={builder,saved:savedListsPage,battle,setup,math,rules,data:dataPage,manage:dataManagementPage,log:logPage,scorelog:scoringLogPage};document.getElementById('app').innerHTML=`<div class="top"><div class="brand">ONOFORGE 40K</div><div class="sub">11th Edition • v285 • 40k.app v925 data source • Army-linked Mathhammer Engine</div></div>${nav()}<main class="wrap">
   
 <div class="status">✓ Browser app loaded locally • Source: ${esc(state.source)} • ${esc(state.revision)} • 40k.app v${esc(String(ONOFORGE_40KAPP_SOURCE?.source?.revision||'925'))}</div><div style="height:12px"></div>${(pages[state.page]||builder)()}${secondaryPlanEditorModal()}</main></div>`
   ensureLiveGameTimerDisplay();
@@ -3797,6 +3831,8 @@ document.addEventListener('click',function(ev){
     }
     return;
   }
+  const st=ev.target.closest('[data-secondary-toggle]');
+  if(st){ev.preventDefault();ev.stopPropagation();toggleSecondaryTracking(st.dataset.secondaryToggleSide,st.dataset.secondaryToggleName);return;}
   const sd=ev.target.closest('[data-secondary-detail]');
   if(sd){ev.preventDefault();ev.stopPropagation();selectSecondaryDetail(sd.dataset.secondaryDetailSide,sd.dataset.secondaryDetailName);return;}
   const ss=ev.target.closest('[data-secondary-score]');
