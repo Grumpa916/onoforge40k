@@ -2275,7 +2275,6 @@ const LEADER_ATTACHMENTS_11E={
   'The Swarmlord':['Tyrant Guard'],
   'Broodlord':['Genestealers'],
   'Captain':['Assault Intercessor Squad','Bladeguard Veteran Squad','Company Heroes','Hellblaster Squad','Infernus Squad','Intercessor Squad','Sternguard Veteran Squad','Tactical Squad'],
-  'Lieutenant':['Assault Intercessor Squad','Bladeguard Veteran Squad','Company Heroes','Hellblaster Squad','Infernus Squad','Intercessor Squad','Sternguard Veteran Squad','Tactical Squad'],
   'Chaplain':['Assault Intercessor Squad','Bladeguard Veteran Squad','Hellblaster Squad','Infernus Squad','Intercessor Squad','Sternguard Veteran Squad','Tactical Squad'],
   'Librarian':['Assault Intercessor Squad','Desolation Squad','Devastator Squad','Hellblaster Squad','Infernus Squad','Intercessor Squad','Sternguard Veteran Squad','Tactical Squad'],
   'Captain in Terminator Armour':['Terminator Squad'],
@@ -2285,6 +2284,80 @@ const LEADER_ATTACHMENTS_11E={
   'Marneus Calgar in Armour of Antilochus':['Aggressor Squad','Assault Intercessor Squad','Bladeguard Veteran Squad','Company Heroes','Eradicator Squad','Heavy Intercessor Squad','Infernus Squad','Intercessor Squad','Sternguard Veteran Squad','Tactical Squad','Terminator Assault Squad','Terminator Squad','Victrix Honour Guard'],
   'Cato Sicarius':['Victrix Honour Guard']
 };
+const SUPPORT_ATTACHMENTS_11E={
+  'Ancient':['Assault Intercessor Squad','Desolation Squad','Devastator Squad','Hellblaster Squad','Infernus Squad','Intercessor Squad','Sternguard Veteran Squad','Tactical Squad','Company Heroes'],
+  'Ancient in Terminator Armour':['Terminator Squad','Terminator Assault Squad'],
+  'Apothecary':['Assault Intercessor Squad','Desolation Squad','Devastator Squad','Hellblaster Squad','Infernus Squad','Intercessor Squad','Sternguard Veteran Squad','Tactical Squad'],
+  'Apothecary Biologis':['Aggressor Squad','Eradicator Squad','Heavy Intercessor Squad'],
+  'Lieutenant':['Assault Intercessor Squad','Bladeguard Veteran Squad','Company Heroes','Hellblaster Squad','Infernus Squad','Intercessor Squad','Sternguard Veteran Squad','Tactical Squad'],
+  'Lieutenant in Phobos Armour':['Incursor Squad','Infiltrator Squad','Reiver Squad'],
+  'Lieutenant in Reiver Armour':['Reiver Squad']
+};
+function supportNamesForBodyguard(u){return SUPPORT_ATTACHMENTS_11E[u?.name]||[]}
+function isSupportUnit(u){return !!u&&Object.prototype.hasOwnProperty.call(SUPPORT_ATTACHMENTS_11E,u.name)}
+function bodyguardSupports(side,bodyguardUid){
+  const body=entry(side,bodyguardUid);if(!body)return [];
+  const ids=Array.isArray(body.supportUids)?body.supportUids.slice():[];
+  if(body.supportUid&&!ids.includes(body.supportUid))ids.unshift(body.supportUid);
+  return ids.map(id=>entry(side,id)).filter(Boolean);
+}
+function syncBodyguardSupportFields(body){
+  const ids=Array.isArray(body.supportUids)?body.supportUids.filter(Boolean):[];
+  body.supportUids=Array.from(new Set(ids));
+  if(body.supportUids.length)body.supportUid=body.supportUids[0];else delete body.supportUid;
+}
+function supportBodyguard(side,supportUid){
+  return (state[side]||[]).find(e=>e.attachedTo===supportUid && e.attachedRole==='support')||null;
+}
+function supportCandidates(side,bodyguardUid){
+  const body=entry(side,bodyguardUid);if(!body)return [];
+  const allowed=supportNamesForBodyguard(get(body.unitId));
+  if(bodyguardSupports(side,bodyguardUid).length)return [];
+  return (state[side]||[]).filter(e=>e.uid!==bodyguardUid&&!e.attachedTo&&allowed.includes(get(e.unitId)?.name));
+}
+function supportBodyguardsForUnit(u){return SUPPORT_ATTACHMENTS_11E[u?.name]||[]}
+function supportCandidatesForUnit(side,supportUid){
+  const support=entry(side,supportUid);if(!support)return [];
+  const allowed=supportBodyguardsForUnit(get(support.unitId));
+  return (state[side]||[]).filter(e=>e.uid!==supportUid&&!e.attachedTo&&allowed.includes(get(e.unitId)?.name)&&!bodyguardSupports(side,e.uid).length);
+}
+function attachSupport(side,supportUid,bodyguardUid){
+  const support=entry(side,supportUid),body=entry(side,bodyguardUid);if(!support||!body)return;
+  const su=get(support.unitId),bu=get(body.unitId);if(!isSupportUnit(su)||!supportNamesForBodyguard(bu).includes(su.name)||bodyguardSupports(side,bodyguardUid).length)return;
+  const oldBody=supportBodyguard(side,supportUid);if(oldBody){
+    oldBody.supportUids=(Array.isArray(oldBody.supportUids)?oldBody.supportUids:[]).filter(id=>id!==supportUid);syncBodyguardSupportFields(oldBody);
+  }
+  body.supportUids=Array.isArray(body.supportUids)?body.supportUids.slice():[];
+  body.supportUids.push(support.uid);syncBodyguardSupportFields(body);
+  support.attachedTo=body.uid;support.attachedRole='support';
+  save();state.supportAttachmentModal=null;state.supportBodyguardAttachmentModal=null;render();
+}
+function detachSupport(side,supportUid){
+  const support=entry(side,supportUid);if(!support)return;
+  const body=supportBodyguard(side,supportUid);delete support.attachedTo;delete support.attachedRole;
+  if(body){body.supportUids=(Array.isArray(body.supportUids)?body.supportUids:[]).filter(id=>id!==supportUid);syncBodyguardSupportFields(body)}
+  save();state.supportAttachmentModal=null;state.supportBodyguardAttachmentModal=null;render();
+}
+function openSupportAttachment(side,bodyguardUid){state.supportAttachmentModal={side,bodyguardUid};state.supportBodyguardAttachmentModal=null;render()}
+function openSupportBodyguardAttachment(side,supportUid){state.supportBodyguardAttachmentModal={side,supportUid};state.supportAttachmentModal=null;render()}
+function supportAttachmentModal(){
+  if(!state.supportAttachmentModal)return '';
+  const {side,bodyguardUid}=state.supportAttachmentModal,body=entry(side,bodyguardUid);if(!body)return '';
+  const candidates=supportCandidates(side,bodyguardUid),u=get(body.unitId),current=bodyguardSupports(side,bodyguardUid);
+  return '<div class="modal"><div class="card leader-attach-modal"><div class="split"><div><h2 style="margin:0">Attach Support</h2><div class="muted">'+esc(u?.name||'Bodyguard Unit')+'</div></div><button class="btn" onclick="state.supportAttachmentModal=null;render()">Close</button></div>'+
+    (current.length?'<div class="status">Current Support: <b>'+esc(get(current[0].unitId)?.name||'Support')+'</b><button class="btn" style="margin-left:8px" onclick="detachSupport(\\''+side+'\\',\\''+current[0].uid+'\\')">Detach</button></div>':'')+
+    (candidates.length?'<div class="leader-candidate-list">'+candidates.map(e=>'<button class="leader-candidate" type="button" onclick="attachSupport(\\''+side+'\\',\\''+e.uid+'\\',\\''+bodyguardUid+'\\')"><span><strong>'+esc(unitDisplayName(side,e))+'</strong><small>'+esc(get(e.unitId)?.faction||'')+' • '+pts(e)+' pts</small></span><span class="pill">Attach</span></button>').join('')+'</div>':'<div class="empty">No eligible unattached Support units are currently in this army.</div>')+
+    '<div class="tiny" style="margin-top:10px">Support units can join a Bodyguard unit alongside an eligible Leader.</div></div></div>';
+}
+function supportBodyguardAttachmentModal(){
+  if(!state.supportBodyguardAttachmentModal)return '';
+  const {side,supportUid}=state.supportBodyguardAttachmentModal,support=entry(side,supportUid);if(!support)return '';
+  const current=supportBodyguard(side,supportUid),candidates=supportCandidatesForUnit(side,supportUid),u=get(support.unitId);
+  return '<div class="modal"><div class="card leader-attach-modal"><div class="split"><div><h2 style="margin:0">Attach Bodyguard</h2><div class="muted">'+esc(u?.name||'Support')+' • Support</div></div><button class="btn" onclick="state.supportBodyguardAttachmentModal=null;render()">Close</button></div>'+
+    (current?'<div class="status">Current Bodyguard: <b>'+esc(unitDisplayName(side,current))+'</b><button class="btn" style="margin-left:8px" onclick="detachSupport(\\''+side+'\\',\\''+supportUid+'\\')">Detach</button></div>':'')+
+    (candidates.length?'<div class="leader-candidate-list">'+candidates.map(e=>'<button class="leader-candidate" type="button" onclick="attachSupport(\\''+side+'\\',\\''+supportUid+'\\',\\''+e.uid+'\\')"><span><strong>'+esc(unitDisplayName(side,e))+'</strong><small>'+esc(get(e.unitId)?.faction||'')+' • '+pts(e)+' pts</small></span><span class="pill">Attach</span></button>').join('')+'</div>':'<div class="empty">No eligible unattached Bodyguard units are currently in this army.</div>')+
+    '</div></div>';
+}
 function leaderNamesForBodyguard(u){return LEADER_ATTACHMENTS_11E[u?.name]||[]}
 function isLeaderUnit(u){return !!u&&Object.prototype.hasOwnProperty.call(LEADER_ATTACHMENTS_11E,u.name)}
 function bodyguardLeaders(side,bodyguardUid){
@@ -2312,7 +2385,7 @@ function bodyguardNamesForLeader(u){
   if(!u)return [];
   return LEADER_ATTACHMENTS_11E[u.name]||[];
 }
-function leaderBodyguard(side,leaderUid){return (state[side]||[]).find(e=>e.attachedTo===leaderUid)||null}
+function leaderBodyguard(side,leaderUid){return (state[side]||[]).find(e=>e.attachedTo===leaderUid&&(e.attachedRole==='leader'||!e.attachedRole))||null}
 function bodyguardLeader(side,bodyguardUid){return bodyguardLeaders(side,bodyguardUid)[0]||null}
 function bodyguardCandidatesForLeader(side,leaderUid){
   const leader=entry(side,leaderUid);if(!leader)return [];
@@ -2338,7 +2411,7 @@ function attachLeader(side,leaderUid,bodyguardUid){
   if(current.length && !specialCatoPair)return;
   body.leaderUids=Array.isArray(body.leaderUids)?body.leaderUids.slice():[];
   body.leaderUids.push(leader.uid);syncBodyguardLeaderFields(body);
-  leader.attachedTo=body.uid;
+  leader.attachedTo=body.uid;leader.attachedRole='leader';
   save();state.leaderAttachmentModal=null;state.bodyguardAttachmentModal=null;render();
 }
 function detachLeader(side,leaderUid){
