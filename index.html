@@ -2269,8 +2269,7 @@ function unitPointsDisplay(e,u){
 function makeEntry(u){return {uid:uid(),unitId:u.id,qty:1,models:u.models,wargear:[],wargearSelections:{},weapons:(u.weapons||[]).map(w=>w.name),enhancement:'',notes:'',attachedTo:null,leaderUid:null}}
 const LEADER_ATTACHMENTS_11E={
   'Tyranid Prime with Lash Whip':['Hormagaunts','Termagants','Tyranid Warriors with Ranged Bio-Weapons','Tyranid Warriors with Melee Bio-Weapons'],
- 'Winged Tyranid Prime':['Gargoyles','Tyranid Warriors with Ranged Bio-Weapons','Tyranid Warriors with Melee Bio-Weapons'],
-  'Winged Tyranid Prime':['Tyranid Warriors with Ranged Bio-Weapons','Tyranid Warriors with Melee Bio-Weapons'],
+  'Winged Tyranid Prime':['Gargoyles','Tyranid Warriors with Ranged Bio-Weapons','Tyranid Warriors with Melee Bio-Weapons'],
   'Neurotyrant':['Neurogaunts','Tyrant Guard','Zoanthropes'],
   'Hive Tyrant':['Tyrant Guard'],
   'The Swarmlord':['Tyrant Guard'],
@@ -2283,41 +2282,72 @@ const LEADER_ATTACHMENTS_11E={
   'Chaplain in Terminator Armour':['Terminator Squad'],
   'Librarian in Terminator Armour':['Terminator Squad'],
   'Uriel Ventris':['Assault Intercessor Squad','Assault Squad','Bladeguard Veteran Squad','Company Heroes','Command Squad','Intercessor Squad','Sternguard Veteran Squad','Tactical Squad','Vanguard Veteran Squad','Victrix Honour Guard'],
-  'Marneus Calgar in Armour of Antilochus':['Aggressor Squad','Assault Intercessor Squad','Bladeguard Veteran Squad','Company Heroes','Eradicator Squad','Heavy Intercessor Squad','Infernus Squad','Intercessor Squad','Sternguard Veteran Squad','Tactical Squad','Terminator Squad','Victrix Honour Guard'],
+  'Marneus Calgar in Armour of Antilochus':['Aggressor Squad','Assault Intercessor Squad','Bladeguard Veteran Squad','Company Heroes','Eradicator Squad','Heavy Intercessor Squad','Infernus Squad','Intercessor Squad','Sternguard Veteran Squad','Tactical Squad','Terminator Assault Squad','Terminator Squad','Victrix Honour Guard'],
   'Cato Sicarius':['Victrix Honour Guard']
 };
 function leaderNamesForBodyguard(u){return LEADER_ATTACHMENTS_11E[u?.name]||[]}
 function isLeaderUnit(u){return !!u&&Object.prototype.hasOwnProperty.call(LEADER_ATTACHMENTS_11E,u.name)}
+function bodyguardLeaders(side,bodyguardUid){
+  const body=entry(side,bodyguardUid);if(!body)return [];
+  const ids=Array.isArray(body.leaderUids)?body.leaderUids.slice():[];
+  if(body.leaderUid&&!ids.includes(body.leaderUid))ids.unshift(body.leaderUid);
+  return ids.map(id=>entry(side,id)).filter(Boolean);
+}
+function syncBodyguardLeaderFields(body){
+  const ids=Array.isArray(body.leaderUids)?body.leaderUids.filter(Boolean):[];
+  body.leaderUids=Array.from(new Set(ids));
+  if(body.leaderUids.length)body.leaderUid=body.leaderUids[0];else delete body.leaderUid;
+}
 function bodyguardCandidates(side,bodyguardUid){
   const body=entry(side,bodyguardUid);if(!body)return [];
-  const allowed=leaderNamesForBodyguard(get(body.unitId));
-  return (state[side]||[]).filter(e=>e.uid!==bodyguardUid&&!e.attachedTo&&allowed.includes(get(e.unitId)?.name));
+  const allowed=leaderNamesForBodyguard(get(body.unitId)),current=bodyguardLeaders(side,bodyguardUid);
+  return (state[side]||[]).filter(e=>{
+    if(e.uid===bodyguardUid||e.attachedTo||!allowed.includes(get(e.unitId)?.name))return false;
+    if(!current.length)return true;
+    const names=current.map(x=>get(x.unitId)?.name);
+    return get(e.unitId)?.name==='Cato Sicarius' && names.includes('Marneus Calgar in Armour of Antilochus') && get(body.unitId)?.name==='Victrix Honour Guard';
+  });
 }
 function bodyguardNamesForLeader(u){
   if(!u)return [];
-  for(const [leaderName,bodyguards] of Object.entries(LEADER_ATTACHMENTS_11E)){
-    if(leaderName===u.name)return Array.isArray(bodyguards)?bodyguards:[];
-  }
-  return [];
+  return LEADER_ATTACHMENTS_11E[u.name]||[];
 }
 function leaderBodyguard(side,leaderUid){return (state[side]||[]).find(e=>e.attachedTo===leaderUid)||null}
-function bodyguardLeader(side,bodyguardUid){return (state[side]||[]).find(e=>e.leaderUid===bodyguardUid)||null}
+function bodyguardLeader(side,bodyguardUid){return bodyguardLeaders(side,bodyguardUid)[0]||null}
 function bodyguardCandidatesForLeader(side,leaderUid){
   const leader=entry(side,leaderUid);if(!leader)return [];
-  const allowed=bodyguardNamesForLeader(get(leader.unitId));
-  return (state[side]||[]).filter(e=>e.uid!==leaderUid&&!e.attachedTo&&!e.leaderUid&&allowed.includes(get(e.unitId)?.name));
+  const lu=get(leader.unitId),allowed=bodyguardNamesForLeader(lu);
+  return (state[side]||[]).filter(e=>{
+    if(e.uid===leaderUid||e.attachedTo||!allowed.includes(get(e.unitId)?.name))return false;
+    const current=bodyguardLeaders(side,e.uid);
+    if(!current.length)return true;
+    const names=current.map(x=>get(x.unitId)?.name);
+    return lu?.name==='Marneus Calgar in Armour of Antilochus' && get(e.unitId)?.name==='Victrix Honour Guard' && names.includes('Cato Sicarius');
+  });
 }
 function attachLeader(side,leaderUid,bodyguardUid){
   const leader=entry(side,leaderUid),body=entry(side,bodyguardUid);if(!leader||!body)return;
   const lu=get(leader.unitId),bu=get(body.unitId);if(!isLeaderUnit(lu)||!leaderNamesForBodyguard(bu).includes(lu.name))return;
-  const oldBody=leaderBodyguard(side,leaderUid);if(oldBody)delete oldBody.leaderUid;
-  const oldLeader=bodyguardLeader(side,bodyguardUid);if(oldLeader)delete oldLeader.attachedTo;
-  leader.attachedTo=body.uid;body.leaderUid=leader.uid;
+  const oldBody=leaderBodyguard(side,leaderUid);if(oldBody){
+    oldBody.leaderUids=(Array.isArray(oldBody.leaderUids)?oldBody.leaderUids:[]).filter(id=>id!==leaderUid);
+    syncBodyguardLeaderFields(oldBody);
+  }
+  const current=bodyguardLeaders(side,bodyguardUid);
+  const already=current.some(x=>x.uid===leaderUid);if(already)return;
+  const specialCatoPair=bu?.name==='Victrix Honour Guard' && lu?.name==='Cato Sicarius' && current.some(x=>get(x.unitId)?.name==='Marneus Calgar in Armour of Antilochus');
+  if(current.length && !specialCatoPair)return;
+  body.leaderUids=Array.isArray(body.leaderUids)?body.leaderUids.slice():[];
+  body.leaderUids.push(leader.uid);syncBodyguardLeaderFields(body);
+  leader.attachedTo=body.uid;
   save();state.leaderAttachmentModal=null;state.bodyguardAttachmentModal=null;render();
 }
 function detachLeader(side,leaderUid){
   const leader=entry(side,leaderUid);if(!leader)return;
-  const body=leaderBodyguard(side,leaderUid);delete leader.attachedTo;if(body)delete body.leaderUid;
+  const body=leaderBodyguard(side,leaderUid);delete leader.attachedTo;
+  if(body){
+    body.leaderUids=(Array.isArray(body.leaderUids)?body.leaderUids:[]).filter(id=>id!==leaderUid);
+    syncBodyguardLeaderFields(body);
+  }
   save();state.leaderAttachmentModal=null;state.bodyguardAttachmentModal=null;render();
 }
 function openLeaderAttachment(side,bodyguardUid){state.leaderAttachmentModal={side,bodyguardUid};state.bodyguardAttachmentModal=null;render()}
@@ -2325,20 +2355,21 @@ function openBodyguardAttachment(side,leaderUid){state.bodyguardAttachmentModal=
 function leaderAttachmentModal(){
   if(!state.leaderAttachmentModal)return '';
   const {side,bodyguardUid}=state.leaderAttachmentModal,body=entry(side,bodyguardUid);if(!body)return '';
-  const candidates=bodyguardCandidates(side,bodyguardUid),u=get(body.unitId),current=bodyguardLeader(side,bodyguardUid);
+  const candidates=bodyguardCandidates(side,bodyguardUid),u=get(body.unitId),current=bodyguardLeaders(side,bodyguardUid);
+  const currentHtml=current.length?'<div class="status">Current Leader'+(current.length>1?'s':'')+': '+current.map(x=>'<span class="pill">'+esc(get(x.unitId)?.name||'Leader')+'</span> <button class="btn" style="margin-left:4px" onclick="detachLeader(\\''+side+'\\',\\''+x.uid+'\\')">Detach</button>').join(' ')+'</div>':'';
   return '<div class="modal"><div class="card leader-attach-modal"><div class="split"><div><h2 style="margin:0">Attach Leader</h2><div class="muted">'+esc(u?.name||'Bodyguard Unit')+'</div></div><button class="btn" onclick="state.leaderAttachmentModal=null;render()">Close</button></div>'+
-    (current?'<div class="status">Current Leader: <b>'+esc(get(current.unitId)?.name||'Leader')+'</b><button class="btn" style="margin-left:8px" onclick="detachLeader(\''+side+'\',\''+current.uid+'\')">Detach</button></div>':'')+
-    (candidates.length?'<div class="leader-candidate-list">'+candidates.map(e=>'<button class="leader-candidate" type="button" onclick="attachLeader(\''+side+'\',\''+e.uid+'\',\''+bodyguardUid+'\')"><span><strong>'+esc(unitDisplayName(side,e))+'</strong><small>'+esc(get(e.unitId)?.faction||'')+' • '+pts(e)+' pts</small></span><span class="pill">Attach</span></button>').join('')+'</div>':'<div class="empty">No eligible unattached Leaders are currently in this army. Add the Leader to the army first, then attach it here.</div>')+
-    '<div class="tiny" style="margin-top:10px">Leader choices are limited to the current OnoForge 11th Edition attachment map. The underlying Leader and Bodyguard remain separate datasheets.</div></div></div>';
+    currentHtml+
+    (candidates.length?'<div class="leader-candidate-list">'+candidates.map(e=>'<button class="leader-candidate" type="button" onclick="attachLeader(\\''+side+'\\',\\''+e.uid+'\\',\\''+bodyguardUid+'\\')"><span><strong>'+esc(unitDisplayName(side,e))+'</strong><small>'+esc(get(e.unitId)?.faction||'')+' • '+pts(e)+' pts</small></span><span class="pill">Attach</span></button>').join('')+'</div>':'<div class="empty">No eligible unattached Leaders are currently in this army. Add the Leader to the army first, then attach it here.</div>')+
+    '<div class="tiny" style="margin-top:10px">Leader choices are limited to the current OnoForge 11th Edition attachment map. Cato Sicarius has a special exception allowing him to join a Victrix Honour Guard unit already joined by Marneus Calgar.</div></div></div>';
 }
 function bodyguardAttachmentModal(){
   if(!state.bodyguardAttachmentModal)return '';
   const {side,leaderUid}=state.bodyguardAttachmentModal,leader=entry(side,leaderUid);if(!leader)return '';
   const u=get(leader.unitId),current=leaderBodyguard(side,leaderUid),candidates=bodyguardCandidatesForLeader(side,leaderUid);
   return '<div class="modal"><div class="card leader-attach-modal"><div class="split"><div><h2 style="margin:0">Attach Bodyguard</h2><div class="muted">'+esc(u?.name||'Leader')+'</div></div><button class="btn" onclick="state.bodyguardAttachmentModal=null;render()">Close</button></div>'+
-    (current?'<div class="status">Current Bodyguard: <b>'+esc(unitDisplayName(side,current))+'</b><button class="btn" style="margin-left:8px" onclick="detachLeader(\''+side+'\',\''+leaderUid+'\')">Detach</button></div>':'')+
-    (candidates.length?'<div class="leader-candidate-list">'+candidates.map(e=>'<button class="leader-candidate" type="button" onclick="attachLeader(\''+side+'\',\''+leaderUid+'\',\''+e.uid+'\')"><span><strong>'+esc(unitDisplayName(side,e))+'</strong><small>'+esc(get(e.unitId)?.faction||'')+' • '+pts(e)+' pts</small></span><span class="pill">Attach</span></button>').join('')+'</div>':'<div class="empty">No eligible unattached Bodyguard units are currently in this army. Add the Bodyguard unit to the army first, then attach it here.</div>')+
-    '<div class="tiny" style="margin-top:10px">Bodyguard choices are the reverse lookup of the same OnoForge 11th Edition attachment map. The Leader and Bodyguard remain separate datasheets.</div></div></div>';
+    (current?'<div class="status">Current Bodyguard: <b>'+esc(unitDisplayName(side,current))+'</b><button class="btn" style="margin-left:8px" onclick="detachLeader(\\''+side+'\\',\\''+leaderUid+'\\')">Detach</button></div>':'')+
+    (candidates.length?'<div class="leader-candidate-list">'+candidates.map(e=>'<button class="leader-candidate" type="button" onclick="attachLeader(\\''+side+'\\',\\''+leaderUid+'\\',\\''+e.uid+'\\')"><span><strong>'+esc(unitDisplayName(side,e))+'</strong><small>'+esc(get(e.unitId)?.faction||'')+' • '+pts(e)+' pts</small></span><span class="pill">Attach</span></button>').join('')+'</div>':'<div class="empty">No eligible unattached Bodyguard units are currently in this army. Add the Bodyguard unit to the army first, then attach it here.</div>')+
+    '<div class="tiny" style="margin-top:10px">Bodyguard choices are the reverse lookup of the same OnoForge 11th Edition attachment map.</div></div></div>';
 }
 
 function entry(side,id){return state[side].find(e=>e.uid===id)}
@@ -2593,7 +2624,13 @@ function dataSyncStatusHtml(){
 }
 function nav(){const tools=[['rules','Rules Engine'],['data','Data Sources'],['manage','Data Management'],['log','Action Log']];const toolOpen=tools.some(([id])=>state.page===id);return '<div class="nav"><div class="nav-main">'+[['builder','List Builder'],['saved','Saved Lists'],['setup','Battle Setup'],['battle','Battle Mode'],['math','Mathhammer']].map(([id,n])=>`<button class="${state.page===id?'active':''}" onclick="state.page='${id}';state.builderView='full';render()">${n}</button>`).join('')+'</div><details class="nav-tools" ${toolOpen?"open":""}><summary>Tools</summary><div class="nav-tools-menu">'+tools.map(([id,n])=>`<button class="${state.page===id?'active':''}" onclick="state.page='${id}';state.builderView='full';render()">${n}</button>`).join('')+'</div></details></div>'}
 function addUnit(side,id){if(side!=='my'&&side!=='opp')return;const u=get(id);if(!u)return;state[side].push(makeEntry(u));save();render()}
-function removeUnit(side,id){const e=entry(side,id);if(e?.attachedTo){const b=entry(side,e.attachedTo);if(b)delete b.leaderUid}if(e?.leaderUid){const l=entry(side,e.leaderUid);if(l)delete l.attachedTo}state[side]=state[side].filter(x=>x.uid!==id);save();render()}
+function removeUnit(side,id){
+ const e=entry(side,id);if(!e)return;
+ if(e.attachedTo){const b=entry(side,e.attachedTo);if(b){b.leaderUids=(Array.isArray(b.leaderUids)?b.leaderUids:[]).filter(x=>x!==id);syncBodyguardLeaderFields(b)}}
+ for(const l of bodyguardLeaders(side,id)){delete l.attachedTo}
+ state[side]=state[side].filter(x=>x.uid!==id);
+ save();render();
+}
 function configure(side,id){state.configure={side,id};render()}
 function toggleWeapon(side,id,name){const e=entry(side,id);e.weapons=e.weapons.includes(name)?e.weapons.filter(x=>x!==name):[...e.weapons,name];save();render()}
 function configureModal(){
