@@ -699,7 +699,7 @@ async function refreshCurrentUnitDatabase(showMessage=true){
       if(!merged.some(u=>u.faction===fresh.faction&&u.name===fresh.name))merged.push(fresh);
     });
     window.CURRENT_UNIT_DATABASE=merged;
-    window.DEMO=merged;
+    DEMO.splice(0,DEMO.length,...merged);
     state.dataUpdatedAt=new Date().toISOString();
     save();
     render();
