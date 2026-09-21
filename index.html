@@ -2354,6 +2354,7 @@ function selectedWargearSummary(e,u){return selectedWargearDetails(e,u).map(x=>`
 function makeEntry(u){return {uid:uid(),unitId:u.id,qty:1,models:u.models,wargear:[],wargearSelections:{},weapons:(u.weapons||[]).map(w=>w.name),enhancement:'',notes:'',attachedTo:null,leaderUid:null}}
 const LEADER_ATTACHMENTS_11E={
   'Tyranid Prime with Lash Whip':['Hormagaunts','Termagants','Tyranid Warriors with Ranged Bio-Weapons','Tyranid Warriors with Melee Bio-Weapons'],
+ 'Winged Tyranid Prime':['Tyranid Warriors with Ranged Bio-Weapons','Tyranid Warriors with Melee Bio-Weapons'],
   'Winged Tyranid Prime':['Tyranid Warriors with Ranged Bio-Weapons','Tyranid Warriors with Melee Bio-Weapons'],
   'Neurotyrant':['Neurogaunts','Tyrant Guard','Zoanthropes'],
   'Hive Tyrant':['Tyrant Guard'],
