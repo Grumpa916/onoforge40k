@@ -690,13 +690,17 @@ async function refreshCurrentUnitDatabase(showMessage=true){
     if(!all.length)throw new Error('No unit data was found.');
     const currentByName=new Map(all.map(u=>[`${u.faction}|${u.name}`,u]));
 
-    // Merge into the existing catalogue so any custom/app-only metadata is retained.
-    const merged=(typeof EXPANDED_CATALOGUE!=='undefined'?EXPANDED_CATALOGUE:[]).map(old=>{
-      const fresh=currentByName.get(`${old.faction}|${old.name}`);
-      return fresh?{...old,...fresh,id:old.id}:old;
-    });
+    // 40k.app is the canonical unit source for OnoForge. BSData is supplemental:
+    // use it only to fill units absent from the audited canonical catalogue.
+    // Do not overwrite canonical points, profiles, compositions, or wargear with
+    // a secondary source that can lag the current 40k.app revision.
+    const merged=(typeof EXPANDED_CATALOGUE!=='undefined'
+      ? EXPANDED_CATALOGUE.map(old=>({...old}))
+      : []);
     all.forEach(fresh=>{
-      if(!merged.some(u=>u.faction===fresh.faction&&u.name===fresh.name))merged.push(fresh);
+      if(!merged.some(u=>u.faction===fresh.faction&&u.name===fresh.name)){
+        merged.push(fresh);
+      }
     });
     window.CURRENT_UNIT_DATABASE=merged;
     DEMO.splice(0,DEMO.length,...merged);
