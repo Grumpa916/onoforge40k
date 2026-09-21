@@ -2644,8 +2644,12 @@ const UNIT_POINT_RULES_BY_NAME={
 function unitPointSurcharge(e,u,side){
   const rule=UNIT_POINT_RULES_11E[u?.id]||UNIT_POINT_RULES_BY_NAME[(u?.faction||'')+'|'+(u?.name||'')];
   if(!rule||!side||!Array.isArray(state[side]))return 0;
-  const idx=state[side].filter(x=>x.unitId===e.unitId).indexOf(e)+1;
-  return idx>=rule.threshold ? rule.surcharge : 0;
+  const same=state[side].filter(x=>x.unitId===e.unitId);
+  const idx=same.indexOf(e)+1;
+  const qty=Math.max(1,Number(e.qty)||1);
+  let totalTax=0;
+  for(let k=0;k<qty;k++)if(idx+k>=rule.threshold)totalTax+=Number(rule.surcharge)||0;
+  return totalTax;
 }
 function unitBasePoints(e,u){
   const side=state.my.includes(e)?'my':(state.opp.includes(e)?'opp':null);
@@ -2659,7 +2663,7 @@ function unitBasePoints(e,u){
 function pts(e){
   const u=get(e.unitId);
   const side=state.my.includes(e)?'my':(state.opp.includes(e)?'opp':null);
-  return (unitBasePoints(e,u)+selectedWargearCost(e,u)+unitPointSurcharge(e,u,side))*e.qty
+  return (unitBasePoints(e,u)+selectedWargearCost(e,u))*Math.max(1,Number(e.qty)||1)+unitPointSurcharge(e,u,side)
 }
 function total(side){return state[side].reduce((n,e)=>n+pts(e),0)}
 function unitRules(u){
