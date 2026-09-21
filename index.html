@@ -2158,11 +2158,11 @@ Tyranids_tyrant_guard:[
 ],
 Tyranids_tyranid_warriors_with_ranged_bio_weapons:[
  {key:'base',label:'Ranged weapon by model',type:'allocation',required:true,options:['Devourer','Deathspitter','Spinefists'],help:'Allocate the ranged weapon on each model. Any number of models may take Deathspitters or Spinefists.'},
- {key:'special',label:'Per 3 models: special ranged weapon',type:'count',per:3,options:['None','Barbed strangler','Venom cannon'],help:'One model in each group of 3 can replace its devourer with a barbed strangler or venom cannon.'}
+ {key:'special',label:'Per 3 models: special ranged weapon',type:'allocation',maxTotalPerGroup:3,options:['Barbed strangler','Venom cannon'],help:'For every 3 models, up to 1 model can take each special weapon. Different special weapons can be mixed within the unit.'}
 ],
 Tyranids_termagants:[
  {key:'base',label:'Ranged weapon by model',type:'allocation',required:true,options:['Fleshborer','Termagant devourer','Termagant spinefists'],help:'Allocate the ranged weapon on each model. Devourers and Spinefists can be mixed freely across the unit.'},
- {key:'special',label:'Per 10 models: special ranged weapon',type:'count',per:10,options:['None','Shardlauncher','Spike rifle','Strangleweb'],help:'One model in each group of 10 can take one of these special weapons.'}
+ {key:'special',label:'Per 10 models: special ranged weapons',type:'allocation',maxTotalPerGroup:10,options:['Shardlauncher','Spike rifle','Strangleweb'],help:'For every 10 models, up to 1 model can take each listed special weapon. Different special weapons can be mixed within the unit.'}
 ],
 Tyranids_biovores:[
  {key:'fixed',label:'Standard Wargear',type:'fixed',options:['Chitin-barbed limbs','Spore Mine launcher']}
@@ -2178,7 +2178,7 @@ Tyranids_raveners:[{key:'fixed',label:'Wargear Options',type:'fixed',options:['N
 Tyranids_carnifexes:[
  {key:'slot1',label:'Extra scything talons by model',type:'allocation',required:true,options:['Keep extra scything talons','Deathspitters with slimer maggots','Devourers with brainleech worms','Heavy venom cannon','Stranglethorn cannon','Carnifex crushing claws'],help:'Each Carnifex independently chooses how to replace its extra scything talons.'},
  {key:'slot2',label:'Scything talons by model',type:'allocation',required:true,options:['Keep scything talons','Deathspitters with slimer maggots','Devourers with brainleech worms','Carnifex crushing claws'],help:'Each Carnifex independently chooses how to replace its scything talons.'},
- {key:'extras',label:'Additional options by model',type:'allocation',required:false,options:['Bio-plasma','Spine banks'],help:'Each Carnifex can independently take Bio-plasma and/or Spine banks.'}
+ {key:'extras',label:'Additional options by model',type:'allocation',required:false,independent:true,options:['Bio-plasma','Spine banks'],help:'Each Carnifex can independently take Bio-plasma and/or Spine banks.'}
 ],
 Tyranids_tyrannofex:[
  {key:'main',label:'Main weapon',type:'single',options:['Fleshborer hive','Acid spray','Rupture cannon']},
@@ -2266,12 +2266,11 @@ function normalizeAllocation(e,g){
   const models=Math.max(1,Math.floor(Number(e?.models)||1));
   let cur=e.wargearSelections[g.key];
   let counts=(cur&&typeof cur==='object'&&!Array.isArray(cur)&&cur.counts&&typeof cur.counts==='object')?{...cur.counts}:{};
-  // Migrate old single/multi selections into model counts.
+  // Migrate old single/multi/count selections into model counts.
   if(Object.keys(counts).length===0){
     if(typeof cur==='string'&&cur&&cur!=='None') counts[cur]=models;
-    else if(Array.isArray(cur)){
-      cur.filter(v=>v&&v!=='None').forEach(v=>counts[v]=models);
-    }
+    else if(Array.isArray(cur)) cur.filter(v=>v&&v!=='None').forEach(v=>counts[v]=models);
+    else if(cur&&typeof cur==='object'&&cur.option&&cur.option!=='None'&&Number(cur.count)>0) counts[cur.option]=Math.floor(Number(cur.count));
   }
   const clean={};
   let total=0;
@@ -2279,29 +2278,35 @@ function normalizeAllocation(e,g){
     const n=Math.max(0,Math.floor(Number(counts[opt])||0));
     if(n){clean[opt]=n;total+=n;}
   }
+  const limit=g.required?models:(g.maxTotalPerGroup?Math.floor(models/(Number(g.maxTotalPerGroup)||1)):((g.independent?models*(g.options||[]).length:models)));
   if(g.required){
     if(total===0){clean[g.options?.[0]||'']=models;total=models;}
-    if(total>models){
-      let over=total-models;
-      for(const opt of [...(g.options||[])].reverse()){
-        if(over<=0)break;
-        const take=Math.min(over,clean[opt]||0);
-        if(take){clean[opt]-=take;over-=take;if(clean[opt]===0)delete clean[opt];}
-      }
-    }else if(total<models){
-      const def=g.options?.[0];
-      if(def)clean[def]=(clean[def]||0)+(models-total);
+  }
+  if(!g.independent && total>limit){
+    let over=total-limit;
+    for(const opt of [...(g.options||[])].reverse()){
+      if(over<=0)break;
+      const take=Math.min(over,clean[opt]||0);
+      if(take){clean[opt]-=take;over-=take;if(clean[opt]===0)delete clean[opt];}
     }
+    total=limit;
+  }
+  if(g.required && total<models){
+    const def=g.options?.[0];
+    if(def)clean[def]=(clean[def]||0)+(models-total);
   }
   e.wargearSelections[g.key]={counts:clean};
   return clean;
 }
 function allocationCounts(e,g){ensureWargear(e,get(e.unitId));return e.wargearSelections[g.key]?.counts||{}}
 function allocationTotal(e,g){return Object.values(allocationCounts(e,g)).reduce((n,v)=>n+Math.max(0,Math.floor(Number(v)||0)),0)}
+function allocationLimit(e,g){const models=Math.max(1,Math.floor(Number(e?.models)||1));return g.maxTotalPerGroup?Math.floor(models/(Number(g.maxTotalPerGroup)||1)):(g.independent?models*(g.options||[]).length:models)}
 function allocationMaxForOption(e,g,opt){
   const models=Math.max(1,Math.floor(Number(e?.models)||1));
+  if(g.independent)return models;
+  const limit=g.required?models:allocationLimit(e,g);
   const others=allocationTotal(e,g)-(Number(e.wargearSelections[g.key]?.counts?.[opt])||0);
-  return Math.max(0,models-others);
+  return Math.max(0,limit-others);
 }
 function setWargearAllocationCount(side,id,key,opt,count){
   const e=entry(side,id);if(!e)return;
@@ -2311,11 +2316,8 @@ function setWargearAllocationCount(side,id,key,opt,count){
   counts[opt]=Math.min(max,Math.max(0,Math.floor(Number(count)||0)));
   if(!counts[opt])delete counts[opt];
   if(g.required){
-    const total=allocationTotal(e,g);
-    if(total<e.models){
-      const def=g.options?.[0];
-      if(def)counts[def]=(counts[def]||0)+(e.models-total);
-    }
+    const total=Object.values(counts).reduce((n,v)=>n+Math.max(0,Math.floor(Number(v)||0)),0);
+    if(total<e.models){const def=g.options?.[0];if(def)counts[def]=(counts[def]||0)+(e.models-total);}
   }
   e.wargearSelections[g.key]={counts};
   save();render();
@@ -2933,7 +2935,9 @@ function configureModal(){
       const counts=e.wargearSelections[g.key]?.counts||{};
       const total=Object.values(counts).reduce((n,v)=>n+Math.max(0,Math.floor(Number(v)||0)),0);
       const required=g.required!==false;
-      return `<div class="wargear-group"><h4>${esc(g.label)}</h4><div class="muted" style="margin-bottom:7px">${required?'Allocate all '+e.models+' models.':'Optional — allocate 0 to '+e.models+' models.'} Current: ${total}/${e.models}</div>${g.options.map(opt=>{
+      const independent=!!g.independent;
+      const limit=required?e.models:(g.maxTotalPerGroup?Math.floor(e.models/(Number(g.maxTotalPerGroup)||1)):(independent?e.models*(g.options||[]).length:e.models));
+      return `<div class="wargear-group"><h4>${esc(g.label)}</h4><div class="muted" style="margin-bottom:7px">${required?'Allocate all '+e.models+' models.':independent?'Each option is allocated independently; a model may take more than one.':'Optional — allocate up to '+limit+' models.'} Current: ${total}/${limit}</div>${g.options.map(opt=>{
         const value=Math.max(0,Math.floor(Number(counts[opt])||0));
         const max=allocationMaxForOption(e,g,opt);
         const aid=(`alloc-${e.uid}-${g.key}-${opt}`).replace(/[^A-Za-z0-9_-]/g,'-');
