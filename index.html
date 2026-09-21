@@ -3695,7 +3695,7 @@ function setMathRoster(side,uid){
   state.mathRules=state.mathRules||{};
   if(side==='my')state.mathRules.attackerEntry=uid; else state.mathRules.defenderEntry=uid;
   const e=state[side].find(x=>x.uid===uid),u=e?get(e.unitId):null;
-  if(side==='my'&&u){state.attacker=u.id;state.weapon=(e.weapons?.[0]||u.weapons?.[0]?.name||'');normalizeMathWeaponForUnit(u);}
+  if(side==='my'&&u){state.attacker=u.id;state.weapon=(activeWeaponNames(e,u)[0]||u.weapons?.[0]?.name||'');normalizeMathWeaponForUnit(u);}
   if(side==='opp'&&u)state.target=u.id;
   save();render();
 }
