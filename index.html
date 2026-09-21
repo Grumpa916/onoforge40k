@@ -2129,11 +2129,11 @@ Tyranids_tyrant_guard:[
 ],
 Tyranids_tyranid_warriors_with_ranged_bio_weapons:[
  {key:'base',label:'Base ranged weapon',type:'single',options:['Devourer','Deathspitter','Spinefists']},
- {key:'special',label:'Per 3 models: special ranged weapon',type:'single',options:['None','Barbed strangler','Venom cannon'],help:'One model in each group of 3 can replace its devourer with a barbed strangler or venom cannon.'}
+ {key:'special',label:'Per 3 models: special ranged weapon',type:'count',per:3,options:['None','Barbed strangler','Venom cannon'],help:'One model in each group of 3 can replace its devourer with a barbed strangler or venom cannon.'}
 ],
 Tyranids_termagants:[
  {key:'base',label:'Base ranged weapon',type:'single',options:['Fleshborer','Termagant devourer','Termagant spinefists']},
- {key:'special',label:'Per 10 models: special ranged weapon',type:'single',options:['None','Shardlauncher','Spike rifle','Strangleweb'],help:'One model in each group of 10 can take one of these special weapons.'}
+ {key:'special',label:'Per 10 models: special ranged weapon',type:'count',per:10,options:['None','Shardlauncher','Spike rifle','Strangleweb'],help:'One model in each group of 10 can take one of these special weapons.'}
 ],
 Tyranids_biovores:[
  {key:'fixed',label:'Standard Wargear',type:'fixed',options:['Chitin-barbed limbs','Spore Mine launcher']}
@@ -2164,14 +2164,14 @@ Tyranids_hive_guard:[{key:'ranged',label:'Ranged weapon',type:'single',options:[
 Ultramarines_intercessor_squad:[
  {key:'sergeant_ranged',label:'Intercessor Sergeant ranged weapon',type:'single',options:['Bolt rifle','Astartes chainsword','Hand flamer','Plasma pistol','Power weapon']},
  {key:'sergeant_melee',label:'Intercessor Sergeant melee weapon',type:'single',options:['Close combat weapon','Astartes chainsword','Power fist','Power weapon','Thunder hammer']},
- {key:'launcher',label:'Per 5 models: grenade launcher',type:'single',options:['None','Astartes grenade launcher']}
+ {key:'launcher',label:'Per 5 models: grenade launcher',type:'count',per:5,options:['None','Astartes grenade launcher']}
 ],
 Ultramarines_assault_intercessor_squad:[
  {key:'sergeant_pistol',label:'Assault Intercessor Sergeant pistol',type:'single',options:['Heavy bolt pistol','Hand flamer','Plasma pistol']},
  {key:'sergeant_melee',label:'Assault Intercessor Sergeant melee weapon',type:'single',options:['Astartes chainsword','Power fist','Power weapon','Thunder hammer']}
 ],
 Ultramarines_heavy_intercessor_squad:[
- {key:'heavy_weapon',label:'Per 5 models: heavy weapon',type:'single',options:['Heavy bolt rifle','Heavy bolter']}
+ {key:'heavy_weapon',label:'Per 5 models: heavy weapon',type:'count',per:5,options:['None','Heavy bolt rifle','Heavy bolter']}
 ],
 Ultramarines_aggressor_squad:[
  {key:'loadout',label:'Aggressor gauntlet loadout',type:'single',options:['Flamestorm gauntlets','Auto boltstorm gauntlets + fragstorm grenade launcher']}
@@ -2183,7 +2183,7 @@ Ultramarines_inceptor_squad:[
  {key:'loadout',label:'Inceptor weapon loadout',type:'single',options:['Assault bolters','Plasma exterminators']}
 ],
 Ultramarines_terminator_squad:[
- {key:'heavy_weapon',label:'Per 5 models: heavy weapon',type:'single',options:['None','Assault cannon','Heavy flamer','Cyclone missile launcher + storm bolter']},
+ {key:'heavy_weapon',label:'Per 5 models: heavy weapon',type:'count',per:5,options:['None','Assault cannon','Heavy flamer','Cyclone missile launcher + storm bolter']},
  {key:'fist',label:'Terminator melee weapon',type:'single',options:['Power fist','Chainfist']},
  {key:'sergeant',label:'Terminator Sergeant melee weapon',type:'single',options:['Power fist','Power weapon']}
 ],
@@ -2213,8 +2213,18 @@ function ensureWargear(e,u){
   for(const g of wargearGroups(u)){
     if(g.type==='single' && !(g.key in e.wargearSelections)) e.wargearSelections[g.key]=g.options[0]||'';
     if(g.type==='multi' && !Array.isArray(e.wargearSelections[g.key])) e.wargearSelections[g.key]=[];
+    if(g.type==='count'){
+      const cur=e.wargearSelections[g.key];
+      if(!cur || typeof cur!=='object' || Array.isArray(cur)){
+        e.wargearSelections[g.key]={option:g.options[0]||'None',count:0};
+      }else{
+        cur.option=cur.option||g.options[0]||'None';
+        cur.count=Math.max(0,Math.floor(Number(cur.count)||0));
+      }
+    }
   }
 }
+function countWargearMax(e,g){return Math.max(0,Math.floor((Number(e?.models)||0)/(Number(g?.per)||1)));}
 function setWargear(side,id,key,value){
   const e=entry(side,id); if(!e) return;
   const u=get(e.unitId),g=wargearGroups(u).find(x=>x.key===key); if(!g) return;
@@ -2223,7 +2233,20 @@ function setWargear(side,id,key,value){
   else if(g.type==='multi'){
     const arr=Array.isArray(e.wargearSelections[key])?e.wargearSelections[key].slice():[];
     e.wargearSelections[key]=arr.includes(value)?arr.filter(v=>v!==value):arr.concat(value);
+  }else if(g.type==='count'){
+    const max=countWargearMax(e,g);
+    e.wargearSelections[key]={option:value,count:value==='None'?0:Math.min(max,Math.max(0,Number(e.wargearSelections[key]?.count)||0))};
   }
+  save();render();
+}
+function setWargearCount(side,id,key,count){
+  const e=entry(side,id); if(!e) return;
+  const u=get(e.unitId),g=wargearGroups(u).find(x=>x.key===key); if(!g||g.type!=='count') return;
+  ensureWargear(e,u);
+  const max=countWargearMax(e,g),sel=e.wargearSelections[key]||{};
+  sel.count=Math.min(max,Math.max(0,Math.floor(Number(count)||0)));
+  if(sel.count===0)sel.option=g.options[0]||'None';
+  e.wargearSelections[key]=sel;
   save();render();
 }
 const WARGEAR_COSTS_11E={Tyranids_tyrannofex:{main:{'Fleshborer hive':0,'Acid spray':10,'Rupture cannon':20}}};
@@ -2239,6 +2262,9 @@ function wargearOptionStats(u,opt){const name=String(opt||'').trim();if(!name||n
     } else if(g.type==='multi'){
       const vals=e.wargearSelections[g.key]||[];
       for(const v of vals) if(v && v!=='None') total+=wargearOptionPoints(u,g,v);
+    } else if(g.type==='count'){
+      const sel=e.wargearSelections[g.key]||{},v=sel.option,count=Math.max(0,Math.floor(Number(sel.count)||0));
+      if(v && v!=='None') total+=wargearOptionPoints(u,g,v)*count;
     }
   }
   return total;
@@ -2248,6 +2274,11 @@ function selectedWargearDetails(e,u){
   const out=[];
   for(const g of wargearGroups(u)){
     if(g.type==='fixed') continue;
+    if(g.type==='count'){
+      const sel=e.wargearSelections[g.key]||{},v=sel.option,count=Math.max(0,Math.floor(Number(sel.count)||0));
+      if(v && v!=='None' && count) out.push({name:count+'× '+v,points:wargearOptionPoints(u,g,v)*count});
+      continue;
+    }
     const vals=g.type==='multi'?(e.wargearSelections[g.key]||[]):[e.wargearSelections[g.key]];
     for(const v of vals) if(v && v!=='None') out.push({name:v,points:wargearOptionPoints(u,g,v)});
   }
@@ -2723,6 +2754,10 @@ function configureModal(){
   const side=state.configure.side,u=get(e.unitId),r=unitRules(u);ensureWargear(e,u);
   const wg=wargearGroups(u).map(g=>{
     if(g.type==='fixed')return `<div class="wargear-group"><h4>${esc(g.label)}</h4><div class="wargear-fixed">${g.options.map(opt=>`<div><b>${esc(opt)}</b> <span class="wargear-cost">${wargearCostLabel(wargearOptionPoints(u,g,opt))}</span>${wargearOptionStats(u,opt)}</div>`).join('')}</div>${g.help?`<div class="wargear-note">${esc(g.help)}</div>`:''}</div>`;
+    if(g.type==='count'){
+      const sel=e.wargearSelections[g.key]||{option:g.options[0]||'None',count:0},max=countWargearMax(e,g);
+      return `<div class="wargear-group"><h4>${esc(g.label)}</h4><div class="field"><label>Weapon option</label><select onchange="setWargear('${side}','${e.uid}','${esc(g.key).replace(/'/g,"\\'")}',this.value)">${g.options.map(opt=>`<option value="${esc(opt)}" ${sel.option===opt?'selected':''}>${esc(opt)} — ${wargearCostLabel(wargearOptionPoints(u,g,opt))}</option>`).join('')}</select></div><div class="field" style="margin-top:8px"><label>Number of models with this option (0–${max})</label><input type="number" min="0" max="${max}" step="1" value="${Math.min(max,Math.max(0,Number(sel.count)||0))}" onchange="setWargearCount('${side}','${e.uid}','${esc(g.key).replace(/'/g,"\\'")}',this.value)"></div>${g.help?`<div class="wargear-note">${esc(g.help)}</div>`:''}</div>`;
+    }
     const vals=g.type==='multi'?(e.wargearSelections[g.key]||[]):[e.wargearSelections[g.key]];
     const inputType=g.type==='multi'?'checkbox':'radio';
     return `<div class="wargear-group"><h4>${esc(g.label)}</h4><div class="wargear-options">${g.options.map((opt,i)=>{
@@ -2731,7 +2766,7 @@ function configureModal(){
       return `<label class="wargear-option" for="${esc(id)}"><input id="${esc(id)}" type="${inputType}" name="wg-${esc(e.uid)}-${esc(g.key)}" ${checked?'checked':''} onchange="setWargear('${side}','${e.uid}','${esc(g.key).replace(/'/g,"\'")}','${esc(opt).replace(/'/g,"\'")}')"><span class="wargear-option-text"><span>${esc(opt)} <span class="wargear-cost">${wargearCostLabel(wargearOptionPoints(u,g,opt))}</span></span>${wargearOptionStats(u,opt)}</span></label>`;
     }).join('')}</div>${g.help?`<div class="wargear-note">${esc(g.help)}</div>`:''}</div>`;
   }).join('');
-  return `<div class="modal"><div class="card"><div class="split"><h2>Configure ${esc(unitDisplayName(side,e))}</h2><button class="btn" onclick="state.configure=null;render()">Close</button></div><div class="grid3"><div class="field"><label>Models per unit</label><input type="number" min="${r.minModels}" max="${r.maxModels}" step="${r.step}" value="${e.models}" onchange="entry('${side}','${e.uid}').models=+this.value||${r.minModels};save();render()"></div><div class="field"><label>Enhancement</label><input value="${esc(e.enhancement)}" onchange="entry('${side}','${e.uid}').enhancement=this.value;save()"></div></div><div class="wargear-box"><div class="split"><h3 style="margin:0">11th Edition Wargear</h3><span class="detachment-dp">Wargear: ${selectedWargearCost(e,u)?'+'+selectedWargearCost(e,u)+' pts':'Free'}</span></div><div class="wargear-source">Each option shows its current point cost and weapon profile when available. Selected costs are added to the unit total.</div>${wg}</div><div class="status" style="margin-top:10px"><strong>Unit Total:</strong> Base ${u.points} pts + Wargear ${selectedWargearCost(e,u)} pts = <b>${pts(e)} pts</b></div><h3>Weapons</h3>${u.weapons.map(w=>`<label style="display:block;margin:8px 0"><input type="checkbox" ${e.weapons.includes(w.name)?'checked':''} onchange="toggleWeapon('${side}','${e.uid}','${esc(w.name).replace(/'/g,"\\'")}')"> ${esc(w.name)} <span class="muted">A ${esc(w.A)} • ${esc(w.BS||w.WS||'—')} • S${w.S} • AP${w.AP} • D${esc(w.D)}</span></label>`).join('')}<div class="field"><label>Personal notes</label><textarea onchange="entry('${side}','${e.uid}').notes=this.value;save()">${esc(e.notes)}</textarea></div><button class="btn primary" onclick="state.configure=null;save();render()">Save Configuration</button></div></div>`
+  return `<div class="modal"><div class="card"><div class="split"><h2>Configure ${esc(unitDisplayName(side,e))}</h2><button class="btn" onclick="state.configure=null;render()">Close</button></div><div class="grid3"><div class="field"><label>Models per unit</label><input type="number" min="${r.minModels}" max="${r.maxModels}" step="${r.step}" value="${e.models}" onchange="entry('${side}','${e.uid}').models=+this.value||${r.minModels};save();render()"></div><div class="field"><label>Enhancement</label><input value="${esc(e.enhancement)}" onchange="entry('${side}','${e.uid}').enhancement=this.value;save()"></div></div><div class="wargear-box"><div class="split"><h3 style="margin:0">11th Edition Wargear</h3><span class="detachment-dp">Wargear: ${selectedWargearCost(e,u)?'+'+selectedWargearCost(e,u)+' pts':'Free'}</span></div><div class="wargear-source">Each option shows its current point cost and weapon profile when available. Selected costs are added to the unit total.</div>${wg}</div><div class="status" style="margin-top:10px"><strong>Unit Total:</strong> Base ${unitBasePoints(e,u)} pts + Wargear ${selectedWargearCost(e,u)} pts = <b>${pts(e)} pts</b></div><h3>Weapons</h3>${u.weapons.map(w=>`<label style="display:block;margin:8px 0"><input type="checkbox" ${e.weapons.includes(w.name)?'checked':''} onchange="toggleWeapon('${side}','${e.uid}','${esc(w.name).replace(/'/g,"\\'")}')"> ${esc(w.name)} <span class="muted">A ${esc(w.A)} • ${esc(w.BS||w.WS||'—')} • S${w.S} • AP${w.AP} • D${esc(w.D)}</span></label>`).join('')}<div class="field"><label>Personal notes</label><textarea onchange="entry('${side}','${e.uid}').notes=this.value;save()">${esc(e.notes)}</textarea></div><button class="btn primary" onclick="state.configure=null;save();render()">Save Configuration</button></div></div>`
 }
 function changeMyFaction(value){
   state.saveListMessage='';
