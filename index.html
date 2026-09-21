@@ -2219,7 +2219,7 @@ function ensureWargear(e,u){
         e.wargearSelections[g.key]={option:g.options[0]||'None',count:0};
       }else{
         cur.option=cur.option||g.options[0]||'None';
-        cur.count=Math.max(0,Math.floor(Number(cur.count)||0));
+        cur.count=Math.min(countWargearMax(e,g),Math.max(0,Math.floor(Number(cur.count)||0)));
       }
     }
   }
