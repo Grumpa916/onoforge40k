@@ -1337,7 +1337,6 @@ const GAME_REFERENCE_SECONDARY_DETAILS={
  'Secure No Man’s Land':{when:'my turn',task:'2 objectives in no mans land',vp:'5',oppVP:'',action:'now',unit:'incorporated into basic strategy'}
 };
 
-function secondaryWorkbookHtml(){
 function defaultSecondaryPersonalPlans(){
  const out={};
  Object.entries(GAME_REFERENCE_SECONDARY_DETAILS).forEach(([name,d])=>{out[name]={when:d.when||'',task:d.task||'',vp:d.vp||'',oppVP:d.oppVP||'',oppWhen:d.oppWhen||'',action:d.action||'',unit:d.unit||''};});
@@ -1384,6 +1383,8 @@ function secondaryPlanEditorHtml(){
  return '<div class="card secondary-plan-editor"><div class="split"><div><h3 style="margin:0">My Secondary Plans</h3><div class="muted" style="margin-top:4px">Edit the personal notes that appear directly on active secondary cards during Battle Mode.</div></div><span class="pill">18 missions</span></div><div class="secondary-plan-editor-note" style="margin-top:8px">These are personal game plans, not official mission wording. They are stored locally and copied into saved army lists.</div><div class="secondary-plan-editor-grid" style="margin-top:10px">'+cards+'</div></div>';
 }
 
+
+function secondaryWorkbookHtml(){
  const active=[...secState('my'),...secState('opp')].filter((v,i,a)=>v&&a.indexOf(v)===i);
  const cards=active.map(name=>{
    const d=GAME_REFERENCE_SECONDARY_DETAILS[name];
@@ -1392,6 +1393,8 @@ function secondaryPlanEditorHtml(){
  }).join('');
  const all=Object.entries(GAME_REFERENCE_SECONDARY_DETAILS).map(([name,d])=>`<div class="game-assistant-secondary"><b>${esc(name)}</b><span><b>${esc(d.when)}</b> • ${esc(d.task)}<br>VP ${esc(d.vp)}${d.oppVP?` / Opp ${esc(d.oppVP)}`:''}</span><em>${esc(d.action||'')} ${esc(d.unit||'')}</em></div>`).join('');
  return `<details class="game-assistant-sub"><summary>Active secondary plans (${active.length})</summary>${cards||'<div class="empty">No active secondaries selected.</div>'}</details><details class="game-assistant-sub"><summary>All spreadsheet secondary notes</summary>${all}</details>`;
+}
+
 }
 
 const GAME_REFERENCE_PRIMARY=[
