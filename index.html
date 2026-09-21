@@ -2243,6 +2243,11 @@ function activeWeaponNames(e,u){
   const groups=wargearGroups(u);
   if(!groups.some(g=>g.type!=='fixed'))return catalog;
   ensureWargear(e,u);
+  if(modelRosterRule(u)){
+    const roster=ensureModelRoster(e,u);
+    const rosterNames=Array.from(new Set(roster.flatMap(m=>Array.isArray(m.weapons)?m.weapons:[]).filter(Boolean)));
+    if(rosterNames.length)return rosterNames;
+  }
   const names=catalog.slice();
   const remove=new Set(),add=[];
   for(const g of groups){
