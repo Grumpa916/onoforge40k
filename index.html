@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OnoForge 40K v292</title><style>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OnoForge 40K v293</title><style>
 *{box-sizing:border-box}body{margin:0;background:#0b0f15;color:#e9edf3;font-family:Arial,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}.top{padding:18px 22px;background:#111722;border-bottom:1px solid #273142}.brand{font-size:25px;font-weight:800}.sub,.muted{color:#9ca8b8;font-size:13px}.nav{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:10px 16px;background:#0e141e;border-bottom:1px solid #273142}.nav-main{display:flex;gap:6px;flex-wrap:wrap}.nav button,.nav-tools summary{background:#171e2a;color:#cbd5e1;border:1px solid #2c3748;border-radius:7px;padding:9px 13px;font-size:14px;cursor:pointer}.nav button.active{background:#24334b;color:#fff;border-color:#49678f}.nav-tools{position:relative;margin-left:auto}.nav-tools summary{list-style:none}.nav-tools summary::-webkit-details-marker{display:none}.nav-tools summary:after{content:' ▾';font-size:11px}.nav-tools[open] summary{background:#24334b;color:#fff;border-color:#49678f}.nav-tools-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:1200;min-width:170px;padding:6px;background:#111722;border:1px solid #344052;border-radius:8px;box-shadow:0 12px 30px rgba(0,0,0,.4);display:grid;gap:4px}.nav-tools-menu button{width:100%;text-align:left}.wrap{max-width:1250px;margin:auto;padding:18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.card{background:#111722;border:1px solid #273142;border-radius:10px;padding:15px;margin-bottom:14px}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.split{display:flex;justify-content:space-between;gap:10px;align-items:center}.field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:150px}.field label{font-size:12px;color:#9ca8b8}.field input,.field select,.field textarea,input[type=text]{width:100%;background:#0b1018;color:#eef2f7;border:1px solid #344052;border-radius:7px;padding:9px}.btn{background:#1b2432;color:#e8edf4;border:1px solid #354255;border-radius:7px;padding:8px 11px}.btn.primary{background:#27598b;border-color:#3975b6}.btn.danger{background:#5b252c;border-color:#82404a}.pill{display:inline-block;border:1px solid #3a4658;border-radius:999px;padding:4px 8px;font-size:12px;margin:2px}.status,.warn,.ok{border-radius:7px;padding:9px;margin-top:8px}.status{background:#17202d;border:1px solid #304057}.warn{background:#38261b;border:1px solid #78512d;color:#f4c58f}.ok{background:#183022;border:1px solid #356747;color:#aee2bf}.big{font-size:24px;font-weight:800}.unit{padding:11px 0;border-top:1px solid #26303e}.empty{padding:25px;text-align:center;color:#8995a5}.bar{height:8px;background:#242d3a;border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;background:#4d86bd}.mono{font-family:monospace;font-size:12px;white-space:pre-wrap}.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.tabs button{background:#171e2a;color:#cbd5e1;border:1px solid #2c3748;border-radius:7px;padding:8px 11px}.tabs button.active{background:#315174}.logrow{border-top:1px solid #273142;padding:10px 0}.metric{font-size:20px;font-weight:700}.modal{position:fixed;inset:0;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;padding:18px;z-index:50}.modal>.card{width:min(850px,100%);max-height:92vh;overflow:auto}.tiny{font-size:11px;color:#8290a1}@media(max-width:850px){.grid,.grid3,.grid2{grid-template-columns:1fr}.wrap{padding:10px}}
 
 .wargear-box{background:#0d1722;border:1px solid #3f6f99;border-radius:10px;padding:12px;margin:14px 0}
@@ -184,6 +184,8 @@
 .primary-score-box.scored{opacity:.72}
 @media(max-width:850px){.primary-mission-pair{grid-template-columns:1fr}}
 .unit-identity-badge{display:inline-block;margin-left:6px;padding:2px 5px;border:1px solid #45627d;border-radius:5px;font-size:9px;color:#9fcfff;text-transform:uppercase;font-weight:800}
+
+.leader-attach-modal{width:min(680px,100%)}.leader-candidate-list{display:grid;gap:7px;margin-top:12px}.leader-candidate{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;padding:10px 12px;background:#111d2a;color:#eef5fb;border:1px solid #34516b;border-radius:8px}.leader-candidate:hover{background:#182b3d;border-color:#4f9ad6}.leader-candidate span:first-child{display:flex;flex-direction:column;gap:3px}.leader-candidate small{color:#9fb4c8}.attached-leader-row{display:flex;align-items:center;gap:9px;margin-top:9px;padding:9px 10px;background:#13263a;border:1px solid #3974a8;border-radius:8px}.attached-leader-row>div:nth-child(2){flex:1;min-width:0}.attached-leader-icon{font-size:18px;color:#8fc8ff}.attach-leader-strip{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:9px;padding:8px 10px;background:#0d1722;border:1px dashed #3d5777;border-radius:8px}.attach-leader-strip .muted{font-size:10px}@media(max-width:600px){.attached-leader-row,.attach-leader-strip{align-items:flex-start;flex-direction:column}.attached-leader-row .row{width:100%}.attached-leader-row .row .btn{flex:1}}
 </style>
 </style>
 </style>
@@ -2335,7 +2337,55 @@ function selectedWargearDetails(e,u){
 }
 function selectedWargearSummary(e,u){return selectedWargearDetails(e,u).map(x=>`${x.name} (+${x.points} pts)`)}
 
-function makeEntry(u){return {uid:uid(),unitId:u.id,qty:1,models:u.models,wargear:[],wargearSelections:{},weapons:(u.weapons||[]).map(w=>w.name),enhancement:'',notes:'',attachedTo:null}}
+function makeEntry(u){return {uid:uid(),unitId:u.id,qty:1,models:u.models,wargear:[],wargearSelections:{},weapons:(u.weapons||[]).map(w=>w.name),enhancement:'',notes:'',attachedTo:null,leaderUid:null}}
+const LEADER_ATTACHMENTS_11E={
+  'Tyranid Prime with Lash Whip':['Hormagaunts','Termagants','Tyranid Warriors with Ranged Bio-Weapons','Tyranid Warriors with Melee Bio-Weapons'],
+  'Winged Tyranid Prime':['Tyranid Warriors with Ranged Bio-Weapons','Tyranid Warriors with Melee Bio-Weapons'],
+  'Neurotyrant':['Neurogaunts','Tyrant Guard','Zoanthropes'],
+  'Hive Tyrant':['Tyrant Guard'],
+  'Captain':['Assault Intercessor Squad','Bladeguard Veteran Squad','Company Heroes','Hellblaster Squad','Infernus Squad','Intercessor Squad','Sternguard Veteran Squad','Tactical Squad'],
+  'Lieutenant':['Assault Intercessor Squad','Bladeguard Veteran Squad','Company Heroes','Hellblaster Squad','Infernus Squad','Intercessor Squad','Sternguard Veteran Squad','Tactical Squad'],
+  'Chaplain':['Assault Intercessor Squad','Bladeguard Veteran Squad','Hellblaster Squad','Infernus Squad','Intercessor Squad','Sternguard Veteran Squad','Tactical Squad'],
+  'Librarian':['Assault Intercessor Squad','Desolation Squad','Devastator Squad','Hellblaster Squad','Infernus Squad','Intercessor Squad','Sternguard Veteran Squad','Tactical Squad'],
+  'Captain in Terminator Armour':['Terminator Squad'],
+  'Chaplain in Terminator Armour':['Terminator Squad'],
+  'Librarian in Terminator Armour':['Terminator Squad'],
+  'Uriel Ventris':['Assault Intercessor Squad','Bladeguard Veteran Squad','Company Heroes','Intercessor Squad','Sternguard Veteran Squad','Tactical Squad','Victrix Honour Guard'],
+  'Marneus Calgar in Armour of Antilochus':['Aggressor Squad','Assault Intercessor Squad','Bladeguard Veteran Squad','Company Heroes','Eradicator Squad','Heavy Intercessor Squad','Infernus Squad','Intercessor Squad','Sternguard Veteran Squad','Tactical Squad','Terminator Squad','Victrix Honour Guard']
+};
+function leaderNamesForBodyguard(u){return LEADER_ATTACHMENTS_11E[u?.name]||[]}
+function isLeaderUnit(u){return !!u&&Object.prototype.hasOwnProperty.call(LEADER_ATTACHMENTS_11E,u.name)}
+function bodyguardCandidates(side,bodyguardUid){
+  const body=entry(side,bodyguardUid);if(!body)return [];
+  const allowed=leaderNamesForBodyguard(get(body.unitId));
+  return (state[side]||[]).filter(e=>e.uid!==bodyguardUid&&!e.attachedTo&&allowed.includes(get(e.unitId)?.name));
+}
+function leaderBodyguard(side,leaderUid){return (state[side]||[]).find(e=>e.attachedTo===leaderUid)||null}
+function bodyguardLeader(side,bodyguardUid){return (state[side]||[]).find(e=>e.leaderUid===bodyguardUid)||null}
+function attachLeader(side,leaderUid,bodyguardUid){
+  const leader=entry(side,leaderUid),body=entry(side,bodyguardUid);if(!leader||!body)return;
+  const lu=get(leader.unitId),bu=get(body.unitId);if(!isLeaderUnit(lu)||!leaderNamesForBodyguard(bu).includes(lu.name))return;
+  const oldBody=leaderBodyguard(side,leaderUid);if(oldBody)delete oldBody.leaderUid;
+  const oldLeader=bodyguardLeader(side,bodyguardUid);if(oldLeader)delete oldLeader.attachedTo;
+  leader.attachedTo=body.uid;body.leaderUid=leader.uid;
+  save();state.leaderAttachmentModal=null;render();
+}
+function detachLeader(side,leaderUid){
+  const leader=entry(side,leaderUid);if(!leader)return;
+  const body=leaderBodyguard(side,leaderUid);delete leader.attachedTo;if(body)delete body.leaderUid;
+  save();render();
+}
+function openLeaderAttachment(side,bodyguardUid){state.leaderAttachmentModal={side,bodyguardUid};render()}
+function leaderAttachmentModal(){
+  if(!state.leaderAttachmentModal)return '';
+  const {side,bodyguardUid}=state.leaderAttachmentModal,body=entry(side,bodyguardUid);if(!body)return '';
+  const candidates=bodyguardCandidates(side,bodyguardUid),u=get(body.unitId),current=bodyguardLeader(side,bodyguardUid);
+  return '<div class="modal"><div class="card leader-attach-modal"><div class="split"><div><h2 style="margin:0">Attach Leader</h2><div class="muted">'+esc(u?.name||'Bodyguard Unit')+'</div></div><button class="btn" onclick="state.leaderAttachmentModal=null;render()">Close</button></div>'+
+    (current?'<div class="status">Current Leader: <b>'+esc(get(current.unitId)?.name||'Leader')+'</b><button class="btn" style="margin-left:8px" onclick="detachLeader(\''+side+'\',\''+current.uid+'\')">Detach</button></div>':'')+
+    (candidates.length?'<div class="leader-candidate-list">'+candidates.map(e=>'<button class="leader-candidate" type="button" onclick="attachLeader(\''+side+'\',\''+e.uid+'\',\''+bodyguardUid+'\')"><span><strong>'+esc(unitDisplayName(side,e))+'</strong><small>'+esc(get(e.unitId)?.faction||'')+' • '+pts(e)+' pts</small></span><span class="pill">Attach</span></button>').join('')+'</div>':'<div class="empty">No eligible unattached Leaders are currently in this army. Add the Leader to the army first, then attach it here.</div>')+
+    '<div class="tiny" style="margin-top:10px">Leader choices are limited to the current OnoForge 11th Edition attachment map. The underlying Leader and Bodyguard remain separate datasheets.</div></div></div>';
+}
+
 function entry(side,id){return state[side].find(e=>e.uid===id)}
 function pts(e){const u=get(e.unitId);return (u.points+selectedWargearCost(e,u))*e.qty}
 function total(side){return state[side].reduce((n,e)=>n+pts(e),0)}
@@ -2401,7 +2451,9 @@ function unitDisplayName(side,e){const arr=Array.isArray(state[side])?state[side
 function rosterCreatedLabel(value){if(!value)return '';const d=new Date(value);if(Number.isNaN(d.getTime()))return '';return d.toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});}
 function savedRosterDisplayName(x){const stamp=rosterCreatedLabel(x?.created);return (x?.name||'Unnamed Roster')+(stamp?' • '+stamp:'');}
 function activeArmyDisplayName(side){const name=side==='my'?state.myName:state.oppName,id=side==='my'?state.activeRosterId:state.activeOpponentRosterId,list=(state.savedArmyLists||[]).find(x=>x.id===id);return savedRosterDisplayName({name,created:list?.created});}
-function unitRow(side,e){const u=get(e.unitId),displayName=unitDisplayName(side,e),wg=selectedWargearSummary(e,u);return `<div class="unit"><div class="split"><div><strong>${esc(displayName)}</strong><span class="pill" style="margin-left:6px">Individual Unit</span><div class="muted">${esc(u.faction)} • Base ${u.points} + Wargear ${selectedWargearCost(e,u)} = <b>${pts(e)} pts</b> • ${e.models} models/unit</div></div><div class="row"><button class="btn" onclick="configure('${side}','${e.uid}')">Configure</button><button class="btn danger" onclick="removeUnit('${side}','${e.uid}')">Remove</button></div></div><div>${e.weapons.map(w=>`<span class="pill">${esc(w)}</span>`).join('')}</div>${wg.length?`<div class="muted">Wargear: ${wg.map(esc).join(' • ')}</div>`:''}${e.enhancement?`<div class="muted">Enhancement: ${esc(e.enhancement)}</div>`:''}${e.notes?`<div class="muted">Note: ${esc(e.notes)}</div>`:''}${issues(side).filter(x=>x.startsWith(u.name+':')).map(x=>`<div class="warn">⚠ ${esc(x)}</div>`).join('')}</div>`}
+function unitRow(side,e){const u=get(e.unitId),displayName=unitDisplayName(side,e),wg=selectedWargearSummary(e,u),attachedLeader=bodyguardLeader(side,e.uid),isAttachedLeader=!!e.attachedTo;return 
+`${isAttachedLeader?'':`<div class="unit"><div class="split"><div><strong>${esc(displayName)}</strong><span class="pill" style="margin-left:6px">${isLeaderUnit(u)?'Leader':'Individual Unit'}</span><div class="muted">${esc(u.faction)} • Base ${u.points} + Wargear ${selectedWargearCost(e,u)} = <b>${pts(e)} pts</b> • ${e.models} models/unit</div></div><div class="row"><button class="btn" onclick="configure('${side}','${e.uid}')">Configure</button><button class="btn danger" onclick="removeUnit('${side}','${e.uid}')">Remove</button></div></div><div>${e.weapons.map(w=>`<span class="pill">${esc(w)}</span>`).join('')}</div>${wg.length?`<div class="muted">Wargear: ${wg.map(esc).join(' • ')}</div>`:''}${e.enhancement?`<div class="muted">Enhancement: ${esc(e.enhancement)}</div>`:''}${e.notes?`<div class="muted">Note: ${esc(e.notes)}</div>`:''}${issues(side).filter(x=>x.startsWith(u.name+':')).map(x=>`<div class="warn">⚠ ${esc(x)}</div>`).join('')}${isLeaderUnit(u)&&!e.attachedTo?bodyguardCandidates(side,e.uid).length?'': '':''}</div>`}${!isAttachedLeader&&attachedLeader?`<div class="attached-leader-row"><span class="attached-leader-icon">↳</span><div><strong>${esc(unitDisplayName(side,attachedLeader))}</strong><span class="pill">Leader</span><div class="muted">${pts(attachedLeader)} pts • ${attachedLeader.models} model</div></div><div class="row"><button class="btn" onclick="configure('${side}','${attachedLeader.uid}')">Configure</button><button class="btn" onclick="detachLeader('${side}','${attachedLeader.uid}')">Detach</button></div></div>`:''}${!isAttachedLeader&&!isLeaderUnit(u)&&leaderNamesForBodyguard(u).length?`<div class="attach-leader-strip"><div><strong>Leader</strong><div class="muted">${attachedLeader?'Attached: '+esc(unitDisplayName(side,attachedLeader)):'No Leader attached'}</div></div><button class="btn primary" onclick="openLeaderAttachment('${side}','${e.uid}')">${attachedLeader?'Change Leader':'Attach Leader'}</button></div>`:''}${!isAttachedLeader&&isLeaderUnit(u)?`<div class="attach-leader-strip"><div><strong>Leader Unit</strong><div class="muted">${e.attachedTo?'Attached to a Bodyguard':'Available to attach'}</div></div>${e.attachedTo?`<button class="btn" onclick="detachLeader('${side}','${e.uid}')">Detach</button>`:''}</div>`:''}</div>`;
+}
 function unitListCategory(u){const k=(Array.isArray(u.keywords)?u.keywords:[]).map(x=>String(x).toUpperCase());if(k.includes('CHARACTER'))return 0;if(k.includes('INFANTRY'))return 1;if(k.includes('MONSTER')||k.includes('VEHICLE'))return 2;return 3}
 function sortUnitList(arr){return arr.slice().sort((a,b)=>unitListCategory(a)-unitListCategory(b)||a.name.localeCompare(b.name));}
 function unitListCategoryName(u){const c=unitListCategory(u);return c===0?'Characters':c===1?'Infantry':c===2?'Monsters / Vehicles':'Other'}
@@ -3769,7 +3821,7 @@ async function cloudDeleteBattle(id){
   }catch(e){state.cloud.status='Error';state.cloud.error=e.message||String(e);save();render()}
 }
 function dataManagementPage(){const cfg=getCloudConfig();const battles=Array.isArray(state.cloudBattles)?state.cloudBattles:[];return `<div class="card">
-  <div class="split"><div><h2 style="margin:0">Data Management</h2><div class="muted" style="margin-top:4px">Back up and restore your OnoForge data on this device, or connect it to your Supabase account.</div></div><span class="pill">v292 Backup + Cloud</span></div>
+  <div class="split"><div><h2 style="margin:0">Data Management</h2><div class="muted" style="margin-top:4px">Back up and restore your OnoForge data on this device, or connect it to your Supabase account.</div></div><span class="pill">v293 Backup + Cloud</span></div>
 
   <div class="card cloud-card" style="margin-top:12px">
     <div class="split">
@@ -3927,7 +3979,7 @@ async function load40kAppSourceManifest(){
   render();
 }
 
-function render(){const pages={builder,saved:savedListsPage,battle,setup,math,rules,data:dataPage,manage:dataManagementPage,log:logPage,scorelog:scoringLogPage};document.getElementById('app').innerHTML=`<div class="top"><div class="brand">ONOFORGE 40K</div><div class="sub">11th Edition • v292 • 40k.app v925 data source • Army-linked Mathhammer Engine</div></div>${nav()}<main class="wrap">
+function render(){const pages={builder,saved:savedListsPage,battle,setup,math,rules,data:dataPage,manage:dataManagementPage,log:logPage,scorelog:scoringLogPage};document.getElementById('app').innerHTML=`<div class="top"><div class="brand">ONOFORGE 40K</div><div class="sub">11th Edition • v293 • 40k.app v925 data source • Army-linked Mathhammer Engine</div></div>${nav()}<main class="wrap">
   
 <div class="status">✓ Browser app loaded locally • Source: ${esc(state.source)} • ${esc(state.revision)} • 40k.app v${esc(String(ONOFORGE_40KAPP_SOURCE?.source?.revision||'925'))}</div>${dataSyncStatusHtml()}<div style="height:12px"></div>${(pages[state.page]||builder)()}${secondaryPlanEditorModal()}</main></div>`
   ensureLiveGameTimerDisplay();
