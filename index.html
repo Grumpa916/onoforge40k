@@ -2208,6 +2208,27 @@ function wargearGroups(u){
   const standard=(u.weapons||[]).map(w=>w.name).filter(Boolean);
   return [{key:'standard',label:'Standard Wargear',type:'fixed',options:standard.length?standard:['Standard unit wargear'],help:'No alternate wargear choices are currently defined in the prototype catalogue for this unit.'}];
 }
+function activeWeaponNames(e,u){
+  const catalog=Array.isArray(u?.weapons)?u.weapons.map(w=>w.name).filter(Boolean):[];
+  const groups=wargearGroups(u);
+  if(!groups.some(g=>g.type!=='fixed'))return catalog;
+  ensureWargear(e,u);
+  const names=catalog.slice();
+  const remove=new Set(),add=[];
+  for(const g of groups){
+    if(g.type==='fixed')continue;
+    (g.options||[]).forEach(v=>{if(v&&v!=='None')remove.add(v)});
+    if(g.type==='single'){
+      const v=e.wargearSelections[g.key];if(v&&v!=='None')add.push(v);
+    }else if(g.type==='multi'){
+      (e.wargearSelections[g.key]||[]).forEach(v=>{if(v&&v!=='None')add.push(v)});
+    }else if(g.type==='count'){
+      const sel=e.wargearSelections[g.key]||{},v=sel.option,count=Math.max(0,Math.floor(Number(sel.count)||0));
+      if(v&&v!=='None'&&count)add.push(v);
+    }
+  }
+  return Array.from(new Set(names.filter(n=>!remove.has(n)).concat(add)));
+}
 function ensureWargear(e,u){
   e.wargearSelections=e.wargearSelections&&typeof e.wargearSelections==='object'?e.wargearSelections:{};
   for(const g of wargearGroups(u)){
@@ -2707,7 +2728,7 @@ function unitRules(u){
  if(u.name==='Hormagaunts')r={minModels:10,maxModels:20,step:10,maxUnits:6};
  return r
 }
-function issues(side){let out=[];let seen={};for(const e of state[side]){const u=get(e.unitId),r=unitRules(u);seen[e.unitId]=(seen[e.unitId]||0)+e.qty;if(e.models<r.minModels||e.models>r.maxModels||((e.models-r.minModels)%r.step))out.push(u.name+': invalid model count');if(e.qty>r.maxUnits)out.push(u.name+': too many units');if((u.weapons||[]).length&&!e.weapons.length)out.push(u.name+': no weapons selected');if(side==='my'&&u.faction!==state.faction)out.push(u.name+': faction mismatch')}for(const id in seen){const u=get(id);if(seen[id]>unitRules(u).maxUnits)out.push(u.name+': duplicate limit exceeded')}if(total(side)>state.limit)out.push('Points limit exceeded');return [...new Set(out)]}
+function issues(side){let out=[];let seen={};for(const e of state[side]){const u=get(e.unitId),r=unitRules(u);seen[e.unitId]=(seen[e.unitId]||0)+e.qty;if(e.models<r.minModels||e.models>r.maxModels||((e.models-r.minModels)%r.step))out.push(u.name+': invalid model count');if(e.qty>r.maxUnits)out.push(u.name+': too many units');if((u.weapons||[]).length&&!activeWeaponNames(e,u).length)out.push(u.name+': no active weapons selected');if(side==='my'&&u.faction!==state.faction)out.push(u.name+': faction mismatch')}for(const id in seen){const u=get(id);if(seen[id]>unitRules(u).maxUnits)out.push(u.name+': duplicate limit exceeded')}if(total(side)>state.limit)out.push('Points limit exceeded');return [...new Set(out)]}
 function localDataSavedLabel(){
   if(!state.localSavedAt)return 'Not saved yet';
   const d=new Date(state.localSavedAt);
@@ -2747,7 +2768,7 @@ function removeUnit(side,id){
  save();render();
 }
 function configure(side,id){state.configure={side,id};render()}
-function toggleWeapon(side,id,name){const e=entry(side,id);e.weapons=e.weapons.includes(name)?e.weapons.filter(x=>x!==name):[...e.weapons,name];save();render()}
+function toggleWeapon(side,id,name){const e=entry(side,id);if(!e)return;const u=get(e.unitId);const active=activeWeaponNames(e,u);e.weapons=active.includes(name)?active.filter(x=>x!==name):active.concat(name);save();render()}
 function configureModal(){
   if(!state.configure)return '';
   const e=entry(state.configure.side,state.configure.id);if(!e)return '';
@@ -2802,7 +2823,7 @@ function unitRow(side,e){
  const addBodyguardButton=isLeader&&!attachedBodyguard&&bodyguardCandidatesForLeader(side,e.uid).length?'<button class="btn" type="button" onclick="openBodyguardAttachment(\''+side+'\',\''+e.uid+'\')">＋ Add Bodyguard</button>':'';
  const addSupportBodyguardButton=isSupport&&!supportBodyguard(side,e.uid)&&supportCandidatesForUnit(side,e.uid).length?'<button class="btn" type="button" onclick="openSupportBodyguardAttachment(\''+side+'\',\''+e.uid+'\')">＋ Add Bodyguard</button>':'';
  const attachButton=isLeader?addBodyguardButton:(isSupport?addSupportBodyguardButton:[addLeaderButton,addSupportButton].filter(Boolean).join(''));
- return '<div class="unit"><div class="split"><div><strong>'+esc(displayName)+'</strong><span class="pill" style="margin-left:6px">'+(isLeader?'Leader':isSupport?'Support':'')+'</span><div class="muted">'+esc(u.faction)+' • '+unitPointsDisplay(e,u)+' • '+e.models+' models/unit</div></div><div class="row">'+attachButton+(hasSelectableWargear?'<button class="btn" onclick="configure(\''+side+'\',\''+e.uid+'\')">Configure</button>':'')+'<button class="btn danger" onclick="removeUnit(\''+side+'\',\''+e.uid+'\')">Remove</button></div></div><div>'+e.weapons.map(w=>'<span class="pill">'+esc(w)+'</span>').join('')+'</div>'+(wg.length?'<div class="muted">Wargear: '+wg.map(esc).join(' • ')+'</div>':'')+(e.enhancement?'<div class="muted">Enhancement: '+esc(e.enhancement)+'</div>':'')+(e.notes?'<div class="muted">Note: '+esc(e.notes)+'</div>':'')+issues(side).filter(x=>x.startsWith(u.name+':')).map(x=>'<div class="warn">⚠ '+esc(x)+'</div>').join('')+(isLeader?bodyguardBox:isSupport?bodyguardBox+supportBox:leaderBoxes+supportBox)+'</div>';
+ return '<div class="unit"><div class="split"><div><strong>'+esc(displayName)+'</strong><span class="pill" style="margin-left:6px">'+(isLeader?'Leader':isSupport?'Support':'')+'</span><div class="muted">'+esc(u.faction)+' • '+unitPointsDisplay(e,u)+' • '+e.models+' models/unit</div></div><div class="row">'+attachButton+(hasSelectableWargear?'<button class="btn" onclick="configure(\''+side+'\',\''+e.uid+'\')">Configure</button>':'')+'<button class="btn danger" onclick="removeUnit(\''+side+'\',\''+e.uid+'\')">Remove</button></div></div><div>'+activeWeapons.map(w=>'<span class="pill">'+esc(w)+'</span>').join('')+'</div>'+(wg.length?'<div class="muted">Wargear: '+wg.map(esc).join(' • ')+'</div>':'')+(e.enhancement?'<div class="muted">Enhancement: '+esc(e.enhancement)+'</div>':'')+(e.notes?'<div class="muted">Note: '+esc(e.notes)+'</div>':'')+issues(side).filter(x=>x.startsWith(u.name+':')).map(x=>'<div class="warn">⚠ '+esc(x)+'</div>').join('')+(isLeader?bodyguardBox:isSupport?bodyguardBox+supportBox:leaderBoxes+supportBox)+'</div>';
 }
 function leaderAttachmentNamesForBodyguardFix(u){return leaderNamesForBodyguard(u)}
 function unitListCategory(u){const k=(Array.isArray(u.keywords)?u.keywords:[]).map(x=>String(x).toUpperCase());if(k.includes('CHARACTER'))return 0;if(k.includes('INFANTRY'))return 1;if(k.includes('MONSTER')||k.includes('VEHICLE'))return 2;return 3}
@@ -3658,7 +3679,7 @@ function mathRosterEntry(side){
 function mathUnit(side){const e=mathRosterEntry(side);return e?get(e.unitId):get(side==='my'?state.attacker:state.target)}
 function mathWeaponAlloc(e,u){
   const rules=state.mathRules||{}; const key=e?.uid||u?.id||'catalogue'; const saved=(rules.weaponAlloc&&rules.weaponAlloc[key])||{};
-  const names=(e?.weapons&&e.weapons.length?e.weapons:(u?.weapons||[]).map(w=>w.name));
+  const names=activeWeaponNames(e,u);
   let alloc={}; let remaining=Math.max(0,Number(e?.models)||Number(u?.models)||1);
   names.forEach((n,i)=>{let v=Number(saved[n]); if(!Number.isFinite(v)||v<0)v= i===0?remaining:0; v=Math.min(remaining,Math.floor(v)); alloc[n]=v; remaining-=v;});
   if(remaining>0&&names.length)alloc[names[0]]=(alloc[names[0]]||0)+remaining;
@@ -3666,7 +3687,7 @@ function mathWeaponAlloc(e,u){
 }
 function normalizeMathWeaponForUnit(u){
   if(!u)return;
-  const names=(u.weapons||[]).map(w=>w.name);
+  const names=activeWeaponNames(null,u);
   if(!names.includes(state.weapon))state.weapon=names[0]||'';
 }
 function setMathRoster(side,uid){
