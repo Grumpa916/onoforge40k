@@ -2699,8 +2699,15 @@ function nav(){const tools=[['rules','Rules Engine'],['data','Data Sources'],['m
 function addUnit(side,id){if(side!=='my'&&side!=='opp')return;const u=get(id);if(!u)return;state[side].push(makeEntry(u));save();render()}
 function removeUnit(side,id){
  const e=entry(side,id);if(!e)return;
- if(e.attachedTo){const b=entry(side,e.attachedTo);if(b){b.leaderUids=(Array.isArray(b.leaderUids)?b.leaderUids:[]).filter(x=>x!==id);syncBodyguardLeaderFields(b)}}
- for(const l of bodyguardLeaders(side,id)){delete l.attachedTo}
+ if(e.attachedTo){
+   const b=entry(side,e.attachedTo);
+   if(b){
+     b.leaderUids=(Array.isArray(b.leaderUids)?b.leaderUids:[]).filter(x=>x!==id);syncBodyguardLeaderFields(b);
+     b.supportUids=(Array.isArray(b.supportUids)?b.supportUids:[]).filter(x=>x!==id);syncBodyguardSupportFields(b);
+   }
+ }
+ for(const l of bodyguardLeaders(side,id)){delete l.attachedTo;delete l.attachedRole}
+ for(const sup of bodyguardSupports(side,id)){delete sup.attachedTo;delete sup.attachedRole}
  state[side]=state[side].filter(x=>x.uid!==id);
  save();render();
 }
