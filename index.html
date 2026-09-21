@@ -292,6 +292,28 @@
 .unit-copy-control{margin-left:auto;display:flex;align-items:center;gap:5px;font-size:11px;color:#9ab8d8;cursor:default}
 .unit-copy-control input{width:54px;box-sizing:border-box;padding:4px 6px;border:1px solid #355d7c;border-radius:5px;background:#0b1320;color:#e9edf3}
 </style>
+<style id="two-column-unit-picker">
+.unit-category{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:0 14px;
+  margin-bottom:10px;
+}
+.unit-category-title{
+  grid-column:1 / -1;
+}
+.unit-category > .unit{
+  min-width:0;
+}
+@media(max-width:700px){
+  .unit-category{
+    grid-template-columns:1fr;
+  }
+  .unit-category-title{
+    grid-column:1;
+  }
+}
+</style>
 <style id="unit-search-layout">
 .unit-selection-toolbar{margin-bottom:6px!important}
 .unit-search-under-add{margin:0 0 8px}
