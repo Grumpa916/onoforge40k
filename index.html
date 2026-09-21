@@ -2539,7 +2539,7 @@ function renderUnitSections(arr,side){
     return `<div class="unit ${isSelected?'unit-selected':''}" data-unit-id="${esc(u.id)}">
       <div class="unit-select-row" onclick="toggleUnitSelection('${side}','${esc(u.id)}')">
         <button type="button" class="unit-title-toggle" aria-expanded="false" onclick="event.stopPropagation();toggleUnitInfo(this)">
-          <strong>${esc(u.name)}</strong>
+          <strong>${esc(u.name)}</strong>${isLeaderUnit(u)?'<span class="pill" style="margin-left:6px">Leader</span>':''}
         </button>
         ${isSelected?`<label class="unit-copy-control" onclick="event.stopPropagation()">Copies <input type="number" min="1" max="${Math.max(1,Number(unitRules(u).maxUnits)||1)}" value="${selectedUnitAddQty(side,u.id)}" onclick="event.stopPropagation()" onchange="setSelectedUnitAddQty('${side}','${esc(u.id)}',this.value);event.stopPropagation()"></label>`:''}
       </div>
