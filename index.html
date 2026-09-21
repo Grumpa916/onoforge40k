@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OnoForge 40K v281</title><style>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OnoForge 40K v282</title><style>
 *{box-sizing:border-box}body{margin:0;background:#0b0f15;color:#e9edf3;font-family:Arial,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}.top{padding:18px 22px;background:#111722;border-bottom:1px solid #273142}.brand{font-size:25px;font-weight:800}.sub,.muted{color:#9ca8b8;font-size:13px}.nav{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:10px 16px;background:#0e141e;border-bottom:1px solid #273142}.nav-main{display:flex;gap:6px;flex-wrap:wrap}.nav button,.nav-tools summary{background:#171e2a;color:#cbd5e1;border:1px solid #2c3748;border-radius:7px;padding:9px 13px;font-size:14px;cursor:pointer}.nav button.active{background:#24334b;color:#fff;border-color:#49678f}.nav-tools{position:relative;margin-left:auto}.nav-tools summary{list-style:none}.nav-tools summary::-webkit-details-marker{display:none}.nav-tools summary:after{content:' ▾';font-size:11px}.nav-tools[open] summary{background:#24334b;color:#fff;border-color:#49678f}.nav-tools-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:1200;min-width:170px;padding:6px;background:#111722;border:1px solid #344052;border-radius:8px;box-shadow:0 12px 30px rgba(0,0,0,.4);display:grid;gap:4px}.nav-tools-menu button{width:100%;text-align:left}.wrap{max-width:1250px;margin:auto;padding:18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.card{background:#111722;border:1px solid #273142;border-radius:10px;padding:15px;margin-bottom:14px}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.split{display:flex;justify-content:space-between;gap:10px;align-items:center}.field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:150px}.field label{font-size:12px;color:#9ca8b8}.field input,.field select,.field textarea,input[type=text]{width:100%;background:#0b1018;color:#eef2f7;border:1px solid #344052;border-radius:7px;padding:9px}.btn{background:#1b2432;color:#e8edf4;border:1px solid #354255;border-radius:7px;padding:8px 11px}.btn.primary{background:#27598b;border-color:#3975b6}.btn.danger{background:#5b252c;border-color:#82404a}.pill{display:inline-block;border:1px solid #3a4658;border-radius:999px;padding:4px 8px;font-size:12px;margin:2px}.status,.warn,.ok{border-radius:7px;padding:9px;margin-top:8px}.status{background:#17202d;border:1px solid #304057}.warn{background:#38261b;border:1px solid #78512d;color:#f4c58f}.ok{background:#183022;border:1px solid #356747;color:#aee2bf}.big{font-size:24px;font-weight:800}.unit{padding:11px 0;border-top:1px solid #26303e}.empty{padding:25px;text-align:center;color:#8995a5}.bar{height:8px;background:#242d3a;border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;background:#4d86bd}.mono{font-family:monospace;font-size:12px;white-space:pre-wrap}.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.tabs button{background:#171e2a;color:#cbd5e1;border:1px solid #2c3748;border-radius:7px;padding:8px 11px}.tabs button.active{background:#315174}.logrow{border-top:1px solid #273142;padding:10px 0}.metric{font-size:20px;font-weight:700}.modal{position:fixed;inset:0;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;padding:18px;z-index:50}.modal>.card{width:min(850px,100%);max-height:92vh;overflow:auto}.tiny{font-size:11px;color:#8290a1}@media(max-width:850px){.grid,.grid3,.grid2{grid-template-columns:1fr}.wrap{padding:10px}}
 
 .wargear-box{background:#0d1722;border:1px solid #3f6f99;border-radius:10px;padding:12px;margin:14px 0}
@@ -371,7 +371,33 @@
 .cloud-list{display:flex;flex-direction:column;gap:7px;margin-top:10px}
 .cloud-list-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 10px;background:#0d1722;border:1px solid #304057;border-radius:8px}
 @media(max-width:700px){.cloud-auth-grid{grid-template-columns:1fr}.cloud-list-row{align-items:flex-start;flex-direction:column}}
-/* v281 compact battle display */.game-unit-row{grid-template-columns:minmax(105px,.75fr) minmax(0,1.55fr);gap:7px;padding:5px 0}.game-unit-name{min-width:0;font-size:11px;line-height:1.15}.game-unit-stats{font-size:9px;line-height:1.15;margin-top:2px;white-space:normal}.game-unit-actions{gap:3px;margin-top:3px}.game-unit-actions .btn{font-size:9px;line-height:1;padding:2px 4px;min-height:20px;border-radius:5px}.game-unit-reference{gap:3px;margin-top:4px}.game-unit-reference-pill{padding:2px 4px;font-size:8.5px;line-height:1.15}.battleshock-badge{margin-left:4px;padding:1px 4px;font-size:8px}.army-state-card{padding:10px}.army-state-card>h3{margin:0 0 5px}.army-state-card .empty{padding:12px}@media(max-width:700px){.game-unit-row{grid-template-columns:1fr;gap:3px}.game-unit-name{font-size:11px}}/* Compact Mathhammer loadout rows */.weapon-allocation{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:7px 9px;margin:5px 0;background:#101a26;border-color:#334b63;border-radius:8px}.weapon-allocation b{font-size:11px;color:#eef5fb}.weapon-allocation .muted{font-size:9.5px;line-height:1.2;color:#aebfd0}.allocation-control{gap:5px}.allocation-control input{width:56px;padding:5px 6px;font-size:13px;background:#0b1018;color:#fff;border-color:#40566c}.allocation-control span{font-size:10px;color:#9fb1c2}/* Compact secondary mission cards */.secondary-missions-collapsible>summary{padding:9px 12px}.secondary-missions-body{padding:0 10px 10px}.secondary-catalog{gap:5px;margin-top:7px}.secondary-catalog-card{padding:6px}.secondary-catalog-name{font-size:11px;line-height:1.15}.secondary-catalog-number{font-size:9px}.secondary-catalog-type{font-size:9px;line-height:1.15;margin-top:2px}.secondary-catalog-type .pill{font-size:8px;padding:2px 5px}.secondary-catalog-status{font-size:9px;margin-top:3px}.secondary-catalog-actions{gap:3px;margin-top:4px}.secondary-catalog-actions .btn{font-size:9px;padding:3px 5px;min-height:20px}.secondary-catalog-score{gap:3px;margin-top:4px}.secondary-catalog-score input{width:45px;padding:3px 4px;font-size:9px}.secondary-catalog-score label{font-size:9px}.secondary-plan-details{margin-top:4px;border-top:1px solid #26364d;padding-top:3px}.secondary-plan-details summary{cursor:pointer;color:#9ecbff;font-size:9px;font-weight:700}.secondary-plan-details .secondary-personal-plan{margin-top:4px;padding:5px 6px}.secondary-plan-details .secondary-scoring{margin-top:4px;padding:5px 6px;font-size:10px}.secondary-plan-details .secondary-personal-plan-grid{gap:3px;font-size:9.5px}.secondary-plan-details .secondary-personal-plan .plan-title{font-size:8px;margin-bottom:3px}.secondary-plan-details .secondary-personal-plan .plan-action,.secondary-plan-details .secondary-personal-plan .plan-unit{font-size:9.5px;margin-top:3px}.secondary-plan-details .secondary-scoring summary{font-size:9px}</style>
+/* v281 compact battle display */.game-unit-row{grid-template-columns:minmax(105px,.75fr) minmax(0,1.55fr);gap:7px;padding:5px 0}.game-unit-name{min-width:0;font-size:11px;line-height:1.15}.game-unit-stats{font-size:9px;line-height:1.15;margin-top:2px;white-space:normal}.game-unit-actions{gap:3px;margin-top:3px}.game-unit-actions .btn{font-size:9px;line-height:1;padding:2px 4px;min-height:20px;border-radius:5px}.game-unit-reference{gap:3px;margin-top:4px}.game-unit-reference-pill{padding:2px 4px;font-size:8.5px;line-height:1.15}.battleshock-badge{margin-left:4px;padding:1px 4px;font-size:8px}.army-state-card{padding:10px}.army-state-card>h3{margin:0 0 5px}.army-state-card .empty{padding:12px}@media(max-width:700px){.game-unit-row{grid-template-columns:1fr;gap:3px}.game-unit-name{font-size:11px}}/* Compact Mathhammer loadout rows */.weapon-allocation{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:7px 9px;margin:5px 0;background:#101a26;border-color:#334b63;border-radius:8px}.weapon-allocation b{font-size:11px;color:#eef5fb}.weapon-allocation .muted{font-size:9.5px;line-height:1.2;color:#aebfd0}.allocation-control{gap:5px}.allocation-control input{width:56px;padding:5px 6px;font-size:13px;background:#0b1018;color:#fff;border-color:#40566c}.allocation-control span{font-size:10px;color:#9fb1c2}/* Compact secondary mission cards */.secondary-missions-collapsible>summary{padding:9px 12px}.secondary-missions-body{padding:0 10px 10px}.secondary-catalog{gap:5px;margin-top:7px}.secondary-catalog-card{padding:6px}.secondary-catalog-name{font-size:11px;line-height:1.15}.secondary-catalog-number{font-size:9px}.secondary-catalog-type{font-size:9px;line-height:1.15;margin-top:2px}.secondary-catalog-type .pill{font-size:8px;padding:2px 5px}.secondary-catalog-status{font-size:9px;margin-top:3px}.secondary-catalog-actions{gap:3px;margin-top:4px}.secondary-catalog-actions .btn{font-size:9px;padding:3px 5px;min-height:20px}.secondary-catalog-score{gap:3px;margin-top:4px}.secondary-catalog-score input{width:45px;padding:3px 4px;font-size:9px}.secondary-catalog-score label{font-size:9px}.secondary-plan-details{margin-top:4px;border-top:1px solid #26364d;padding-top:3px}.secondary-plan-details summary{cursor:pointer;color:#9ecbff;font-size:9px;font-weight:700}.secondary-plan-details .secondary-personal-plan{margin-top:4px;padding:5px 6px}.secondary-plan-details .secondary-scoring{margin-top:4px;padding:5px 6px;font-size:10px}.secondary-plan-details .secondary-personal-plan-grid{gap:3px;font-size:9.5px}.secondary-plan-details .secondary-personal-plan .plan-title{font-size:8px;margin-bottom:3px}.secondary-plan-details .secondary-personal-plan .plan-action,.secondary-plan-details .secondary-personal-plan .plan-unit{font-size:9.5px;margin-top:3px}.secondary-plan-details .secondary-scoring summary{font-size:9px}
+/* v282 compact secondary mission list */
+.secondary-player-panel.active-player{border-color:#3d9cff;box-shadow:0 0 0 1px rgba(61,156,255,.15)}
+.secondary-player-panel .secondary-army-heading{padding:6px 8px}
+.secondary-player-panel .secondary-army-heading h4{font-size:13px}
+.secondary-compact-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center;padding:3px 5px;border-bottom:1px solid #1c2b3a;min-height:25px}
+.secondary-compact-row:nth-child(odd){background:rgba(35,62,88,.16)}
+.secondary-compact-row:hover{background:rgba(43,86,125,.24)}
+.secondary-compact-name{border:0;background:none;color:#dcecff;text-align:left;padding:2px 0;font-size:11px;cursor:pointer;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.secondary-compact-row .btn{font-size:9px;line-height:1;padding:3px 7px;min-width:52px;min-height:20px}
+.secondary-compact-row .secondary-tracked-btn{border-color:#3fcb88;color:#75efb0;background:#10291f}
+.secondary-compact-row.scored .secondary-compact-name{color:#7f91a2}
+.secondary-compact-row.unavailable .secondary-compact-name{color:#718091}
+.secondary-player-summary{padding:5px 8px;font-size:9px;color:#8ea5ba;text-align:right}
+.secondary-detail-panel{margin-top:8px;padding:9px 11px;border:1px solid #36506a;border-radius:8px;background:#0f1a27}
+.secondary-detail-main{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center}
+.secondary-detail-main h4{margin:2px 0;font-size:15px}
+.secondary-detail-score{text-align:right}
+.secondary-score-buttons{display:flex;gap:3px;margin-top:3px}
+.secondary-score-buttons .btn{min-width:28px;padding:3px 5px;font-size:9px}
+.secondary-detail-description{margin-top:7px;font-size:10px;color:#c7d5e3;line-height:1.3}
+.secondary-detail-plan{margin-top:6px}
+.secondary-detail-plan summary{font-size:9px;color:#9ecbff;cursor:pointer}
+.secondary-detail-plan .secondary-personal-plan{margin-top:4px;padding:5px 6px}
+.secondary-detail-hint{margin-top:5px;font-size:9px;color:#8297aa}
+@media(max-width:700px){.secondary-detail-main{grid-template-columns:1fr}.secondary-detail-score{text-align:left}.secondary-score-buttons{justify-content:flex-start}}
+</style>
 </head><body><div id="app"></div><script>
 window.addEventListener('error',function(ev){var a=document.getElementById('app');if(a&&!a.innerHTML.includes('battleforge-error'))a.insertAdjacentHTML('afterbegin','<div id="battleforge-error" style="margin:12px;padding:12px;background:#5b252c;border:1px solid #a44;color:#fff;border-radius:8px"><b>OnoForge error:</b> '+String(ev.error?.message||ev.message||'Unknown error')+'</div>');});
 'use strict';
@@ -1195,7 +1221,7 @@ function stratagemsUI(){
 }
 let state={
   savedArmyLists:[],
-  stratagemsMy:[], stratagemsOpp:[], stratagemsOpen:false,primaryMissionsOpen:false,secondaryMissionsOpen:false,page:'builder',myName:'My Army',oppName:'Opponent Army',faction:'Tyranids',detachment:'Invasion Fleet',detachmentSelections:['Invasion Fleet'],oppFaction:'Ultramarines',oppDetachment:'Gladius Task Force',oppDetachmentSelections:['Gladius Task Force'],limit:2000,my:[],opp:[],searchMy:'',searchOpp:'',configure:null,attacker:'norn',weapon:'Rupture Cannon',target:'marine',round:1,phase:'Command',myVP:0,oppVP:0,myCP:0,oppCP:0,battleReadyMy:false,battleReadyOpp:false,secondaryMy:'tactical',secondaryOpp:'tactical',secondaryMyCards:[],secondaryOppCards:[],secondaryMyDeck:[],secondaryOppDeck:[],secondaryMyDiscard:[],secondaryOppDiscard:[],newOrdersCompletedMy:false,newOrdersCompletedOpp:false,secondaryMyScored:[],secondaryOppScored:[],secondaryMyScoredVP:{},secondaryOppScoredVP:{},secondaryPersonalPlans:{},secondaryPlanEdit:'',gameReferencePersonal:{},myForceDisposition:'',oppForceDisposition:'',attackerSide:'my',firstTurn:'my',currentTurn:'my',objectives:{},events:[],gameAssistantChecks:{},gameAssistantNotes:'',lists:[],activeRosterId:'',activeOpponentRosterId:'',dataStatus:'Expanded Tyranid + Ultramarines community catalogue',source:'BSData wh40k-11e (community)',revision:'current-community-catalogue',cloud:{email:'',userId:'',status:'Not connected',lastSync:'',error:''},cloudBattles:[],rulesLog:[],mathRules:{},gameTimer:{elapsedMs:0,running:false,paused:false,startedAt:0,pausedAt:0,finishedAt:0,turnMyMs:0,turnOppMs:0,turnStartedGameMs:0,turnPaused:false}};
+  stratagemsMy:[], stratagemsOpp:[], stratagemsOpen:false,primaryMissionsOpen:false,secondaryMissionsOpen:false,page:'builder',myName:'My Army',oppName:'Opponent Army',faction:'Tyranids',detachment:'Invasion Fleet',detachmentSelections:['Invasion Fleet'],oppFaction:'Ultramarines',oppDetachment:'Gladius Task Force',oppDetachmentSelections:['Gladius Task Force'],limit:2000,my:[],opp:[],searchMy:'',searchOpp:'',configure:null,attacker:'norn',weapon:'Rupture Cannon',target:'marine',round:1,phase:'Command',myVP:0,oppVP:0,myCP:0,oppCP:0,battleReadyMy:false,battleReadyOpp:false,secondaryMy:'tactical',secondaryOpp:'tactical',secondaryMyCards:[],secondaryOppCards:[],secondaryMyDeck:[],secondaryOppDeck:[],secondaryMyDiscard:[],secondaryOppDiscard:[],newOrdersCompletedMy:false,newOrdersCompletedOpp:false,secondaryMyScored:[],secondaryOppScored:[],secondaryMyScoredVP:{},secondaryOppScoredVP:{},secondaryPersonalPlans:{},secondaryPlanEdit:'',secondaryDetailSide:'',secondaryDetailName:'',gameReferencePersonal:{},myForceDisposition:'',oppForceDisposition:'',attackerSide:'my',firstTurn:'my',currentTurn:'my',objectives:{},events:[],gameAssistantChecks:{},gameAssistantNotes:'',lists:[],activeRosterId:'',activeOpponentRosterId:'',dataStatus:'Expanded Tyranid + Ultramarines community catalogue',source:'BSData wh40k-11e (community)',revision:'current-community-catalogue',cloud:{email:'',userId:'',status:'Not connected',lastSync:'',error:''},cloudBattles:[],rulesLog:[],mathRules:{},gameTimer:{elapsedMs:0,running:false,paused:false,startedAt:0,pausedAt:0,finishedAt:0,turnMyMs:0,turnOppMs:0,turnStartedGameMs:0,turnPaused:false}};
 
 const GAME_REFERENCE_PHASES={
  Command:[
@@ -1708,53 +1734,51 @@ function undoLastSecondarySelection(){
  Object.assign(state,restored);
  save();render();
 }
-function secondaryCatalogHtml(side){
- const isMy=side==='my';
- const mode=isMy?state.secondaryMy:state.secondaryOpp;
- const active=secState(side), scored=secScored(side), discarded=secDiscard(side);
- const name=esc(isMy?state.myName:state.oppName);
- const fixedCount=active.filter(n=>secondaryByName(n).fixed).length;
- const modeLabel=mode==='fixed'?'Fixed':'Tactical';
- const cards=SECONDARY_CARDS.map(c=>{
-   const n=c.name, activeNow=active.includes(n), scoredNow=scored.includes(n), discardedNow=discarded.includes(n);
-   const allowed=(mode==='fixed')===!!c.fixed;
-   const fixedFull=mode==='fixed'&&!activeNow&&active.length>=2;
-   let cls='secondary-catalog-card';
-   if(activeNow)cls+=' tracked';
-   else if(scoredNow)cls+=' completed';
-   else if(discardedNow||fixedFull)cls+=' unavailable';
-   let action='';
-   if(scoredNow){
-     action=`<button type="button" class="btn" onclick="resetSecondaryScore('${side}','${esc(n)}');return false;">Unscore</button>`;
-   }else if(activeNow){
-     action=`<button type="button" class="btn" onclick="undoSecondarySelection('${side}','${esc(n)}');return false;">Untrack</button>`;
-     if(mode==='tactical')action+=`<button type="button" class="btn danger" onclick="discardTactical('${side}','${esc(n)}');return false;">Discard</button>`;
-   }else if(discardedNow){
-     action=`<button type="button" class="btn" disabled>Discarded</button>`;
-   }else if(fixedFull){
-     action=`<button type="button" class="btn" disabled>2 Fixed tracked</button>`;
-   }else{
-     action=`<button type="button" class="btn primary" data-secondary-track="1" data-secondary-track-side="${side}" data-secondary-track-name="${esc(n)}">Track</button>`;
-   }
-   let score='';
-   if(activeNow){
-     score=`<div class="secondary-catalog-score"><label for="${secondaryInputId(side,n)}">VP earned</label><input id="${secondaryInputId(side,n)}" type="number" min="1" max="20" value="5" step="1"><button type="button" class="btn primary" onclick="scoreSecondaryFromInput('${side}','${esc(n)}');return false;">Score</button></div>`;
-   }
-   return `<div class="${cls}">
-     <div class="secondary-catalog-head"><span class="secondary-catalog-name">${esc(n)}</span><span class="secondary-catalog-number">#${c.cardNumber}</span></div>
-     <div class="secondary-catalog-type"><span class="pill">${c.fixed?'Fixed':'Tactical'}</span> ${esc(c.type||'Secondary Mission')}</div>
-     <div class="secondary-catalog-status">${scoredNow?'✓ Completed':activeNow?'● Tracked':discardedNow?'Discarded':fixedFull?'2 Fixed tracked':'Available'}</div>
-     <div class="secondary-catalog-actions">${action}</div>
-     ${score}
-     ${activeNow?'<details class="secondary-plan-details"><summary>Plan / scoring</summary>'+secondaryPersonalPlanHtml(n)+secondaryScoringHtml(n)+'</details>':''}
-   </div>`;
- }).join('');
- return `<div class="secondary-player-panel">
-   <div class="secondary-army-heading"><h4>${name}</h4><span class="pill">${modeLabel} • ${active.length} tracked${mode==='fixed'?' • '+fixedCount+'/2 fixed':''}</span></div>
-   <div class="muted small">All 18 secondary missions are shown. Track missions independently for this player.</div>
-   <div class="secondary-catalog">${cards}</div>
- </div>`;
+
+function secondaryActiveSide(){return state.currentTurn==='opp'?'opp':'my'}
+function selectSecondaryDetail(side,name){state.secondaryDetailSide=side;state.secondaryDetailName=name;save();render()}
+function secondaryDetailTarget(side){
+ const active=secState(side),scored=secScored(side);
+ let name=(state.secondaryDetailSide===side&&state.secondaryDetailName)?state.secondaryDetailName:'';
+ if(!name||!SECONDARY_CARDS.some(c=>c.name===name))name=active[0]||scored[scored.length-1]||SECONDARY_CARDS[0]?.name||'';
+ return name;
 }
+function setSecondaryDetailScore(side,name,vp){
+ const n=Math.max(0,Math.min(20,Math.floor(Number(vp)||0)));
+ if(n===0){if(secScored(side).includes(name))resetSecondaryScore(side,name);return}
+ if(!secState(side).includes(name)){alert('Track this secondary mission first.');return}
+ scoreSecondary(side,name,n);
+}
+function secondaryDetailHtml(side){
+ const name=secondaryDetailTarget(side);if(!name)return '';
+ const c=secondaryByName(name);
+ const active=secState(side).includes(name),scored=secScored(side).includes(name);
+ const scoredVP=Number((side==='my'?state.secondaryMyScoredVP:state.secondaryOppScoredVP)?.[name])||0;
+ const data=SECONDARY_SCORING[name]||SECONDARY_SCORING[c?.name]||null;
+ const mode=side==='my'?state.secondaryMy:state.secondaryOpp;
+ const scoringText=data?Object.entries(data).filter(([m])=>m===mode.charAt(0).toUpperCase()+mode.slice(1)).flatMap(([,items])=>items.map(x=>x[0]+' VP — '+x[1])).join(' • '):(c?.type||'Secondary mission');
+ const detailPlan=secondaryPersonalPlanHtml(name);
+ return '<div class="secondary-detail-panel"><div class="secondary-detail-main">'+
+   '<div><div class="muted small">MISSION DETAILS • '+esc(side==='my'?state.myName:state.oppName)+'</div><h4>'+esc(name)+'</h4><div class="muted small">'+esc(c?.type||'Secondary Mission')+'</div></div>'+
+   '<div class="secondary-detail-score"><div class="muted small">SCORE</div><div class="secondary-score-buttons">'+[0,1,2,3,4,5].map(v=>'<button type="button" class="btn '+(scoredVP===v?'primary':'')+'" data-secondary-score="1" data-secondary-score-side="'+side+'" data-secondary-score-name="'+esc(name)+'" data-secondary-score-value="'+v+'">'+v+'</button>').join('')+'</div><div class="muted small">'+(scored?'Scored '+scoredVP+' VP':'Not scored')+'</div></div>'+
+   '</div><div class="secondary-detail-description"><b>Scoring:</b> '+esc(scoringText)+'</div>'+
+   (detailPlan?'<details class="secondary-detail-plan"><summary>Personal plan / notes</summary>'+detailPlan+'</details>':'')+
+   '<div class="secondary-detail-hint">'+(active?'Use the score buttons above to record this mission.':'Track this mission above before scoring it.')+'</div></div>';
+}
+function secondaryCatalogHtml(side){
+ const isMy=side==='my',active=secState(side),scored=secScored(side),discarded=secDiscard(side);
+ const isActivePlayer=secondaryActiveSide()===side,name=esc(isMy?state.myName:state.oppName),mode=isMy?state.secondaryMy:state.secondaryOpp;
+ const fixedFull=mode==='fixed'&&active.length>=2;
+ const rows=SECONDARY_CARDS.map(c=>{
+   const n=c.name,activeNow=active.includes(n),scoredNow=scored.includes(n),discardedNow=discarded.includes(n);
+   const unavailable=fixedFull&&!activeNow&&!scoredNow;
+   let label='Track',disabled=false,cls='';
+   if(activeNow){label='✓ Tracked';cls=' tracked'}else if(scoredNow){label='✓';disabled=true;cls=' scored'}else if(discardedNow||unavailable){label='—';disabled=true;cls=' unavailable'}
+   return '<div class="secondary-compact-row'+cls+'"><button type="button" class="secondary-compact-name" data-secondary-detail="1" data-secondary-detail-side="'+side+'" data-secondary-detail-name="'+esc(n)+'">'+esc(n)+'</button><button type="button" class="btn '+(activeNow?'secondary-tracked-btn':'')+'" '+(disabled?'disabled ':'')+'data-secondary-track="1" data-secondary-track-side="'+side+'" data-secondary-track-name="'+esc(n)+'">'+label+'</button></div>';
+ }).join('');
+ return '<div class="secondary-player-panel'+(isActivePlayer?' active-player':'')+'"><div class="secondary-army-heading"><h4>'+esc(name)+'</h4><span class="pill">'+(isActivePlayer?'ACTIVE PLAYER':'')+'</span></div><div class="secondary-catalog">'+rows+'</div><div class="secondary-player-summary">'+active.length+' tracked'+(scored.length?' • '+scored.length+' scored':'')+'</div></div>';
+}
+
 function secondaryChooserHtml(side){
  const mode=side==='my'?state.secondaryMy:state.secondaryOpp;
  const opts=secondaryChoiceOptions(side);
@@ -1950,6 +1974,8 @@ function load(){
   state.activeRosterId=typeof state.activeRosterId==='string'?state.activeRosterId:'';
   state.phase=state.phase||'Command';
   state.currentTurn=(state.currentTurn==='opp'||state.currentTurn==='my')?state.currentTurn:(state.firstTurn==='opp'?'opp':'my');
+  state.secondaryDetailSide=(state.secondaryDetailSide==='opp'||state.secondaryDetailSide==='my')?state.secondaryDetailSide:'';
+  state.secondaryDetailName=typeof state.secondaryDetailName==='string'?state.secondaryDetailName:'';
   state.round=Math.min(MAX_ROUND,Math.max(1,Number(state.round)||1));
   state.myVP=Math.max(0,Number(state.myVP)||0);
   state.oppVP=Math.max(0,Number(state.oppVP)||0);
@@ -2820,8 +2846,8 @@ function battle(){const recent=state.events.slice(0,12);return `${gameTimerHtml(
 ${primaryMissionPanel('battle')}
 ${gameAssistantHtml()}
 <details class="card secondary-battle-card secondary-missions-collapsible" ${state.secondaryMissionsOpen===true?"open":""} ontoggle="state.secondaryMissionsOpen=this.open;save()">
-<summary><div class="split"><div><h3 style="margin:0">Secondary Missions</h3><div class="muted">My ${secState('my').length} tracked • Opp ${secState('opp').length} tracked • Secondary VP ${state.myVP||0}–${state.oppVP||0}</div></div><div class="pill">Click to ${state.secondaryMissionsOpen===true?'collapse':'open'}</div></div></summary>
-<div class="secondary-missions-body"><div class="grid2">${secondaryCatalogHtml('my')}${secondaryCatalogHtml('opp')}</div></div></details>
+<summary><div class="split"><div><h3 style="margin:0">Secondary Missions</h3><div class="muted">All 18 missions • Active player: ${esc(state.currentTurn==='opp'?state.oppName:state.myName)} • Secondary VP ${state.myVP||0}–${state.oppVP||0}</div></div><div class="pill">Click to ${state.secondaryMissionsOpen===true?'collapse':'open'}</div></div></summary>
+<div class="secondary-missions-body"><div class="grid2">${secondaryActiveSide()==='my'?secondaryCatalogHtml('my')+secondaryCatalogHtml('opp'):secondaryCatalogHtml('opp')+secondaryCatalogHtml('my')}</div>${secondaryDetailHtml(secondaryActiveSide())}</div></details>
   ${stratagemsUI()}
 
 </div><div class="battle-state-column"><div class="army-state-grid"><div>${armyStateCard('my','My Army State')}</div><div>${armyStateCard('opp','Opponent Army State')}</div></div></div>
@@ -3432,7 +3458,7 @@ async function cloudDeleteBattle(id){
   }catch(e){state.cloud.status='Error';state.cloud.error=e.message||String(e);save();render()}
 }
 function dataManagementPage(){const cfg=getCloudConfig();const battles=Array.isArray(state.cloudBattles)?state.cloudBattles:[];return `<div class="card">
-  <div class="split"><div><h2 style="margin:0">Data Management</h2><div class="muted" style="margin-top:4px">Back up and restore your OnoForge data on this device, or connect it to your Supabase account.</div></div><span class="pill">v281 Backup + Cloud</span></div>
+  <div class="split"><div><h2 style="margin:0">Data Management</h2><div class="muted" style="margin-top:4px">Back up and restore your OnoForge data on this device, or connect it to your Supabase account.</div></div><span class="pill">v282 Backup + Cloud</span></div>
 
   <div class="card cloud-card" style="margin-top:12px">
     <div class="split">
@@ -3568,7 +3594,7 @@ async function load40kAppSourceManifest(){
   }
   render();
 }
-function render(){const pages={builder,saved:savedListsPage,battle,setup,math,rules,data:dataPage,manage:dataManagementPage,log:logPage,scorelog:scoringLogPage};document.getElementById('app').innerHTML=`<div class="top"><div class="brand">ONOFORGE 40K</div><div class="sub">11th Edition • v281 • 40k.app v925 data source • Army-linked Mathhammer Engine</div></div>${nav()}<main class="wrap">
+function render(){const pages={builder,saved:savedListsPage,battle,setup,math,rules,data:dataPage,manage:dataManagementPage,log:logPage,scorelog:scoringLogPage};document.getElementById('app').innerHTML=`<div class="top"><div class="brand">ONOFORGE 40K</div><div class="sub">11th Edition • v282 • 40k.app v925 data source • Army-linked Mathhammer Engine</div></div>${nav()}<main class="wrap">
   
 <div class="status">✓ Browser app loaded locally • Source: ${esc(state.source)} • ${esc(state.revision)} • 40k.app v${esc(String(ONOFORGE_40KAPP_SOURCE?.source?.revision||'925'))}</div><div style="height:12px"></div>${(pages[state.page]||builder)()}${secondaryPlanEditorModal()}</main></div>`
   ensureLiveGameTimerDisplay();
@@ -3623,6 +3649,10 @@ document.addEventListener('click',function(ev){
     }
     return;
   }
+  const sd=ev.target.closest('[data-secondary-detail]');
+  if(sd){ev.preventDefault();ev.stopPropagation();selectSecondaryDetail(sd.dataset.secondaryDetailSide,sd.dataset.secondaryDetailName);return;}
+  const ss=ev.target.closest('[data-secondary-score]');
+  if(ss){ev.preventDefault();ev.stopPropagation();setSecondaryDetailScore(ss.dataset.secondaryScoreSide,ss.dataset.secondaryScoreName,ss.dataset.secondaryScoreValue);return;}
   const tr=ev.target.closest('[data-secondary-track]');
   if(tr){ev.preventDefault();ev.stopPropagation();chooseSecondary(tr.dataset.secondaryTrackSide,tr.dataset.secondaryTrackName);return;}
   const sc=ev.target.closest('[data-secondary-side]');
