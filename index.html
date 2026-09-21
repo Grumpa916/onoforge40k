@@ -3316,6 +3316,8 @@ function dataManagementPage(){const cfg=getCloudConfig();const battles=Array.isA
       ${state.cloud?.userId?`<button class="btn" type="button" onclick="cloudSyncSavedLists()">Sync Saved Lists</button><button class="btn primary" type="button" onclick="cloudSaveCurrentBattle()">${state.cloudBattleSaving?'Saving…':'Save Battle'}</button><button class="btn" type="button" onclick="cloudNewBattle()">New Battle</button><button class="btn" type="button" onclick="cloudSignOut()">Sign Out</button>`:''}
       ${cfg.url||cfg.key?`<button class="btn danger" type="button" onclick="clearCloudConfiguration()">Forget Connection</button>`:''}
     </div>
+    ${state.cloud?.userId&&state.cloudBattleSavedAt?`<div class="tiny" style="margin-top:8px">Battle snapshot: <b>Saved ✓</b> • ${esc(formatSavedListDate(state.cloudBattleSavedAt))}</div>`:''}
+    ${state.cloudBattleSaveError?`<div class="warn" style="margin-top:8px">${esc(state.cloudBattleSaveError)}</div>`:''}
     <div class="cloud-help">Use only the <b>Publishable key</b> in this browser. Never put an <b>sb_secret_...</b> key or database password here. Your Supabase RLS policies control which records your signed-in account can access.</div>
     ${!state.cloud?.userId?`<div class="cloud-auth-grid" style="margin-top:14px">
       <div class="field"><label>Email</label><input id="cloud-email" type="email" autocomplete="email" placeholder="you@example.com"></div>
