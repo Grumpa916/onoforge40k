@@ -400,7 +400,7 @@ const EXPANDED_CATALOGUE=[
 {id:'Tyranids_carnifexes',name:'Carnifexes',faction:'Tyranids',points:125,models:1,wounds:8,profile:{T:9,Sv:2,W:8,OC:4},keywords:['TYRANIDS','INFANTRY'],abilities:[],weapons:[{name:'Fang and Talon',A:2,BS:'3+',WS:'3+',S:4,AP:0,D:1,abilities:[]}]},
 {id:'Tyranids_screamer_killer',name:'Screamer-killer',faction:'Tyranids',points:125,models:1,wounds:10,profile:{T:9,Sv:2,W:10,OC:4},keywords:['TYRANIDS','INFANTRY'],abilities:[],weapons:[{name:'Fang and Talon',A:2,BS:'3+',WS:'3+',S:4,AP:0,D:1,abilities:[]}]},
 {id:'Tyranids_hive_guard',name:'Hive Guard',faction:'Tyranids',points:100,models:3,wounds:3,profile:{T:6,Sv:4,W:3,OC:2},keywords:['TYRANIDS','INFANTRY'],abilities:[],weapons:[{name:'Fang and Talon',A:2,BS:'3+',WS:'3+',S:4,AP:0,D:1,abilities:[]}]},
-{id:'Tyranids_tyrannofex',name:'Tyrannofex',faction:'Tyranids',points:190,models:1,wounds:16,profile:{T:11,Sv:2,W:16,OC:4},keywords:['TYRANIDS','INFANTRY'],abilities:[],weapons:[{name:'Fang and Talon',A:2,BS:'3+',WS:'3+',S:4,AP:0,D:1,abilities:[]}]},
+{id:'Tyranids_tyrannofex',name:'Tyrannofex',faction:'Tyranids',points:180,models:1,wounds:16,profile:{T:11,Sv:2,W:16,OC:4},keywords:['TYRANIDS','INFANTRY'],abilities:[],weapons:[{name:'Fang and Talon',A:2,BS:'3+',WS:'3+',S:4,AP:0,D:1,abilities:[]}]},
 {id:'Tyranids_tyrannocyte',name:'Tyrannocyte',faction:'Tyranids',points:100,models:1,wounds:12,profile:{T:9,Sv:3,W:12,OC:0},keywords:['TYRANIDS','INFANTRY'],abilities:[],weapons:[{name:'Fang and Talon',A:2,BS:'3+',WS:'3+',S:4,AP:0,D:1,abilities:[]}]},
 {id:'Tyranids_harpy',name:'Harpy',faction:'Tyranids',points:170,models:1,wounds:14,profile:{T:10,Sv:3,W:14,OC:4},keywords:['TYRANIDS','INFANTRY'],abilities:[],weapons:[{name:'Fang and Talon',A:2,BS:'3+',WS:'3+',S:4,AP:0,D:1,abilities:[]}]},
 {id:'Tyranids_hive_crone',name:'Hive Crone',faction:'Tyranids',points:155,models:1,wounds:12,profile:{T:10,Sv:3,W:12,OC:4},keywords:['TYRANIDS','INFANTRY'],abilities:[],weapons:[{name:'Fang and Talon',A:2,BS:'3+',WS:'3+',S:4,AP:0,D:1,abilities:[]}]},
@@ -2060,29 +2060,11 @@ function setWargear(side,id,key,value){
   }
   save();render();
 }
-const WARGEAR_COSTS_11E={
-  // BSData 11th-edition catalogue currently represents these wargear
-  // selections as no-cost options. Keeping the costs explicit here makes
-  // future paid upgrades easy to add without changing the calculation logic.
-};
-function wargearOptionPoints(u,g,opt){
-  const byUnit=WARGEAR_COSTS_11E[u.id]||{};
-  const byGroup=byUnit[g.key]||{};
-  const n=Number(byGroup[opt]);
-  return Number.isFinite(n)?n:0;
-}
+const WARGEAR_COSTS_11E={Tyranids_tyrannofex:{main:{'Fleshborer hive':0,'Acid spray':10,'Rupture cannon':20}}};
+const WARGEAR_PROFILES_11E={Tyranids_tyrannofex:{'Fleshborer hive':{rng:'24"',A:'20',BS:'3+',S:'5',AP:'0',D:'1',abilities:'Sustained Hits 1; Twin-linked',points:0},'Acid spray':{rng:'18"',A:'D6+6',BS:'—',S:'6',AP:'-2',D:'2',abilities:'Torrent',points:10},'Rupture cannon':{rng:'48"',A:'2',BS:'3+',S:'18',AP:'-4',D:'D6+6',abilities:'Heavy',points:20},'Stinger salvoes':{rng:'24"',A:'8',BS:'3+',S:'5',AP:'0',D:'1',abilities:'',points:0},'Powerful limbs':{rng:'Melee',A:'4',WS:'3+',S:'8',AP:'0',D:'2',abilities:'',points:0}}};
+function wargearOptionPoints(u,g,opt){const byUnit=WARGEAR_COSTS_11E[u.id]||{},byGroup=byUnit[g.key]||{},n=Number(byGroup[opt]);if(Number.isFinite(n))return n;const p=Number(WARGEAR_PROFILES_11E[u.id]?.[opt]?.points);return Number.isFinite(p)?p:0;}
 function wargearCostLabel(points){return Number(points)||0?'+'+(Number(points)||0)+' pts':'Free'}
-function wargearOptionStats(u,opt){
-  const needle=String(opt||'').trim().toLowerCase();
-  if(!needle || needle==='none') return '';
-  const weapons=Array.isArray(u.weapons)?u.weapons:[];
-  let w=weapons.find(x=>String(x.name||'').trim().toLowerCase()===needle);
-  if(!w) w=weapons.find(x=>{const n=String(x.name||'').trim().toLowerCase();return n&& (n.includes(needle)||needle.includes(n));});
-  if(!w) return '';
-  const vals=[['A',w.A??'—'],['BS/WS',w.BS??w.WS??'—'],['S',w.S??'—'],['AP',w.AP??'—'],['D',w.D??'—']];
-  const abilities=Array.isArray(w.abilities)&&w.abilities.length?w.abilities.join(', '):'';
-  return `<div class="wargear-stats">${vals.map(([k,v])=>`<span><b>${esc(k)}</b> ${esc(v)}</span>`).join('')}${abilities?`<span><b>Abilities</b> ${esc(abilities)}</span>`:''}</div>`;
-}
+function wargearOptionStats(u,opt){const name=String(opt||'').trim();if(!name||name==='None')return '';const p=WARGEAR_PROFILES_11E[u.id]?.[name];if(p){const vals=[];if(p.rng)vals.push(['RNG',p.rng]);if(p.A!==undefined)vals.push(['A',p.A]);if(p.BS!==undefined)vals.push(['BS',p.BS]);if(p.WS!==undefined)vals.push(['WS',p.WS]);if(p.S!==undefined)vals.push(['S',p.S]);if(p.AP!==undefined)vals.push(['AP',p.AP]);if(p.D!==undefined)vals.push(['D',p.D]);return '<div class="wargear-stats">'+vals.map(([k,v])=>'<span><b>'+esc(k)+'</b> '+esc(v)+'</span>').join('')+(p.abilities?'<span><b>Abilities</b> '+esc(p.abilities)+'</span>':'')+'</div>';}const needle=name.toLowerCase(),weapons=Array.isArray(u.weapons)?u.weapons:[];let w=weapons.find(x=>String(x.name||'').trim().toLowerCase()===needle);if(!w)w=weapons.find(x=>{const n=String(x.name||'').trim().toLowerCase();return n&&(n.includes(needle)||needle.includes(n));});if(!w)return '<div class="wargear-stats"><span class="muted">Profile not yet loaded for this option</span></div>';const vals=[['A',w.A??'—'],['BS',w.BS??'—'],['WS',w.WS??'—'],['S',w.S??'—'],['AP',w.AP??'—'],['D',w.D??'—']];const abilities=Array.isArray(w.abilities)&&w.abilities.length?w.abilities.join(', '):'';return '<div class="wargear-stats">'+vals.map(([k,v])=>'<span><b>'+esc(k)+'</b> '+esc(v)+'</span>').join('')+(abilities?'<span><b>Abilities</b> '+esc(abilities)+'</span>':'')+'</div>';}
 function selectedWargearCost(e,u){
   ensureWargear(e,u);
   let total=0;
@@ -2125,7 +2107,7 @@ function configureModal(){
   const e=entry(state.configure.side,state.configure.id);if(!e)return '';
   const side=state.configure.side,u=get(e.unitId),r=unitRules(u);ensureWargear(e,u);
   const wg=wargearGroups(u).map(g=>{
-    if(g.type==='fixed')return `<div class="wargear-group"><h4>${esc(g.label)}</h4><div class="wargear-fixed">${g.options.map(esc).join(' • ')}</div>${g.help?`<div class="wargear-note">${esc(g.help)}</div>`:''}</div>`;
+    if(g.type==='fixed')return `<div class="wargear-group"><h4>${esc(g.label)}</h4><div class="wargear-fixed">${g.options.map(opt=>`<div><b>${esc(opt)}</b> <span class="wargear-cost">${wargearCostLabel(wargearOptionPoints(u,g,opt))}</span>${wargearOptionStats(u,opt)}</div>`).join('')}</div>${g.help?`<div class="wargear-note">${esc(g.help)}</div>`:''}</div>`;
     const vals=g.type==='multi'?(e.wargearSelections[g.key]||[]):[e.wargearSelections[g.key]];
     const inputType=g.type==='multi'?'checkbox':'radio';
     return `<div class="wargear-group"><h4>${esc(g.label)}</h4><div class="wargear-options">${g.options.map((opt,i)=>{
@@ -2134,7 +2116,7 @@ function configureModal(){
       return `<label class="wargear-option" for="${esc(id)}"><input id="${esc(id)}" type="${inputType}" name="wg-${esc(e.uid)}-${esc(g.key)}" ${checked?'checked':''} onchange="setWargear('${side}','${e.uid}','${esc(g.key).replace(/'/g,"\'")}','${esc(opt).replace(/'/g,"\'")}')"><span class="wargear-option-text"><span>${esc(opt)} <span class="wargear-cost">${wargearCostLabel(wargearOptionPoints(u,g,opt))}</span></span>${wargearOptionStats(u,opt)}</span></label>`;
     }).join('')}</div>${g.help?`<div class="wargear-note">${esc(g.help)}</div>`:''}</div>`;
   }).join('');
-  return `<div class="modal"><div class="card"><div class="split"><h2>Configure ${esc(unitDisplayName(side,e))}</h2><button class="btn" onclick="state.configure=null;render()">Close</button></div><div class="grid3"><div class="field"><label>Models per unit</label><input type="number" min="${r.minModels}" max="${r.maxModels}" step="${r.step}" value="${e.models}" onchange="entry('${side}','${e.uid}').models=+this.value||${r.minModels};save();render()"></div><div class="field"><label>Enhancement</label><input value="${esc(e.enhancement)}" onchange="entry('${side}','${e.uid}').enhancement=this.value;save()"></div></div><div class="wargear-box"><div class="split"><h3 style="margin:0">11th Edition Wargear</h3><span class="detachment-dp">Wargear: ${selectedWargearCost(e,u)?'+'+selectedWargearCost(e,u)+' pts':'Free'}</span></div><div class="wargear-source">Wargear points are calculated per selected option and added to the unit total. Options marked <b>Free</b> add 0 pts.</div>${wg}</div><div class="status" style="margin-top:10px"><strong>Unit Total:</strong> Base ${u.points} pts + Wargear ${selectedWargearCost(e,u)} pts = <b>${pts(e)} pts</b></div><h3>Weapons</h3>${u.weapons.map(w=>`<label style="display:block;margin:8px 0"><input type="checkbox" ${e.weapons.includes(w.name)?'checked':''} onchange="toggleWeapon('${side}','${e.uid}','${esc(w.name).replace(/'/g,"\\'")}')"> ${esc(w.name)} <span class="muted">A ${esc(w.A)} • ${esc(w.BS||w.WS||'—')} • S${w.S} • AP${w.AP} • D${esc(w.D)}</span></label>`).join('')}<div class="field"><label>Personal notes</label><textarea onchange="entry('${side}','${e.uid}').notes=this.value;save()">${esc(e.notes)}</textarea></div><button class="btn primary" onclick="state.configure=null;save();render()">Save Configuration</button></div></div>`
+  return `<div class="modal"><div class="card"><div class="split"><h2>Configure ${esc(unitDisplayName(side,e))}</h2><button class="btn" onclick="state.configure=null;render()">Close</button></div><div class="grid3"><div class="field"><label>Models per unit</label><input type="number" min="${r.minModels}" max="${r.maxModels}" step="${r.step}" value="${e.models}" onchange="entry('${side}','${e.uid}').models=+this.value||${r.minModels};save();render()"></div><div class="field"><label>Enhancement</label><input value="${esc(e.enhancement)}" onchange="entry('${side}','${e.uid}').enhancement=this.value;save()"></div></div><div class="wargear-box"><div class="split"><h3 style="margin:0">11th Edition Wargear</h3><span class="detachment-dp">Wargear: ${selectedWargearCost(e,u)?'+'+selectedWargearCost(e,u)+' pts':'Free'}</span></div><div class="wargear-source">Each option shows its current point cost and weapon profile when available. Selected costs are added to the unit total.</div>${wg}</div><div class="status" style="margin-top:10px"><strong>Unit Total:</strong> Base ${u.points} pts + Wargear ${selectedWargearCost(e,u)} pts = <b>${pts(e)} pts</b></div><h3>Weapons</h3>${u.weapons.map(w=>`<label style="display:block;margin:8px 0"><input type="checkbox" ${e.weapons.includes(w.name)?'checked':''} onchange="toggleWeapon('${side}','${e.uid}','${esc(w.name).replace(/'/g,"\\'")}')"> ${esc(w.name)} <span class="muted">A ${esc(w.A)} • ${esc(w.BS||w.WS||'—')} • S${w.S} • AP${w.AP} • D${esc(w.D)}</span></label>`).join('')}<div class="field"><label>Personal notes</label><textarea onchange="entry('${side}','${e.uid}').notes=this.value;save()">${esc(e.notes)}</textarea></div><button class="btn primary" onclick="state.configure=null;save();render()">Save Configuration</button></div></div>`
 }
 function changeMyFaction(value){
   state.saveListMessage='';
