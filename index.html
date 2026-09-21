@@ -2387,7 +2387,7 @@ ${primaryMissionPanel('battle')}
 </div>
 ${currentArmyDisplay()}
 `}
-function armyStateCard(side,title){const units=side==='my'?state.my:state.opp;const empty=side==='my'?'<div class="empty">No army. Go to List Builder to add units, then Start / Reset Battle.</div>':'<div class="empty">No army.</div>';return `<div class="card army-state-card"><h3>${esc(title)}</h3>${sortBattleState(units).map(e=>gameRow(side,e)).join('')||empty}</div>`}
+function armyStateCard(side,title){const units=side==='my'?state.my:state.opp;const empty=side==='my'?'<div class="empty">No army. Go to List Builder to add units, then Start / Reset Battle.</div>':'<div class="empty">No army.</div>';return `<div class="card army-state-card"><h3>${esc(title)}</h3>${(units||[]).map(e=>gameRow(side,e)).join('')||empty}</div>`}
 function sortBattleState(arr){return (arr||[]).slice().sort((a,b)=>{const au=get(a.unitId),bu=get(b.unitId);const ag=a.game||{models:a.models,wounds:a.models*(au?.wounds||1),status:'Alive',battleshocked:false};const bg=b.game||{models:b.models,wounds:b.models*(bu?.wounds||1),status:'Alive',battleshocked:false};const aDestroyed=ag.status==='Destroyed'?1:0,bDestroyed=bg.status==='Destroyed'?1:0;if(aDestroyed!==bDestroyed)return aDestroyed-bDestroyed;const aShock=ag.battleshocked?0:1,bShock=bg.battleshocked?0:1;if(aShock!==bShock)return aShock-bShock;const aMax=a.models*(au?.wounds||1),bMax=b.models*(bu?.wounds||1);const aDamaged=Number(ag.wounds)<aMax?0:1,bDamaged=Number(bg.wounds)<bMax?0:1;if(aDamaged!==bDamaged)return aDamaged-bDamaged;if(aDamaged===0&&Number(ag.wounds)!==Number(bg.wounds))return Number(ag.wounds)-Number(bg.wounds);return String(au?.name||'').localeCompare(String(bu?.name||''));});}
 function gameRow(side,e){const u=get(e.unitId);const g=e.game||{models:e.models,wounds:e.models*u.wounds,status:'Alive',battleshocked:false};if(g.battleshocked==null)g.battleshocked=false;const modelControls=e.models>1?`<button class="btn" type="button" onclick="changeUnit('${side}','${e.uid}',-1,0);return false;">− Model</button><button class="btn" type="button" onclick="changeUnit('${side}','${e.uid}',1,0);return false;">+ Model</button>`:'';const shockControl=`<button class="btn${g.battleshocked?' danger':''}" type="button" onclick="toggleBattleshocked('${side}','${e.uid}');return false;">${g.battleshocked?'✓ Battleshocked':'Battleshock'}</button>`;const destroyedControl=`<button class="btn${g.status==='Destroyed'?' danger':''}" type="button" onclick="setUnitDestroyed('${side}','${e.uid}');return false;">${g.status==='Destroyed'?'✓ Destroyed':'Destroyed'}</button>`;return `<div class="game-unit-row ${g.battleshocked?'is-battleshocked':''}" data-entry-id="${esc(e.uid)}"><div class="game-unit-name"><strong>${esc(u.name)}</strong>${g.battleshocked?'<span class="battleshock-badge">BATTLESHOCKED</span>':''}</div><div class="game-unit-controls">
 <div class="game-unit-stats">${e.models>1?`${g.models}/${e.models} models • `:''}${g.wounds}/${e.models*u.wounds} wounds • ${g.status}</div>
@@ -2420,8 +2420,8 @@ if(e.game.entryId!==e.uid)e.game={...e.game,entryId:e.uid};if(e.game.battleshock
 function changeVP(side,d){d=Number(d)||0;const fullBefore=snapshotForUndo();const before=side==='my'?Number(state.myVP)||0:Number(state.oppVP)||0;const after=Math.max(0,before+d);if(side==='my')state.myVP=after;else state.oppVP=after;event('VP_CHANGED',{side,unit:side==='my'?'My Score':'Opponent Score',action:'VP '+(d>0?'+':'')+d,before,after,delta:d},fullBefore);save();render()}
 function objectivePrompt(){const n=prompt('Objective name');if(!n)return;const owner=prompt('Controlled by: my / opp / contested','my');if(!owner)return;const fullBefore=snapshotForUndo();const previous=state.objectives[n]||'none';state.objectives[n]=owner;event('OBJECTIVE_CHANGED',{name:n,unit:'Objective '+n,action:'Control → '+owner,owner,previous,after:owner},fullBefore);save();render()}
 function changeCP(side,d){d=Number(d)||0;const fullBefore=snapshotForUndo();const before=side==='my'?Number(state.myCP)||0:Number(state.oppCP)||0;const after=Math.max(0,before+d);if(side==='my')state.myCP=after;else state.oppCP=after;event('CP_CHANGED',{side,unit:side==='my'?'My CP':'Opponent CP',action:'CP '+(d>0?'+':'')+d,before,after,delta:d},fullBefore);save();render()}
-function advancePhase(){const before=snapshotForUndo();const phases=['Command','Movement','Shooting','Charge','Fight','End'];const current=String(state.phase||'Command');let i=phases.indexOf(current);if(i<0)i=0;const next=phases[(i+1)%phases.length];state.phase=next;event('PHASE_CHANGED',{from:phases[i],phase:next,action:'Next Phase'},before);save();render()}
-function previousPhase(){const before=snapshotForUndo();const phases=['Command','Movement','Shooting','Charge','Fight','End'];const current=String(state.phase||'Command');let i=phases.indexOf(current);if(i<0)i=0;const prev=phases[(i-1+phases.length)%phases.length];state.phase=prev;event('PHASE_CHANGED',{from:phases[i],phase:prev,action:'Previous Phase'},before);save();render()}
+function advancePhase(){const before=snapshotForUndo();const phases=['Command','Movement','Shooting','Charge','Fight','End'];const current=String(state.phase||'Command');let i=phases.indexOf(current);if(i<0)i=0;const next=phases[(i+1)%phases.length];state.phase=next;state.my=sortBattleState(state.my);state.opp=sortBattleState(state.opp);event('PHASE_CHANGED',{from:phases[i],phase:next,action:'Next Phase'},before);save();render()}
+function previousPhase(){const before=snapshotForUndo();const phases=['Command','Movement','Shooting','Charge','Fight','End'];const current=String(state.phase||'Command');let i=phases.indexOf(current);if(i<0)i=0;const prev=phases[(i-1+phases.length)%phases.length];state.phase=prev;state.my=sortBattleState(state.my);state.opp=sortBattleState(state.opp);event('PHASE_CHANGED',{from:phases[i],phase:prev,action:'Previous Phase'},before);save();render()}
 function nextRound(){
  const before=snapshotForUndo();
  const current=Number(state.round);
@@ -2429,6 +2429,8 @@ function nextRound(){
  state.round=Math.min(MAX_ROUND,(Number.isFinite(current)&&current>0?current:1)+1);
  syncPrimaryScoringRound();
  state.phase='Command';
+ state.my=sortBattleState(state.my);
+ state.opp=sortBattleState(state.opp);
  
  event('ROUND_CHANGED',{round:state.round,phase:'Command',action:'Next Round'},before);
  save();
@@ -2441,6 +2443,8 @@ function previousRound(){
  state.round=Math.max(1,current-1);
  syncPrimaryScoringRound();
  state.phase='Command';
+ state.my=sortBattleState(state.my);
+ state.opp=sortBattleState(state.opp);
  event('ROUND_CHANGED',{round:state.round,phase:'Command',action:'Previous Round'},before);
  save();
  render();
