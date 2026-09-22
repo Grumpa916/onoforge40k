@@ -4454,26 +4454,31 @@ function tacticalWeaponHasRule(w,rule){
 function tacticalWeaponLimited(w){
   return tacticalWeaponHasRule(w,'ONE SHOT')||tacticalWeaponHasRule(w,'ONCE PER BATTLE');
 }
-function tacticalWeaponAvailable(entryUid,w){
-  if(!w)return {available:false,reason:'missing weapon'};
+function tacticalWeaponAvailable(entryUid,w,maxCount){
+  if(!w)return {available:false,count:0,reason:'missing weapon'};
   const use=tacticalWeaponUseState(entryUid,w.name);
-  if(tacticalWeaponHasRule(w,'ONE SHOT')&&use.used)return {available:false,reason:'One Shot already used',use};
-  return {available:true,reason:null,use};
+  const limit=Math.max(1,Number(maxCount)||1);
+  if(tacticalWeaponHasRule(w,'ONE SHOT')){
+    const remaining=Math.max(0,limit-Math.min(limit,use.usedCount));
+    return {available:remaining>0,count:remaining,reason:remaining>0?null:'All One Shot weapons used',use};
+  }
+  return {available:true,count:limit,reason:null,use};
 }
-function setTacticalWeaponUsed(entryUid,weaponName,used){
+function setTacticalWeaponUsed(entryUid,weaponName,value){
   if(!entryUid||!weaponName)return;
   const before=snapshotForUndo(),t=ensureTacticalState(),key=tacticalWeaponUseKey(entryUid,weaponName),old=tacticalWeaponUseState(entryUid,weaponName);
-  t.unitUse[key]={used:!!used,usedCount:used?Math.max(1,old.usedCount):0};
-  event('TACTICAL_WEAPON_USE_CHANGED',{entryUid,weaponName,action:used?'Weapon marked used':'Weapon use restored',before:old,after:t.unitUse[key]},before);
+  const n=Math.max(0,Math.floor(Number(value)||0));
+  t.unitUse[key]={used:n>0,usedCount:n};
+  event('TACTICAL_WEAPON_USE_CHANGED',{entryUid,weaponName,action:n?'Weapon use count changed':'Weapon use restored',before:old,after:t.unitUse[key]},before);
   save();render();
 }
 function tacticalWeaponUseHtml(entryUid,groups){
   const unique=[...new Map((groups||[]).map(g=>[g.weapon.name,g])).values()].filter(g=>tacticalWeaponLimited(g.weapon));
   if(!unique.length)return '';
-  return '<div class="status"><b>Limited-use weapons</b><div class="row" style="margin-top:7px">'+unique.map(g=>{
-    const u=tacticalWeaponUseState(entryUid,g.weapon.name),label=u.used?'Used':'Available';
-    return '<label class="check"><input type="checkbox" '+(u.used?'checked':'')+' onchange="setTacticalWeaponUsed(\''+entryUid+'\',\''+esc(g.weapon.name).replace(/'/g,"\\'")+'\',this.checked)"> '+esc(g.weapon.name)+' • '+label+'</label>';
-  }).join('')+'</div><div class="tiny">Use this only for limited-use rules. Hazardous weapons remain available but are flagged by the Advisor.</div></div>';
+  return '<div class="status"><b>Limited-use weapons</b><div class="grid2" style="margin-top:7px">'+unique.map(g=>{
+    const u=tacticalWeaponUseState(entryUid,g.weapon.name),max=Math.max(1,Number(g.count)||1),used=Math.min(max,u.usedCount),label=used+'/'+max+' used';
+    return '<div class="field"><label>'+esc(g.weapon.name)+' • '+label+'</label><input type="number" min="0" max="'+max+'" step="1" value="'+used+'" onchange="setTacticalWeaponUsed(\''+entryUid+'\',\''+esc(g.weapon.name).replace(/'/g,"\\'")+'\',this.value)"></div>';
+  }).join('')+'</div><div class="tiny">One Shot is tracked per weapon model. Hazardous weapons remain available but are flagged by the Advisor.</div></div>';
 }
 function tacticalWeaponRange(w){
   if(!w)return null;
@@ -4575,7 +4580,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
   if(!attacker)return {version:'tactical-advisor-v1',status:'no-attacker',recommendations:[],avoid:[],naturalTargets:[]};
   const groups=attachedCombatWeaponGroups(side,atkEntry);
   if(!groups.length)return {version:'tactical-advisor-v1',status:'no-weapons',attacker:attacker.name,recommendations:[],avoid:[],naturalTargets:[]};
-  const availableGroups=groups.filter(g=>tacticalWeaponAvailable(g.entry?.uid||atkEntry?.uid,g.weapon).available);
+  const availableGroups=groups.map(g=>{const a=tacticalWeaponAvailable(g.entry?.uid||atkEntry?.uid,g.weapon,g.count);return a.available?{...g,count:Math.min(g.count,a.count)}:null}).filter(Boolean);
   const roots=(state.opp||[]).filter(e=>!e.attachedTo);
   const results=roots.map(targetEntry=>{
     const snap=combatSnapshot('opp',targetEntry);
@@ -4605,7 +4610,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
       models:defModels,targetWounds:totalWounds,expectedDamage:damage,modelsKilled:killed,wipeChance:wipe,
       damageFraction:damageFrac,killFraction,damagePerPoint:efficiency,weaponProfiles:weaponKeys,
       antiMatches:[...new Set(antiMatches)],confidence,
-      tacticalLegality:tacticalTargetLegality(atkEntry,targetEntry,state.phase),\n      limitedUseExcluded:groups.filter(g=>!tacticalWeaponAvailable(g.entry?.uid||atkEntry?.uid,g.weapon).available).map(g=>g.weapon.name),\n      hazardousWeapons:[...new Set(availableGroups.filter(g=>tacticalWeaponHasRule(g.weapon,'HAZARDOUS')).map(g=>g.weapon.name))],
+      tacticalLegality:tacticalTargetLegality(atkEntry,targetEntry,state.phase),\n      limitedUseExcluded:groups.filter(g=>!tacticalWeaponAvailable(g.entry?.uid||atkEntry?.uid,g.weapon,g.count).available).map(g=>g.weapon.name),\n      hazardousWeapons:[...new Set(availableGroups.filter(g=>tacticalWeaponHasRule(g.weapon,'HAZARDOUS')).map(g=>g.weapon.name))],
       attached:!!target.__combatTarget,
       bodyguardTarget:!!target.__bodyguardEntryUid,
       strategicHook:{objectiveControl:Number(target.profile?.OC)||0,keywords:[...(target.keywords||[])]},
