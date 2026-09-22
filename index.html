@@ -5122,30 +5122,115 @@ function engineTargetForAttack(t,m,woundsState){
   }
   return t;
 }
-function enginePrecisionTargetIds(m){
-  const ids=Array.isArray(m?.precisionTargetModelIds)?m.precisionTargetModelIds.filter(Boolean):[];
-  if(ids.length)return ids.map(String);
-  return m?.precisionTargetModelId?[String(m.precisionTargetModelId)]:[];
+function enginePrecisionTargetId(m){
+  return m?.precisionTargetModelId?String(m.precisionTargetModelId):'';
 }
-function enginePrecisionAllocationIndex(w,t,m,woundsState,precisionOrdinal=0){
-  const s=m?.attachedTargetState;
+function enginePrecisionGroupIndex(w,t,m,s,woundsState,allocationGroups){
   const c=engineContext(null,w,t,m);
-  if(!s||!c.precision)return null;
-  const ids=enginePrecisionTargetIds(m);
-  if(!ids.length)return null;
-  const wanted=ids[precisionOrdinal%ids.length];
-  const idx=s.characterSlots.findIndex((slot,i)=>String(slot.model?.id||'')===wanted&&Number(woundsState[s.bodyguardCount+i])>0);
-  return idx<0?null:s.bodyguardCount+idx;
+  if(!s||!c.precision)return -1;
+  const wanted=enginePrecisionTargetId(m);
+  if(!wanted)return -1;
+  const modelIndex=s.characterSlots.findIndex((slot,i)=>String(slot.model?.id||'')===wanted&&Number(woundsState[s.bodyguardCount+i])>0);
+  if(modelIndex<0)return -1;
+  const idx=s.bodyguardCount+modelIndex;
+  return allocationGroups.findIndex(g=>g.indices.includes(idx));
 }
-function engineAllocationTargetForAttack(w,t,m,woundsState,precisionOrdinal=0){
-  const precisionIndex=enginePrecisionAllocationIndex(w,t,m,woundsState,precisionOrdinal);
-  const s=m?.attachedTargetState;
-  if(Number.isInteger(precisionIndex)){
-    const slot=s.characterSlots[precisionIndex-s.bodyguardCount];
-    return {index:precisionIndex,unit:{...t,profile:{...(slot.profile||t.profile)},wounds:slot.maxWounds||t.wounds,models:1,__allocationState:s},precision:true};
+function engineGroupLiveIndices(s,woundsState,g){
+  return (g?.indices||[]).filter(i=>Number(woundsState[i])>0);
+}
+function engineSelectModelInGroup(s,woundsState,g){
+  const live=engineGroupLiveIndices(s,woundsState,g);
+  if(!live.length)return -1;
+  const wounded=live.find(i=>{
+    const slot=i<s.bodyguardCount?s.bodyguardSlots[i]:s.characterSlots[i-s.bodyguardCount];
+    return Number(woundsState[i])<Number(slot?.maxWounds||slot?.profile?.W||1);
+  });
+  return Number.isInteger(wounded)?wounded:live[0];
+}
+function engineAdvanceAllocationCursor(s,woundsState,groups,cursor){
+  let i=Math.max(0,Number(cursor)||0);
+  while(i<groups.length&&!engineGroupLiveIndices(s,woundsState,groups[i]).length)i++;
+  return i;
+}
+function engineMortalWoundIndex(s,woundsState,preferredGroupIndex=null){
+  if(!s)return woundsState.findIndex(x=>Number(x)>0);
+  const groups=engineBuildAllocationGroups(s,woundsState);
+  if(Number.isInteger(preferredGroupIndex)&&preferredGroupIndex>=0&&preferredGroupIndex<groups.length){
+    const idx=engineSelectModelInGroup(s,woundsState,groups[preferredGroupIndex]);
+    if(idx>=0)return idx;
   }
-  const idx=s?engineSelectAllocationIndex(s,woundsState):woundsState.findIndex(x=>Number(x)>0);
-  return {index:idx,unit:t,precision:false};
+  const nonChars=groups.filter(g=>!g.character);
+  const woundedNonChar=nonChars.find(g=>g.indices.some(i=>{
+    const slot=s.bodyguardSlots?.[i],max=Number(slot?.maxWounds||slot?.profile?.W||1);
+    return Number(woundsState[i])>0&&Number(woundsState[i])<max;
+  }));
+  if(woundedNonChar){
+    const idx=engineSelectModelInGroup(s,woundsState,woundedNonChar);
+    if(idx>=0)return idx;
+  }
+  const anyNonChar=nonChars.find(g=>engineGroupLiveIndices(s,woundsState,g).length);
+  if(anyNonChar){
+    const idx=engineSelectModelInGroup(s,woundsState,anyNonChar);
+    if(idx>=0)return idx;
+  }
+  const chars=groups.filter(g=>g.character);
+  const woundedChar=chars.find(g=>g.indices.some(i=>{
+    const slot=s.characterSlots?.[i-s.bodyguardCount],max=Number(slot?.maxWounds||slot?.profile?.W||1);
+    return Number(woundsState[i])>0&&Number(woundsState[i])<max;
+  }));
+  if(woundedChar){
+    const idx=engineSelectModelInGroup(s,woundsState,woundedChar);
+    if(idx>=0)return idx;
+  }
+  const anyChar=chars.find(g=>engineGroupLiveIndices(s,woundsState,g).length);
+  return anyChar?engineSelectModelInGroup(s,woundsState,anyChar):-1;
+}
+function engineApplyDamageToWoundsState(d,woundsState,t,targetIndex=null){
+  let remainingDamage=Math.max(0,Number(d)||0),applied=0;
+  const s=t?.__allocationState||null;
+  while(remainingDamage>0){
+    const explicitIndex=Number.isInteger(targetIndex)&&targetIndex>=0&&targetIndex<woundsState.length;
+    if(explicitIndex&&Number(woundsState[targetIndex])<=0)return applied;
+    const idx=explicitIndex?targetIndex:(s?engineSelectAllocationIndex(s,woundsState):woundsState.findIndex(x=>Number(x)>0));
+    if(idx<0)break;
+    const remaining=Math.max(0,Number(woundsState[idx])||Number(t?.profile?.W)||1);
+    const dealt=Math.min(remaining,remainingDamage);
+    woundsState[idx]=Math.max(0,remaining-dealt);
+    applied+=dealt;
+    break;
+  }
+  return applied;
+}
+function engineTargetForAttack(t,m,woundsState){
+  const s=m?.attachedTargetState;
+  if(!s)return t;
+  const bodyguardLive=s.bodyguardSlots.filter((_,i)=>Number(woundsState[i])>0);
+  if(bodyguardLive.length){
+    const highestT=Math.max(...bodyguardLive.map(slot=>Number(slot.profile?.T)||Number(t.profile?.T)||4));
+    return {...t,profile:{...(t.profile||{}),T:highestT},wounds:Math.max(1,Number(t.wounds)||1),models:bodyguardLive.length,__allocationState:s};
+  }
+  const characterLive=s.characterSlots.filter((_,i)=>Number(woundsState[s.bodyguardCount+i])>0);
+  if(characterLive.length){
+    const highestT=Math.max(...characterLive.map(slot=>Number(slot.profile?.T)||Number(t.profile?.T)||4));
+    return {...t,profile:{...(t.profile||{}),T:highestT},wounds:Math.max(1,Number(t.wounds)||1),models:characterLive.length,__allocationState:s};
+  }
+  return t;
+}
+function engineAllocationTargetForAttack(w,t,m,woundsState,groupIndex=null){
+  const s=m?.attachedTargetState;
+  if(s){
+    const groups=engineBuildAllocationGroups(s,woundsState);
+    const gi=Number.isInteger(groupIndex)?groupIndex:engineAllocationOrder(s,woundsState).length?groups.findIndex(g=>engineGroupLiveIndices(s,woundsState,g).length):0;
+    if(gi>=0&&gi<groups.length){
+      const idx=engineSelectModelInGroup(s,woundsState,groups[gi]);
+      if(idx>=0){
+        const slot=idx<s.bodyguardCount?s.bodyguardSlots[idx]:s.characterSlots[idx-s.bodyguardCount];
+        return {index:idx,groupIndex:gi,unit:{...t,profile:{...(slot.profile||t.profile)},wounds:slot.maxWounds||t.wounds,models:1,__allocationState:s},precision:false};
+      }
+    }
+  }
+  const idx=woundsState.findIndex(x=>Number(x)>0);
+  return {index:idx,groupIndex:null,unit:t,precision:false};
 }
 function engineOneAttack(a,w,t,m,modelsRemaining,woundsState){
   const baseTarget=engineTargetForAttack(t,m,woundsState);
@@ -5153,7 +5238,6 @@ function engineOneAttack(a,w,t,m,modelsRemaining,woundsState){
   let attacks=Math.max(0,Math.round(engineRoll(w.A)+(baseC.rapidFire&&m.halfRange?baseC.rapidFire:0)+(baseC.blast?baseC.blast*Math.floor(modelsRemaining/5):0)+(baseC.cleave?baseC.cleave*Math.floor(modelsRemaining/5):0)));
   let hits=0,wounds=0,saved=0,critHits=0,critWounds=0,rollLog=[];
   const woundEvents=[];
-  let precisionOrdinal=0;
   for(let ai=0;ai<attacks;ai++){
     const attackTarget=engineTargetForAttack(t,m,woundsState);
     const c=engineContext(a,w,attackTarget,m);
@@ -5164,15 +5248,7 @@ function engineOneAttack(a,w,t,m,modelsRemaining,woundsState){
     if(crit)critHits++;
     if(crit&&c.lethal){
       wounds++;
-      const precision=c.precision;
-      const precisionIndex=precision?enginePrecisionAllocationIndex(w,attackTarget,m,woundsState,precisionOrdinal):null;
-      if(precision&&Number.isInteger(precisionIndex))precisionOrdinal++;
-      woundEvents.push({
-        hit:h,wound:'AUTO',criticalWound:false,devastating:false,precision,
-        precisionIndex:Number.isInteger(precisionIndex)?precisionIndex:null,
-        damage:()=>engineRoll(w.D)+(c.melta&&m.halfRange?c.melta:0),
-        context:c
-      });
+      woundEvents.push({hit:h,wound:'AUTO',criticalWound:false,devastating:false,precision:c.precision,context:c,damage:()=>engineRoll(w.D)+(c.melta&&m.halfRange?c.melta:0)});
       continue;
     }
     hits++;
@@ -5183,70 +5259,76 @@ function engineOneAttack(a,w,t,m,modelsRemaining,woundsState){
       const critW=wr>=c.critWoundThreshold,wound=wr>=c.woundNeed||critW;
       if(!wound)continue;
       wounds++;if(critW)critWounds++;
-      const precision=c.precision;
-      const precisionIndex=precision?enginePrecisionAllocationIndex(w,attackTarget,m,woundsState,precisionOrdinal):null;
-      if(precision&&Number.isInteger(precisionIndex))precisionOrdinal++;
-      woundEvents.push({
-        hit:h,wound:wr,criticalWound:critW,devastating:!!(critW&&c.devastating),precision,
-        precisionIndex:Number.isInteger(precisionIndex)?precisionIndex:null,
-        damage:()=>engineRoll(w.D)+(c.melta&&m.halfRange?c.melta:0),
-        context:c
-      });
+      woundEvents.push({hit:h,wound:wr,criticalWound:critW,devastating:!!(critW&&c.devastating),precision:c.precision,context:c,damage:()=>engineRoll(w.D)+(c.melta&&m.halfRange?c.melta:0)});
     }
   }
 
-  // Precision is the explicit sequencing exception: all successfully-wounding
-  // Precision attacks are assigned to their selected visible Character(s)
-  // before any saving throws are rolled.
-  const precisionEvents=woundEvents.filter(e=>e.precision&&Number.isInteger(e.precisionIndex));
-  const normalEvents=woundEvents.filter(e=>!(e.precision&&Number.isInteger(e.precisionIndex)));
-  const saveEvents=[];
-  for(const e of precisionEvents.concat(normalEvents)){
-    if(e.devastating){
-      saveEvents.push({...e,saveRoll:null,saved:false,allocatedIndex:e.precision?e.precisionIndex:null});
-      continue;
-    }
-    const provisionalTarget=e.precision
-      ?e.precisionIndex
-        :null;
-    let saveTarget=t;
-    if(Number.isInteger(provisionalTarget)&&m.attachedTargetState){
-      const s=m.attachedTargetState,slot=provisionalTarget<s.bodyguardCount?s.bodyguardSlots[provisionalTarget]:s.characterSlots[provisionalTarget-s.bodyguardCount];
-      if(slot)saveTarget={...t,profile:{...(slot.profile||t.profile)},wounds:slot.maxWounds||t.wounds,models:1,__allocationState:s};
-    }else if(!m.attachedTargetState){
-      saveTarget=t;
-    }
-    const save=engineSaveDistribution(saveTarget,w,e.context,m);
+  const s=m?.attachedTargetState||null;
+  const allocationGroups=s?engineAllocationOrder(s,woundsState):[];
+  const precisionGroupIndex=s&&woundEvents.some(e=>e.precision)
+    ?enginePrecisionGroupIndex(w,t,m,s,woundsState,allocationGroups):-1;
+  const saveEvents=woundEvents.filter(e=>!e.devastating).map(e=>{
     let sr=1+Math.floor(Math.random()*6);
     if(m.rerollSave1&&sr===1)sr=1+Math.floor(Math.random()*6);
-    const savedThis=sr!==1&&sr>=save.need;
-    saveEvents.push({...e,saveNeed:save.need,saveRoll:sr,saved:savedThis,allocatedIndex:Number.isInteger(provisionalTarget)?provisionalTarget:null});
+    return {...e,saveRoll:sr};
+  });
+
+  let totalDamage=0;
+  let normalCursor=0;
+  let precisionCursor=precisionGroupIndex>=0?precisionGroupIndex:null;
+  const resolveNormal=(e)=>{
+    normalCursor=engineAdvanceAllocationCursor(s,woundsState,allocationGroups,normalCursor);
+    if(!s)return {index:woundsState.findIndex(x=>Number(x)>0),groupIndex:null,unit:t};
+    if(normalCursor>=allocationGroups.length)return {index:-1,groupIndex:normalCursor,unit:t};
+    const idx=engineSelectModelInGroup(s,woundsState,allocationGroups[normalCursor]);
+    const slot=idx<s.bodyguardCount?s.bodyguardSlots[idx]:s.characterSlots[idx-s.bodyguardCount];
+    return {index:idx,groupIndex:normalCursor,unit:{...t,profile:{...(slot.profile||t.profile)},wounds:slot.maxWounds||t.wounds,models:1,__allocationState:s}};
+  };
+  const resolvePrecision=(e)=>{
+    if(precisionCursor===null||!s)return resolveNormal(e);
+    precisionCursor=engineAdvanceAllocationCursor(s,woundsState,allocationGroups,precisionCursor);
+    if(precisionCursor>=allocationGroups.length)return {index:-1,groupIndex:precisionCursor,unit:t};
+    const idx=engineSelectModelInGroup(s,woundsState,allocationGroups[precisionCursor]);
+    const slot=idx<s.bodyguardCount?s.bodyguardSlots[idx]:s.characterSlots[idx-s.bodyguardCount];
+    return {index:idx,groupIndex:precisionCursor,unit:{...t,profile:{...(slot.profile||t.profile)},wounds:slot.maxWounds||t.wounds,models:1,__allocationState:s}};
+  };
+
+  // All normal save rolls are resolved from lowest result to highest result.
+  // Allocation groups are fixed before the rolls; only destruction advances the
+  // current group. Precision temporarily makes its selected Character group the
+  // current group for Precision attacks until that group is destroyed.
+  saveEvents.sort((x,y)=>Number(x.saveRoll)-Number(y.saveRoll));
+  for(const e of saveEvents){
+    const alloc=e.precision?resolvePrecision(e):resolveNormal(e);
+    if(alloc.index<0)break;
+    const save=engineSaveDistribution(alloc.unit,w,e.context,m);
+    const savedThis=e.saveRoll!==1&&e.saveRoll>=save.need;
+    if(savedThis){saved++;continue}
+    let d=e.damage();
+    if(m.minusDamage1)d=Math.max(0,d-1);
+    d=engineApplyFnp(d,m);
+    if(d>0)totalDamage+=engineApplyDamageToWoundsState(d,woundsState,alloc.unit,alloc.index);
+    const cursor=alloc.groupIndex;
+    if(s&&cursor!==null&&cursor>=0&&cursor<allocationGroups.length&&!engineGroupLiveIndices(s,woundsState,allocationGroups[cursor]).length){
+      if(e.precision)precisionCursor=cursor+1;else normalCursor=cursor+1;
+    }
   }
 
-  // The current rules resolve save rolls from lowest result to highest result.
-  // Non-Precision wounds are allocated at damage resolution, after the save
-  // result is known; Precision wounds retain their pre-save Character target.
-  const resolution=saveEvents.filter(e=>e.devastating||e.saved||e.saveRoll!==null)
-    .sort((x,y)=>{
-      if(x.devastating&&!y.devastating)return -1;
-      if(!x.devastating&&y.devastating)return 1;
-      if(x.devastating&&y.devastating)return 0;
-      return Number(x.saveRoll)-Number(y.saveRoll);
-    });
-  let totalDamage=0;
-  for(const e of resolution){
-    if(e.saved){saved++;continue}
-    const alloc=Number.isInteger(e.allocatedIndex)
-      ?engineAllocationTargetForAttack(w,t,m,woundsState,e.precision?precisionEvents.indexOf(e):0)
-      :engineAllocationTargetForAttack(w,t,m,woundsState,0);
-    const targetIndex=Number.isInteger(e.precisionIndex)?e.precisionIndex:alloc.index;
-    const allocationTarget=Number.isInteger(e.precisionIndex)&&m.attachedTargetState
-      ?(()=>{const s=m.attachedTargetState,slot=s.characterSlots[e.precisionIndex-s.bodyguardCount];return slot?{...t,profile:{...(slot.profile||t.profile)},wounds:slot.maxWounds||t.wounds,models:1,__allocationState:s}:t})()
-      :alloc.unit;
-    let d=e.damage();
-    if(m.minusDamage1&&!e.devastating)d=Math.max(0,d-1);
+  // 11th edition Devastating Wounds are mortal wounds applied after normal
+  // damage. A Precision Devastating Wound first uses the selected Character
+  // group if that group still exists; otherwise use the normal mortal-wound
+  // allocation rules. Each critical wound can damage at most one model.
+  const devEvents=woundEvents.filter(e=>e.devastating);
+  for(const e of devEvents){
+    const preferred=(e.precision&&precisionGroupIndex>=0&&s&&engineGroupLiveIndices(s,woundsState,allocationGroups[precisionGroupIndex]).length)
+      ?precisionGroupIndex:null;
+    const idx=s?engineMortalWoundIndex(s,woundsState,preferred):woundsState.findIndex(x=>Number(x)>0);
+    if(idx<0)break;
+    let d=Math.max(0,Math.floor(e.damage()));
+    if(m.minusDamage1)d=Math.max(0,d-1);
+    // Devastating Wounds may damage at most one model for each critical wound.
     d=engineApplyFnp(d,m);
-    if(d>0)totalDamage+=engineApplyDamageToWoundsState(d,woundsState,allocationTarget,targetIndex);
+    if(d>0)totalDamage+=engineApplyDamageToWoundsState(d,woundsState,alloc={...t,__allocationState:s},idx);
   }
   return {damage:totalDamage,hits,wounds,saved,critHits,critWounds,rollLog,remaining:woundsState};
 }
