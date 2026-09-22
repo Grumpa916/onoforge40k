@@ -4760,13 +4760,56 @@ function engineMonteCarloMixed(a,t,groups,m,samples){
 }
 const TACTICAL_STATE_VERSION='1.4';
 function ensureTacticalState(){
-  if(!state.tactical||typeof state.tactical!=='object')state.tactical={version:TACTICAL_STATE_VERSION,pairs:{},unitUse:{},unitMovement:{},unitActions:{}};
+  if(!state.tactical||typeof state.tactical!=='object')state.tactical={version:TACTICAL_STATE_VERSION,pairs:{},unitUse:{},unitMovement:{},unitActions:{},fightPhase:{}};
   if(!state.tactical.pairs||typeof state.tactical.pairs!=='object')state.tactical.pairs={};
   if(!state.tactical.unitUse||typeof state.tactical.unitUse!=='object')state.tactical.unitUse={};
   if(!state.tactical.unitMovement||typeof state.tactical.unitMovement!=='object')state.tactical.unitMovement={};
   if(!state.tactical.unitActions||typeof state.tactical.unitActions!=='object')state.tactical.unitActions={};
+  if(!state.tactical.fightPhase||typeof state.tactical.fightPhase!=='object')state.tactical.fightPhase={};
   state.tactical.version=TACTICAL_STATE_VERSION;
   return state.tactical;
+}
+function tacticalFightPhaseState(){
+  const t=ensureTacticalState(),r=Math.max(1,Number(state.round)||1),turn=state.currentTurn;
+  const raw=t.fightPhase;
+  if(raw.round!==r||raw.playerTurn!==turn){
+    return {round:r,playerTurn:turn,step:'unknown',selected:[],nextSide:turn,notes:''};
+  }
+  return {
+    round:r,playerTurn:turn,
+    step:['fightsFirst','remaining','unknown'].includes(raw.step)?raw.step:'unknown',
+    selected:Array.isArray(raw.selected)?raw.selected.map(String):[],
+    nextSide:raw.nextSide==='opp'?'opp':'my',
+    notes:raw.notes==null?'':String(raw.notes)
+  };
+}
+function setTacticalFightPhase(field,value){
+  const before=snapshotForUndo(),t=ensureTacticalState(),r=Math.max(1,Number(state.round)||1),turn=state.currentTurn;
+  const cur=tacticalFightPhaseState();
+  const next={...cur,round:r,playerTurn:turn};
+  if(field==='step')next.step=['fightsFirst','remaining','unknown'].includes(value)?value:'unknown';
+  else if(field==='nextSide')next.nextSide=value==='opp'?'opp':'my';
+  else if(field==='notes')next.notes=String(value||'');
+  else if(field==='select'){
+    const uid=String(value||'');
+    next.selected=uid?[...new Set([...next.selected,uid])]:next.selected;
+  }else if(field==='unselect'){
+    const uid=String(value||'');
+    next.selected=next.selected.filter(x=>x!==uid);
+  }else return;
+  t.fightPhase=next;
+  event('TACTICAL_FIGHT_PHASE_CHANGED',{field,value,action:'Fight phase sequencing changed',before:cur,after:next},before);
+  save();render();
+}
+function tacticalFightOrderState(entry){
+  const f=tacticalUnitFightState(entry),phase=tacticalFightPhaseState();
+  const selected=phase.selected.includes(String(entry?.uid||''));
+  return {
+    ...f,
+    selected,
+    stepEligible:f.fightsFirst?'fightsFirst':f.eligible?'remaining':'ineligible',
+    availableNow:f.eligible&&!selected&&(phase.step==='unknown'||phase.step===(f.fightsFirst?'fightsFirst':'remaining'))
+  };
 }
 function tacticalPairKey(attackerUid,targetUid){return String(attackerUid||'')+'>'+String(targetUid||'')}
 function tacticalPairState(attackerUid,targetUid){
@@ -5163,7 +5206,7 @@ function tacticalContextHtml(){
     '</div>'+
     '<div class="grid2" style="margin-top:10px">'+
     '<div class="field"><label>Movement</label><select onchange="setTacticalUnitAction(\''+ae.uid+'\',\'movement\',this.value)"><option value="unknown" '+(movementType==='unknown'?'selected':'')+'>Unknown</option><option value="remained" '+(movementType==='remained'?'selected':'')+'>Remained</option><option value="normal" '+(movementType==='normal'?'selected':'')+'>Normal Move</option><option value="advance" '+(movementType==='advance'?'selected':'')+'>Advanced</option><option value="fallback" '+(movementType==='fallback'?'selected':'')+'>Fell Back</option></select></div><div class="field" style="margin-top:8px"><label>Maximum model movement this turn (inches)</label><input type="number" min="0" max="60" step="0.1" value="${actions.movementDistanceInches==null?'':esc(String(actions.movementDistanceInches))}" placeholder="Unknown" onchange="setTacticalUnitAction('${ae.uid}','movementDistanceInches',this.value)"></div><div class="field" style="margin-top:8px"><label>Set up on battlefield this turn</label><select onchange="setTacticalUnitAction('${ae.uid}','setUpThisTurn',this.value)"><option value="" ${actions.setUpThisTurn===null?'selected':''}>Unknown</option><option value="false" ${actions.setUpThisTurn===false?'selected':''}>No</option><option value="true" ${actions.setUpThisTurn===true?'selected':''}>Yes</option></select></div>'+
-    '<div class="field"><label>Phase actions</label><div class="status"><select onchange="setTacticalUnitAction(\''+ae.uid+'\',\'shootingDone\',this.value===\'true\')" style="margin-right:6px"><option value="false" '+(!actions.shootingDone?'selected':'')+'>Shooting: Available</option><option value="true" '+(actions.shootingDone?'selected':'')+'>Shooting: Completed</option></select><select onchange="setTacticalUnitAction(\''+ae.uid+'\',\'chargeDone\',this.value===\'true\')" style="margin-right:6px"><option value="false" '+(!actions.chargeDone?'selected':'')+'>Charge: Available</option><option value="true" '+(actions.chargeDone?'selected':'')+'>Charge: Completed</option></select><select onchange="setTacticalUnitAction(\''+ae.uid+'\',\'chargeMade\',this.value===\'true\')" style="margin-right:6px"><option value="false" '+(!actions.chargeMade?'selected':'')+'>Charge move: Not made</option><option value="true" '+(actions.chargeMade?'selected':'')+'>Charge move: Made</option></select><select onchange="setTacticalUnitAction(\''+ae.uid+'\',\'fightDone\',this.value===\'true\')"><option value="false" '+(!actions.fightDone?'selected':'')+'>Fight: Available</option><option value="true" '+(actions.fightDone?'selected':'')+'>Fight: Completed</option></select></div></div>'+
+    '<div class="field"><label>Fight sequencing</label><div class="status"><select onchange="setTacticalFightPhase(\'step\',this.value)"><option value="unknown" '+(tacticalFightPhaseState().step==='unknown'?'selected':'')+'>Fight step: Unknown</option><option value="fightsFirst" '+(tacticalFightPhaseState().step==='fightsFirst'?'selected':'')+'>Fights First</option><option value="remaining" '+(tacticalFightPhaseState().step==='remaining'?'selected':'')+'>Remaining Combats</option></select><select onchange="setTacticalFightPhase(\'nextSide\',this.value)" style="margin-left:6px"><option value="my" '+(tacticalFightPhaseState().nextSide==='my'?'selected':'')+'>Next: My army</option><option value="opp" '+(tacticalFightPhaseState().nextSide==='opp'?'selected':'')+'>Next: Opponent</option></select></div></div><div class="field"><label>Phase actions</label><div class="status"><select onchange="setTacticalUnitAction(\''+ae.uid+'\',\'shootingDone\',this.value===\'true\')" style="margin-right:6px"><option value="false" '+(!actions.shootingDone?'selected':'')+'>Shooting: Available</option><option value="true" '+(actions.shootingDone?'selected':'')+'>Shooting: Completed</option></select><select onchange="setTacticalUnitAction(\''+ae.uid+'\',\'chargeDone\',this.value===\'true\')" style="margin-right:6px"><option value="false" '+(!actions.chargeDone?'selected':'')+'>Charge: Available</option><option value="true" '+(actions.chargeDone?'selected':'')+'>Charge: Completed</option></select><select onchange="setTacticalUnitAction(\''+ae.uid+'\',\'chargeMade\',this.value===\'true\')" style="margin-right:6px"><option value="false" '+(!actions.chargeMade?'selected':'')+'>Charge move: Not made</option><option value="true" '+(actions.chargeMade?'selected':'')+'>Charge move: Made</option></select><select onchange="setTacticalUnitAction(\''+ae.uid+'\',\'fightDone\',this.value===\'true\')"><option value="false" '+(!actions.fightDone?'selected':'')+'>Fight: Available</option><option value="true" '+(actions.fightDone?'selected':'')+'>Fight: Completed</option></select></div></div>'+
     '</div>'+
     '<div class="muted small" style="margin-top:6px">Action state is scoped to the current round and player turn. Advanced units are restricted to Assault weapons; Fell Back units cannot shoot. Heavy requires the unit to be unengaged, not set up this turn, and no model to have moved more than 3 inches; unknown movement/setup data conservatively withholds the bonus.</div>'+
     (leg.reasons.length?'<div class="warn" style="margin-top:10px">Advisor status: '+esc(leg.reasons.join(' • '))+'.</div>':'<div class="ok" style="margin-top:10px">Advisor has the minimum battlefield context needed for the current phase.</div>')+
