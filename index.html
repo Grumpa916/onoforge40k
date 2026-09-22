@@ -4698,6 +4698,15 @@ function setTacticalWeaponUsed(entryUid,weaponName,count){
 function tacticalWeaponShootingMode(w){
   return tacticalWeaponIsCloseQuarters(w)?'close-quarters':'other-ranged';
 }
+function tacticalWeaponEventEntryMatches(entryUid,event,side='my'){
+  if(!entryUid||!event)return false;
+  const logged=String(event.payload?.attackerEntryUid||'');
+  if(!logged)return false;
+  if(logged===String(entryUid))return true;
+  const e=entry(side,entryUid);
+  const root=e?combatRootEntry(side,e):null;
+  return !!root&&String(root.uid)===logged;
+}
 function tacticalWeaponModelUseEvents(entryUid,round=state.round,phase=state.phase,side='my'){
   if(!entryUid)return [];
   const r=Math.max(1,Number(round)||1),p=String(phase||'Command'),s=side==='opp'?'opp':'my';
@@ -4706,7 +4715,7 @@ function tacticalWeaponModelUseEvents(entryUid,round=state.round,phase=state.pha
     (Number(e.round)||1)===r &&
     String(e.phase||'')===p &&
     String(e.playerTurn||'')===s &&
-    String(e.payload?.attackerEntryUid||'')===String(entryUid) &&
+    tacticalWeaponEventEntryMatches(entryUid,e,s) &&
     Array.isArray(e.payload?.modelIds)
   );
 }
@@ -4734,7 +4743,7 @@ function tacticalWeaponPhaseUseCount(entryUid,weaponName,round=state.round,phase
     (Number(e.round)||1)===r &&
     String(e.phase||'')===p &&
     String(e.playerTurn||'')===s &&
-    String(e.payload?.attackerEntryUid||'')===String(entryUid) &&
+    tacticalWeaponEventEntryMatches(entryUid,e,s) &&
     String(e.payload?.weapon||'')===String(weaponName)
   ).reduce((n,e)=>n+Math.max(1,Number(e.payload?.modelsResolved)||1),0);
 }
