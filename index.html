@@ -3929,7 +3929,7 @@ function battle(){const recent=state.events.slice(0,12);return `${gameTimerHtml(
 </div>
  <div class="tabs"><button class="active">Current State</button><button onclick="openMyListFromBattle()">My List</button><button onclick="openOpponentListFromBattle()">Opponent List</button><button onclick="state.page='log';state.builderView='full';render()">Full Action Log</button><button onclick="state.page='scorelog';render()">Scoring Log</button></div>
 ${primaryMissionPanel('battle')}
-${gameAssistantHtml()}${tacticalContextHtml()}${tacticalWeaponUseHtml(ae?.uid,attachedCombatWeaponGroups('my',ae))}
+${gameAssistantHtml()}${tacticalContextHtml()}
 <details class="card secondary-battle-card secondary-missions-collapsible" ${state.secondaryMissionsOpen===true?"open":""} ontoggle="state.secondaryMissionsOpen=this.open;save()">
 <summary><div class="split"><div><h3 style="margin:0">Secondary Missions</h3><div class="muted">All 18 missions • Active player: ${esc(state.currentTurn==='opp'?state.oppName:state.myName)} • Secondary VP ${state.myVP||0}–${state.oppVP||0}</div></div><div class="pill">Click to ${state.secondaryMissionsOpen===true?'collapse':'open'}</div></div></summary>
 <div class="secondary-missions-body"><div class="grid2">${secondaryActiveSide()==='my'?secondaryCatalogHtml('my')+secondaryCatalogHtml('opp'):secondaryCatalogHtml('opp')+secondaryCatalogHtml('my')}</div>${secondaryDetailHtml(secondaryActiveSide())}</div></details>
@@ -4471,14 +4471,6 @@ function setTacticalWeaponUsed(entryUid,weaponName,value){
   t.unitUse[key]={used:n>0,usedCount:n};
   event('TACTICAL_WEAPON_USE_CHANGED',{entryUid,weaponName,action:n?'Weapon use count changed':'Weapon use restored',before:old,after:t.unitUse[key]},before);
   save();render();
-}
-function tacticalWeaponUseHtml(entryUid,groups){
-  const unique=[...new Map((groups||[]).map(g=>[g.weapon.name,g])).values()].filter(g=>tacticalWeaponLimited(g.weapon));
-  if(!unique.length)return '';
-  return `<div class="status"><b>Limited-use weapons</b><div class="grid2" style="margin-top:7px">${unique.map(g=>{
-    const u=tacticalWeaponUseState(entryUid,g.weapon.name),max=Math.max(1,Number(g.count)||1),used=Math.min(max,u.usedCount),label=used+'/'+max+' used';
-    return `<div class="field"><label>${esc(g.weapon.name)} • ${label}</label><input type="number" min="0" max="${max}" step="1" value="${used}" onchange="setTacticalWeaponUsed(${JSON.stringify(entryUid)},${JSON.stringify(g.weapon.name)},this.value)"></div>`;
-  }).join('')}</div><div class="tiny">One Shot is tracked per weapon model. Hazardous weapons remain available but are flagged by the Advisor.</div></div>`;
 }
 function tacticalWeaponRange(w){
   if(!w)return null;
