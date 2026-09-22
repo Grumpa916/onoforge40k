@@ -4233,6 +4233,7 @@ function combatModelSnapshot(side,ce,u){
       woundsRemaining:Math.max(0,Number(m.woundsRemaining)||0),
       maxWounds:Math.max(1,Number(u.wounds)||1),
       weapons:Array.isArray(m.weapons)?m.weapons.filter(Boolean).slice():[],
+      character:(u.keywords||[]).some(k=>String(k||'').toUpperCase().trim()==='CHARACTER'),
       profile:{...(u.profile||{})},unitName:u.name,weaponIdentityExact:true,modelIdentityExact:true
     }));
   }
@@ -4255,6 +4256,7 @@ function combatModelSnapshot(side,ce,u){
       role:(isLeaderUnit(u)&&i===0)?'Leader':'Model '+(i+1),alive:remaining>0,
       woundsRemaining:remaining,maxWounds,
       weapons:selectedWeapons[i]?[selectedWeapons[i]]:[],
+      character:(u.keywords||[]).some(k=>String(k||'').toUpperCase().trim()==='CHARACTER'),
       profile:{...(u.profile||{})},unitName:u.name,
       weaponIdentityExact:false,modelIdentityExact:false
     };
@@ -4281,6 +4283,7 @@ function combatSnapshot(side,entryUidOrEntry){
   }));
   const alive=models.filter(m=>m.alive!==false);
   const bodyguardModels=components.filter(c=>c.role==='bodyguard').flatMap(c=>c.models.filter(m=>m.alive!==false));
+  const characterModels=alive.filter(m=>m.character===true);
   const targetModels=bodyguardModels.length?bodyguardModels:alive;
   const toughnessPool=targetModels.map(m=>Number(m.profile?.T)).filter(Number.isFinite);
   const uniqueToughness=Array.from(new Set(toughnessPool));
@@ -4296,6 +4299,7 @@ function combatSnapshot(side,entryUidOrEntry){
     version:2,side,rootUid:root.uid,rootUnitId:get(root.unitId)?.id||root.unitId,
     rootUnitName:get(root.unitId)?.name||'',faction:get(root.unitId)?.faction||'',
     components,models,weapons,survivingModels:alive.length,
+    characterModels,characterModelsCount:characterModels.length,
     totalWounds:alive.reduce((n,m)=>n+Math.max(0,Number(m.woundsRemaining)||0),0),
     maxWounds:models.reduce((n,m)=>n+Math.max(0,Number(m.maxWounds)||0),0),
     targetToughness:uniqueToughness.length===1?uniqueToughness[0]:null,
