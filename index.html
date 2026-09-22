@@ -5057,6 +5057,11 @@ function tacticalWeaponIsAssault(w){
 function tacticalWeaponIsIndirect(w){
   return tacticalWeaponHasRule(w,'INDIRECT FIRE');
 }
+function closeQuartersForTarget(attackerEntry,targetEntry){
+  if(!attackerEntry||!targetEntry)return false;
+  const groups=attachedCombatWeaponGroups('my',attackerEntry,targetEntry);
+  return groups.some(g=>tacticalWeaponIsCloseQuarters(g.weapon)&&tacticalWeaponPhaseEligible(g.weapon,'Shooting',attackerEntry,targetEntry));
+}
 function tacticalUnitIsEngagedAny(entryUid){
   if(!entryUid)return false;
   const pairs=ensureTacticalState().pairs||{};
@@ -5123,7 +5128,12 @@ function tacticalTargetLegality(attackerEntry,targetEntry,phase){
     const targetIsMonsterVehicle=!!targetCombatUnit&&((targetCombatUnit.keywords||[]).map(k=>String(k||'').toUpperCase().trim()).some(k=>k==='MONSTER'||k==='VEHICLE'));
     if(advanced===null)reasons.push('movement state unknown');
     if(engaged&&ctx.engagement!=='engaged'){
-      return {status:'known',known:true,canTarget:false,reasons:['engaged unit can only target an enemy unit it is engaged with during Close-quarters Shooting'],context:ctx};
+      if(!attackerMV){
+        return {status:'known',known:true,canTarget:false,reasons:['engaged unit can only shoot its engaged target with Close-quarters shooting'],context:ctx};
+      }
+      if(!closeQuartersForTarget(attackerEntry,targetEntry)){
+        return {status:'known',known:true,canTarget:false,reasons:['engaged MONSTER/VEHICLE requires an eligible Close-quarters shooting attack against this target'],context:ctx};
+      }
     }
     if(!engaged&&targetEngaged&&!targetIsMonsterVehicle){
       return {status:'known',known:true,canTarget:false,reasons:['engaged non-MONSTER/VEHICLE targets cannot be selected by normal/assault/indirect shooting'],context:ctx};
