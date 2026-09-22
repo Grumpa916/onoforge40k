@@ -4877,15 +4877,28 @@ function tacticalContextHtml(){
     '</div>';
 }
 
+function tacticalAdvisorAttackerEntry(){
+  const candidates=(state.my||[]).filter(e=>!e.attachedTo&&!tacticalUnitState('my',e)?.destroyed);
+  const selected=state.tactical?.selectedAttackerUid;
+  return candidates.find(e=>e.uid===selected)||mathRosterEntry('my')||candidates[0]||null;
+}
+function setTacticalAdvisorAttacker(uid){
+  const e=entry('my',uid);
+  if(!e)return;
+  ensureTacticalState().selectedAttackerUid=e.uid;
+  ensureTacticalState().selectedTargetUid=null;
+  save();render();
+}
 function tacticalAdvisorConfidenceLabel(value){
   const v=Math.max(0,Math.min(1,Number(value)||0));
   return v>=0.80?'High':v>=0.55?'Medium':'Limited';
 }
 function tacticalAdvisorHtml(){
-  const ae=mathRosterEntry('my');
+  const ae=tacticalAdvisorAttackerEntry();
   if(!ae){
     return '<div class="card tactical-advisor-card"><div class="split"><div><h3 style="margin:0">Tactical Advisor</h3><div class="muted">Build your army and select an attacker to receive target recommendations.</div></div></div></div>';
   }
+  const attackerOptions=(state.my||[]).filter(e=>!e.attachedTo&&!tacticalUnitState('my',e)?.destroyed).map(e=>'<option value="'+esc(e.uid)+'" '+(e.uid===ae.uid?'selected':'')+'>'+esc(unitDisplayName('my',e))+'</option>').join('');
   const result=tacticalAdvisorV1(ae.uid,{samples:4000});
   if(result.status!=='ok'){
     const detail=result.attacker?(' • '+esc(result.attacker)):'';
@@ -4916,6 +4929,7 @@ function tacticalAdvisorHtml(){
   return '<details class="card tactical-advisor-card" open>'+
     '<summary><div class="split"><div><h3 style="margin:0">Tactical Advisor</h3><div class="muted">Target selection • exchange risk • mission context • confidence</div></div><span class="pill">'+esc(result.evaluatedAt?.phase||state.phase||'Command')+'</span></div></summary>'+
     '<div style="margin-top:12px">'+
+      '<div class="field" style="margin-bottom:10px"><label>Attacker</label><select onchange="setTacticalAdvisorAttacker(this.value)">'+attackerOptions+'</select></div>'+
       (top?'<div class="status tactical-advisor-top"><div class="muted small">Top recommendation</div><div style="font-size:1.2em;font-weight:700;margin-top:2px">'+esc(top.name)+'</div><div style="margin-top:5px">'+esc(top.recommendationExplanation?.why||'Combat and mission factors are combined.')+'</div>'+(top.recommendationExplanation?.nearTie?'<div class="warn" style="margin-top:8px">Close call — verify the battlefield context before committing.</div>':'')+'</div>':'<div class="empty">No eligible target recommendations for the current phase.</div>')+
       recs.slice(0,5).map(recCard).join('')+
       '<div class="grid2" style="margin-top:10px"><div class="status"><b>Natural targets</b><div style="margin-top:6px">'+(natural||'<span class="muted">None identified</span>')+'</div></div><div class="status"><b>Avoid / high-risk targets</b><div style="margin-top:6px">'+(avoid||'<span class="muted">None identified</span>')+'</div></div></div>'+
