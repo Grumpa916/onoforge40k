@@ -4426,7 +4426,11 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     const points=Math.max(1,Number(targetEntry.points)||Number(target.points)||1);
     const efficiency=damage/points;
     const weaponKeys=[...new Set(groups.filter(g=>g.count>0).map(g=>g.weapon.name))];
-    const antiMatches=groups.flatMap(g=>(g.weapon.abilities||[]).filter(a=>/ANTI/i.test(String(a))&&String(a).toUpperCase().includes(String(target.keywords||[]).join(' ').toUpperCase())));
+    const targetKeywords=(target.keywords||[]).map(k=>String(k).toUpperCase().replace(/[^A-Z0-9 ]/g,' ').trim()).filter(Boolean);
+    const antiMatches=groups.flatMap(g=>(g.weapon.abilities||[]).filter(a=>{
+      const m=String(a).toUpperCase().replace(/-/g,' ').match(/ANTI\s+([A-Z ]+)\s+(\d+)\+/);
+      return !!m&&targetKeywords.some(k=>m[1].trim().split(/\s+/).includes(k)||m[1].trim()===k);
+    }));
     const confidence=snap?.exactModelIdentity&&snap?.exactWeaponIdentity?'high':(snap?.exactWeaponIdentity?'medium':'limited');
     return {
       entryUid:targetEntry.uid,unitId:target.id,name:target.name,faction:target.faction,points,
@@ -4436,10 +4440,26 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
       attached:!!target.__combatTarget,
       bodyguardTarget:!!target.__bodyguardEntryUid,
       strategicHook:{objectiveControl:Number(target.profile?.OC)||0,keywords:[...(target.keywords||[])]},
-      // Internal tactical index: balances immediate removal chance with damage efficiency and avoids rewarding excessive overkill.
+      // Internal tactical index: combat-only baseline. Mission value and reciprocal threat are separate dimensions for later advisor weighting.
       tacticalIndex:(0.50*wipe)+(0.30*killFrac)+(0.20*damageFrac)
     };
   }).filter(Boolean);
+  const friendlyRoots=(state.my||[]).filter(e=>!e.attachedTo);
+  results.forEach(x=>{
+    const targetEntry=entry('opp',x.entryUid);if(!targetEntry)return;
+    const enemyGroups=attachedCombatWeaponGroups('opp',targetEntry);
+    if(!enemyGroups.length)return;
+    let threat=0;
+    friendlyRoots.forEach(fr=>{
+      const ft=combatTargetUnit('my',fr)||get(fr.unitId);if(!ft)return;
+      const fg=Math.max(1,Number(ft.models)||Number(fr.models)||1);
+      const tm={...(state.mathRules||{}),defenderModels:fg,quickSamples:1000,_skipSim:true};
+      const tr=calculateMathMixed(get(targetEntry.unitId),ft,enemyGroups,tm);
+      threat+=Math.max(0,Number(tr.damage)||0);
+    });
+    x.incomingThreat=Math.min(999,threat);
+    x.threatPerPoint=threat/Math.max(1,x.points);
+  });
   results.sort((a,b)=>b.tacticalIndex-a.tacticalIndex);
   const naturalTargets=results.filter(x=>x.antiMatches.length||x.damageFraction>=0.75).slice(0,5);
   const avoid=results.filter(x=>x.damageFraction<0.25&&x.wipeChance<0.15).sort((a,b)=>a.damageFraction-b.damageFraction).slice(0,5);
