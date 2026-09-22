@@ -4830,7 +4830,7 @@ function tacticalWeaponAvailableForPhase(entryUid,w,maxCount,round=state.round,p
   const limit=Math.max(0,Math.floor(Number(maxCount)||0));
   if(!w||limit<=0)return {available:false,count:0,reason:'No remaining models'};
   const phaseUsed=tacticalWeaponPhaseUseCount(entryUid,w.name,round,phase,side);
-  const use=tacticalWeaponUseState(entryUid,w.name);
+  const use=tacticalWeaponUseState(entryUid,w.name,side);
   if(tacticalWeaponHasRule(w,'ONE SHOT')){
     const used=Math.max(phaseUsed,Math.min(limit,use.usedCount));
     const remaining=Math.max(0,limit-used);
