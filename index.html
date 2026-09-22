@@ -4766,6 +4766,7 @@ function ensureTacticalState(){
   if(!state.tactical.unitMovement||typeof state.tactical.unitMovement!=='object')state.tactical.unitMovement={};
   if(!state.tactical.unitActions||typeof state.tactical.unitActions!=='object')state.tactical.unitActions={};
   if(!state.tactical.fightPhase||typeof state.tactical.fightPhase!=='object')state.tactical.fightPhase={};
+  if(!state.tactical.preRoll||typeof state.tactical.preRoll!=='object')state.tactical.preRoll={};
   state.tactical.version=TACTICAL_STATE_VERSION;
   return state.tactical;
 }
@@ -5344,137 +5345,38 @@ function tacticalAdvisorConfidenceLabel(value){
   const v=Math.max(0,Math.min(1,Number(value)||0));
   return v>=0.80?'High':v>=0.55?'Medium':'Limited';
 }
+function tacticalPreRollWeaponState(attackerEntryUid,targetEntryUid){const t=ensureTacticalState(),key=String(attackerEntryUid||'')+'>'+String(targetEntryUid||'');const raw=t.preRoll?.[key];return raw&&typeof raw==='object'?{key,weaponName:raw.weaponName?String(raw.weaponName):null}:{key,weaponName:null};}
+function setTacticalPreRollWeapon(weaponName){const ae=tacticalAdvisorAttackerEntry(),teUid=state.tactical?.selectedTargetUid;if(!ae||!teUid)return;const t=ensureTacticalState(),key=String(ae.uid)+'>'+String(teUid);t.preRoll[key]={weaponName:weaponName?String(weaponName):null};save();render();}
 function tacticalPreRollCheck(attackerEntryUid,targetEntryUid,weaponName=null){
-  const ae=entry('my',attackerEntryUid),te=entry('opp',targetEntryUid);
-  if(!ae||!te)return {status:'missing-context',steps:[],warnings:['Select an attacker and target.']};
-  const a=combatTargetUnit('my',ae)||get(ae.unitId),t=combatTargetUnit('opp',te)||get(te.unitId);
-  if(!a||!t)return {status:'missing-units',steps:[],warnings:['Unit data is unavailable.']};
-  const phase=String(state.phase||'Shooting');
-  const phaseWeapons=(a.weapons||[]).filter(x=>tacticalWeaponPhaseEligible(x,phase,ae,te));
-  const requested=(a.weapons||[]).find(x=>x.name===weaponName)||(a.weapons||[]).find(x=>x.name===state.weapon);
-  const w=(requested&&tacticalWeaponPhaseEligible(requested,phase,ae,te))?requested:phaseWeapons[0];
-  if(!w)return {status:'missing-weapon',steps:[],warnings:[phase==='Fight'?'No melee weapon is currently eligible for this attack.':'No phase-eligible weapon is available for this attack.']};
-  const ctx=tacticalPairState(ae.uid,te.uid),movementEntry=combatRootEntry('my',ae)||ae;
-  const actions=tacticalAdvisorActionState(movementEntry.uid),movementType=tacticalUnitMovementType(movementEntry.uid);
-  const advanced=movementType==='advance',stationary=movementType==='remained';
-  const targetEngaged=ctx.engagement==='engaged'||tacticalUnitIsEngagedAny(te.uid);
-  const attackerEngagedAny=tacticalUnitIsEngagedAny(ae.uid);
-  const attackerEngagedWithTarget=ctx.engagement==='engaged';
-  const attackerMV=tacticalUnitIsMonsterVehicle(ae),targetMV=tacticalUnitIsMonsterVehicle(te);
-  const movementDistance=actions?.movementDistanceInches;
-  const effectiveMovementDistance=stationary?0:movementDistance;
-  const setUpThisTurn=actions?.setUpThisTurn;
-  const m={
-    engagedTargetMonsterVehicle:targetEngaged&&targetMV,
-    attackerEngagedWithTarget,
-    attackerEngagedAny,
-    attackerMonsterVehicle:attackerMV,
-    stationary,
-    movementDistanceInches:effectiveMovementDistance,
-    setUpThisTurn,
-    heavyEligible:!attackerEngagedAny&&setUpThisTurn!==true&&effectiveMovementDistance!==null&&Number.isFinite(Number(effectiveMovementDistance))&&Number(effectiveMovementDistance)<=3,
-    chargeMade:!!actions?.chargeMade,
-    indirectShooting:state.phase==='Shooting'&&tacticalWeaponIsIndirect(w)&&advanced===false&&attackerEngagedAny===false&&movementType!=='fallback',
-    indirectStationaryFriendlyVisible:false
-  };
+  const ae=entry('my',attackerEntryUid),te=entry('opp',targetEntryUid);if(!ae||!te)return {status:'missing-context',steps:[],warnings:['Select an attacker and target.']};
+  const a=combatTargetUnit('my',ae)||get(ae.unitId),t=combatTargetUnit('opp',te)||get(te.unitId);if(!a||!t)return {status:'missing-units',steps:[],warnings:['Unit data is unavailable.']};
+  const phase=String(state.phase||'Shooting'),phaseWeapons=(a.weapons||[]).filter(x=>tacticalWeaponPhaseEligible(x,phase,ae,te)),stored=tacticalPreRollWeaponState(ae.uid,te.uid).weaponName,requestedName=weaponName||stored||null,requested=requestedName?(a.weapons||[]).find(x=>String(x.name)===String(requestedName)):null;
+  if(phase==='Charge'){const ctx=tacticalPairState(ae.uid,te.uid),d=Number(ctx.distanceInches);if(!Number.isFinite(d))return {status:'needs-context',type:'Charge',attacker:a.name,target:t.name,steps:[],warnings:['Measure the distance to the target before rolling the charge.']};const required=Math.max(2,Math.ceil(d)),chance=[...Array(36)].map((_,i)=>Math.floor(i/6)+1+(i%6)+1).filter(x=>x>=required).length/36;return {status:'ready',type:'Charge',attacker:a.name,target:t.name,weapon:null,steps:[{label:'Charge roll',value:'2D6',detail:'Roll before selecting charge targets.'},{label:'Required total',value:required+'+',detail:'Current candidate is '+String(ctx.distanceInches)+'" away.'},{label:'Success chance',value:(chance*100).toFixed(0)+'%',detail:'Exact 2D6 probability for the current measured distance.'}],warnings:[]};}
+  if(!['Shooting','Fight'].includes(phase))return {status:'not-available',type:phase,attacker:a.name,target:t.name,steps:[],warnings:['Pre-Roll Check is available for Shooting, Fight, and Charge.']};
+  if(requestedName&&!requested)return {status:'needs-weapon-selection',attacker:a.name,target:t.name,steps:[],warnings:['The selected weapon is not present on this unit. Choose an available weapon.']};
+  if(requested&&!phaseWeapons.some(x=>x===requested))return {status:'illegal',attacker:a.name,target:t.name,weapon:requested.name,steps:[],warnings:['The selected weapon is not currently eligible for '+phase+'.']};
+  if(!requested&&phaseWeapons.length!==1)return {status:'needs-weapon-selection',attacker:a.name,target:t.name,steps:[],warnings:phaseWeapons.length?'Choose the weapon profile to check before rolling.':'No phase-eligible weapon is available for this attack.',weapons:phaseWeapons.map(x=>x.name)};
+  const w=requested||phaseWeapons[0],ctx=tacticalPairState(ae.uid,te.uid),movementEntry=combatRootEntry('my',ae)||ae,actions=tacticalAdvisorActionState(movementEntry.uid),movementType=tacticalUnitMovementType(movementEntry.uid),advanced=movementType==='advance',stationary=movementType==='remained',targetEngaged=ctx.engagement==='engaged'||tacticalUnitIsEngagedAny(te.uid),attackerEngagedAny=tacticalUnitIsEngagedAny(ae.uid),attackerEngagedWithTarget=ctx.engagement==='engaged',attackerMV=tacticalUnitIsMonsterVehicle(ae),targetMV=tacticalUnitIsMonsterVehicle(te),movementDistance=actions?.movementDistanceInches,effectiveMovementDistance=stationary?0:movementDistance,setUpThisTurn=actions?.setUpThisTurn;
+  const m={...(state.mathRules||{}),engagedTargetMonsterVehicle:targetEngaged&&targetMV,attackerEngagedWithTarget,attackerEngagedAny,attackerMonsterVehicle:attackerMV,stationary,movementDistanceInches:effectiveMovementDistance,setUpThisTurn,heavyEligible:!attackerEngagedAny&&setUpThisTurn!==true&&effectiveMovementDistance!==null&&Number.isFinite(Number(effectiveMovementDistance))&&Number(effectiveMovementDistance)<=3,chargeMade:!!actions?.chargeMade,indirectShooting:phase==='Shooting'&&tacticalWeaponIsIndirect(w)&&advanced===false&&attackerEngagedAny===false&&movementType!=='fallback',indirectStationaryFriendlyVisible:false};
   m.indirectStationaryFriendlyVisible=m.indirectShooting&&stationary&&ctx.los==='yes';
-  const half=tacticalHalfRangeState(w,ctx.distanceInches);
-  m.halfRange=half.active===true;
-  const rf=half;
-  const melta=tacticalMeltaState(w,ctx.distanceInches);
-  const c=engineContext(a,w,t,m);
-  const steps=[];
-  const warnings=[];
-  if(c.precision){
-    const precisionAttached=tacticalTargetIsAttached('opp',te);
-    if(precisionAttached){
-      warnings.push('Precision: target is Attached. Before resolving attacks, confirm which CHARACTER allocation group is visible to at least one attacking model; only a confirmed visible Character can be selected for Precision allocation.');
-    }else{
-      warnings.push('Precision: this weapon has Precision, but the selected target is not currently identified as an Attached unit, so Precision Character allocation is not available.');
-    }
-  }
-  const modifiers=[];
-  if(phase==='Charge'){
-    const d=Number(ctx.distanceInches);
-    if(!Number.isFinite(d)){return {status:'needs-context',steps:[],warnings:['Measure the distance to the target before rolling the charge.']};}
-    const required=Math.max(2,Math.ceil(d));
-    const chance=[...Array(36)].map((_,i)=>Math.floor(i/6)+1+(i%6)+1).filter(x=>x>=required).length/36;
-    return {status:'ready',type:'Charge',attacker:a.name,target:t.name,weapon:null,steps:[{label:'Charge roll',value:'2D6',detail:'Roll before selecting charge targets.'},{label:'Candidate target',value:required+'+ after the roll',detail:'Current candidate is '+String(ctx.distanceInches)+'" away. Target selection occurs after the charge roll.'}],warnings};
-  }
-  const phaseEligible=tacticalWeaponPhaseEligible(w,phase,ae,te);
-  const legality=tacticalTargetLegality(ae,te,phase);
-  if(legality.canTarget===false)return {status:'illegal',attacker:a.name,target:t.name,weapon:w.name,steps:[],warnings:legality.reasons||['This attack is not currently legal.']};
-  if(legality.canTarget===null)warnings.push(...(legality.reasons||[]));
-  if(phase!=='Shooting'&&phase!=='Fight')warnings.push('Pre-roll combat checks are available during Shooting and Fight.');
-  if(phase==='Shooting'&&!phaseEligible)warnings.push('This weapon is not currently eligible for Shooting.');
-  const weaponAvailability=tacticalWeaponAvailable(ae.uid,w,1,'my');
-  if(phase==='Shooting'&&weaponAvailability.available===false)return {status:'illegal',attacker:a.name,target:t.name,weapon:w.name,steps:[],warnings:[weaponAvailability.reason||'Weapon is no longer available this battle.']};
-  if(phase==='Shooting'&&tacticalWeaponHasRule(w,'ONE SHOT'))warnings.push('ONE SHOT: this weapon can only be selected once per battle.');
-  const selectedWeaponRange=tacticalWeaponRange(w);
-  if(phase==='Shooting'&&Number.isFinite(Number(ctx.distanceInches))&&Number.isFinite(selectedWeaponRange)&&Number(ctx.distanceInches)>selectedWeaponRange){
-    return {status:'illegal',attacker:a.name,target:t.name,weapon:w.name,steps:[],warnings:['Weapon is out of range: target is '+String(ctx.distanceInches)+'" away, weapon range is '+selectedWeaponRange+'".']};
-  }
-  if(c.closeQuartersHitPenalty)modifiers.push({label:'Close-quarters',value:-1,reason:targetMV&&targetEngaged?'Engaged MONSTER/VEHICLE target':'Attacker is an engaged MONSTER/VEHICLE'});
-  if(c.heavy&&(c.hitNeed<Number(String(w.BS||w.WS||'4+').replace('+',''))))modifiers.push({label:'Heavy',value:1,reason:'Unit remained eligible for Heavy'});
-  if(c.cover)warnings.push('Cover applies to the target save.');
-  if(c.indirect)warnings.push('Indirect Fire: hit roll floor and hit re-roll restrictions apply.');
-  if(c.blast&&targetEngaged)warnings.push('Blast cannot target an engaged unit.');
-  if(rf.rapid){
-    if(rf.active===true){
-      modifiers.push({label:'Rapid Fire '+rf.rapid,value:rf.rapid,reason:'Target is within half range ('+rf.halfRange+'")'});
-    }else if(rf.active===false){
-      warnings.push('Rapid Fire '+rf.rapid+' is not active: target is '+String(ctx.distanceInches)+'" away; half range is '+rf.halfRange+'".');
-    }else{
-      warnings.push('Rapid Fire '+rf.rapid+' status unresolved: measure target distance.');
-    }
-  }
-  if(melta.melta){
-    if(melta.active===true){
-      modifiers.push({label:'Melta '+melta.melta,value:melta.melta,reason:'Add '+melta.melta+' to Damage within half range ('+melta.halfRange+'")'});
-    }else if(melta.active===false){
-      warnings.push('Melta '+melta.melta+' is not active: target is '+String(ctx.distanceInches)+'" away; half range is '+melta.halfRange+'".');
-    }else{
-      warnings.push('Melta '+melta.melta+' status unresolved: measure target distance.');
-    }
-  }
-  if(phase==='Shooting'&&Number.isFinite(Number(ctx.distanceInches))){
-    const threats=tacticalRapidFireThreats(te,ctx.distanceInches);
-    const activeThreats=threats.filter(x=>x.active===true);
-    const thresholdThreats=threats.filter(x=>x.active===false&&Number(ctx.distanceInches)<=x.range);
-    const meltaThreats=tacticalMeltaThreats(te,ctx.distanceInches);
-    const activeMeltaThreats=meltaThreats.filter(x=>x.active===true);
-    const thresholdMeltaThreats=meltaThreats.filter(x=>x.active===false&&Number(ctx.distanceInches)<=x.range);
-    if(activeThreats.length){
-      const names=[...new Set(activeThreats.map(x=>x.weapon.name))].slice(0,3).join(', ');
-      warnings.push('Enemy Rapid Fire threat active at current distance: '+names+'.');
-    }else if(thresholdThreats.length){
-      const nearest=thresholdThreats.sort((x,y)=>(Number(ctx.distanceInches)-x.halfRange)-(Number(ctx.distanceInches)-y.halfRange))[0];
-      warnings.push('Enemy Rapid Fire threshold: '+nearest.weapon.name+' gains Rapid Fire '+nearest.rapid+' at '+nearest.halfRange+'".');
-    }
-    if(activeMeltaThreats.length){
-      const names=[...new Set(activeMeltaThreats.map(x=>x.weapon.name))].slice(0,3).join(', ');
-      warnings.push('Enemy Melta threat active at current distance: '+names+'. Damage is increased while within half range.');
-    }else if(thresholdMeltaThreats.length){
-      const nearest=thresholdMeltaThreats.sort((x,y)=>(Number(ctx.distanceInches)-x.halfRange)-(Number(ctx.distanceInches)-y.halfRange))[0];
-      warnings.push('Enemy Melta threshold: '+nearest.weapon.name+' gains +'+nearest.melta+' Damage at '+nearest.halfRange+'".');
-    }
-  }
-  const baseHit=Math.max(2,Number(String(w.BS||w.WS||'4+').replace('+',''))||4);
-  const wound=Number(c.woundNeed)||null, save=engineSaveDistribution(t,w,c,m).need;
-  if(rf.rapid&&Number.isFinite(rf.range)){
-    const attackCount=engineExpectedDice(w.A)+(rf.active===true?rf.rapid:0);
-    steps.unshift({label:'Attacks',value:String(attackCount),detail:'Base '+String(w.A)+' attacks'+(rf.active===true?' • Rapid Fire '+rf.rapid+' active within '+rf.halfRange+'"':' • Rapid Fire threshold at '+rf.halfRange+'"')});
-  }
-  if(melta.melta){
-    const baseDamage=String(w.D??'—');
-    steps.push({label:'Damage',value:melta.active===true?baseDamage+' + '+melta.melta:baseDamage,detail:melta.active===true?'Melta '+melta.melta+' active within '+melta.halfRange+'"':'Melta threshold at '+melta.halfRange+'"'});
-  }
-  steps.push({label:'Hit',value:c.torrent?'Automatic':c.hitNeed+'+',detail:baseHit+'+ base'+(modifiers.length?' • '+modifiers.map(x=>(x.value>0?'+':'')+x.value+' '+x.label).join(' • '):'')});
-  if(!c.torrent)steps.push({label:'Wound',value:wound?Math.min(6,Math.max(2,wound))+'+':'—',detail:'Strength '+String(w.S??'?')+' vs Toughness '+String(t.profile?.T??'?')});
-  steps.push({label:'Save',value:save>6?'No save':save+'+',detail:'AP '+String(w.AP??0)+(c.invuln?' • Invulnerable save considered':'')});
-  return {status:warnings.length?'ready-with-warnings':'ready',type:phase,attacker:a.name,target:t.name,weapon:w.name,steps,warnings,modifiers,context:ctx};
-}
-
+  const half=tacticalHalfRangeState(w,ctx.distanceInches),melta=tacticalMeltaState(w,ctx.distanceInches);m.halfRange=half.active===true;
+  const c=engineContext(a,w,t,m),saveInfo=engineSaveDistribution(t,w,c,m),steps=[],warnings=[],modifiers=[],baseHit=Math.max(2,Number(String(w.BS||w.WS||'4+').replace('+',''))||4),hitMods=[];
+  if(Number(m.plusHit||0))hitMods.push({label:'Hit modifier',value:-Math.abs(Number(m.plusHit)),reason:'Positive hit modifier'});
+  if(Number(m.minusHit||0))hitMods.push({label:'Hit penalty',value:Math.abs(Number(m.minusHit)),reason:'Negative hit modifier'});
+  if(m.abilityNodeLash)hitMods.push({label:'Ability',value:-1,reason:'Node Lash hit modifier'});
+  if(m.abilityHypnoticGaze)hitMods.push({label:'Ability',value:1,reason:'Hypnotic Gaze hit penalty'});
+  if(c.heavy&&m.heavyEligible===true)hitMods.push({label:'Heavy',value:-1,reason:'Heavy is active'});
+  if(c.cover)hitMods.push({label:'Cover',value:1,reason:'Target is benefiting from Cover'});
+  const damagedAttacker=DAMAGED_HIT_PENALTY_11E.has(String(a?.faction||'')+'|'+String(a?.name||''))&&Number(a?.models||1)===1&&Number(m.attackerWoundsRemaining)>0&&Number(m.attackerWoundsRemaining)<=5;if(damagedAttacker)hitMods.push({label:'Damaged',value:1,reason:'Attacker is damaged'});
+  if(c.closeQuartersHitPenalty)hitMods.push({label:'Close-quarters',value:1,reason:targetMV&&targetEngaged?'Engaged MONSTER/VEHICLE target':'Engaged MONSTER/VEHICLE attacker'});modifiers.push(...hitMods);
+  if(c.precision)warnings.push(tacticalTargetIsAttached('opp',te)?'Precision: target is Attached. Confirm which CHARACTER allocation group is visible to at least one attacking model before resolving Precision.':'Precision: this weapon has Precision, but the selected target is not currently identified as an Attached unit.');
+  if(c.cover)warnings.push('Cover applies to the target save.');if(c.indirect)warnings.push('Indirect Fire: hit-roll floor and hit re-roll restrictions apply.');if(c.blast&&targetEngaged)warnings.push('Blast cannot target an engaged unit.');
+  const rf=tacticalHalfRangeState(w,ctx.distanceInches);if(rf.rapid){if(rf.active===true)warnings.push('Rapid Fire '+rf.rapid+' is active within half range ('+rf.halfRange+'").');else if(rf.active===false)warnings.push('Rapid Fire '+rf.rapid+' is not active at the current distance.');else warnings.push('Rapid Fire '+rf.rapid+' status unresolved: measure target distance.');}
+  if(rf.rapid&&rf.active===true)steps.push({label:'Attacks',value:String(engineExpectedDice(w.A)+rf.rapid),detail:'Base '+String(w.A)+' attacks • Rapid Fire '+rf.rapid+' active within '+rf.halfRange+'"'});else steps.push({label:'Attacks',value:String(engineExpectedDice(w.A)),detail:'Base '+String(w.A)+' attacks'+(rf.rapid?' • Rapid Fire threshold at '+rf.halfRange+'"':'')});
+  if(c.torrent)steps.push({label:'Hit',value:'Automatic',detail:'Torrent: attacks automatically hit; no Hit roll.'});else steps.push({label:'Hit',value:c.hitNeed+'+',detail:baseHit+'+ base'+(hitMods.length?' • '+hitMods.map(x=>(x.value>0?'+':'')+x.value+' '+x.label).join(' • '):' • no modifiers')});
+  if(!c.torrent)steps.push({label:'Wound',value:Math.min(6,Math.max(2,Number(c.woundNeed)||2))+'+',detail:'Strength '+String(w.S??'?')+' vs Toughness '+String(t.profile?.T??'?')});
+  steps.push({label:'Save',value:saveInfo.need>6?'No save':saveInfo.need+'+',detail:'Base '+String(t.profile?.Sv??'?')+'+ • AP '+String(w.AP??0)+(saveInfo.inv?' • Invulnerable '+saveInfo.inv+'+ considered':'')});
+  if(melta.melta)steps.push({label:'Damage',value:melta.active===true?String(w.D??'—')+' + '+melta.melta:String(w.D??'—'),detail:melta.active===true?'Melta '+melta.melta+' active within '+melta.halfRange+'"':'Melta threshold at '+melta.halfRange+'"'});return {status:warnings.length?'ready-with-warnings':'ready',type:phase,attacker:a.name,target:t.name,weapon:w.name,steps,warnings,modifiers,context:ctx,hitBase:baseHit,hitFinal:c.hitNeed,woundFinal:c.woundNeed,save:saveInfo};}
 function tacticalPreRollHtml(){
   const ae=tacticalAdvisorAttackerEntry();
   const teUid=state.tactical?.selectedTargetUid;
@@ -5489,24 +5391,13 @@ function tacticalPreRollHtml(){
 
 function tacticalAdvisorHtml(){
   const ae=tacticalAdvisorAttackerEntry();
-  if(!ae){
-    return '<div class="card tactical-advisor-card"><div class="split"><div><h3 style="margin:0">Tactical Advisor</h3><div class="muted">Build your army and select an attacker to receive target recommendations.</div></div></div></div>';
-  }
-  const attackerOptions=(state.my||[]).filter(e=>!e.attachedTo&&!tacticalUnitState('my',e)?.destroyed).map(e=>'<option value="'+esc(e.uid)+'" '+(e.uid===ae.uid?'selected':'')+'>'+esc(unitDisplayName('my',e))+'</option>').join('');
-  const result=tacticalAdvisorV1(ae.uid,{samples:4000});
-  if(result.status!=='ok'){
-    const detail=result.attacker?(' • '+esc(result.attacker)):'';
-    const phaseLabel=result.phase?(' • '+esc(result.phase)):'';
-    const gateLabel=result.status==='action-already-completed'?'Action complete':result.status==='charge-target-evaluation-not-yet-modeled'?'Charge targeting':'Phase gate';
-    const note=result.note||'The advisor is not producing a weapon-target recommendation from the current game state.';
-    return '<div class="card tactical-advisor-card"><div class="split"><div><h3 style="margin:0">Tactical Advisor</h3><div class="muted">'+esc(result.status||'Advisor unavailable')+detail+phaseLabel+'</div></div><span class="pill">'+gateLabel+'</span></div><div class="status" style="margin-top:10px">'+esc(note)+'</div></div>';
-  }
-  const recs=Array.isArray(result.recommendations)?result.recommendations:[];
-  const top=recs[0];
-  const confidenceClass=v=>v==='High'?'ok':v==='Medium'?'status':'warn';
-  const recCard=(r)=>{
-    const e=r.recommendationExplanation||{};
-    const expected=e.expected||{};
+  if(!ae){function tacticalPreRollHtml(){
+  const ae=tacticalAdvisorAttackerEntry(),teUid=state.tactical?.selectedTargetUid,te=teUid?entry('opp',teUid):null;if(!ae||!te)return '';
+  const stored=tacticalPreRollWeaponState(ae.uid,te.uid),unit=combatTargetUnit('my',ae)||get(ae.unitId),phase=String(state.phase||'Command'),eligibleWeapons=(unit?.weapons||[]).filter(w=>tacticalWeaponPhaseEligible(w,phase,ae,te)),weaponOptions=eligibleWeapons.map(w=>'<option value="'+esc(w.name)+'" '+(String(stored.weaponName||'')===String(w.name)?'selected':'')+'>'+esc(w.name)+'</option>').join('');
+  const r=tacticalPreRollCheck(ae.uid,te.uid,stored.weaponName||null),cls=r.status==='ready'?'ok':r.status==='ready-with-warnings'?'status':'warn',warningHtml=(r.warnings||[]).map(x=>'<li>'+esc(x)+'</li>').join(''),steps=(r.steps||[]).map(x=>'<div class="status" style="margin:0"><div class="muted small">'+esc(x.label)+'</div><div style="font-size:1.55em;font-weight:900">'+esc(x.value)+'</div><div class="tiny">'+esc(x.detail||'')+'</div></div>').join(''),selector=(phase==='Shooting'||phase==='Fight')?'<div class="field" style="margin-top:10px"><label>Weapon profile</label><select onchange="setTacticalPreRollWeapon(this.value)"><option value="">Choose a weapon…</option>'+weaponOptions+'</select></div>':'';
+  return '<div class="card tactical-preroll-card" style="border-color:#4f6f8f;margin-top:12px"><div class="split"><div><h3 style="margin:0">Pre-Roll Check</h3><div class="muted">Verify the final target number before rolling physical dice.</div></div><span class="pill">PHYSICAL DICE</span></div>'+selector+'<div class="'+cls+'" style="margin-top:10px"><b>'+esc(r.status==='ready'||r.status==='ready-with-warnings'?'ROLL WHEN READY':'CHECK REQUIRED')+'</b>'+(r.weapon?' • '+esc(r.weapon):'')+'</div><div class="grid3" style="margin-top:10px">'+steps+'</div>'+(warningHtml?'<div class="warn" style="margin-top:10px"><b>Rules / context reminders</b><ul style="margin:5px 0 0 18px">'+warningHtml+'</ul></div>':'')+'<div class="tiny" style="margin-top:8px">Final values use the same combat engine as Tactical Advisor. The app never rolls the physical dice.</div></div>';
+}
+};
     const risk=e.risk||{};
     const conf=e.confidence||{};
     const changes=Array.isArray(e.whatCouldChange)?e.whatCouldChange:[];
