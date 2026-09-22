@@ -4618,18 +4618,34 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
   const friendlyRoots=(state.my||[]).filter(e=>!e.attachedTo);
   results.forEach(x=>{
     const targetEntry=entry('opp',x.entryUid);if(!targetEntry)return;
-    const enemyGroups=attachedCombatWeaponGroups('opp',targetEntry);
+    const enemyGroupsRaw=attachedCombatWeaponGroups('opp',targetEntry);
+    if(!enemyGroupsRaw.length)return;
+    const enemyGroups=enemyGroupsRaw.map(g=>{
+      const u=tacticalWeaponAvailable(g.entry?.uid||targetEntry?.uid,g.weapon,g.count);
+      return u.available?{...g,count:Math.min(g.count,u.count)}:null;
+    }).filter(Boolean);
     if(!enemyGroups.length)return;
     let threat=0;
     friendlyRoots.forEach(fr=>{
       const ft=combatTargetUnit('my',fr)||get(fr.unitId);if(!ft)return;
-      const fg=Math.max(1,Number(ft.models)||Number(fr.models)||1);
-      const tm={...(state.mathRules||{}),defenderModels:fg,quickSamples:1000,_skipSim:true};
+      const friendlySnap=combatSnapshot('my',fr);
+      if(!friendlySnap||friendlySnap.survivingModels<=0)return;
+      const friendlyRoster=modelRosterRule(ft)?survivingModelRoster(fr,ft):null;
+      const fg=friendlyRoster?Math.max(1,friendlyRoster.length):Math.max(1,Number(ft.models)||Number(fr.models)||1);
+      const friendlyWounds=friendlyRoster?Math.max(1,friendlyRoster.reduce((sum,m)=>sum+Math.max(0,Number(m.woundsRemaining)||0),0)):fg*Math.max(1,Number(ft.profile?.W)||1);
+      const tm={...(state.mathRules||{}),defenderModels:fg,defenderWoundsRemaining:friendlyWounds,quickSamples:1000,_skipSim:true};
       const tr=calculateMathMixed(get(targetEntry.unitId),ft,enemyGroups,tm);
       threat+=Math.max(0,Number(tr.damage)||0);
     });
     x.incomingThreat=Math.min(999,threat);
     x.threatPerPoint=threat/Math.max(1,x.points);
+    x.exchangeExposure=Math.min(1,threat/Math.max(1,Number(x.expectedDamage)||1));
+    x.exchangeComponents={
+      incomingThreat:x.incomingThreat,
+      outgoingDamage:x.expectedDamage,
+      threatPerPoint:x.threatPerPoint,
+      exposure:x.exchangeExposure
+    };
   });
   results.sort((a,b)=>b.tacticalIndex-a.tacticalIndex);
   const eligibleResults=results.filter(x=>x.recommendationEligible!==false);
