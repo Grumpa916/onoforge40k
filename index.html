@@ -4447,9 +4447,15 @@ function calculateMathMixed(a,t,groups,m){
   const c=leadGroup?.weapon?engineContext(leadAttacker,leadGroup.weapon,t,safe):{woundNeed:7,hitNeed:7};
   const saveText=save.need>6?'No save':save.need+'+';
   const hitText=c.torrent?'Auto-hit':c.hitNeed+'+';
-  const targetWounds=safe.defenderModels*(Number(t.profile.W)||1);
-  return {...totals,killChance:sim.wipeChance,modelsKilled:sim.avgKilled,targetWounds,saveText,woundNeed:c.woundNeed,hitText,sim,details,
-    summary:`${a.name} mixed loadout into ${t.name}: ${totals.hits.toFixed(2)} hits, ${totals.wounds.toFixed(2)} wounds, ${totals.failedSaves.toFixed(2)} failed saves and ${totals.damage.toFixed(2)} expected damage across ${groups.filter(g=>g.count>0).length} weapon profile${groups.filter(g=>g.count>0).length===1?'':'s'}. Full-unit wipe chance is ${(sim.wipeChance*100).toFixed(1)}% based on ${sim.samples.toLocaleString()} simulated sequences.`};
+  const targetWounds=Array.isArray(safe.defenderWoundsState)
+    ?safe.defenderWoundsState.reduce((sum,v)=>sum+Math.max(0,Number(v)||0),0)
+    :safe.defenderModels*(Number(t.profile.W)||1);
+  // Mixed-loadout damage must come from the shared-state simulation: separate
+  // analytical weapon calculations cannot reproduce 11th-edition allocation
+  // ordering when saves, wounds, Characters, or Precision differ.
+  const allocationAwareDamage=Number.isFinite(sim.avgDamage)?sim.avgDamage:totals.damage;
+  return {...totals,damage:allocationAwareDamage,profileDamage:totals.damage,killChance:sim.wipeChance,modelsKilled:sim.avgKilled,targetWounds,saveText,woundNeed:c.woundNeed,hitText,sim,details,
+    summary:`${a.name} mixed loadout into ${t.name}: ${totals.hits.toFixed(2)} hits, ${totals.wounds.toFixed(2)} wounds, ${allocationAwareDamage.toFixed(2)} allocation-aware expected damage across ${groups.filter(g=>g.count>0).length} weapon profile${groups.filter(g=>g.count>0).length===1?'':'s'}. Full-unit wipe chance is ${(sim.wipeChance*100).toFixed(1)}% based on ${sim.samples.toLocaleString()} simulated sequences.`};
 }
 function engineMonteCarloMixed(a,t,groups,m,samples){
   samples=Math.max(100,Math.min(20000,Number(samples)||2000));
