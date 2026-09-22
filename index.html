@@ -4403,9 +4403,10 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
   if(!groups.length)return {version:'tactical-advisor-v1',status:'no-weapons',attacker:attacker.name,recommendations:[],avoid:[],naturalTargets:[]};
   const roots=(state.opp||[]).filter(e=>!e.attachedTo);
   const results=roots.map(targetEntry=>{
+    const snap=combatSnapshot('opp',targetEntry);
+    if(!snap||snap.survivingModels<=0)return null;
     const target=combatTargetUnit('opp',targetEntry)||get(targetEntry.unitId);
     if(!target)return null;
-    const snap=combatSnapshot('opp',targetEntry);
     const defModels=Math.max(1,Number(target.models)||Number(targetEntry.models)||1);
     const totalWounds=defModels*Math.max(1,Number(target.profile?.W)||1);
     const m={...(state.mathRules||{}),defenderModels:defModels,quickSamples:Math.min(10000,Math.max(2000,Number(options.samples)||4000)),_skipSim:false};
