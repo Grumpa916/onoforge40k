@@ -4881,6 +4881,18 @@ function tacticalLegalityForUnit(side,e){
   const available={movement:p==='Movement',shooting:p==='Shooting'&&action.remainingShootingModels>0,charge:p==='Charge',fight:p==='Fight',command:p==='Command'};
   return {legal:true,phase:p,action,available};
 }
+function tacticalObjectiveValueForTarget(targetEntry,pairCtx){
+  const label=String(pairCtx?.objective||'').trim();
+  if(!label)return {value:0,status:'unknown',reason:'no-objective-context',objective:''};
+  const rawOwner=state.objectives?.[label];
+  const owner=['my','opp','contested','none'].includes(rawOwner)?rawOwner:'unknown';
+  if(owner==='unknown'||owner==='none')return {value:0,status:'unknown',reason:'objective-owner-unknown',objective:label,owner};
+  const oc=Math.max(0,Number(targetEntry?.profile?.OC)||0);
+  if(owner==='opp')return {value:Math.min(1,0.65+0.35*Math.min(1,oc/5)),status:'positive',reason:'target-linked-to-opponent-controlled-objective',objective:label,owner,oc};
+  if(owner==='contested')return {value:Math.min(1,0.40+0.25*Math.min(1,oc/5)),status:'contested',reason:'target-linked-to-contested-objective',objective:label,owner,oc};
+  return {value:0.05*Math.min(1,oc/5),status:'negative',reason:'target-linked-to-friendly-controlled-objective',objective:label,owner,oc};
+}
+
 function tacticalAdvisorStateSnapshot(attackerEntryUid){
   const atk=entry('my',attackerEntryUid)||mathRosterEntry('my');
   const targets=(state.opp||[]).filter(e=>!e.attachedTo&&!tacticalUnitState('opp',e)?.destroyed);
@@ -4979,7 +4991,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
       },
       attached:!!target.__combatTarget,
       bodyguardTarget:!!target.__bodyguardEntryUid,
-      strategicHook:{objectiveControl:Number(target.profile?.OC)||0,keywords:[...(target.keywords||[])]},
+      strategicHook:{objectiveControl:Number(target.profile?.OC)||0,objective:tacticalObjectiveValueForTarget(target,pairCtx),keywords:[...(target.keywords||[])]},
       // Internal tactical index: combat-only baseline. Mission value and reciprocal threat are separate dimensions for later advisor weighting.
       tacticalIndex:legalityBlocked?-1:(0.50*wipe)+(0.30*killFrac)+(0.20*damageFrac)
     };
@@ -5030,7 +5042,8 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     const incoming=Number(x.incomingThreat)||0;
     const outgoing=Math.max(0,Number(x.expectedDamage)||0);
     const objectiveControl=Math.max(0,Number(x.strategicHook?.objectiveControl)||0);
-    const objectiveValue=Math.min(1,objectiveControl/5);
+    const objectiveContext=x.strategicHook?.objective||{value:0,status:'unknown',reason:'objective-context-unavailable'};
+    const objectiveValue=Math.max(0,Math.min(1,Number(objectiveContext.value)||0));
     const efficiency=Math.max(0,Math.min(1,(Number(x.damagePerPoint)||0)*100));
     const threatSuppression=Math.min(1,incoming/Math.max(1,incoming+outgoing));
     const lethality=Math.max(0,Math.min(1,
@@ -5045,6 +5058,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     x.exchangeComponents.exposureBand=exposure>=0.75?'high':exposure>=0.40?'moderate':'low';
     x.exchangeComponents.threatSuppression=threatSuppression;
     x.exchangeComponents.objectiveValue=objectiveValue;
+    x.exchangeComponents.objectiveContext=objectiveContext;
     x.exchangeComponents.efficiency=efficiency;
     x.exchangeComponents.dataConfidence=dataConfidence;
     x.exchangeComponents.simulationConfidence=simulationConfidence;
@@ -5058,7 +5072,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
       0.05*simulationConfidence
     ));
     x.decisionComponents={
-      lethality,threatSuppression,efficiency,objectiveValue,dataConfidence,simulationConfidence,decisionConfidence,
+      lethality,threatSuppression,efficiency,objectiveValue,objectiveContext,dataConfidence,simulationConfidence,decisionConfidence,
       weights:{lethality:0.42,threatSuppression:0.24,efficiency:0.10,objectiveValue:0.09,dataConfidence:0.10,simulationConfidence:0.05}
     };
     x.tacticalIndexAdjusted=Math.max(-1,Number(x.tacticalIndex)||0)*(1-0.20*exposure);
@@ -5073,7 +5087,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     recommendations:eligibleResults.slice(0,8),avoid,naturalTargets,
     stateSnapshot:tacticalAdvisorStateSnapshot(atkEntry?.uid),
     legality:tacticalLegalityForUnit('my',atkEntry),attackerActionState:attackerLegality.action,
-    limitations:['Combat outcome is based on the shared rules engine and current tracked roster state.','Position, range, line-of-sight, engagement, and limited-use weapon state are consumed when the corresponding battle state is known; unknown context is surfaced rather than guessed.','Mission/objective value is exposed as state but is not yet allowed to override combat outcomes.','Attached units are evaluated against their currently targetable Bodyguard models before Leaders/Support models become targetable.']
+    limitations:['Combat outcome is based on the shared rules engine and current tracked roster state.','Position, range, line-of-sight, engagement, and limited-use weapon state are consumed when the corresponding battle state is known; unknown context is surfaced rather than guessed.','Mission/objective value uses explicit tracked objective ownership plus the target/objective tactical link; missing objective context remains unknown/neutral rather than being inferred.','Attached units are evaluated against their currently targetable Bodyguard models before Leaders/Support models become targetable.']
   };
 }
 function math(){
