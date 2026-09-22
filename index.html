@@ -1377,6 +1377,10 @@ const GAME_REFERENCE_PRIMARY=[];
 
 function ensurePersonalArmyNotes(){
   if(typeof state.personalArmyNotes!=='string')state.personalArmyNotes='';
+  if(state.activeRosterId){
+    const list=(state.savedArmyLists||[]).find(x=>x.id===state.activeRosterId);
+    if(list&&typeof list.personalNotes==='string'&&state.personalArmyNotes!==list.personalNotes)state.personalArmyNotes=list.personalNotes;
+  }
   return state.personalArmyNotes;
 }
 function updatePersonalArmyNotes(value){
@@ -3355,7 +3359,7 @@ function saveList(){
 }
 function loadSavedList(id){
  const x=state.lists.find(v=>v.id===id);if(!x)return;
- state.activeRosterId=x.id;state.myName=x.name||'My Army';state.faction=x.faction||state.faction;state.detachmentSelections=Array.isArray(x.detachmentSelections)?[...x.detachmentSelections]:[];state.detachment=x.detachment||state.detachmentSelections[0]||'';state.limit=Number(x.limit)||2000;state.my=JSON.parse(JSON.stringify(x.entries||[]));state.secondaryPersonalPlans=JSON.parse(JSON.stringify(x.secondaryPlans||defaultSecondaryPersonalPlans()));ensureSecondaryPersonalPlans();state.gameReferencePersonal=JSON.parse(JSON.stringify(x.gameReferencePersonal||defaultGameReferencePersonal()));ensureGameReferencePersonal();
+ state.activeRosterId=x.id;state.myName=x.name||'My Army';state.faction=x.faction||state.faction;state.detachmentSelections=Array.isArray(x.detachmentSelections)?[...x.detachmentSelections]:[];state.detachment=x.detachment||state.detachmentSelections[0]||'';state.limit=Number(x.limit)||2000;state.my=JSON.parse(JSON.stringify(x.entries||[]));state.secondaryPersonalPlans=JSON.parse(JSON.stringify(x.secondaryPlans||defaultSecondaryPersonalPlans()));ensureSecondaryPersonalPlans();state.gameReferencePersonal={phases:{Command:[],Movement:[],Shooting:[],Charge:[],Fight:[],End:[]},quick:[],primary:[],custom:''};
  state.savedMyListSnapshot=currentMyListSnapshot();
  save();render();
 }
@@ -3376,7 +3380,6 @@ function battleSavedRosters(){
    detachmentDP:Number(x.detachmentDP)||0,
    limit:Number(x.limit)||2000,
    secondaryPlans:JSON.parse(JSON.stringify(x.secondaryPlans||defaultSecondaryPersonalPlans())),
-   gameReferencePersonal:JSON.parse(JSON.stringify(x.gameReferencePersonal||defaultGameReferencePersonal())),
    entries:Array.isArray(x.units)?JSON.parse(JSON.stringify(x.units)):(Array.isArray(x.entries)?JSON.parse(JSON.stringify(x.entries)):[]),
    created:x.created||''
  })).sort((a,b)=>String(b.created||'').localeCompare(String(a.created||'')));
@@ -3392,7 +3395,7 @@ function loadBattleSavedRoster(side,id){
    state.detachment=x.detachment||state.detachmentSelections[0]||'';
    state.limit=Number(x.limit)||2000;
    state.my=JSON.parse(JSON.stringify(x.entries||[]));
-   state.secondaryPersonalPlans=JSON.parse(JSON.stringify(x.secondaryPlans||defaultSecondaryPersonalPlans()));ensureSecondaryPersonalPlans();state.gameReferencePersonal=JSON.parse(JSON.stringify(x.gameReferencePersonal||defaultGameReferencePersonal()));ensureGameReferencePersonal();
+   state.secondaryPersonalPlans=JSON.parse(JSON.stringify(x.secondaryPlans||defaultSecondaryPersonalPlans()));ensureSecondaryPersonalPlans();state.gameReferencePersonal={phases:{Command:[],Movement:[],Shooting:[],Charge:[],Fight:[],End:[]},quick:[],primary:[],custom:''};
    state.savedMyListSnapshot=currentMyListSnapshot();
  }else{
    state.activeOpponentRosterId=x.id;
