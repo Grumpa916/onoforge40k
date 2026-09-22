@@ -1058,12 +1058,24 @@ function scorePrimaryItem(side,index,mission,amountOverride){
     const originalIndex=primaryScoringOriginalIndex(mission,index);
     const group=primaryScoringExclusiveGroup(mission,originalIndex);
 
+    const before=Number(state[vpKey])||0;
+    const roundTotalBefore=primaryRoundScoredVP(side);
+    let groupExistingVP=0;
+    if(group){
+      for(const otherIndex of scored){
+        if(primaryScoringExclusiveGroup(mission,primaryScoringOriginalIndex(mission,otherIndex))===group){
+          groupExistingVP+=Math.max(0,Number(values[otherIndex])||0);
+        }
+      }
+    }
+    const replacementBaseVP=Math.max(0,before-groupExistingVP);
+    const replacementRoundBase=Math.max(0,roundTotalBefore-groupExistingVP);
+    const allowedVP=Math.min(requestedVP,Math.max(0,15-replacementRoundBase),Math.max(0,45-replacementBaseVP));
+    if(allowedVP<=0){alert('Primary scoring is capped at 15 VP for this round.');return;}
+
     if(group){
       for(const otherIndex of [...scored]){
         if(primaryScoringExclusiveGroup(mission,primaryScoringOriginalIndex(mission,otherIndex))===group){
-          const otherActual=Math.max(0,Number(values[otherIndex])||0);
-          state[vpKey]=Math.max(0,(Number(state[vpKey])||0)-otherActual);
-          state[overallKey]=Math.max(0,(Number(state[overallKey])||0)-otherActual);
           delete values[otherIndex];
           delete amounts[otherIndex];
         }
@@ -1071,19 +1083,15 @@ function scorePrimaryItem(side,index,mission,amountOverride){
       state[byRoundKey][roundKey]=scored.filter(i=>primaryScoringExclusiveGroup(mission,primaryScoringOriginalIndex(mission,i))!==group);
     }
 
-    const roundTotalBefore=primaryRoundScoredVP(side);
-    const allowedVP=Math.min(requestedVP,Math.max(0,15-roundTotalBefore));
-    if(allowedVP<=0){alert('Primary scoring is capped at 15 VP for this round.');return;}
-    const before=Number(state[vpKey])||0;
-    const after=Math.min(45,before+allowedVP);
-    const actual=after-before;
+    const after=replacementBaseVP+allowedVP;
+    const delta=after-before;
     state[vpKey]=after;
-    state[overallKey]=Math.max(0,(Number(state[overallKey])||0)+actual);
+    state[overallKey]=Math.max(0,(Number(state[overallKey])||0)+delta);
     state[byRoundKey][roundKey]=[...state[byRoundKey][roundKey],index];
-    state[valueKey][roundKey][index]=actual;
+    state[valueKey][roundKey][index]=allowedVP;
     state[amountKey][roundKey][index]=amount;
     state[listKey]=state[byRoundKey][roundKey];
-    event('PRIMARY_SCORED',{side,unit:side==='my'?'Primary Mission':'Opponent Primary Mission',action:'Primary scored +'+actual+' VP',before,after,delta:actual,mission,round,scoringItem:row[2],scoringTiming:row[0],amount,roundCap:15,roundTotal:roundTotalBefore+actual},fullBefore);
+    event('PRIMARY_SCORED',{side,unit:side==='my'?'Primary Mission':'Opponent Primary Mission',action:'Primary scored '+(delta>=0?'+':'')+delta+' VP',before,after,delta,mission,round,scoringItem:row[2],scoringTiming:row[0],amount,roundCap:15,roundTotal:replacementRoundBase+allowedVP},fullBefore);
   }
   save();
   render();
