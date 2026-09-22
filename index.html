@@ -4351,7 +4351,7 @@ function engineApplicableWeaponAbilities(w,target){
   return raw.filter(ab=>{
     const parts=ab.split(':');
     if(parts.length<2)return true;
-    const qualifiers=parts.slice(1).join(':').split(/[\\/,&+]/).map(x=>x.replace(/[-]?\\d+\\+?/g,'').trim().toUpperCase()).filter(Boolean);
+    const qualifiers=parts.slice(1).join(':').split(/[\\/,&+]/).map(x=>x.replace(/[-]?\d+\+?/g,'').trim().toUpperCase()).filter(Boolean);
     return !qualifiers.length||qualifiers.some(q=>kws.has(q));
   }).sort();
 }
