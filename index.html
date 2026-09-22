@@ -4445,22 +4445,25 @@ function clearTacticalPair(attackerUid,targetUid){
 }
 function tacticalWeaponUseKey(entryUid,weaponName){return String(entryUid||'')+'|'+String(weaponName||'')}
 function tacticalWeaponUseState(entryUid,weaponName){
-  const t=ensureTacticalState(),raw=t.unitUse[tacticalWeaponUseKey(entryUid,weaponName)]||{};
+  var t=ensureTacticalState(),raw=t.unitUse[tacticalWeaponUseKey(entryUid,weaponName)]||{};
   return {usedCount:Math.max(0,Number(raw.usedCount)||0)};
 }
-function tacticalWeaponLimited(w){return (w?.abilities||[]).some(a=>/ONE[- ]SHOT/i.test(String(a||'')))}
+function tacticalWeaponLimited(w){
+  var abilities=w&&Array.isArray(w.abilities)?w.abilities:[];
+  return abilities.some(function(a){return String(a||'').toUpperCase().indexOf('ONE SHOT')>=0;});
+}
 function tacticalWeaponAvailability(entryUid,w,count){
-  const n=Math.max(0,Number(count)||0);
+  var n=Math.max(0,Number(count)||0);
   if(!tacticalWeaponLimited(w))return {availableCount:n,limited:false,usedCount:0};
-  const used=Math.min(n,tacticalWeaponUseState(entryUid,w.name).usedCount);
+  var used=Math.min(n,tacticalWeaponUseState(entryUid,w.name).usedCount);
   return {availableCount:Math.max(0,n-used),limited:true,usedCount:used};
 }
 function setTacticalWeaponUseCount(entryUid,weaponName,count){
   if(!entryUid||!weaponName)return;
-  const before=snapshotForUndo(),t=ensureTacticalState(),key=tacticalWeaponUseKey(entryUid,weaponName);
-  const old=tacticalWeaponUseState(entryUid,weaponName),n=Math.max(0,Math.floor(Number(count)||0));
+  var before=snapshotForUndo(),t=ensureTacticalState(),key=tacticalWeaponUseKey(entryUid,weaponName);
+  var old=tacticalWeaponUseState(entryUid,weaponName),n=Math.max(0,Math.floor(Number(count)||0));
   t.unitUse[key]={usedCount:n};
-  event('TACTICAL_WEAPON_USE_CHANGED',{entryUid,weaponName,action:'One Shot use count changed',before:old,after:{usedCount:n}},before);
+  event('TACTICAL_WEAPON_USE_CHANGED',{entryUid:entryUid,weaponName:weaponName,action:'One Shot use count changed',before:old,after:{usedCount:n}},before);
   save();render();
 }
 function tacticalWeaponRange(w){
