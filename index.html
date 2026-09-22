@@ -1336,7 +1336,7 @@ function useStratagem(side,index){
  state.stratagemsOpen=true;
  save();render();
 }
-const STRATAGEM_PHASE_ORDER_11E=['Command','Movement','Shooting','Charge','Fight','End','Any Phase'];
+const STRATAGEM_PHASE_ORDER_11E=['Command','Movement','Shooting','Charge','Fight','Any Phase'];
 function stratagemPhaseRank(phase){
  const p=String(phase||'Any Phase').trim();
  const i=STRATAGEM_PHASE_ORDER_11E.indexOf(p);
@@ -3691,6 +3691,7 @@ function startBattle(){
   startGameTimer();
 
   state.round=1;
+  state.battleRoundComplete=false;
   state.battleEnded=false;
   state.phase='Command';
   state.primaryScoringRound=1;
@@ -4303,8 +4304,83 @@ function objectiveStateSummary(){
 
 function objectivePrompt(){const n=String(prompt('Objective name')||'').trim();if(!n)return;const rawOwner=String(prompt('Controlled by: my / opp / contested','my')||'').trim().toLowerCase();const owner=['my','opp','contested','none'].includes(rawOwner)?rawOwner:'';if(!owner){alert('Use my, opp, contested, or none.');return}const fullBefore=snapshotForUndo();const previous=state.objectives[n]||'none';state.objectives[n]=owner;event('OBJECTIVE_CHANGED',{name:n,unit:'Objective '+n,action:'Control → '+owner,owner,previous,after:owner},fullBefore);save();render()}
 function changeCP(side,d){d=Number(d)||0;const fullBefore=snapshotForUndo();const before=side==='my'?Number(state.myCP)||0:Number(state.oppCP)||0;const after=Math.max(0,before+d);if(side==='my')state.myCP=after;else state.oppCP=after;event('CP_CHANGED',{side,unit:side==='my'?'My CP':'Opponent CP',action:'CP '+(d>0?'+':'')+d,before,after,delta:d},fullBefore);save();render()}
-function advancePhase(){const before=snapshotForUndo();const phases=['Command','Movement','Shooting','Charge','Fight','End'];const current=String(state.phase||'Command');let i=phases.indexOf(current);if(i<0)i=0;const next=phases[(i+1)%phases.length];state.phase=next;state.my=sortBattleState(state.my);state.opp=sortBattleState(state.opp);event('PHASE_CHANGED',{from:phases[i],phase:next,action:'Next Phase'},before);save();render()}
-function previousPhase(){const before=snapshotForUndo();const phases=['Command','Movement','Shooting','Charge','Fight','End'];const current=String(state.phase||'Command');let i=phases.indexOf(current);if(i<0)i=0;const prev=phases[(i-1+phases.length)%phases.length];state.phase=prev;state.my=sortBattleState(state.my);state.opp=sortBattleState(state.opp);event('PHASE_CHANGED',{from:phases[i],phase:prev,action:'Previous Phase'},before);save();render()}
+function advancePhase(){
+  const before=snapshotForUndo();
+  const phases=['Command','Movement','Shooting','Charge','Fight'];
+  const current=String(state.phase||'Command');
+  let i=phases.indexOf(current);
+  if(i<0)i=0;
+
+  // 11th edition has five phases per player turn. After Fight, the
+  // current player's turn ends and the other player takes their turn.
+  if(i===phases.length-1){
+    const endingTurn=state.currentTurn==='opp'?'opp':'my';
+    const firstTurn=state.firstTurn==='opp'?'opp':'my';
+    const otherTurn=endingTurn==='my'?'opp':'my';
+
+    if(endingTurn!==firstTurn){
+      const currentRound=Math.max(1,Number(state.round)||1);
+      if(currentRound>=MAX_ROUND){
+        state.battleRoundComplete=true;
+        event('TURN_ENDED',{endingTurn,round:currentRound,phase:'Fight',action:'Battle round complete — final round'},before);
+        save();render();
+        return;
+      }
+      state.round=currentRound+1;
+      state.currentTurn=firstTurn;
+      state.phase='Command';
+      state.battleRoundComplete=false;
+      state.objectiveTurnStartOwners={...(state.objectiveTurnStartOwners||{})};
+      state.objectiveTurnStartOwners[String(state.round)+'|'+firstTurn]=Object.fromEntries(
+        Object.entries(state.objectives||{}).map(([name,owner])=>[name,['my','opp','contested','none'].includes(owner)?owner:'none'])
+      );
+      switchTurnClock(firstTurn);
+      ensureTacticalTurnDraw(firstTurn);
+      syncPrimaryScoringRound();
+      state.my=sortBattleState(state.my);
+      state.opp=sortBattleState(state.opp);
+      event('ROUND_CHANGED',{fromRound:currentRound,round:state.round,phase:'Command',currentTurn:firstTurn,action:'Battle round advanced after both player turns'},before);
+      save();render();
+      return;
+    }
+
+    state.currentTurn=otherTurn;
+    state.phase='Command';
+    state.battleRoundComplete=false;
+    state.objectiveTurnStartOwners={...(state.objectiveTurnStartOwners||{})};
+    state.objectiveTurnStartOwners[String(state.round)+'|'+otherTurn]=Object.fromEntries(
+      Object.entries(state.objectives||{}).map(([name,owner])=>[name,['my','opp','contested','none'].includes(owner)?owner:'none'])
+    );
+    switchTurnClock(otherTurn);
+    ensureTacticalTurnDraw(otherTurn);
+    state.my=sortBattleState(state.my);
+    state.opp=sortBattleState(state.opp);
+    event('TURN_CHANGED',{from:endingTurn,to:otherTurn,round:Math.max(1,Number(state.round)||1),phase:'Command',action:'End of turn — opponent begins'},before);
+    save();render();
+    return;
+  }
+
+  const next=phases[i+1];
+  state.phase=next;
+  state.my=sortBattleState(state.my);
+  state.opp=sortBattleState(state.opp);
+  event('PHASE_CHANGED',{from:phases[i],phase:next,action:'Next Phase'},before);
+  save();render();
+}
+function previousPhase(){
+  const before=snapshotForUndo();
+  const phases=['Command','Movement','Shooting','Charge','Fight'];
+  const current=String(state.phase||'Command');
+  let i=phases.indexOf(current);
+  if(i<0)i=0;
+  const prev=phases[(i-1+phases.length)%phases.length];
+  state.phase=prev;
+  state.battleRoundComplete=false;
+  state.my=sortBattleState(state.my);
+  state.opp=sortBattleState(state.opp);
+  event('PHASE_CHANGED',{from:phases[i],phase:prev,action:'Previous Phase'},before);
+  save();render();
+}
 function nextRound(){
  const before=snapshotForUndo();
  const current=Number(state.round);
