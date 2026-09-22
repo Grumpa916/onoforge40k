@@ -1797,7 +1797,7 @@ function secondaryTotalScoredVP(side){
 function secondaryRoundScoredVP(side,round=state.round){
   ensureSecondaryRoundLedger();
   const key=side==='my'?'secondaryMyScoredVPByRound':'secondaryOppScoredVPByRound';
-  const roundKey=String(Math.max(1,Number(round)||1));
+  const roundKey=String(round)==='END'?'END':String(Math.max(1,Number(round)||1));
   const bucket=state[key]?.[roundKey]||{};
   return Object.values(bucket).reduce((sum,v)=>sum+Math.max(0,Number(v)||0),0);
 }
@@ -1807,7 +1807,7 @@ function recordSecondaryRoundVP(side,name,actual,round=state.round){
   if(!state[roundMapKey]||typeof state[roundMapKey]!=='object')state[roundMapKey]={};
   state[roundMapKey][name]=Math.max(1,Number(round)||1);
   const key=side==='my'?'secondaryMyScoredVPByRound':'secondaryOppScoredVPByRound';
-  const roundKey=String(Math.max(1,Number(round)||1));
+  const roundKey=String(round)==='END'?'END':String(Math.max(1,Number(round)||1));
   if(!state[key][roundKey]||typeof state[key][roundKey]!=='object')state[key][roundKey]={};
   state[key][roundKey][name]=Math.max(0,Number(state[key][roundKey][name])||0)+Math.max(0,Number(actual)||0);
 }
@@ -1830,8 +1830,6 @@ function scoreSecondary(side,name,vpInput){
  const card=secondaryByName(name);const mode=side==='my'?state.secondaryMy:state.secondaryOpp;
  const fixed=mode==='fixed';
  const endOfBattleCard=secondaryHasEndOfBattleCondition(name);
- if(state.battleEnded&&!endOfBattleCard){alert('The battle is ended. Only end-of-battle secondary scoring can be added.');return;}
- if(!state.battleEnded&&endOfBattleCard){alert('This secondary includes an end-of-battle scoring condition. End the battle before scoring that condition.');return;}
  const max=fixed?20:(Number.isFinite(Number(card.maxVP))?Number(card.maxVP):null);
  const fullBefore=snapshotForUndo();
  const before=side==='my'?Number(state.myVP)||0:Number(state.oppVP)||0;
@@ -1857,7 +1855,7 @@ function scoreSecondary(side,name,vpInput){
    if(!secScored(side).includes(name))secScored(side).push(name);
    if(mode==='tactical'&&!secDiscard(side).includes(name))secDiscard(side).push(name);
  }
- recordSecondaryRoundVP(side,name,actual,round);
+ recordSecondaryRoundVP(side,name,actual,endOfBattleCard&&state.battleEnded?'END':round);
  state[side==='my'?'myVP':'oppVP']=scoreTotalForSide(side);
  event('SECONDARY_SCORED',{side,unit:name,action:'Secondary scored +'+actual+' VP',secondary:name,before,after:before+actual,delta:actual,mode,discarded:!fixed,round,roundCap:endOfBattleCard&&state.battleEnded?null:15,roundTotal:roundTotalBefore+actual,missionTotal:missionBefore+actual,missionCap:max},fullBefore);
  save();render();
