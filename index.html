@@ -4334,25 +4334,29 @@ function engineMonteCarlo(a,w,t,m,samples){samples=Math.max(100,Math.min(20000,N
 function simulateOne(a,w,t,m){const r=engineMonteCarlo(a,w,t,m,1);return {damage:r.avgDamage,killed:r.avgKilled,dead:r.wipeChance>=1}}
 function runMathSimulation(){
   const a=mathUnit('my'),t=mathUnit('opp'); if(!a||!t)return;
-  const ae=mathRosterEntry('my'), alloc=mathWeaponAlloc(ae,a); const groups=(a.weapons||[]).map(w=>({weapon:w,count:Number(alloc[w.name])||0})).filter(g=>g.count>0);
-  const m={...(state.mathRules||{}),defenderModels:Math.max(1,Number(ae?mathRosterEntry('opp')?.models:state.mathRules?.defenderModels)||t.models||1)};
+  const ae=mathRosterEntry('my'),de=mathRosterEntry('opp'), alloc=mathWeaponAlloc(ae,a); const groups=(a.weapons||[]).map(w=>({weapon:w,count:Number(alloc[w.name])||0})).filter(g=>g.count>0);
+  const atkModels=ae&&modelRosterRule(a)?Math.max(1,survivingModelRoster(ae,a).length):Math.max(1,Number(ae?.models)||Number(a?.models)||1);
+  const defModels=de&&modelRosterRule(t)?Math.max(1,survivingModelRoster(de,t).length):Math.max(1,Number(de?.models)||Number(t?.models)||1);
+  const m={...(state.mathRules||{}),attackerModels:atkModels,defenderModels:defModels};
   const n=Math.max(100,Math.min(20000,Number(document.getElementById('simCount')?.value)||5000)); const r=engineMonteCarloMixed(a,t,groups,m,n); const el=document.getElementById('simResult');
   if(el)el.innerHTML=`<div class="grid3"><div class="result-card"><div class="result-label">Average Damage</div><div class="result-value">${r.avgDamage.toFixed(2)}</div></div><div class="result-card"><div class="result-label">Average Models Killed</div><div class="result-value">${r.avgKilled.toFixed(2)}</div></div><div class="result-card"><div class="result-label">Full Unit Destroyed</div><div class="result-value">${(r.wipeChance*100).toFixed(1)}%</div></div></div><div class="status">${n.toLocaleString()} complete mixed-loadout attack sequences • ${esc(a.name)} → ${esc(t.name)}</div>`;
 }
 
 function resolveAttack(){
   const fullBefore=snapshotForUndo();
+  const ae=mathRosterEntry('my'),de=mathRosterEntry('opp');
   const a=get(state.attacker),t=get(state.target),w=(a.weapons||[]).find(x=>x.name===state.weapon)||a.weapons[0];
   if(!w)return;
   const m={...(state.mathRules||{})};
-  const te=state.opp.find(e=>e.unitId===t.id)||state.my.find(e=>e.unitId===t.id);
+  const selectedTargetEntry=de&&get(de.unitId)?.id===t.id?de:null;
+  const te=selectedTargetEntry||state.opp.find(e=>e.unitId===t.id)||state.my.find(e=>e.unitId===t.id);
   const rosterTracked=!!(te&&modelRosterRule(t));
   let woundsState,rosterAlive=[];
   if(rosterTracked){
     const roster=ensureModelRoster(te,t);
     rosterAlive=roster.filter(x=>x.alive!==false);
     woundsState=rosterAlive.map(x=>Math.max(0,Number(x.woundsRemaining)||Number(t.wounds)||1));
-    m.attackerModels=Math.max(1,Number(m.attackerModels)||a.models||1);
+    m.attackerModels=ae&&modelRosterRule(a)?Math.max(1,survivingModelRoster(ae,a).length):Math.max(1,Number(m.attackerModels)||a.models||1);
   }else{
     woundsState=Array.from({length:Math.max(1,Number(t.models)||1)},()=>Number(t.profile.W)||1);
     m.defenderModels=Math.max(1,Number(t.models)||1);
