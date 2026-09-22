@@ -5092,8 +5092,9 @@ function engineApplyDamageToWoundsState(d,woundsState,t,targetIndex=null){
   let remainingDamage=Math.max(0,Number(d)||0),applied=0;
   const s=t?.__allocationState||null;
   while(remainingDamage>0){
-    const idx=Number.isInteger(targetIndex)&&targetIndex>=0&&targetIndex<woundsState.length&&Number(woundsState[targetIndex])>0
-      ?targetIndex:(s?engineSelectAllocationIndex(s,woundsState):woundsState.findIndex(x=>Number(x)>0));
+    const explicitIndex=Number.isInteger(targetIndex)&&targetIndex>=0&&targetIndex<woundsState.length;
+    if(explicitIndex&&Number(woundsState[targetIndex])<=0)return applied;
+    const idx=explicitIndex?targetIndex:(s?engineSelectAllocationIndex(s,woundsState):woundsState.findIndex(x=>Number(x)>0));
     if(idx<0)break;
     const remaining=Math.max(0,Number(woundsState[idx])||Number(t?.profile?.W)||1);
     const dealt=Math.min(remaining,remainingDamage);
@@ -5215,7 +5216,7 @@ function engineOneAttack(a,w,t,m,modelsRemaining,woundsState){
     }else if(!m.attachedTargetState){
       saveTarget=t;
     }
-    const save=engineSaveDistribution(saveTarget,w,c=e.context,m);
+    const save=engineSaveDistribution(saveTarget,w,e.context,m);
     let sr=1+Math.floor(Math.random()*6);
     if(m.rerollSave1&&sr===1)sr=1+Math.floor(Math.random()*6);
     const savedThis=sr!==1&&sr>=save.need;
