@@ -4661,7 +4661,6 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
       if(!u.available)return null;
       const count=Math.min(g.count,u.count);
       if(count<=0)return null;
-      if(state.phase==='Shooting'&&Number.isFinite(snap?.battleState?.round)&&false)return null;
       const distance=tacticalPairState(atkEntry.uid,targetEntry.uid).distanceInches;
       const range=tacticalWeaponRange(g.weapon);
       if(state.phase==='Shooting'&&distance!==null&&Number.isFinite(range)&&range<distance)return null;
@@ -4691,7 +4690,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
       damageFraction:damageFrac,killFraction,damagePerPoint:efficiency,weaponProfiles:weaponKeys,
       antiMatches:[...new Set(antiMatches)],confidence,
       tacticalLegality,
-      recommendationEligible:tacticalLegality.canTarget===true&&phaseActionAvailable,
+      recommendationEligible:tacticalLegality.canTarget===true&&phaseActionAvailable&&availableGroups.length>0,
       scoreComponents:{
         wipeChance:wipe,
         killFraction,
