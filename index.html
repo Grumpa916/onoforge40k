@@ -4980,6 +4980,27 @@ function tacticalUnitHasKeyword(entry,keyword){
 function tacticalUnitCanFly(entry){
   return tacticalUnitHasKeyword(entry,'FLY')||tacticalUnitHasKeyword(entry,'FLYING');
 }
+function tacticalUnitHasFightsFirst(entry){
+  if(!entry)return false;
+  const unit=get(entry.unitId);
+  const abilities=[...(unit?.abilities||[]),...(unit?.keywords||[])].map(a=>String(a||'').toUpperCase().replace(/[-_]/g,' '));
+  return abilities.some(a=>a.includes('FIGHTS FIRST')||a.includes('FIGHT FIRST'));
+}
+function tacticalUnitFightState(entry){
+  const a=tacticalAdvisorActionState(entry?.uid);
+  const engaged=tacticalUnitIsEngagedAny(entry?.uid);
+  const chargeMade=a.chargeMade===true;
+  const intrinsicFirst=tacticalUnitHasFightsFirst(entry);
+  return {
+    eligible:engaged||chargeMade,
+    engaged,
+    chargeMade,
+    fightsFirst:intrinsicFirst||chargeMade,
+    intrinsicFightsFirst:intrinsicFirst,
+    fightType:engaged?'NORMAL_FIGHT':chargeMade?'OVERRUN_OR_POSITION_DEPENDENT':'INELIGIBLE',
+    actionState:a
+  };
+}
 function tacticalWeaponIsCloseQuarters(w){
   return (w?.abilities||[]).some(a=>String(a||'').toUpperCase().replace(/-/g,' ').includes('CLOSE QUARTERS'));
 }
@@ -5095,11 +5116,22 @@ function tacticalTargetLegality(attackerEntry,targetEntry,phase){
   }
   if(p==='Fight'){
     if(!tacticalPhaseActionAvailable(attackerEntry.uid,'Fight'))return {status:'known',known:true,canTarget:false,reasons:['attacker has already completed its Fight action'],context:ctx};
-    if(ctx.engagement==='unknown')reasons.push('engagement status unknown');
+    const fightState=tacticalUnitFightState(attackerEntry);
+    if(!fightState.eligible&&!fightState.chargeMade&&ctx.engagement==='unknown')reasons.push('engagement status unknown');
+    if(!fightState.eligible&&ctx.engagement==='notEngaged')reasons.push('unit is not engaged and did not make a Charge move this turn');
+    if(fightState.chargeMade&&ctx.engagement!=='engaged')reasons.push('unit made a Charge move this turn; current engagement/pile-in state is needed to determine the legal fight type and target');
     if(tacticalUnitHasKeyword(attackerEntry,'AIRCRAFT'))reasons.push('AIRCRAFT units can only make melee attacks against FLYING units');
     if(tacticalUnitHasKeyword(targetEntry,'AIRCRAFT')&&!tacticalUnitCanFly(attackerEntry))reasons.push('only FLYING models can make melee attacks against AIRCRAFT units');
     const blockedAircraft=reasons.some(x=>x==='AIRCRAFT units can only make melee attacks against FLYING units'||x==='only FLYING models can make melee attacks against AIRCRAFT units');
-    return {status:(reasons.length?'unknown':'known'),known:!reasons.length,canTarget:blockedAircraft?false:(reasons.length?null:ctx.engagement==='engaged'),reasons,context:ctx};
+    const hardBlocked=!fightState.eligible&&ctx.engagement==='notEngaged'&&!fightState.chargeMade;
+    const targetEligible=fightState.eligible&&ctx.engagement==='engaged';
+    return {
+      status:blockedAircraft||hardBlocked?'known':(targetEligible?'known':'unknown'),
+      known:blockedAircraft||hardBlocked||targetEligible,
+      canTarget:blockedAircraft||hardBlocked?false:(targetEligible?true:null),
+      reasons,context:ctx,
+      fightState
+    };
   }
   return {status:'notRequired',known:true,canTarget:true,reasons,context:ctx};
 }
@@ -5386,6 +5418,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     const totalWounds=woundsState.reduce((sum,w)=>sum+Math.max(0,Number(w)||0),0);
     const pairCtx=tacticalPairState(atkEntry.uid,targetEntry.uid);
     const engagedTargetMonsterVehicle=pairCtx.engagement==='engaged'&&tacticalUnitIsMonsterVehicle(targetEntry);
+    const attackerFightState=phase==='Fight'?tacticalUnitFightState(atkEntry):null;
     const attackerEngagedWithTarget=pairCtx.engagement==='engaged';
     const m={...(state.mathRules||{}),defenderModels:defModels,defenderWoundsState:woundsState,engagedTargetMonsterVehicle,attackerEngagedWithTarget,quickSamples:Math.min(10000,Math.max(2000,Number(options.samples)||4000)),_skipSim:false};
     // Tactical ranking must use the same attached-unit allocation state as the
@@ -5476,6 +5509,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
       attached:!!target.__combatTarget,
       bodyguardTarget:!!target.__bodyguardEntryUid,
       strategicHook:{objectiveControl:Number(target.profile?.OC)||0,objective:tacticalObjectiveValueForTarget(target,pairCtx),keywords:[...(target.keywords||[])]},
+      fightState:attackerFightState,
       missionContext:missionCtx,
       // Internal tactical index: combat-only baseline. Mission value and reciprocal threat are separate dimensions for later advisor weighting.
       tacticalIndex:legalityBlocked?-1:(0.50*wipe)+(0.30*killFrac)+(0.20*damageFrac)
