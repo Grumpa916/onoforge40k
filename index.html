@@ -4342,20 +4342,31 @@ function combatTargetEntry(side,entryUidOrEntry){
   return root||selected||null;
 }
 function combatUnit(side,entryUidOrEntry){return combatSnapshot(side,entryUidOrEntry)}
-function engineWeaponPoolKey(w){
+function engineApplicableWeaponAbilities(w,target){
+  const raw=Array.isArray(w?.abilities)?w.abilities.map(x=>String(x).trim()).filter(Boolean):[];
+  if(!target)return raw.sort();
+  const kws=new Set((target.keywords||[]).map(k=>String(k||'').toUpperCase().trim()));
+  return raw.filter(ab=>{
+    const parts=ab.split(':');
+    if(parts.length<2)return true;
+    const qualifiers=parts.slice(1).join(':').split(/[\\/,&+]/).map(x=>x.trim().toUpperCase()).filter(Boolean);
+    return !qualifiers.length||qualifiers.some(q=>kws.has(q));
+  }).sort();
+}
+function engineWeaponPoolKey(w,target){
   const p=w?.weapon||w||{};
-  const abilities=Array.isArray(p.abilities)?p.abilities.map(x=>String(x)).sort():[];
+  const abilities=engineApplicableWeaponAbilities(p,target);
   return JSON.stringify({
-    name:String(p.name||''),A:String(p.A??''),BS:String(p.BS??''),WS:String(p.WS??''),
-    S:String(p.S??''),AP:String(p.AP??''),D:String(p.D??''),range:String(p.range??p.Range??''),
+    BS:String(p.BS??''),WS:String(p.WS??''),
+    S:String(p.S??''),AP:String(p.AP??''),D:String(p.D??''),
     abilities
   });
 }
-function attachedCombatWeaponGroups(side,e){
+function attachedCombatWeaponGroups(side,e,target=null){
   const snap=combatSnapshot(side,e);if(!snap)return [];
   return snap.weapons.reduce((groups,w)=>{
-    const key=w.sourceEntryUid+'|'+String(w.sourceModelId||'')+'|'+engineWeaponPoolKey(w);
-    const poolKey=w.sourceEntryUid+'|'+engineWeaponPoolKey(w),existing=groups.find(g=>g.poolKey===poolKey);
+    const key=w.sourceEntryUid+'|'+String(w.sourceModelId||'')+'|'+engineWeaponPoolKey(w.weapon,target);
+    const poolKey=w.sourceEntryUid+'|'+engineWeaponPoolKey(w.weapon,target),existing=groups.find(g=>g.poolKey===poolKey);
     if(existing){existing.count++;existing.modelIds.push(w.sourceModelId)}
     else{
       const ce=entry(side,w.sourceEntryUid),u=get(w.unitId);
