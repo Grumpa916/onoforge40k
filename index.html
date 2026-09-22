@@ -4351,12 +4351,12 @@ function resolveAttack(){
   const selectedTargetEntry=de&&get(de.unitId)?.id===t.id?de:null;
   const te=selectedTargetEntry||state.opp.find(e=>e.unitId===t.id)||state.my.find(e=>e.unitId===t.id);
   const rosterTracked=!!(te&&modelRosterRule(t));
+  if(ae&&modelRosterRule(a))m.attackerModels=Math.max(1,survivingModelRoster(ae,a).length);
   let woundsState,rosterAlive=[];
   if(rosterTracked){
     const roster=ensureModelRoster(te,t);
     rosterAlive=roster.filter(x=>x.alive!==false);
     woundsState=rosterAlive.map(x=>Math.max(0,Number(x.woundsRemaining)||Number(t.wounds)||1));
-    m.attackerModels=ae&&modelRosterRule(a)?Math.max(1,survivingModelRoster(ae,a).length):Math.max(1,Number(m.attackerModels)||a.models||1);
   }else{
     woundsState=Array.from({length:Math.max(1,Number(t.models)||1)},()=>Number(t.profile.W)||1);
     m.defenderModels=Math.max(1,Number(t.models)||1);
