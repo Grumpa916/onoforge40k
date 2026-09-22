@@ -5536,6 +5536,27 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     const tacticalLegality=tacticalTargetLegality(atkEntry,targetEntry,state.phase);
     const legalityBlocked=tacticalLegality.canTarget===false;
     const phaseActionAvailable=tacticalPhaseActionAvailable(advisorActionEntry?.uid||atkEntry?.uid,phase);
+    const fightOrder=phase==='Fight' ? (()=>{
+      const af=tacticalFightOrderState(atkEntry),tf=tacticalFightOrderState(targetEntry),fp=tacticalFightPhaseState();
+      if(!af.eligible)return {status:'attacker-ineligible',advantage:'none',risk:0};
+      if(!tf.eligible)return {status:'target-ineligible',advantage:'attacker',risk:0};
+      if(fp.step==='remaining' && af.fightsFirst!==tf.fightsFirst)return af.fightsFirst
+        ? {status:'fights-first-priority',advantage:'attacker',risk:0}
+        : {status:'fights-first-priority',advantage:'target',risk:1};
+      if(fp.step==='fightsFirst' || fp.step==='unknown'){
+        if(af.fightsFirst!==tf.fightsFirst)return af.fightsFirst
+          ? {status:'fights-first-priority',advantage:'attacker',risk:0}
+          : {status:'fights-first-priority',advantage:'target',risk:1};
+        if(af.fightsFirst&&tf.fightsFirst){
+          return state.currentTurn==='my'
+            ? {status:'both-fights-first',advantage:'attacker',risk:0}
+            : {status:'both-fights-first',advantage:'target',risk:1};
+        }
+      }
+      return state.currentTurn==='my'
+        ? {status:'alternating-combats',advantage:'attacker',risk:0}
+        : {status:'alternating-combats',advantage:'target',risk:1};
+    })() : null;
     return {
       entryUid:targetEntry.uid,unitId:target.id,name:target.name,faction:target.faction,points,
       models:defModels,targetWounds:totalWounds,expectedDamage:damage,modelsKilled:killed,wipeChance:wipe,
@@ -5551,6 +5572,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
       },
       attached:!!target.__combatTarget,
       bodyguardTarget:!!target.__bodyguardEntryUid,
+      fightOrder,
       strategicHook:{objectiveControl:Number(target.profile?.OC)||0,objective:tacticalObjectiveValueForTarget(target,pairCtx),keywords:[...(target.keywords||[])]},
       fightState:attackerFightState,
       missionContext:missionCtx,
@@ -5632,6 +5654,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
       (objectiveContext.status==='contested'?0.30:0)+
       (missionCtx.score.gap<0?0.20:0)
     ));
+    const fightOrderRisk=Math.max(0,Math.min(1,Number(x.fightOrder?.risk)||0));
     const preserveFriendlyUnit=Math.max(0,Math.min(1,
       exposure>=0.75?0.95:exposure>=0.40?0.60:0.15
     ));
@@ -5646,7 +5669,8 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
       0.65*pointExchangeRatio+
       0.10*(Number(x.wipeChance)||0)+
       0.10*(Number(x.threatPerPoint)||0)+
-      0.15*objectiveValue
+      0.15*objectiveValue+
+      0.10* (1-fightOrderRisk)
     ));
     const futureScoringValue=Math.max(0,Math.min(1,
       objectiveValue*(missionCtx.round<5?0.65:0.25)+
