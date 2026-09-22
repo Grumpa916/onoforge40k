@@ -4588,7 +4588,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     const efficiency=damage/points;
     const weaponKeys=[...new Set(availableGroups.filter(g=>g.count>0).map(g=>g.weapon.name))];
     const targetKeywords=(target.keywords||[]).map(k=>String(k).toUpperCase().replace(/[^A-Z0-9 ]/g,' ').trim()).filter(Boolean);
-    const antiMatches=groups.flatMap(g=>(g.weapon.abilities||[]).filter(a=>{
+    const antiMatches=availableGroups.flatMap(g=>(g.weapon.abilities||[]).filter(a=>{
       const m=String(a).toUpperCase().replace(/-/g,' ').match(/ANTI\s+([A-Z ]+)\s+(\d+)\+/);
       return !!m&&targetKeywords.some(k=>m[1].trim().split(/\s+/).includes(k)||m[1].trim()===k);
     }));
@@ -4632,10 +4632,10 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
   return {
     version:'tactical-advisor-v1',status:'ok',attacker:{entryUid:atkEntry?.uid,unitId:attacker.id,name:attacker.name},
     evaluatedAt:{round:Math.max(1,Number(state.round)||1),phase:state.phase||'Command',turn:state.currentTurn||state.turn||'my'},
-    recommendations:results.slice(0,8),avoid,naturalTargets,
+    recommendations:eligibleResults.slice(0,8),avoid,naturalTargets,
     stateSnapshot:tacticalAdvisorStateSnapshot(atkEntry?.uid),
     legality:tacticalLegalityForUnit('my',atkEntry),
-    limitations:['Combat outcome is based on the shared rules engine and current tracked roster state.','Position, range, line-of-sight, engagement, and weapon-use state are not yet tracked and therefore are not assumed.','Mission/objective value is exposed as state but is not yet allowed to override combat outcomes.','Attached units are evaluated against their currently targetable Bodyguard models before Leaders/Support models become targetable.']
+    limitations:['Combat outcome is based on the shared rules engine and current tracked roster state.','Position, range, line-of-sight, engagement, and limited-use weapon state are consumed when the corresponding battle state is known; unknown context is surfaced rather than guessed.','Mission/objective value is exposed as state but is not yet allowed to override combat outcomes.','Attached units are evaluated against their currently targetable Bodyguard models before Leaders/Support models become targetable.']
   };
 }
 function math(){
