@@ -3106,7 +3106,9 @@ function dataSyncStatusHtml(){
 function nav(){const tools=[['rules','Rules Engine'],['data','Data Sources'],['manage','Data Management'],['log','Action Log']];const toolOpen=tools.some(([id])=>state.page===id);return '<div class="nav"><div class="nav-main">'+[['builder','List Builder'],['saved','Saved Lists'],['setup','Battle Setup'],['battle','Battle Mode'],['math','Mathhammer']].map(([id,n])=>`<button class="${state.page===id?'active':''}" onclick="state.page='${id}';state.builderView='full';render()">${n}</button>`).join('')+'</div><details class="nav-tools" ${toolOpen?"open":""}><summary>Tools</summary><div class="nav-tools-menu">'+tools.map(([id,n])=>`<button class="${state.page===id?'active':''}" onclick="state.page='${id}';state.builderView='full';render()">${n}</button>`).join('')+'</div></details></div>'}
 function addUnit(side,id){if(side!=='my'&&side!=='opp')return;const u=get(id);if(!u)return;state[side].push(makeEntry(u));save();render()}
 function removeUnit(side,id){
+ const fullBefore=snapshotForUndo();
  const e=entry(side,id);if(!e)return;
+ const u=get(e.unitId);if(!u)return;
  if(e.attachedTo){
    const b=entry(side,e.attachedTo);
    if(b){
@@ -3117,6 +3119,16 @@ function removeUnit(side,id){
  for(const l of bodyguardLeaders(side,id)){delete l.attachedTo;delete l.attachedRole}
  for(const sup of bodyguardSupports(side,id)){delete sup.attachedTo;delete sup.attachedRole}
  state[side]=state[side].filter(x=>x.uid!==id);
+ const tactical=ensureTacticalState();
+ delete tactical.unitActions[String(id)];
+ delete tactical.unitMovement[String(id)];
+ const unitPrefix=String(id)+'|';
+ Object.keys(tactical.unitUse).forEach(k=>{if(k.startsWith(unitPrefix))delete tactical.unitUse[k]});
+ const pairPrefix=String(id);
+ Object.keys(tactical.pairs).forEach(k=>{
+   if(k.startsWith(pairPrefix+'>')||k.endsWith('>'+pairPrefix))delete tactical.pairs[k];
+ });
+ event('UNIT_REMOVED',{side,entryId:id,unitId:e.unitId,unit:u.name,action:'Unit removed from roster'},fullBefore);
  save();render();
 }
 function configure(side,id){state.configure={side,id};render()}
