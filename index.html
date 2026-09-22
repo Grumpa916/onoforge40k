@@ -4475,10 +4475,10 @@ function setTacticalWeaponUsed(entryUid,weaponName,value){
 function tacticalWeaponUseHtml(entryUid,groups){
   const unique=[...new Map((groups||[]).map(g=>[g.weapon.name,g])).values()].filter(g=>tacticalWeaponLimited(g.weapon));
   if(!unique.length)return '';
-  return '<div class="status"><b>Limited-use weapons</b><div class="grid2" style="margin-top:7px">'+unique.map(g=>{
+  return `<div class="status"><b>Limited-use weapons</b><div class="grid2" style="margin-top:7px">${unique.map(g=>{
     const u=tacticalWeaponUseState(entryUid,g.weapon.name),max=Math.max(1,Number(g.count)||1),used=Math.min(max,u.usedCount),label=used+'/'+max+' used';
-    return '<div class="field"><label>'+esc(g.weapon.name)+' • '+label+'</label><input type="number" min="0" max="'+max+'" step="1" value="'+used+'" onchange="setTacticalWeaponUsed(\''+entryUid+'\',\''+esc(g.weapon.name).replace(/'/g,"\\'")+'\',this.value)"></div>';
-  }).join('')+'</div><div class="tiny">One Shot is tracked per weapon model. Hazardous weapons remain available but are flagged by the Advisor.</div></div>';
+    return `<div class="field"><label>${esc(g.weapon.name)} • ${label}</label><input type="number" min="0" max="${max}" step="1" value="${used}" onchange="setTacticalWeaponUsed(${JSON.stringify(entryUid)},${JSON.stringify(g.weapon.name)},this.value)"></div>`;
+  }).join('')}</div><div class="tiny">One Shot is tracked per weapon model. Hazardous weapons remain available but are flagged by the Advisor.</div></div>`;
 }
 function tacticalWeaponRange(w){
   if(!w)return null;
