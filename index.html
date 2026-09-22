@@ -412,7 +412,7 @@
 .secondary-detail-plan{margin-top:6px}
 .secondary-detail-plan summary{font-size:9px;color:#9ecbff;cursor:pointer}
 .secondary-detail-plan .secondary-personal-plan{margin-top:4px;padding:5px 6px}
-.secondary-detail-hint{margin-top:5px;font-size:9px;color:#8297aa}
+.secondary-detail-hint{margin-top:5px;font-size:9px;color:#8297aa}.secondary-row-scoring{margin-top:8px;display:grid;gap:6px}.secondary-row-score{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:7px 8px;background:#0b1220;border:1px solid #26364d;border-radius:7px}.secondary-row-condition{display:flex;align-items:flex-start;gap:7px;flex-wrap:wrap;font-size:10px;line-height:1.3;color:#c7d5e3}.secondary-row-timing{padding:2px 5px;border:1px solid #7c5a2c;border-radius:4px;color:#f1c27d;font-size:8px;font-weight:800;letter-spacing:.05em}.secondary-row-action{display:flex;gap:4px;align-items:center}.secondary-row-action input{width:54px;padding:5px 5px;background:#0b1220;border:1px solid #40546b;color:#f1f5f9;border-radius:6px;font-size:11px}.secondary-row-action .btn{padding:5px 8px;font-size:10px}@media(max-width:700px){.secondary-row-score{grid-template-columns:1fr}.secondary-row-action{justify-content:flex-start}}
 @media(max-width:700px){.secondary-detail-main{grid-template-columns:1fr}.secondary-detail-score{text-align:left}.secondary-score-buttons{justify-content:flex-start}}
 
 /* v285 approved Primary Mission UI */
@@ -1680,6 +1680,37 @@ function setSecondaryDetailScore(side,name,vp){
  if(!secState(side).includes(name)){alert('Track this secondary mission first.');return}
  scoreSecondary(side,name,n);
 }
+function secondaryRowInputId(side,name,index){
+ return 'score-row-'+side+'-'+String(name).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+'-'+index;
+}
+function secondaryScoreRow(side,name,index){
+ const card=secondaryByName(name),data=SECONDARY_SCORING[name]||SECONDARY_SCORING[card?.name]||null;
+ const mode=side==='my'?'fixed':'fixed';
+ const modeKey=(side==='my'?state.secondaryMy:state.secondaryOpp)==='fixed'?'Fixed':'Tactical';
+ const row=data?.[modeKey]?.[index];
+ if(!row)return;
+ const input=document.getElementById(secondaryRowInputId(side,name,index));
+ const fallback=Number(String(row[0]).match(/\d+/)?.[0]||0);
+ const amount=input?Number(input.value):fallback;
+ const endOfBattle=/end of battle/i.test(String(row[1]||''));
+ scoreSecondary(side,name,amount,{endOfBattle});
+}
+function secondaryScoringRowsHtml(side,name,data,modeKey){
+ const items=data?.[modeKey]||[];
+ if(!items.length)return '';
+ return '<div class="secondary-row-scoring"><div class="secondary-detail-section-title">Scoring conditions</div>'+
+   items.map((row,index)=>{
+     const vpText=String(row?.[0]||'');
+     const condition=String(row?.[1]||'');
+     const endOfBattle=/end of battle/i.test(condition);
+     const fallback=Number(vpText.match(/\d+/)?.[0]||0);
+     const disabled=endOfBattle&&!state.battleEnded?' disabled':'';
+     return '<div class="secondary-row-score">'+
+       '<div class="secondary-row-condition"><span class="secondary-vp">'+esc(vpText)+'</span><span>'+esc(condition)+'</span>'+(endOfBattle?'<span class="secondary-row-timing">END OF BATTLE</span>':'')+'</div>'+
+       '<div class="secondary-row-action"><input type="number" min="1" max="20" step="1" value="'+fallback+'" id="'+secondaryRowInputId(side,name,index)+'" aria-label="VP to score for '+esc(name)+' condition '+(index+1)+'"><button type="button" class="btn primary" data-secondary-row-score="1" data-secondary-row-score-side="'+side+'" data-secondary-row-score-name="'+esc(name)+'" data-secondary-row-score-index="'+index+'"'+disabled+'>Record</button></div>'+
+     '</div>';
+   }).join('')+'</div>';
+}
 function secondaryDetailHtml(side){
  const name=secondaryDetailTarget(side);if(!name)return '';
  const card=secondaryByName(name);
@@ -1687,17 +1718,19 @@ function secondaryDetailHtml(side){
  const active=secState(side).includes(name),scored=secScored(side).includes(name)||scoredVP>0;
  const data=SECONDARY_SCORING[name]||SECONDARY_SCORING[card?.name]||null;
  const mode=side==='my'?state.secondaryMy:state.secondaryOpp;
- const scoringText=data?Object.entries(data).filter(([m])=>m===mode.charAt(0).toUpperCase()+mode.slice(1)).flatMap(([,items])=>items.map(x=>x[0]+' VP — '+x[1])).join(' • '):(card?.type||'Secondary mission');
+ const modeKey=mode==='fixed'?'Fixed':'Tactical';
+ const scoringText=data?Object.entries(data).filter(([m])=>m===modeKey).flatMap(([,items])=>items.map(x=>x[0]+' VP — '+x[1])).join(' • '):(card?.type||'Secondary mission');
  const detailPlan=secondaryPersonalPlanHtml(name);
  const tracked=secState(side),roundVP=secondaryRoundScoredVP(side),totalVP=secondaryTotalScoredVP(side);
  const trackedList=tracked.map(n=>'<button type="button" class="secondary-tracked-mission '+(n===name?'selected':'')+'" data-secondary-detail="1" data-secondary-detail-side="'+side+'" data-secondary-detail-name="'+esc(n)+'"><span class="tracked-dot">✓</span>'+esc(n)+'</button>').join('');
+ const rowHtml=secondaryScoringRowsHtml(side,name,data,modeKey);
  return '<div class="secondary-detail-panel"><div class="secondary-detail-columns">'+
    '<div class="secondary-detail-info"><div class="muted small">MISSION DETAILS • '+esc(side==='my'?state.myName:state.oppName)+'</div><h4>'+esc(name)+'</h4><div class="muted small">'+esc(card?.type||'Secondary Mission')+'</div><div class="secondary-detail-description"><b>Scoring:</b> '+esc(scoringText)+'</div>'+
    (detailPlan?'<details class="secondary-detail-plan"><summary>Personal plan / notes</summary>'+detailPlan+'</details>':'')+'</div>'+
    '<div class="secondary-tracked-list"><div class="secondary-detail-section-title">Tracked Missions <span>'+tracked.length+' / 18</span></div>'+(trackedList||'<div class="muted small">No missions tracked. Click a mission title above to track it.</div>')+'</div>'+
-   '<div class="secondary-detail-score"><div class="secondary-detail-section-title">This Round <span>'+roundVP+' / 15 VP</span></div><div class="secondary-score-buttons">'+[0,1,2,3,4,5].map(v=>'<button type="button" class="btn '+(scoredVP===v?'primary':'')+'" data-secondary-score="1" data-secondary-score-side="'+side+'" data-secondary-score-name="'+esc(name)+'" data-secondary-score-value="'+v+'">'+v+'</button>').join('')+'</div><div class="muted small">'+(scored?'Scored '+scoredVP+' VP':'Not scored')+'</div><div class="secondary-cap-note">Secondary total: '+totalVP+' / 45 VP</div></div>'+
-   '</div><div class="secondary-rules-strip"><b>11th Edition VP limits:</b> Secondary Missions max 15 VP per round and 45 VP total. Primary Missions max 15 VP per round and 45 VP total. Battle Ready adds 10 VP to the final score. Maximum possible game score: 100 VP.</div>'+
-   '<div class="secondary-detail-hint">'+(active?'Use the score buttons to record this mission.':'Click the mission title above to track this mission before scoring it.')+'</div></div>';
+   '<div class="secondary-detail-score"><div class="secondary-detail-section-title">This Round <span>'+roundVP+' / 15 VP</span></div><div class="muted small">'+(scored?'Scored '+scoredVP+' VP':'Not scored')+'</div><div class="secondary-cap-note">Secondary total: '+totalVP+' / 45 VP</div></div>'+
+   '</div>'+rowHtml+'<div class="secondary-rules-strip"><b>11th Edition VP limits:</b> Secondary Missions max 15 VP per battle round and 45 VP total. Fixed Secondary Missions can score up to 20 VP per card. End-of-battle conditions are still subject to the final round’s 15 VP Secondary cap.</div>'+
+   '<div class="secondary-detail-hint">'+(active?'Record the specific scoring condition you achieved. The app enforces the round and game caps.':'Click the mission title above to track it before scoring it.')+'</div></div>';
 }
 
 function secondaryCatalogHtml(side){
@@ -1788,6 +1821,25 @@ function ensureTacticalTurnDraw(side){
 function ensureSecondaryRoundLedger(){
   if(!state.secondaryMyScoredVPByRound||typeof state.secondaryMyScoredVPByRound!=='object')state.secondaryMyScoredVPByRound={};
   if(!state.secondaryOppScoredVPByRound||typeof state.secondaryOppScoredVPByRound!=='object')state.secondaryOppScoredVPByRound={};
+  // Migrate the temporary END bucket created by an earlier scoring implementation.
+  // Current 11th-edition scoring still counts end-of-battle Secondary VP against
+  // the final battle-round 15 VP limit.
+  for(const side of ['my','opp']){
+    const key=side==='my'?'secondaryMyScoredVPByRound':'secondaryOppScoredVPByRound';
+    const roundMapKey=side==='my'?'secondaryMyScoredRound':'secondaryOppScoredRound';
+    const end=state[key].END;
+    if(end&&typeof end==='object'){
+      if(!state[key]['5']||typeof state[key]['5']!=='object')state[key]['5']={};
+      let room=Math.max(0,15-Object.values(state[key]['5']).reduce((s,v)=>s+Math.max(0,Number(v)||0),0));
+      for(const [name,value] of Object.entries(end)){
+        const amount=Math.min(Math.max(0,Number(value)||0),room);
+        if(amount>0)state[key]['5'][name]=Math.max(0,Number(state[key]['5'][name])||0)+amount;
+        room-=amount;
+        if(state[roundMapKey]?.[name]==='END')state[roundMapKey][name]=5;
+      }
+      delete state[key].END;
+    }
+  }
 }
 function secondaryTotalScoredVP(side){
   const key=side==='my'?'secondaryMyScoredVP':'secondaryOppScoredVP';
@@ -1820,16 +1872,13 @@ function removeSecondaryRoundVP(side,name,round=null){
   }
   if(state[roundMapKey])delete state[roundMapKey][name];
 }
-function secondaryHasEndOfBattleCondition(name){
- const data=SECONDARY_SCORING[name]||{};
- return Object.values(data).some(items=>Array.isArray(items)&&items.some(row=>String(row?.[1]||'').toLowerCase().includes('end of battle')));
-}
-function scoreSecondary(side,name,vpInput){
+function scoreSecondary(side,name,vpInput,rowMeta=null){
  const active=secState(side);if(!active.includes(name))return;
  let vp=Number(vpInput);if(!Number.isFinite(vp))vp=0;vp=Math.floor(vp);if(vp<1){alert('Enter at least 1 VP to score.');return;}
  const card=secondaryByName(name);const mode=side==='my'?state.secondaryMy:state.secondaryOpp;
  const fixed=mode==='fixed';
- const endOfBattleCard=secondaryHasEndOfBattleCondition(name);
+ const endOfBattleRow=!!rowMeta?.endOfBattle;
+ if(endOfBattleRow&&!state.battleEnded){alert('This scoring condition can only be recorded after the battle ends.');return;}
  const max=fixed?20:(Number.isFinite(Number(card.maxVP))?Number(card.maxVP):null);
  const fullBefore=snapshotForUndo();
  const before=side==='my'?Number(state.myVP)||0:Number(state.oppVP)||0;
@@ -1838,7 +1887,7 @@ function scoreSecondary(side,name,vpInput){
  const totalBefore=Number(secondaryTotalScoredVP(side)||0);
  const missionBefore=fixed?Math.max(0,Number((side==='my'?state.secondaryMyScoredVP:state.secondaryOppScoredVP)?.[name])||0):0;
  const missionRemaining=max===null?vp:Math.max(0,max-missionBefore);
- const roundAllowance=endOfBattleCard&&state.battleEnded?vp:Math.max(0,15-roundTotalBefore);
+ const roundAllowance=Math.max(0,15-roundTotalBefore);
  const allowedVP=Math.min(vp,missionRemaining,roundAllowance,Math.max(0,45-totalBefore));
  if(allowedVP<=0){
    alert(missionRemaining<=0&&fixed?'This Fixed Secondary Mission has reached its 20 VP cap.':totalBefore>=45?'Secondary Missions are capped at 45 VP for the game.':'Secondary scoring is capped at 15 VP for this round.');
@@ -1855,9 +1904,9 @@ function scoreSecondary(side,name,vpInput){
    if(!secScored(side).includes(name))secScored(side).push(name);
    if(mode==='tactical'&&!secDiscard(side).includes(name))secDiscard(side).push(name);
  }
- recordSecondaryRoundVP(side,name,actual,endOfBattleCard&&state.battleEnded?'END':round);
+ recordSecondaryRoundVP(side,name,actual,round);
  state[side==='my'?'myVP':'oppVP']=scoreTotalForSide(side);
- event('SECONDARY_SCORED',{side,unit:name,action:'Secondary scored +'+actual+' VP',secondary:name,before,after:before+actual,delta:actual,mode,discarded:!fixed,round,roundCap:endOfBattleCard&&state.battleEnded?null:15,roundTotal:roundTotalBefore+actual,missionTotal:missionBefore+actual,missionCap:max},fullBefore);
+ event('SECONDARY_SCORED',{side,unit:name,action:'Secondary scored +'+actual+' VP',secondary:name,before,after:before+actual,delta:actual,mode,discarded:!fixed,round,roundCap:15,roundTotal:roundTotalBefore+actual,missionTotal:missionBefore+actual,missionCap:max},fullBefore);
  save();render();
 }
 function secondaryInputId(side,name){return 'score-'+side+'-'+String(name).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}
@@ -6299,6 +6348,8 @@ document.addEventListener('click',function(ev){
   if(st){ev.preventDefault();ev.stopPropagation();toggleSecondaryTracking(st.dataset.secondaryToggleSide,st.dataset.secondaryToggleName);return;}
   const sd=ev.target.closest('[data-secondary-detail]');
   if(sd){ev.preventDefault();ev.stopPropagation();selectSecondaryDetail(sd.dataset.secondaryDetailSide,sd.dataset.secondaryDetailName);return;}
+  const sr=ev.target.closest('[data-secondary-row-score]');
+  if(sr){ev.preventDefault();ev.stopPropagation();secondaryScoreRow(sr.dataset.secondaryRowScoreSide,sr.dataset.secondaryRowScoreName,Number(sr.dataset.secondaryRowScoreIndex));return;}
   const ss=ev.target.closest('[data-secondary-score]');
   if(ss){ev.preventDefault();ev.stopPropagation();setSecondaryDetailScore(ss.dataset.secondaryScoreSide,ss.dataset.secondaryScoreName,ss.dataset.secondaryScoreValue);return;}
   const tr=ev.target.closest('[data-secondary-track]');
