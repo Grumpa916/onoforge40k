@@ -4496,7 +4496,7 @@ function tacticalWeaponPhaseUseCount(entryUid,weaponName,round=state.round,phase
     String(e.playerTurn||'')===s &&
     String(e.payload?.attackerEntryUid||'')===String(entryUid) &&
     String(e.payload?.weapon||'')===String(weaponName)
-  ).length;
+  ).reduce((n,e)=>n+Math.max(1,Number(e.payload?.modelsResolved)||1),0);
 }
 function tacticalWeaponAvailableForPhase(entryUid,w,maxCount,round=state.round,phase=state.phase,side='my'){
   const limit=Math.max(0,Math.floor(Number(maxCount)||0));
@@ -4590,14 +4590,29 @@ function tacticalBattleState(){
     objectives,units:{my:(state.my||[]).map(e=>tacticalUnitState('my',e)).filter(Boolean),opp:(state.opp||[]).map(e=>tacticalUnitState('opp',e)).filter(Boolean)},
     recentEvents:(state.events||[]).slice(0,20).map(e=>({kind:e.kind,round:e.round,phase:e.phase,playerTurn:e.playerTurn,payload:e.payload||{}}))};
 }
+function tacticalUnitActionState(side,e){
+  const p=String(state.phase||'Command'),round=Math.max(1,Number(state.round)||1),turn=state.currentTurn==='opp'?'opp':'my';
+  if(!e)return {phase:p,round,turn,shootingModelsResolved:0,shootingResolved:false};
+  const uid=String(e.uid||'');
+  const shootingModelsResolved=(state.events||[]).filter(ev=>
+    ev?.kind==='ATTACK_RESOLUTION' &&
+    (Number(ev.round)||1)===round &&
+    String(ev.phase||'')==='Shooting' &&
+    String(ev.playerTurn||'')===side &&
+    String(ev.payload?.attackerEntryUid||'')===uid
+  ).reduce((n,ev)=>n+Math.max(1,Number(ev.payload?.modelsResolved)||1),0);
+  const roster=modelRosterRule(get(e.unitId))?survivingModelRoster(e,get(e.unitId)).length:Math.max(0,Number(e.game?.models??e.models??0));
+  return {phase:p,round,turn,shootingModelsResolved,shootingResolved:shootingModelsResolved>0,remainingShootingModels:Math.max(0,roster-shootingModelsResolved)};
+}
 function tacticalLegalityForUnit(side,e){
   const p=state.phase||'Command',isMine=side==='my',turn=state.currentTurn==='opp'?'opp':'my';
   const s=tacticalUnitState(side,e);if(!s)return {legal:false,reason:'missing-unit'};
   if(s.destroyed)return {legal:false,reason:'destroyed'};
   if(isMine&&turn!=='my')return {legal:false,reason:'not-your-turn'};
   if(!isMine&&turn==='my')return {legal:false,reason:'opponent-turn'};
-  const legalPhases={shooting:['Shooting'],charge:['Charge'],fight:['Fight'],movement:['Movement'],command:['Command']};
-  return {legal:true,phase:p,available:{movement:p==='Movement',shooting:p==='Shooting',charge:p==='Charge',fight:p==='Fight',command:p==='Command'}};
+  const action=tacticalUnitActionState(side,e);
+  const available={movement:p==='Movement',shooting:p==='Shooting'&&action.remainingShootingModels>0,charge:p==='Charge',fight:p==='Fight',command:p==='Command'};
+  return {legal:true,phase:p,action,available};
 }
 function tacticalAdvisorStateSnapshot(attackerEntryUid){
   const atk=entry('my',attackerEntryUid)||mathRosterEntry('my');
@@ -4609,6 +4624,8 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
   const side='my',atkEntry=entry(side,attackerEntryUid)||mathRosterEntry(side);
   const attacker=atkEntry?get(atkEntry.unitId):get(state.attacker);
   if(!attacker)return {version:'tactical-advisor-v1',status:'no-attacker',recommendations:[],avoid:[],naturalTargets:[]};
+  const attackerLegality=tacticalLegalityForUnit('my',atkEntry);
+  if(!attackerLegality.legal)return {version:'tactical-advisor-v1',status:'attacker-not-legal',attacker:attacker.name,recommendations:[],avoid:[],naturalTargets:[],attackerLegality};
   const groups=attachedCombatWeaponGroups(side,atkEntry);
   if(!groups.length)return {version:'tactical-advisor-v1',status:'no-weapons',attacker:attacker.name,recommendations:[],avoid:[],naturalTargets:[]};
   const roots=(state.opp||[]).filter(e=>!e.attachedTo);
@@ -4646,13 +4663,14 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     const confidence=snap?.exactModelIdentity&&snap?.exactWeaponIdentity?'high':(snap?.exactWeaponIdentity?'medium':'limited');
     const tacticalLegality=tacticalTargetLegality(atkEntry,targetEntry,state.phase);
     const legalityBlocked=tacticalLegality.canTarget===false;
+    const phaseActionAvailable=state.phase==='Shooting'?attackerLegality.available.shooting:true;
     return {
       entryUid:targetEntry.uid,unitId:target.id,name:target.name,faction:target.faction,points,
       models:defModels,targetWounds:totalWounds,expectedDamage:damage,modelsKilled:killed,wipeChance:wipe,
       damageFraction:damageFrac,killFraction,damagePerPoint:efficiency,weaponProfiles:weaponKeys,
       antiMatches:[...new Set(antiMatches)],confidence,
       tacticalLegality,
-      recommendationEligible:!legalityBlocked,
+      recommendationEligible:!legalityBlocked&&phaseActionAvailable,
       scoreComponents:{
         wipeChance:wipe,
         killFraction,
@@ -4722,7 +4740,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     evaluatedAt:{round:Math.max(1,Number(state.round)||1),phase:state.phase||'Command',turn:state.currentTurn||state.turn||'my'},
     recommendations:eligibleResults.slice(0,8),avoid,naturalTargets,
     stateSnapshot:tacticalAdvisorStateSnapshot(atkEntry?.uid),
-    legality:tacticalLegalityForUnit('my',atkEntry),
+    legality:tacticalLegalityForUnit('my',atkEntry),attackerActionState:attackerLegality.action,
     limitations:['Combat outcome is based on the shared rules engine and current tracked roster state.','Position, range, line-of-sight, engagement, and limited-use weapon state are consumed when the corresponding battle state is known; unknown context is surfaced rather than guessed.','Mission/objective value is exposed as state but is not yet allowed to override combat outcomes.','Attached units are evaluated against their currently targetable Bodyguard models before Leaders/Support models become targetable.']
   };
 }
@@ -4903,7 +4921,7 @@ function resolveAttack(){
     event('ATTACK_RESOLUTION',{
       attacker:a.name,attackerEntryUid:ae?.uid||null,weapon:w.name,target:t.name,targetEntryUid:te?.uid||null,unit:a.name,
       action:'Attack with '+w.name+' → '+t.name,
-      attacks:Math.round(engineExpectedDice(w.A)),hits:r.hits,wounds:r.wounds,saved:r.saved,damage:r.damage,
+      attacks:Math.round(engineExpectedDice(w.A)),modelsResolved:rosterTracked?Math.max(1,rosterAlive.length):1,hits:r.hits,wounds:r.wounds,saved:r.saved,damage:r.damage,
       critHits:r.critHits,critW:r.critWounds,before,after:te.game,rollLog:r.rollLog,
       modelLevel:rosterTracked
     },fullBefore);
@@ -4911,7 +4929,7 @@ function resolveAttack(){
     event('ATTACK_RESOLUTION',{
       attacker:a.name,attackerEntryUid:ae?.uid||null,weapon:w.name,target:t.name,targetEntryUid:te?.uid||null,unit:a.name,
       action:'Attack with '+w.name+' → '+t.name,
-      hits:r.hits,wounds:r.wounds,saved:r.saved,damage:r.damage,critHits:r.critHits,critW:r.critWounds,rollLog:r.rollLog
+      modelsResolved:rosterTracked?Math.max(1,rosterAlive.length):1,hits:r.hits,wounds:r.wounds,saved:r.saved,damage:r.damage,critHits:r.critHits,critW:r.critWounds,rollLog:r.rollLog
     },fullBefore);
   }
   state.page='battle';save();render();
