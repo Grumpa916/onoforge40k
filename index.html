@@ -5929,9 +5929,17 @@ function resolveAttack(){
         !tacticalWeaponModelModeConflict(ae.uid,model.id,w,ae,state.round,state.phase,'my')
       )
     :[];
-  const modelsAvailable=attackerRoster.length
-    ?eligibleWeaponModels.length
-    :Math.max(1,Number(mathWeaponAlloc(ae,a)?.[w.name])||0);
+  let modelsAvailable=0;
+  if(attackerRoster.length){
+    modelsAvailable=eligibleWeaponModels.length;
+  }else{
+    const allocated=Math.max(0,Number(mathWeaponAlloc(ae,a)?.[w.name])||0);
+    const available=tacticalWeaponAvailableForPhase(
+      ae?.uid,w,allocated,state.round,state.phase,'my'
+    );
+    if(!available.available)return;
+    modelsAvailable=Math.min(allocated,available.count);
+  }
   if(ae&&attackerRoster.length===1)m.attackerWoundsRemaining=Math.max(0,Number(attackerRoster[0]?.woundsRemaining)||0);
   if(modelsAvailable<=0)return; 
   const rosterTracked=!!(te&&modelRosterRule(t));
