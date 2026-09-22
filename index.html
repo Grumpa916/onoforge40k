@@ -4511,11 +4511,19 @@ function tacticalWeaponAvailableForPhase(entryUid,w,maxCount,round=state.round,p
   const remaining=Math.max(0,limit-phaseUsed);
   return {available:remaining>0,count:remaining,reason:remaining?'':'Weapon capacity already resolved this phase',use,phaseUsed};
 }
-function tacticalWeaponPhaseEligible(w,phase){
+function tacticalWeaponPhaseEligible(w,phase,attackerEntry,targetEntry){
   if(!w)return false;
   const p=String(phase||state.phase||'Command');
   const raw=String(w.rng??w.range??'').trim().toUpperCase();
-  if(p==='Shooting')return raw!=='MELEE';
+  const abilities=(w.abilities||[]).map(a=>String(a||'').toUpperCase().replace(/-/g,' '));
+  const pistol=abilities.some(a=>a.includes('PISTOL'));
+  const bigGuns=abilities.some(a=>a.includes('BIG GUNS NEVER TIRE')||a.includes('BIG GUNS'));
+  const ctx=attackerEntry&&targetEntry?tacticalPairState(attackerEntry.uid,targetEntry.uid):null;
+  if(p==='Shooting'){
+    if(raw==='MELEE')return false;
+    if(ctx?.engagement==='engaged'&&!pistol&&!bigGuns)return false;
+    return true;
+  }
   if(p==='Fight')return raw==='MELEE';
   return true;
 }
@@ -4640,7 +4648,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
   if(!attacker)return {version:'tactical-advisor-v1',status:'no-attacker',recommendations:[],avoid:[],naturalTargets:[]};
   const attackerLegality=tacticalLegalityForUnit('my',atkEntry);
   if(!attackerLegality.legal)return {version:'tactical-advisor-v1',status:'attacker-not-legal',attacker:attacker.name,recommendations:[],avoid:[],naturalTargets:[],attackerLegality};
-  const groups=attachedCombatWeaponGroups(side,atkEntry).filter(g=>tacticalWeaponPhaseEligible(g.weapon,state.phase));
+  const groups=attachedCombatWeaponGroups(side,atkEntry).filter(g=>tacticalWeaponPhaseEligible(g.weapon,state.phase,g.entry,entry('opp',ensureTacticalState().selectedTargetUid)));
   if(!groups.length)return {version:'tactical-advisor-v1',status:'no-phase-eligible-weapons',attacker:attacker.name,recommendations:[],avoid:[],naturalTargets:[],phase:state.phase};
   const roots=(state.opp||[]).filter(e=>!e.attachedTo);
   const results=roots.map(targetEntry=>{
