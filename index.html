@@ -4658,7 +4658,14 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     const availableGroups=groups.map(g=>{
       const uid=g.entry?.uid||atkEntry?.uid;
       const u=tacticalWeaponAvailableForPhase(uid,g.weapon,g.count,state.round,state.phase,side);
-      return u.available?{...g,count:Math.min(g.count,u.count),phaseUsed:u.phaseUsed||0}:null;
+      if(!u.available)return null;
+      const count=Math.min(g.count,u.count);
+      if(count<=0)return null;
+      if(state.phase==='Shooting'&&Number.isFinite(snap?.battleState?.round)&&false)return null;
+      const distance=tacticalPairState(atkEntry.uid,targetEntry.uid).distanceInches;
+      const range=tacticalWeaponRange(g.weapon);
+      if(state.phase==='Shooting'&&distance!==null&&Number.isFinite(range)&&range<distance)return null;
+      return {...g,count,phaseUsed:u.phaseUsed||0};
     }).filter(Boolean);
     const calc=calculateMathMixed(attacker,target,availableGroups,m);
     const damage=Math.max(0,Number(calc.damage)||0);
@@ -4684,7 +4691,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
       damageFraction:damageFrac,killFraction,damagePerPoint:efficiency,weaponProfiles:weaponKeys,
       antiMatches:[...new Set(antiMatches)],confidence,
       tacticalLegality,
-      recommendationEligible:!legalityBlocked&&phaseActionAvailable,
+      recommendationEligible:tacticalLegality.canTarget===true&&phaseActionAvailable,
       scoreComponents:{
         wipeChance:wipe,
         killFraction,
