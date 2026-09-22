@@ -910,8 +910,8 @@ function scorePrimary(side,vpInput){
   if(actual<=0)return;
   const fullBefore=snapshotForUndo();
   state[key]=after;
-  if(side==='my')state.myVP=Math.max(0,(Number(state.myVP)||0)+actual);
-  else state.oppVP=Math.max(0,(Number(state.oppVP)||0)+actual);
+  if(side==='my')state.myVP=scoreTotalForSide('my');
+  else state.oppVP=scoreTotalForSide('opp');
   event('PRIMARY_SCORED',{
     side,
     unit:side==='my'?'Primary Mission':'Opponent Primary Mission',
@@ -934,8 +934,8 @@ function resetPrimary(side){
   state[amountKey]={};
   state[valueKey]={};
   state[side==='my'?'primaryScoredItemsMy':'primaryScoredItemsOpp']=[];
-  if(side==='my')state.myVP=Math.max(0,(Number(state.myVP)||0)-actual);
-  else state.oppVP=Math.max(0,(Number(state.oppVP)||0)-actual);
+  if(side==='my')state.myVP=scoreTotalForSide('my');
+  else state.oppVP=scoreTotalForSide('opp');
   event('PRIMARY_SCORE_RESET',{
     side,
     unit:side==='my'?'Primary Mission':'Opponent Primary Mission',
