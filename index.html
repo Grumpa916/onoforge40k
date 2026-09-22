@@ -4527,23 +4527,29 @@ function tacticalWeaponRange(w){
   return m?Number(m[1]):null;
 }
 function tacticalTargetLegality(attackerEntry,targetEntry,phase){
-  if(!attackerEntry||!targetEntry)return {status:'unknown',reasons:['missing-unit']};
+  if(!attackerEntry||!targetEntry)return {status:'unknown',known:false,canTarget:null,reasons:['missing-unit']};
   const ctx=tacticalPairState(attackerEntry.uid,targetEntry.uid),p=String(phase||state.phase||'Command');
   const reasons=[];
   if(p==='Shooting'){
     if(ctx.los==='no')return {status:'known',known:true,canTarget:false,reasons:['line of sight confirmed unavailable'],context:ctx};
+    const groups=attachedCombatWeaponGroups('my',attackerEntry).filter(g=>tacticalWeaponPhaseEligible(g.weapon,'Shooting'));
+    const ranges=groups.map(g=>tacticalWeaponRange(g.weapon)).filter(Number.isFinite);
+    if(!groups.length)return {status:'known',known:true,canTarget:false,reasons:['attacker has no phase-eligible ranged weapons'],context:ctx};
+    if(!ranges.length)reasons.push('weapon range unknown');
     if(ctx.distanceInches===null)reasons.push('range unknown');
     if(ctx.los==='unknown')reasons.push('line of sight unknown');
     if(ctx.distanceInches!==null&&ctx.distanceInches<=0)reasons.push('invalid distance');
-    const groups=attachedCombatWeaponGroups('my',attackerEntry);
-    const ranges=groups.map(g=>tacticalWeaponRange(g.weapon)).filter(Number.isFinite);
     if(ctx.distanceInches!==null&&ranges.length&&Math.max(...ranges)<ctx.distanceInches)reasons.push('target is beyond all known weapon ranges');
-    return {status:reasons.length?'unknown':'known',known:!reasons.length,canTarget:reasons.some(x=>x.includes('confirmed')||x.includes('beyond all'))?false:(reasons.length?null:true),reasons,context:ctx};
+    const blocked=reasons.some(x=>x==='invalid distance'||x==='target is beyond all known weapon ranges');
+    return {status:blocked?'known':(reasons.length?'unknown':'known'),known:!reasons.length||blocked,canTarget:blocked?false:(reasons.length?null:true),reasons,context:ctx};
   }
   if(p==='Charge'){
     if(ctx.distanceInches===null)reasons.push('distance unknown');
+    if(ctx.distanceInches!==null&&ctx.distanceInches>12)reasons.push('target is beyond the 12-inch charge declaration range');
     if(ctx.engagement==='unknown')reasons.push('engagement status unknown');
-    return {status:reasons.length?'unknown':'known',known:!reasons.length,canTarget:reasons.length?null:ctx.engagement!=='engaged',reasons,context:ctx};
+    if(ctx.engagement==='engaged')reasons.push('target is already within engagement range');
+    const blocked=reasons.some(x=>x==='target is beyond the 12-inch charge declaration range'||x==='target is already within engagement range');
+    return {status:blocked?'known':(reasons.length?'unknown':'known'),known:!reasons.length||blocked,canTarget:blocked?false:(reasons.length?null:true),reasons,context:ctx};
   }
   if(p==='Fight'){
     if(ctx.engagement==='unknown')reasons.push('engagement status unknown');
