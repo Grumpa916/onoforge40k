@@ -4355,13 +4355,15 @@ function engineApplicableWeaponAbilities(w,target){
     return !qualifiers.length||qualifiers.some(q=>kws.has(q));
   }).sort();
 }
-function engineWeaponPoolKey(w,target){
+function engineWeaponPoolKey(w,target,attackerUnit=null){
   const p=w?.weapon||w||{};
   const abilities=engineApplicableWeaponAbilities(p,target);
+  const attackerAbilities=Array.isArray(attackerUnit?.abilities)
+    ?attackerUnit.abilities.map(x=>String(x).trim()).filter(Boolean).sort():[];
   return JSON.stringify({
     BS:String(p.BS??''),WS:String(p.WS??''),
     S:String(p.S??''),AP:String(p.AP??''),D:String(p.D??''),
-    abilities
+    abilities,attackerAbilities
   });
 }
 function engineWeaponVariantKey(w){const p=w?.weapon||w||{};return JSON.stringify({A:String(p.A??'')});}
