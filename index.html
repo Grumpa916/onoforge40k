@@ -5051,7 +5051,23 @@ function engineApplyDamageToWoundsState(d,woundsState,t){
   }
   return applied;
 }
-function engineOneAttack(a,w,t,m,modelsRemaining,woundsState){const c=engineContext(a,w,t,m);let attacks=Math.max(0,Math.round(engineRoll(w.A)+(c.rapidFire&&m.halfRange?c.rapidFire:0)+(c.blast?c.blast*Math.floor(modelsRemaining/5):0)+(c.cleave?c.cleave*Math.floor(modelsRemaining/5):0)));let totalDamage=0,hits=0,wounds=0,saved=0,critHits=0,critWounds=0,rollLog=[];for(let ai=0;ai<attacks;ai++){let h=1+Math.floor(Math.random()*6),rerolled=false;if(c.hitReroll==='all'||(c.hitReroll==='ones'&&h===1)){h=1+Math.floor(Math.random()*6);rerolled=true}const crit=h>=c.critHitThreshold;const hit=h>=c.hitNeed||crit;if(!hit)continue;if(crit)critHits++;if(crit&&c.lethal){wounds++;rollLog.push({hit:h,wound:'AUTO'});continue}hits++;const extra=crit?engineSustained(c,m):0;for(let x=0;x<1+extra;x++){let wr=1+Math.floor(Math.random()*6);if(c.woundReroll==='all'||(c.woundReroll==='ones'&&wr===1)){wr=1+Math.floor(Math.random()*6)}const critW=wr>=c.critWoundThreshold;const wound=wr>=c.woundNeed||critW;if(!wound)continue;wounds++;if(critW)critWounds++;if(critW&&c.devastating){
+function engineTargetForAttack(t,m,woundsState){
+  const s=m?.attachedTargetState;
+  if(!s)return t;
+  const bodyguardAlive=woundsState.slice(0,s.bodyguardCount).some(x=>Number(x)>0);
+  const slots=bodyguardAlive?s.bodyguardSlots:s.characterSlots;
+  const live=slots.findIndex((_,i)=>Number(woundsState[(bodyguardAlive?0:s.bodyguardCount)+i])>0);
+  if(live<0)return t;
+  const slot=slots[live];
+  return {...t,profile:{...(slot.profile||t.profile)},wounds:slot.maxWounds||t.wounds,models:slots.filter((_,i)=>Number(woundsState[(bodyguardAlive?0:s.bodyguardCount)+i])>0).length};
+}
+function engineOneAttack(a,w,t,m,modelsRemaining,woundsState){
+  const baseC=engineContext(a,w,t,m);
+  let attacks=Math.max(0,Math.round(engineRoll(w.A)+(baseC.rapidFire&&m.halfRange?baseC.rapidFire:0)+(baseC.blast?baseC.blast*Math.floor(modelsRemaining/5):0)+(baseC.cleave?baseC.cleave*Math.floor(modelsRemaining/5):0)));
+  let totalDamage=0,hits=0,wounds=0,saved=0,critHits=0,critWounds=0,rollLog=[];
+  for(let ai=0;ai<attacks;ai++){
+  const attackTarget=engineTargetForAttack(t,m,woundsState);
+  const c=engineContext(a,w,attackTarget,m);let h=1+Math.floor(Math.random()*6),rerolled=false;if(c.hitReroll==='all'||(c.hitReroll==='ones'&&h===1)){h=1+Math.floor(Math.random()*6);rerolled=true}const crit=h>=c.critHitThreshold;const hit=h>=c.hitNeed||crit;if(!hit)continue;if(crit)critHits++;if(crit&&c.lethal){wounds++;rollLog.push({hit:h,wound:'AUTO'});continue}hits++;const extra=crit?engineSustained(c,m):0;for(let x=0;x<1+extra;x++){let wr=1+Math.floor(Math.random()*6);if(c.woundReroll==='all'||(c.woundReroll==='ones'&&wr===1)){wr=1+Math.floor(Math.random()*6)}const critW=wr>=c.critWoundThreshold;const wound=wr>=c.woundNeed||critW;if(!wound)continue;wounds++;if(critW)critWounds++;if(critW&&c.devastating){
   const d=engineApplyFnp(engineRoll(w.D)+(c.melta&&m.halfRange?c.melta:0),m);
   totalDamage+=engineApplyDamageToWoundsState(d,woundsState,t);
   continue
@@ -5116,8 +5132,20 @@ function resolveAttack(){
   const modelsResolved=Math.max(1,modelsAvailable);
   const resolvedModelIds=eligibleWeaponModels.length?eligibleWeaponModels.slice(0,modelsResolved).map(model=>model.id):[];
   m.attackerModels=modelsResolved;
-  let woundsState,rosterAlive=[];
-  if(rosterTracked){
+  let woundsState,rosterAlive=[],targetSlots=null,targetRoot=null;
+  targetRoot=combatRootEntry('opp',te||selectedTargetEntry||null);
+  const targetSnap=targetRoot?combatSnapshot('opp',targetRoot):null;
+  const attachedTarget=!!(targetSnap&&targetSnap.components?.length>1&&targetSnap.components.some(x=>x.role==='bodyguard')&&targetSnap.components.some(x=>x.role==='leader'||x.role==='support'));
+  if(attachedTarget){
+    const bodyComp=targetSnap.components.find(x=>x.role==='bodyguard')||null;
+    const charComps=targetSnap.components.filter(x=>x.role==='leader'||x.role==='support');
+    const bodySlots=(bodyComp?.models||[]).filter(x=>x.alive!==false).map(x=>({model:x,profile:{...(x.profile||{})},maxWounds:Math.max(1,Number(x.maxWounds)||Number(x.profile?.W)||1)}));
+    const charSlots=charComps.flatMap(comp=>(comp.models||[]).filter(x=>x.alive!==false).map(x=>({model:x,profile:{...(x.profile||{})},maxWounds:Math.max(1,Number(x.maxWounds)||Number(x.profile?.W)||1)})));
+    targetSlots={bodyComp,charComps,bodySlots,charSlots};
+    m.attachedTargetState={bodyguardCount:bodySlots.length,bodyguardSlots:bodySlots,characterSlots:charSlots};
+    woundsState=[...bodySlots,...charSlots].map(x=>Math.max(0,Number(x.model.woundsRemaining)||x.maxWounds));
+    m.defenderModels=Math.max(1,woundsState.length);
+  }else if(rosterTracked){
     const roster=ensureModelRoster(te,t);
     rosterAlive=roster.filter(x=>x.alive!==false);
     woundsState=rosterAlive.map(x=>Math.max(0,Number(x.woundsRemaining)||Number(t.wounds)||1));
@@ -5125,11 +5153,24 @@ function resolveAttack(){
     woundsState=Array.from({length:Math.max(1,Number(t.models)||1)},()=>Number(t.profile.W)||1);
     m.defenderModels=Math.max(1,Number(t.models)||1);
   }
-  const r=engineOneAttack(a,w,t,m,rosterTracked?rosterAlive.length:(t.models||1),woundsState);
+  const resolvedTargetModels=attachedTarget?woundsState.length:(rosterTracked?rosterAlive.length:(t.models||1));
+  const r=engineOneAttack(a,w,t,m,resolvedTargetModels,woundsState);
   if(te){
     if(!te.game)te.game={entryId:te.uid,models:te.models,wounds:te.models*t.wounds,status:'Alive'};
     const before=JSON.parse(JSON.stringify(te.game));
-    if(rosterTracked){
+    if(attachedTarget){
+      let idx=0;
+      for(const slot of [...targetSlots.bodySlots,...targetSlots.charSlots]){
+        const remaining=Math.max(0,Math.min(slot.maxWounds,Number(woundsState[idx])||0));
+        slot.model.woundsRemaining=remaining;
+        if(remaining<=0){slot.model.woundsRemaining=0;slot.model.alive=false;}
+        idx++;
+      }
+      targetSnap.components.forEach(comp=>{
+        const ce=entry('opp',comp.entryUid),cu=get(comp.unitId);
+        if(ce&&cu)syncModelRosterBattleState(ce,cu);
+      });
+    }else if(rosterTracked){
       rosterAlive.forEach((model,i)=>{
         const remaining=Math.max(0,Math.min(Number(t.wounds)||1,Number(woundsState[i])||0));
         model.woundsRemaining=remaining;
