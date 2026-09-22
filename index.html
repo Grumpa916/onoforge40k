@@ -4309,7 +4309,7 @@ function combatSnapshot(side,entryUidOrEntry){
   }).filter(Boolean);
   const models=components.flatMap(c=>c.models.map(m=>({...m,componentRole:c.role})));
   const weapons=[];
-  models.forEach(m=>(m.weapons||[]).forEach(name=>{
+  models.filter(m=>m.alive!==false).forEach(m=>(m.weapons||[]).forEach(name=>{
     const unit=DEMO.find(u=>u.id===m.sourceUnitId);
     const weapon=(unit?.weapons||[]).find(w=>w.name===name);
     if(weapon)weapons.push({
