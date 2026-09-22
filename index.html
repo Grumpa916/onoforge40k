@@ -2,6 +2,17 @@
 *{box-sizing:border-box}body{margin:0;background:#0b0f15;color:#e9edf3;font-family:Arial,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}.top{padding:18px 22px;background:#111722;border-bottom:1px solid #273142}.brand{font-size:25px;font-weight:800}.sub,.muted{color:#9ca8b8;font-size:13px}.nav{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:10px 16px;background:#0e141e;border-bottom:1px solid #273142}.nav-main{display:flex;gap:6px;flex-wrap:wrap}.nav button,.nav-tools summary{background:#171e2a;color:#cbd5e1;border:1px solid #2c3748;border-radius:7px;padding:9px 13px;font-size:14px;cursor:pointer}.nav button.active{background:#24334b;color:#fff;border-color:#49678f}.nav-tools{position:relative;margin-left:auto}.nav-tools summary{list-style:none}.nav-tools summary::-webkit-details-marker{display:none}.nav-tools summary:after{content:' ▾';font-size:11px}.nav-tools[open] summary{background:#24334b;color:#fff;border-color:#49678f}.nav-tools-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:1200;min-width:170px;padding:6px;background:#111722;border:1px solid #344052;border-radius:8px;box-shadow:0 12px 30px rgba(0,0,0,.4);display:grid;gap:4px}.nav-tools-menu button{width:100%;text-align:left}.wrap{max-width:1250px;margin:auto;padding:18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.card{background:#111722;border:1px solid #273142;border-radius:10px;padding:15px;margin-bottom:14px}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.split{display:flex;justify-content:space-between;gap:10px;align-items:center}.field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:150px}.field label{font-size:12px;color:#9ca8b8}.field input,.field select,.field textarea,input[type=text]{width:100%;background:#0b1018;color:#eef2f7;border:1px solid #344052;border-radius:7px;padding:9px}.btn{background:#1b2432;color:#e8edf4;border:1px solid #354255;border-radius:7px;padding:8px 11px}.btn.primary{background:#27598b;border-color:#3975b6}.btn.danger{background:#5b252c;border-color:#82404a}.pill{display:inline-block;border:1px solid #3a4658;border-radius:999px;padding:4px 8px;font-size:12px;margin:2px}.status,.warn,.ok{border-radius:7px;padding:9px;margin-top:8px}.status{background:#17202d;border:1px solid #304057}.warn{background:#38261b;border:1px solid #78512d;color:#f4c58f}.ok{background:#183022;border:1px solid #356747;color:#aee2bf}.big{font-size:24px;font-weight:800}.unit{padding:11px 0;border-top:1px solid #26303e}.empty{padding:25px;text-align:center;color:#8995a5}.bar{height:8px;background:#242d3a;border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;background:#4d86bd}.mono{font-family:monospace;font-size:12px;white-space:pre-wrap}.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.tabs button{background:#171e2a;color:#cbd5e1;border:1px solid #2c3748;border-radius:7px;padding:8px 11px}.tabs button.active{background:#315174}.logrow{border-top:1px solid #273142;padding:10px 0}.metric{font-size:20px;font-weight:700}.modal{position:fixed;inset:0;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;padding:18px;z-index:50}.modal>.card{width:min(850px,100%);max-height:92vh;overflow:auto}.tiny{font-size:11px;color:#8290a1}@media(max-width:850px){.grid,.grid3,.grid2{grid-template-columns:1fr}.wrap{padding:10px}}
 
 
+/* Pre-Roll physical dice entry overlay */
+.pr-dice-modal{z-index:5000;background:rgba(0,0,0,.86)}
+.pr-dice-card{width:min(900px,100%);padding:22px;max-height:94vh;overflow:auto}
+.pr-dice-target{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px;padding:14px 16px;background:#0b1724;border:1px solid #416b91;border-radius:10px}
+.pr-dice-target span{font-size:12px;color:#9fb1c3}.pr-dice-target strong{font-size:34px;font-weight:900}
+.pr-dice-prompt{margin-top:20px;font-size:22px;font-weight:800;line-height:1.25}
+.pr-dice-input{display:block;width:100%;margin-top:18px;padding:18px;font-size:34px;font-weight:900;text-align:center;background:#0b1018;color:#fff;border:2px solid #4f9ad6;border-radius:10px}
+.pr-dice-actions{display:flex;gap:10px;margin-top:18px}.pr-big-btn,.pr-secondary-btn{flex:1;min-height:54px;font-size:17px;font-weight:800}
+.pr-dice-note{margin-top:14px;padding:10px 12px;background:#17202d;border:1px solid #304057;border-radius:8px;color:#b8c7d6;font-size:12px;line-height:1.4}
+@media(max-width:700px){.pr-dice-card{padding:14px}.pr-dice-target strong{font-size:30px}.pr-dice-prompt{font-size:19px}.pr-dice-input{font-size:30px}.pr-dice-actions{position:sticky;bottom:0;background:#111722;padding-top:10px}}
+
 /* Leader + Bodyguard builder */
 .leader-attachment{margin-top:8px;padding:8px 10px;background:#101d2a;border:1px solid #3d6688;border-radius:8px}
 .leader-attachment-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
@@ -3957,7 +3968,7 @@ function battle(){const recent=state.events.slice(0,12);return `${gameTimerHtml(
 </div>
  <div class="tabs"><button class="active">Current State</button><button onclick="openMyListFromBattle()">My List</button><button onclick="openOpponentListFromBattle()">Opponent List</button><button onclick="state.page='log';state.builderView='full';render()">Full Action Log</button><button onclick="state.page='scorelog';render()">Scoring Log</button></div>
 ${primaryMissionPanel('battle')}
-${gameAssistantHtml()}${tacticalContextHtml()}${tacticalAdvisorHtml()}
+${gameAssistantHtml()}${tacticalContextHtml()}${tacticalAdvisorHtml()}${tacticalPreRollResolutionModal()}
 <details class="card secondary-battle-card secondary-missions-collapsible" ${state.secondaryMissionsOpen===true?"open":""} ontoggle="state.secondaryMissionsOpen=this.open;save()">
 <summary><div class="split"><div><h3 style="margin:0">Secondary Missions</h3><div class="muted">All 18 missions • Active player: ${esc(state.currentTurn==='opp'?state.oppName:state.myName)} • Secondary VP ${state.myVP||0}–${state.oppVP||0}</div></div><div class="pill">Click to ${state.secondaryMissionsOpen===true?'collapse':'open'}</div></div></summary>
 <div class="secondary-missions-body"><div class="grid2">${secondaryActiveSide()==='my'?secondaryCatalogHtml('my')+secondaryCatalogHtml('opp'):secondaryCatalogHtml('opp')+secondaryCatalogHtml('my')}</div>${secondaryDetailHtml(secondaryActiveSide())}</div></details>
@@ -5382,6 +5393,253 @@ function tacticalPreRollCheck(attackerEntryUid,targetEntryUid,weaponName=null){
   if(!c.torrent)steps.push({label:'Wound',value:Math.min(6,Math.max(2,Number(c.woundNeed)||2))+'+',detail:'Strength '+String(w.S??'?')+' vs Toughness '+String(t.profile?.T??'?')+(woundMods.length?' • '+woundMods.map(x=>typeof x.value==='number'?(x.value>0?'+':'')+x.value+' '+x.label:x.label+' '+x.value).join(' • '):' • no modifiers')});
   steps.push({label:'Save',value:saveInfo.need>6?'No save':saveInfo.need+'+',detail:'Base '+String(t.profile?.Sv??'?')+'+ • AP '+String(w.AP??0)+' • Modified armour '+(saveInfo.armour>6?'no armour save':saveInfo.armour+'+')+(saveInfo.inv?' • Invulnerable '+saveInfo.inv+'+ considered':'')});
   const saveMods=[];if(Number(m.minusSave||0))saveMods.push({label:'Save penalty',value:-Math.abs(Number(m.minusSave)),reason:'Save modifier'});if(saveInfo.inv&&saveInfo.inv<saveInfo.armour)saveMods.push({label:'Invulnerable save',value:saveInfo.inv,reason:'Better save available'});if(saveMods.length)warnings.push('Save modifiers: '+saveMods.map(x=>x.label+(typeof x.value==='number'?' '+x.value:'')).join(' • '));steps[steps.length-1].detail+=(saveMods.length?' • '+saveMods.map(x=>typeof x.value==='number'?(x.value>0?'+':'')+x.value+' '+x.label:x.label).join(' • '):' • no save modifiers');if(melta.melta)steps.push({label:'Damage',value:melta.active===true?String(w.D??'—')+' + '+melta.melta:String(w.D??'—'),detail:melta.active===true?'Melta '+melta.melta+' active within '+melta.halfRange+'"':'Melta threshold at '+melta.halfRange+'"'});return {status:warnings.length?'ready-with-warnings':'ready',type:phase,attacker:a.name,target:t.name,weapon:w.name,steps,warnings,modifiers,context:ctx,hitBase:baseHit,hitFinal:c.hitNeed,woundFinal:c.woundNeed,save:saveInfo};}
+
+function tacticalPreRollSessionKey(attackerEntryUid,targetEntryUid,weaponName){
+  return String(attackerEntryUid||'')+'>'+String(targetEntryUid||'')+'|'+String(weaponName||'');
+}
+function tacticalPreRollContextSignature(attackerEntryUid,targetEntryUid,weaponName,result){
+  const ae=entry('my',attackerEntryUid),te=entry('opp',targetEntryUid);
+  const phase=String(state.phase||'Command'),round=Math.max(1,Number(state.round)||1),turn=state.currentTurn==='opp'?'opp':'my';
+  const pair=ae&&te?tacticalPairState(ae.uid,te.uid):null;
+  const action=ae?tacticalAdvisorActionState(combatRootEntry('my',ae)?.uid||ae.uid):null;
+  const weaponUse=ae&&weaponName?tacticalWeaponUseState(ae.uid,weaponName,'my'):null;
+  const atkSnap=ae?combatSnapshot('my',ae):null,defSnap=te?combatSnapshot('opp',te):null;
+  return JSON.stringify({
+    phase,round,turn,attackerEntryUid,targetEntryUid,weaponName,
+    pair,action,weaponUse,
+    hitBase:result?.hitBase,hitFinal:result?.hitFinal,woundFinal:result?.woundFinal,
+    save:result?.save||null,modifiers:result?.modifiers||[],
+    attackerModels:atkSnap?.survivingModels,targetModels:defSnap?.survivingModels,
+    targetWounds:defSnap?.targetWoundsState||[],
+    targetExact:defSnap?.exactModelIdentity,targetAttached:defSnap?.components?.length>1
+  });
+}
+function tacticalPreRollResolutionState(){
+  const t=ensureTacticalState();
+  if(!t.preRollResolution||typeof t.preRollResolution!=='object')t.preRollResolution={};
+  return t.preRollResolution;
+}
+function tacticalPreRollResolutionCurrent(){
+  const ae=tacticalAdvisorAttackerEntry(),teUid=state.tactical?.selectedTargetUid,te=teUid?entry('opp',teUid):null;
+  if(!ae||!te)return null;
+  const stored=tacticalPreRollWeaponState(ae.uid,te.uid).weaponName;
+  if(!stored)return null;
+  const r=tacticalPreRollCheck(ae.uid,te.uid,stored);
+  if(!r||!['ready','ready-with-warnings'].includes(r.status))return null;
+  const key=tacticalPreRollSessionKey(ae.uid,te.uid,stored);
+  const signature=tacticalPreRollContextSignature(ae.uid,te.uid,stored,r);
+  const map=tacticalPreRollResolutionState();
+  const raw=map[key];
+  if(!raw||raw.signature!==signature)return null;
+  return {...raw,key,signature,result:r,attackerEntryUid:ae.uid,targetEntryUid:te.uid,weaponName:stored};
+}
+function tacticalPreRollResolutionPlan(ae,te,w,r){
+  const ctx=r?.context||{};
+  const groups=attachedCombatWeaponGroups('my',ae,te).filter(g=>String(g.weapon?.name||'')===String(w.name));
+  const eligibleGroups=groups.filter(g=>{
+    const ids=Array.isArray(g.modelIds)?g.modelIds:[];
+    if(!ids.length)return true;
+    return ids.some(id=>tacticalWeaponModelAvailable(g.entry?.uid,id,w,state.round,state.phase,'my')&&!tacticalWeaponModelModeConflict(g.entry?.uid,id,w,g.entry,state.round,state.phase,'my'));
+  });
+  const models=eligibleGroups.reduce((n,g)=>n+Math.max(0,Number(g.count)||0),0);
+  const targetSnap=combatSnapshot('opp',te);
+  const targetModels=Math.max(1,Number(targetSnap?.targetModels)||Number(targetSnap?.survivingModels)||Number(combatTargetUnit('opp',te)?.models)||1);
+  const c=engineContext(combatTargetUnit('my',ae)||get(ae.unitId),w,combatTargetUnit('opp',te)||get(te.unitId),{
+    ...(state.mathRules||{}),
+    halfRange:tacticalHalfRangeState(w,ctx.distanceInches).active===true,
+    chargeMade:!!tacticalAdvisorActionState(combatRootEntry('my',ae)?.uid||ae.uid)?.chargeMade
+  });
+  const half=tacticalHalfRangeState(w,ctx.distanceInches);
+  const basePer=engineExpectedDice(w.A);
+  const rapid=(c.rapidFire&&half.active===true)?c.rapidFire:0;
+  const blast=c.blast?c.blast*Math.floor(targetModels/5):0;
+  const cleave=c.cleave?c.cleave*Math.floor(targetModels/5):0;
+  const attacks=Math.max(0,models*(basePer+rapid)+blast+cleave);
+  const attached=!!(targetSnap&&targetSnap.components?.length>1&&targetSnap.components.some(x=>x.role==='bodyguard')&&targetSnap.components.some(x=>x.role==='leader'||x.role==='support'));
+  const profiles=new Set((targetSnap?.targetModels?targetSnap.models:[]).filter(m=>m.alive!==false).map(m=>JSON.stringify({T:m.profile?.T,Sv:m.profile?.Sv,W:m.profile?.W})));
+  return {
+    models,attacks,hitNeed:c.torrent?'Auto':c.hitNeed,
+    hitCritThreshold:c.critHitThreshold||6,woundCritThreshold:c.critWoundThreshold||6,
+    woundNeed:Math.min(6,Math.max(2,Number(c.woundNeed)||2)),
+    saveNeed:r.save?.need>6?null:r.save?.need||null,
+    saveInfo:r.save||null,
+    torrent:!!c.torrent,lethal:!!c.lethal,sustained:engineSustained(c,{}),
+    devastating:!!c.devastating,attached,
+    homogeneousTarget:profiles.size<=1,
+    targetModels,
+    variableDamage:/D[36]/i.test(String(w.D||''))||String(w.D||'').includes('+'),
+    damageValue:engineExpectedDice(w.D)+(c.melta&&half.active===true?c.melta:0),
+    meltaActive:c.melta&&half.active===true?c.melta:0,
+    precision:!!c.precision
+  };
+}
+function tacticalPreRollOpenResolution(){
+  const ae=tacticalAdvisorAttackerEntry(),teUid=state.tactical?.selectedTargetUid,te=teUid?entry('opp',teUid):null;
+  if(!ae||!te)return;
+  const stored=tacticalPreRollWeaponState(ae.uid,te.uid).weaponName;
+  if(!stored)return;
+  const r=tacticalPreRollCheck(ae.uid,te.uid,stored);
+  if(!['ready','ready-with-warnings'].includes(r.status)){alert('Pre-Roll Check must be valid before entering dice results.');return;}
+  const w=(attachedCombatWeaponGroups('my',ae,te).map(g=>g.weapon).find(x=>String(x.name)===String(stored)));
+  if(!w)return;
+  const signature=tacticalPreRollContextSignature(ae.uid,te.uid,stored,r);
+  const key=tacticalPreRollSessionKey(ae.uid,te.uid,stored);
+  const plan=tacticalPreRollResolutionPlan(ae,te,w,r);
+  const map=tacticalPreRollResolutionState();
+  const old=map[key];
+  const session=(old&&old.signature===signature)?old:{
+    key,signature,stage:plan.torrent?'wounds':'hits',
+    counts:{},specials:{},plan,startedAt:new Date().toISOString()
+  };
+  session.plan=plan;session.signature=signature;
+  map[key]=session;
+  ensureTacticalState().preRollResolutionOpen=key;
+  save();render();
+}
+function tacticalPreRollCloseResolution(){
+  const t=ensureTacticalState();
+  t.preRollResolutionOpen='';
+  save();render();
+}
+function tacticalPreRollResolutionSet(field,value){
+  const current=tacticalPreRollResolutionCurrent();
+  if(!current)return;
+  const t=ensureTacticalState(),map=tacticalPreRollResolutionState(),s=map[current.key];
+  if(!s||s.signature!==current.signature){t.preRollResolutionOpen='';save();render();return;}
+  const n=Math.max(0,Math.floor(Number(value)||0));
+  const plan=s.plan;
+  if(field==='hits'){
+    if(n>plan.attacks){alert('Successful hit count cannot exceed the number of attacks.');return;}
+    s.counts.hits=n;
+    if(plan.hitCritThreshold){s.stage=plan.lethal||plan.sustained||plan.devastating?'hitSpecial':'wounds';}
+    else s.stage='wounds';
+  }else if(field==='criticalHits'){
+    const max=Number(s.counts.hits)||0;
+    if(n>max){alert('Critical hits cannot exceed total successful hits.');return;}
+    s.specials.criticalHits=n;
+    s.stage='wounds';
+  }else if(field==='wounds'){
+    const critHits=Number(s.specials.criticalHits)||0;
+    const hits=Number(s.counts.hits)||0;
+    const lethalAuto=plan.lethal?Math.min(critHits,hits):0;
+    const woundDice=Math.max(0,(hits-lethalAuto)+(plan.sustained*critHits));
+    if(n>woundDice){alert('Successful wound count cannot exceed the wound rolls required by the preceding result.');return;}
+    s.counts.wounds=n;
+    s.stage=plan.devastating?'woundSpecial':'saves';
+  }else if(field==='criticalWounds'){
+    const max=Number(s.counts.wounds)||0;
+    if(n>max){alert('Critical wounds cannot exceed total successful wounds.');return;}
+    s.specials.criticalWounds=n;
+    s.stage='saves';
+  }else if(field==='failedSaves'){
+    const critW=Number(s.specials.criticalWounds)||0;
+    const wounds=Number(s.counts.wounds)||0;
+    const critDev=plan.devastating?Math.min(critW,wounds):0;
+    const lethalAuto=plan.lethal?Math.min(Number(s.specials.criticalHits)||0,Number(s.counts.hits)||0):0;
+    const totalWounds=wounds+lethalAuto;
+    const saveable=Math.max(0,totalWounds-critDev);
+    if(n>saveable){alert('Failed saves cannot exceed the number of wounds that require saving throws.');return;}
+    s.counts.failedSaves=n;
+    if(plan.variableDamage||plan.damageValue!==Math.floor(plan.damageValue)){s.stage='damage';}
+    else{s.counts.damage=n*Math.max(0,Number(plan.damageValue)||0);s.stage='review';}
+  }else if(field==='damage'){
+    const failed=Number(s.counts.failedSaves)||0;
+    const min=0,max=Math.max(0,failed*Math.max(1,Number(plan.damageValue)||1)*6);
+    if(n>max){alert('Damage entered is outside the current weapon range.');return;}
+    s.counts.damage=n;s.stage='review';
+  }
+  save();render();
+}
+function tacticalPreRollResolutionBack(){
+  const current=tacticalPreRollResolutionCurrent();if(!current)return;
+  const t=ensureTacticalState(),map=tacticalPreRollResolutionState(),s=map[current.key];
+  if(!s)return;
+  const order=['hits','hitSpecial','wounds','woundSpecial','saves','damage','review'];
+  const i=order.indexOf(s.stage);
+  if(i<=0){s.stage=s.plan.torrent?'wounds':'hits';delete s.counts.hits;delete s.specials.criticalHits;save();render();return;}
+  s.stage=order[i-1];save();render();
+}
+function tacticalPreRollApplyResolution(){
+  const current=tacticalPreRollResolutionCurrent();if(!current)return;
+  const t=ensureTacticalState(),map=tacticalPreRollResolutionState(),s=map[current.key],r=current.result;
+  if(!s||s.stage!=='review'||s.signature!==current.signature)return;
+  const ae=entry('my',current.attackerEntryUid),te=entry('opp',current.targetEntryUid),w=(attachedCombatWeaponGroups('my',ae,te).map(g=>g.weapon).find(x=>String(x.name)===String(current.weaponName)));
+  if(!ae||!te||!w)return;
+  const fullBefore=snapshotForUndo(),targetUnit=combatTargetUnit('opp',te)||get(te.unitId);
+  if(!targetUnit)return;
+  const damage=Math.max(0,Number(s.counts.damage)||0);
+  const snap=combatSnapshot('opp',te);
+  const attached=snap?.components?.length>1&&snap.components.some(x=>x.role==='bodyguard')&&snap.components.some(x=>x.role==='leader'||x.role==='support');
+  if(attached&&!s.plan.homogeneousTarget){
+    alert('This target has mixed model profiles. Dice counts are accepted, but exact allocation is required before the result can safely change the target state. Keep this resolution open; the exact-allocation layer will handle it.');
+    return;
+  }
+  let beforeGame=JSON.parse(JSON.stringify(te.game||{})),afterGame=null;
+  if(modelRosterRule(targetUnit)){
+    const roster=ensureModelRoster(te,targetUnit),alive=roster.filter(m=>m.alive!==false);
+    let remainingDamage=damage;
+    for(const model of alive){
+      if(remainingDamage<=0)break;
+      const hp=Math.max(1,Number(targetUnit.wounds)||1),before=Math.max(0,Number(model.woundsRemaining)||0);
+      const applied=Math.min(before,remainingDamage);
+      model.woundsRemaining=Math.max(0,before-applied);
+      if(model.woundsRemaining<=0)model.alive=false;
+      remainingDamage-=applied;
+    }
+    syncModelRosterBattleState(te,targetUnit);
+    afterGame=JSON.parse(JSON.stringify(te.game));
+  }else{
+    const maxWounds=Math.max(0,Number(te.models)||1)*Math.max(1,Number(targetUnit.wounds)||1);
+    te.game=te.game||{entryId:te.uid,models:te.models,wounds:maxWounds,status:'Alive'};
+    te.game.wounds=Math.max(0,Math.min(maxWounds,Number(te.game.wounds||maxWounds)-damage));
+    te.game.models=Math.max(0,Math.ceil(te.game.wounds/Math.max(1,Number(targetUnit.wounds)||1)));
+    te.game.status=te.game.wounds<=0?'Destroyed':te.game.wounds<maxWounds?'Damaged':'Alive';
+    afterGame=JSON.parse(JSON.stringify(te.game));
+  }
+  const hitCount=Number(s.counts.hits)||0,critHits=Number(s.specials.criticalHits)||0,woundCount=Number(s.counts.wounds)||0,critWounds=Number(s.specials.criticalWounds)||0,failedSaves=Number(s.counts.failedSaves)||0;
+  const modelIds=(combatSnapshot('my',ae)?.weapons||[]).filter(x=>String(x.weapon?.name||'')===String(w.name)).map(x=>x.sourceModelId).filter(Boolean).slice(0,Math.max(1,Number(current.plan.models)||1));
+  event('ATTACK_RESOLUTION',{
+    attacker:targetUnit.name===targetUnit.name?get(ae.unitId)?.name:'Attacker',
+    attackerEntryUid:ae.uid,weapon:w.name,target:targetUnit.name,targetEntryUid:te.uid,unit:get(ae.unitId)?.name||'Unit',
+    action:'Dice entry '+w.name+' → '+targetUnit.name,
+    attacks:current.plan.attacks,modelsResolved:current.plan.models,hits:hitCount,wounds:woundCount,saved:Math.max(0,(woundCount+(current.plan.lethal?critHits:0)-failedSaves)),damage,
+    critHits,critW:critWounds,modelIds,shootingMode:state.phase==='Shooting'?tacticalWeaponShootingMode(w):null,
+    diceEntry:true,preRollSignature:current.signature,before:beforeGame,after:afterGame
+  },fullBefore);
+  const actionRoot=combatRootEntry('my',ae)||ae;
+  const actionState=tacticalAdvisorActionState(actionRoot.uid);
+  const totalModels=Math.max(0,Number(combatSnapshot('my',actionRoot)?.survivingModels)||Number(actionRoot.models)||0);
+  const resolved=Number(actionState?.shootingModelsResolved)||0;
+  if(state.phase==='Shooting'&&resolved>=totalModels&&totalModels>0){
+    setTacticalUnitAction(actionRoot.uid,'shootingDone',true);
+  }else{
+    save();
+  }
+  delete map[current.key];
+  t.preRollResolutionOpen='';
+  save();render();
+}
+function tacticalPreRollResolutionModal(){
+  const key=ensureTacticalState().preRollResolutionOpen;
+  if(!key)return '';
+  const current=tacticalPreRollResolutionCurrent();
+  if(!current){ensureTacticalState().preRollResolutionOpen='';return '';}
+  const s=current,plan=s.plan||tacticalPreRollResolutionPlan(entry('my',s.attackerEntryUid),entry('opp',s.targetEntryUid),(attachedCombatWeaponGroups('my',entry('my',s.attackerEntryUid),entry('opp',s.targetEntryUid)).map(g=>g.weapon).find(x=>String(x.name)===String(s.weaponName))),s.result);
+  const stage=s.stage,counts=s.counts||{},specials=s.specials||{};
+  let title='Enter Hit Results',promptText='',max=0,value='',note='';
+  if(stage==='hits'){title='HITS • COUNT';promptText=plan.torrent?'Torrent: attacks automatically hit.':'How many dice met '+plan.hitNeed+'+?';max=plan.attacks;value=counts.hits??'';note='Enter only successful hit dice. The physical dice are authoritative.';}
+  else if(stage==='hitSpecial'){title='HITS • SUBCLASSIFY';promptText='How many of those '+counts.hits+' hits rolled '+plan.hitCritThreshold+'+ as Critical Hits?';max=counts.hits;value=specials.criticalHits??'';note='Only enter the special result when the rules need it.';}
+  else if(stage==='wounds'){const lethalAuto=plan.lethal?Math.min(Number(specials.criticalHits)||0,Number(counts.hits)||0):0;const woundDice=Math.max(0,(Number(counts.hits)||0)-lethalAuto+plan.sustained*(Number(specials.criticalHits)||0));title='WOUNDS • COUNT';promptText='How many of the '+woundDice+' wound rolls met '+plan.woundNeed+'+?';max=woundDice;value=counts.wounds??'';note=(lethalAuto?' '+lethalAuto+' Critical Hits automatically wounded via Lethal Hits; they do not roll to wound.':'')+(plan.sustained?' Sustained Hits adds '+plan.sustained+' wound rolls per Critical Hit.':'');}
+  else if(stage==='woundSpecial'){title='WOUNDS • SUBCLASSIFY';promptText='How many of those '+counts.wounds+' wounds are Critical Wounds ('+plan.woundCritThreshold+'+)?';max=counts.wounds;value=specials.criticalWounds??'';note='Critical Wounds are required here because Devastating Wounds changes the save sequence.';}
+  else if(stage==='saves'){const critDev=plan.devastating?Math.min(Number(specials.criticalWounds)||0,Number(counts.wounds)||0):0;const total=(Number(counts.wounds)||0)+(plan.lethal?Math.min(Number(specials.criticalHits)||0,Number(counts.hits)||0):0);const saveable=Math.max(0,total-critDev);title='SAVES • COUNT';promptText=plan.saveNeed===null?'No saving throw required — all '+saveable+' wounds fail automatically.':'How many of the '+saveable+' saving throws failed?';max=saveable;value=counts.failedSaves??'';note=plan.saveNeed===null?'No save is available against these wounds.':'Roll '+saveable+' saves at '+plan.saveNeed+'+ before entering the failed-save count.';}
+  else if(stage==='damage'){title='DAMAGE • RESOLVE';promptText='Enter the total damage actually applied by the failed saves.';max=Math.max(0,(Number(counts.failedSaves)||0)*Math.max(1,Number(plan.damageValue)||1)*6);value=counts.damage??'';note='Use the physical dice result. Enter the final damage after any damage-reduction rules already shown by the Pre-Roll Check.';}
+  else {title='RESOLUTION • REVIEW';promptText='Confirm the recorded physical result before applying it to the battlefield state.';note='The app will update the target using the existing model-level non-spillover damage architecture.';}
+  const invalid=s.stage!=='review'&&value===''?'':((Number(value)||0)<0||(Number(value)||0)>max?' invalid':'');
+  const input=s.stage==='review'?'':'<input id="pr-dice-input" class="pr-dice-input'+invalid+'" type="number" inputmode="numeric" min="0" max="'+max+'" step="1" value="'+esc(String(value))+'" autofocus>';
+  const action=s.stage==='review'?'<button type="button" class="btn primary pr-big-btn" onclick="tacticalPreRollApplyResolution()">Apply Result</button>':'<button type="button" class="btn primary pr-big-btn" onclick="tacticalPreRollResolutionSet(\''+(stage==='hitSpecial'?'criticalHits':stage==='hits'?'hits':stage==='woundSpecial'?'criticalWounds':stage==='wounds'?'wounds':stage==='saves'?'failedSaves':'damage')+'\',document.getElementById(\'pr-dice-input\').value)">Continue</button>';
+  const back='<button type="button" class="btn pr-secondary-btn" onclick="tacticalPreRollResolutionBack()">Back</button>';
+  return '<div class="modal pr-dice-modal"><div class="card pr-dice-card"><div class="split"><div><div class="tiny">PHYSICAL DICE ENTRY • '+esc(state.phase||'Phase')+'</div><h2 style="margin:4px 0">'+esc(title)+'</h2><div class="muted">'+esc(get(s.targetEntryUid?entry('opp',s.targetEntryUid)?.unitId:'')?.name||'Target')+' • '+esc(s.weaponName)+'</div></div><button type="button" class="btn" onclick="tacticalPreRollCloseResolution()">Close</button></div><div class="pr-dice-target"><span>Target</span><strong>'+esc(s.result.type==='Charge'?'2D6':(stage==='hits'||stage==='hitSpecial'?String(plan.hitNeed)+'+':stage==='wounds'||stage==='woundSpecial'?String(plan.woundNeed)+'+':stage==='saves'?(plan.saveNeed===null?'No Save':String(plan.saveNeed)+'+'):'Damage'))+'</strong><span>'+esc(s.result.attacker)+' → '+esc(s.result.target)+'</span></div><div class="pr-dice-prompt">'+esc(promptText)+'</div>'+(stage==='review'?'<div class="grid3" style="margin-top:14px"><div class="status"><div class="tiny">Hits</div><b>'+counts.hits+(specials.criticalHits!=null?' • '+specials.criticalHits+' crit':'')+'</b></div><div class="status"><div class="tiny">Wounds</div><b>'+counts.wounds+(specials.criticalWounds!=null?' • '+specials.criticalWounds+' crit':'')+'</b></div><div class="status"><div class="tiny">Failed Saves</div><b>'+counts.failedSaves+'</b></div><div class="status"><div class="tiny">Damage</div><b>'+counts.damage+'</b></div></div>':'')+input+(note?'<div class="pr-dice-note">'+esc(note)+'</div>':'')+'<div class="pr-dice-actions">'+back+action+'</div><div class="tiny" style="margin-top:10px">If the battlefield state changes, this session is invalidated and the Pre-Roll Check must be re-run. Nothing here rolls dice for you.</div></div></div>';
+}
 function tacticalPreRollHtml(){
   const ae=tacticalAdvisorAttackerEntry();
   const teUid=state.tactical?.selectedTargetUid;
@@ -5392,7 +5650,8 @@ function tacticalPreRollHtml(){
   const cls=(r.status==='ready'||r.status==='ready-with-warnings')?'ok':'warn';
   const warningHtml=(r.warnings||[]).map(x=>'<li>'+esc(x)+'</li>').join('');
   const steps=(r.steps||[]).map(x=>'<div class="status" style="margin:0"><div class="muted small">'+esc(x.label)+'</div><div style="font-size:1.55em;font-weight:900">'+esc(x.value)+'</div><div class="tiny">'+esc(x.detail||'')+'</div></div>').join('');
-  return '<div class="card tactical-preroll-card" style="border-color:#4f6f8f;margin-top:12px"><div class="split"><div><h3 style="margin:0">Pre-Roll Check</h3><div class="muted">Verify the final target number before rolling physical dice.</div></div><span class="pill">PHYSICAL DICE</span></div>'+selector+'<div class="'+cls+'" style="margin-top:10px"><b>'+esc(r.status==='ready'||r.status==='ready-with-warnings'?'ROLL WHEN READY':'CHECK REQUIRED')+'</b>'+(r.weapon?' • '+esc(r.weapon):'')+'</div><div class="grid3" style="margin-top:10px">'+steps+'</div>'+(warningHtml?'<div class="warn" style="margin-top:10px"><b>Rules / context reminders</b><ul style="margin:5px 0 0 18px">'+warningHtml+'</ul></div>':'')+'<div class="tiny" style="margin-top:8px">Final values are calculated from the current battlefield state and the same combat engine used by Tactical Advisor. The app does not roll the physical dice.</div></div>';
+  const canEnter=['ready','ready-with-warnings'].includes(r.status)&&stored.weaponName;
+  return '<div class="card tactical-preroll-card" style="border-color:#4f6f8f;margin-top:12px"><div class="split"><div><h3 style="margin:0">Pre-Roll Check</h3><div class="muted">Verify the final target number before rolling physical dice.</div></div><span class="pill">PHYSICAL DICE</span></div>'+selector+'<div class="'+cls+'" style="margin-top:10px"><b>'+esc(r.status==='ready'||r.status==='ready-with-warnings'?'ROLL WHEN READY':'CHECK REQUIRED')+'</b>'+(r.weapon?' • '+esc(r.weapon):'')+'</div><div class="grid3" style="margin-top:10px">'+steps+'</div>'+(warningHtml?'<div class="warn" style="margin-top:10px"><b>Rules / context reminders</b><ul style="margin:5px 0 0 18px">'+warningHtml+'</ul></div>':'')+(canEnter?'<button type="button" class="btn primary" style="width:100%;margin-top:12px;font-size:16px;font-weight:800" onclick="tacticalPreRollOpenResolution()">Enter Physical Dice Results</button>':'')+'<div class="tiny" style="margin-top:8px">Final values are calculated from the current battlefield state and the same combat engine used by Tactical Advisor. The app does not roll the physical dice.</div></div>';
 }
 
 function tacticalAdvisorHtml(){
