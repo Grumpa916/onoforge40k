@@ -4443,7 +4443,7 @@ function clearTacticalPair(attackerUid,targetUid){
   event('TACTICAL_CONTEXT_CHANGED',{attackerUid,targetUid,action:'Tactical context cleared',before:old,after:null},before);
   save();render();
 }
-function tacticalWeaponUseCount(entryUid,weaponName){var t=ensureTacticalState(),k=String(entryUid||'')+'|'+String(weaponName||'');return Math.max(0,Number(t.unitUse[k])||0);}\nfunction tacticalWeaponIsOneShot(w){var a=w&&Array.isArray(w.abilities)?w.abilities:[];return a.some(function(x){return String(x||'').toUpperCase().indexOf('ONE SHOT')>=0;});}\nfunction tacticalWeaponRange(w){
+function tacticalWeaponRange(w){
   if(!w)return null;
   const raw=String(w.rng??w.range??'').trim().toUpperCase();
   if(!raw||raw==='MELEE'||raw==='—'||raw==='-')return null;
