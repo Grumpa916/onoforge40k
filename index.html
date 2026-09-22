@@ -5023,7 +5023,6 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
       exposure>=0.75?0.95:exposure>=0.40?0.60:0.15
     ));
     const tradeValue=Math.max(0,Math.min(1,
-      lethalityBase=0,
       (Number(x.wipeChance)||0)*0.45+
       (Number(x.damageFraction)||0)*0.25+
       (Number(x.threatPerPoint)||0)*0.15+
