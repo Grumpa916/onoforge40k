@@ -4370,14 +4370,15 @@ function engineWeaponVariantKey(w){const p=w?.weapon||w||{};return JSON.stringif
 function attachedCombatWeaponGroups(side,e,target=null){
   const snap=combatSnapshot(side,e);if(!snap)return [];
   return snap.weapons.reduce((groups,w)=>{
-    const key=w.sourceEntryUid+'|'+String(w.sourceModelId||'')+'|'+engineWeaponPoolKey(w.weapon,target);
-    const poolKey=engineWeaponPoolKey(w.weapon,target),existing=groups.find(g=>g.poolKey===poolKey);
+    const attackerUnit=get(w.unitId);
+    const key=w.sourceEntryUid+'|'+String(w.sourceModelId||'')+'|'+engineWeaponPoolKey(w.weapon,target,attackerUnit);
+    const poolKey=engineWeaponPoolKey(w.weapon,target,attackerUnit),existing=groups.find(g=>g.poolKey===poolKey);
     if(existing){
       existing.count++;existing.modelIds.push(w.sourceModelId);
       const v=existing.weaponVariants.find(x=>engineWeaponVariantKey(x.weapon)===engineWeaponVariantKey(w.weapon));
       if(v)v.count++;else existing.weaponVariants.push({weapon:w.weapon,count:1});
     }else{
-      const ce=entry(side,w.sourceEntryUid),u=get(w.unitId);
+      const ce=entry(side,w.sourceEntryUid),u=attackerUnit;
       groups.push({key,poolKey,entry:ce,attacker:u,weapon:w.weapon,count:1,modelIds:[w.sourceModelId],role:w.componentRole,identityExact:!!w.identityExact,weaponVariants:[{weapon:w.weapon,count:1}]});
     }
     return groups;
