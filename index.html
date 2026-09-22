@@ -949,14 +949,7 @@ function primaryScoringHtml(mission){
   const rows=PRIMARY_SCORING[mission];
   if(!rows)return '<div class="muted">Scoring details not loaded for this mission.</div>';
   const round=Math.max(1,Number(state.round)||1);
-  const visible=rows.filter(r=>{
-    const timing=String(r[0]||'').toLowerCase();
-    const isEndOfBattle=timing.includes('end of battle');
-    const isEndOfTurn=timing.includes('end of turn');
-    if(round===1)return isEndOfTurn;
-    if(round<5)return !isEndOfBattle;
-    return true;
-  });
+  const visible=rows.filter(r=>primaryScoringRowAvailable(r?.[0],round));
   if(!visible.length)return '<div class="muted">No scoring available this round.</div>';
   return `<div class="primary-scoring"><div class="muted primary-scoring-title">Scoring — Round ${round}</div>${visible.map(r=>`<div class="primary-score-row"><span class="tiny">${esc(r[0])}</span><strong>${esc(r[1])}</strong><span>${esc(r[2])}</span></div>`).join('')}</div>`;
 }
@@ -979,17 +972,24 @@ function syncPrimaryScoringRound(){
   state.primaryScoredItemsMy=[...state.primaryScoringByRoundMy[roundKey]];
   state.primaryScoredItemsOpp=[...state.primaryScoringByRoundOpp[roundKey]];
 }
+function primaryScoringRoundRange(timing){
+  const text=String(timing||'').toUpperCase();
+  const m=text.match(/R(\\d+)\\s*[–—-]\\s*(\\d+)/);
+  if(m)return {min:Number(m[1]),max:Number(m[2])};
+  const plus=text.match(/R(\\d+)\\s*\\+/);
+  if(plus)return {min:Number(plus[1]),max:5};
+  const single=text.match(/R(\\d+)\\b/);
+  if(single)return {min:Number(single[1]),max:Number(single[1])};
+  return {min:1,max:5};
+}
+function primaryScoringRowAvailable(timing,round){
+  const range=primaryScoringRoundRange(timing);
+  return round>=range.min&&round<=range.max;
+}
 function primaryScoringRowsForRound(mission){
   const rows=PRIMARY_SCORING[mission]||[];
-  const round=Math.max(1,Number(state.round)||1);
-  return rows.filter(r=>{
-    const timing=String(r[0]||'').toLowerCase();
-    const isEndOfBattle=timing.includes('end of battle');
-    const isEndOfTurn=timing.includes('end of turn');
-    if(round===1)return isEndOfTurn;
-    if(round<5)return !isEndOfBattle;
-    return true;
-  });
+  const round=Math.max(1,Math.min(5,Number(state.round)||1));
+  return rows.filter(r=>primaryScoringRowAvailable(r?.[0],round));
 }
 function primaryScoringVP(value){
   const m=String(value||'').match(/\d+/);
@@ -1005,6 +1005,12 @@ function primaryScoringExclusiveGroup(mission,index){
   if(mission==='Reconnaissance Sweep' && index<=1)return 'recon-sweep-tier';
   if(mission==='Triangulation' && index>=1 && index<=3)return 'triangulation-tier';
   return '';
+}
+function primaryScoringOriginalIndex(mission,visibleIndex){
+  const rows=PRIMARY_SCORING[mission]||[];
+  const visible=primaryScoringRowsForRound(mission);
+  const row=visible[visibleIndex];
+  return row?rows.indexOf(row):-1;
 }
 function primaryRoundScoredVP(side){
   const roundKey=String(Math.max(1,Number(state.round)||1));
@@ -1049,11 +1055,12 @@ function scorePrimaryItem(side,index,mission,amountOverride){
     const amount=per?Math.max(1,Math.min(50,Math.floor(Number(amountOverride??amounts[index]??1)||1))):1;
     const baseVP=primaryScoringVP(row[1]);
     const requestedVP=baseVP*amount;
-    const group=primaryScoringExclusiveGroup(mission,index);
+    const originalIndex=primaryScoringOriginalIndex(mission,index);
+    const group=primaryScoringExclusiveGroup(mission,originalIndex);
 
     if(group){
       for(const otherIndex of [...scored]){
-        if(primaryScoringExclusiveGroup(mission,otherIndex)===group){
+        if(primaryScoringExclusiveGroup(mission,primaryScoringOriginalIndex(mission,otherIndex))===group){
           const otherActual=Math.max(0,Number(values[otherIndex])||0);
           state[vpKey]=Math.max(0,(Number(state[vpKey])||0)-otherActual);
           state[overallKey]=Math.max(0,(Number(state[overallKey])||0)-otherActual);
@@ -1061,7 +1068,7 @@ function scorePrimaryItem(side,index,mission,amountOverride){
           delete amounts[otherIndex];
         }
       }
-      state[byRoundKey][roundKey]=scored.filter(i=>primaryScoringExclusiveGroup(mission,i)!==group);
+      state[byRoundKey][roundKey]=scored.filter(i=>primaryScoringExclusiveGroup(mission,primaryScoringOriginalIndex(mission,i))!==group);
     }
 
     const roundTotalBefore=primaryRoundScoredVP(side);
