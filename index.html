@@ -4976,7 +4976,7 @@ function tacticalTargetLegality(attackerEntry,targetEntry,phase){
   }
   if(p==='Charge'){
     if(!tacticalPhaseActionAvailable(attackerEntry.uid,'Charge'))return {status:'known',known:true,canTarget:false,reasons:['attacker has already completed its Charge action'],context:ctx};
-    if(tacticalUnitIsEngaged(attackerEntry.uid))reasons.push('attacker is already engaged');
+    if(tacticalUnitIsEngagedAny(attackerEntry.uid))reasons.push('attacker is already engaged');
     if(ctx.distanceInches===null)reasons.push('distance unknown');
     if(ctx.distanceInches!==null&&ctx.distanceInches>12)reasons.push('target is beyond the 12-inch charge declaration range');
     if(ctx.engagement==='unknown')reasons.push('engagement status unknown');
