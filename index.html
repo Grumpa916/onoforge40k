@@ -1866,8 +1866,8 @@ function resetSecondaryScore(side,name){
  if(existing<=0&&!scored.includes(name))return;
  const fullBefore=snapshotForUndo();
  if(side==='my')state.myVP=Math.max(0,(Number(state.myVP)||0)-existing);else state.oppVP=Math.max(0,(Number(state.oppVP)||0)-existing);
- state[side==='my'?'myVP':'oppVP']=scoreTotalForSide(side);
  if(state[vk])delete state[vk][name];
+ state[side==='my'?'myVP':'oppVP']=scoreTotalForSide(side);
  removeSecondaryRoundVP(side,name);
  if(mode==='fixed'){
    event('SECONDARY_SCORE_RESET',{side,unit:name,action:'Fixed Secondary score reset -'+existing+' VP',secondary:name,beforeVP:(side==='my'?state.myVP+existing:state.oppVP+existing),afterVP:(side==='my'?state.myVP:state.oppVP),delta:-existing,mode},fullBefore);
@@ -1896,8 +1896,8 @@ function returnSecondaryToList(side,name){
  const scoredVP=Number(state[vk]&&state[vk][name])||0;
  if(scoredVP){
    if(side==='my')state.myVP=Math.max(0,(Number(state.myVP)||0)-scoredVP);
-   state[side==='my'?'myVP':'oppVP']=scoreTotalForSide(side);
    else state.oppVP=Math.max(0,(Number(state.oppVP)||0)-scoredVP);
+   state[side==='my'?'myVP':'oppVP']=scoreTotalForSide(side);
  }
  state[sk]=Array.isArray(state[sk])?state[sk].filter(x=>x!==name):[];
  state[cardsKey]=Array.isArray(state[cardsKey])?state[cardsKey].filter(x=>x!==name):[];
@@ -1919,6 +1919,7 @@ function get(id){return DEMO.find(u=>u.id===id)||DEMO[0]}
 const STORAGE_KEY='onoforge-v58';
 function save(){
   try{
+    ensureScoreLedger();
     state.localSavedAt=new Date().toISOString();
     const safeState=JSON.parse(JSON.stringify(state));
     safeState.events=(Array.isArray(safeState.events)?safeState.events:[]).slice(0,100);
