@@ -5312,14 +5312,14 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
         counterAttackPotential,objectiveValue:targetObjectiveValue,
         tacticalLegality:legality,recommendationEligible:eligible,
         decisionScore:eligible?chargeValue:-1,
-        decisionMode:!eligible?'INELIGIBLE':successChance===null?'VERIFY_DISTANCE':successChance>=0.70?'HIGH_CHARGE_CONFIDENCE':successChance>=0.50?'MODERATE_CHARGE_CONFIDENCE':'LOW_CHARGE_CONFIDENCE',
+        decisionMode:!eligible?'INELIGIBLE':successChance===null?'VERIFY_DISTANCE':successChance>=0.75?'HIGH_CHARGE_CONFIDENCE':successChance>=0.60?'MODERATE_CHARGE_CONFIDENCE':'LOW_CHARGE_CONFIDENCE',
         recommendationExplanation:{
           headline:successChance===null?'Charge distance required':'Charge probability '+Math.round(successChance*100)+'%',
           why:successChance===null?'Record the battlefield distance before committing to the charge.':
             'Charge probability is combined with objective value, target durability, and counter-attack exposure.',
           expected:{chargeDistance:required,successChance},
           risk:{counterAttackPotential,failedChargeChance:successChance===null?null:1-successChance},
-          confidence:{label:successChance===null?'Limited':successChance>=0.70?'High':successChance>=0.50?'Medium':'Limited',value:successChance===null?0.45:successChance},
+          confidence:{label:successChance===null?'Limited':successChance>=0.75?'High':successChance>=0.60?'Medium':'Limited',value:successChance===null?0.45:successChance},
           whatCouldChange:[
             ...(knownDistance?[]:['Measured distance between the charging unit and target']),
             'Target engagement state',
