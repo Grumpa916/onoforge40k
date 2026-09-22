@@ -4953,7 +4953,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     x.exchangeComponents.objectiveValue=objectiveValue;
     x.exchangeComponents.efficiency=efficiency;
     x.exchangeComponents.confidence=confidence;
-    x.decisionScore=legalityBlocked?-1:Math.max(0,Math.min(1,
+    x.decisionScore=(x.tacticalLegality?.canTarget===false)?-1:Math.max(0,Math.min(1,
       0.45*lethality+
       0.25*threatSuppression+
       0.10*efficiency+
