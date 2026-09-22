@@ -5667,10 +5667,11 @@ function engineAntiForTarget(w,t,m){const abilities=(w.abilities||[]).map(x=>Str
 function engineContext(a,w,t,m){const abilities=(w.abilities||[]).map(x=>String(x).toUpperCase().replace(/-/g,' '));const txt=abilities.join(' | ');const c={};c.indirect=abilities.some(x=>x.includes('INDIRECT FIRE'))&&!!m.indirectShooting;c.lethal=abilities.some(x=>x.includes('LETHAL HITS'))||!!m.lethal;c.sustained=Number((txt.match(/SUSTAINED HITS\s*(D\d+|\d+)/)||[])[1]?.replace('D',''))||0;c.devastating=abilities.some(x=>x.includes('DEVASTATING WOUNDS'))||!!m.devastating||!!m.abilityViciousInsight;c.torrent=abilities.some(x=>x.includes('TORRENT'))||!!m.torrent;const blastMatch=txt.match(/BLAST(?:\s*(\d+))?/);c.blast=blastMatch?(Number(blastMatch[1])||1):0;const cleaveMatch=txt.match(/CLEAVE(?:\s*(\d+))?/);c.cleave=cleaveMatch?(Number(cleaveMatch[1])||1):0;c.rapidFire=Number((txt.match(/RAPID FIRE\s*(\d+)/)||[])[1])||0;c.heavy=abilities.some(x=>x.trim()==='HEAVY');c.twin=abilities.some(x=>x.includes('TWIN-LINKED'));c.melta=Number((txt.match(/MELTA\s*(\d+)/)||[])[1])||0;c.precision=abilities.some(x=>x.includes('PRECISION'));c.ignoreCover=abilities.some(x=>x.includes('IGNORES COVER'));
 const targetAbilities=(t?.abilities||t?.specialRules||[]).map(x=>String(x||'').toUpperCase().replace(/-/g,' '));
 c.stealth=targetAbilities.some(x=>x.trim()==='STEALTH'||x.includes(' STEALTH'));
-c.closeQuarters=abilities.some(x=>x.includes('CLOSE QUARTERS'));const pistolEquivalent=c.closeQuarters||abilities.some(x=>x.includes(' PISTOL'))||abilities.some(x=>x.startsWith('PISTOL'));
+c.closeQuarters=abilities.some(x=>x.includes('CLOSE QUARTERS'));const pistolEquivalent=abilities.some(x=>x.includes(' PISTOL'))||abilities.some(x=>x.startsWith('PISTOL'));
+const closeQuartersAgainstEngagedTarget=c.closeQuarters&&!!m.attackerEngagedWithTarget;
 c.closeQuartersHitPenalty=(
-  (!!m.engagedTargetMonsterVehicle&& !pistolEquivalent) ||
-  (!!m.attackerMonsterVehicle&&m.attackerEngagedAny&&!pistolEquivalent)
+  (!!m.engagedTargetMonsterVehicle&&!closeQuartersAgainstEngagedTarget&&!pistolEquivalent) ||
+  (!!m.attackerMonsterVehicle&&m.attackerEngagedAny&&!closeQuartersAgainstEngagedTarget&&!pistolEquivalent)
 );c.anti=engineAntiForTarget(w,t,m);const damagedAttacker=DAMAGED_HIT_PENALTY_11E.has(String(a?.faction||'')+'|'+String(a?.name||''))&&Number(a?.models||1)===1&&Number(m.attackerWoundsRemaining)>0&&Number(m.attackerWoundsRemaining)<=5;c.cover=(!!m.cover||c.indirect||c.stealth)&&!c.ignoreCover&&!!w.rng;
 if(c.indirect){
   c.hitReroll='none';
