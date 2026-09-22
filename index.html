@@ -5102,6 +5102,7 @@ function tacticalWeaponPhaseEligible(w,phase,attackerEntry,targetEntry){
       if(!monsterVehicle&&!closeQuarters)return false;
       return true;
     }
+    if(tacticalUnitIsEngagedAny(attackerEntry?.uid))return false;
     return true;
   }
   if(p==='Fight')return raw==='MELEE';
