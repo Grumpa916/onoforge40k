@@ -4577,7 +4577,8 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     const defModels=Math.max(1,Number(target.models)||Number(targetEntry.models)||1);
     const totalWounds=defModels*Math.max(1,Number(target.profile?.W)||1);
     const m={...(state.mathRules||{}),defenderModels:defModels,quickSamples:Math.min(10000,Math.max(2000,Number(options.samples)||4000)),_skipSim:false};
-    const availableGroups=groups.map(g=>{const u=tacticalWeaponAvailable(g.entry?.uid||atkEntry?.uid,g.weapon,g.count);return u.available?{...g,count:Math.min(g.count,u.count)}:null}).filter(Boolean);\n    const calc=calculateMathMixed(attacker,target,availableGroups,m);
+    const availableGroups=groups.map(g=>{const u=tacticalWeaponAvailable(g.entry?.uid||atkEntry?.uid,g.weapon,g.count);return u.available?{...g,count:Math.min(g.count,u.count)}:null}).filter(Boolean);
+    const calc=calculateMathMixed(attacker,target,availableGroups,m);
     const damage=Math.max(0,Number(calc.damage)||0);
     const killed=Math.max(0,Number(calc.modelsKilled)||0);
     const wipe=Math.max(0,Math.min(1,Number(calc.killChance)||0));
