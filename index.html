@@ -4546,7 +4546,7 @@ function clearTacticalPair(attackerUid,targetUid){
   event('TACTICAL_CONTEXT_CHANGED',{attackerUid,targetUid,action:'Tactical context cleared',before:old,after:null},before);
   save();render();
 }
-function tacticalUnitActionState(entryUid){
+function tacticalAdvisorActionState(entryUid){
   if(!entryUid)return {movement:'unknown',shootingDone:false,chargeDone:false,fightDone:false,round:Math.max(1,Number(state.round)||1),playerTurn:state.currentTurn};
   const t=ensureTacticalState(),raw=t.unitActions[String(entryUid)];
   if(!raw||raw.round!==Math.max(1,Number(state.round)||1)||raw.playerTurn!==state.currentTurn){
@@ -4566,7 +4566,7 @@ function tacticalUnitMovementTypeLegacy(entryUid){
   return raw&&raw.round===Math.max(1,Number(state.round)||1)&&raw.playerTurn===state.currentTurn?(!!raw.advanced?'advance':'remained'):null;
 }
 function tacticalUnitMovementType(entryUid){
-  const a=tacticalUnitActionState(entryUid);
+  const a=tacticalAdvisorActionState(entryUid);
   if(a.movement!=='unknown')return a.movement;
   const legacy=tacticalUnitMovementTypeLegacy(entryUid);
   return legacy===null?'unknown':legacy;
@@ -4578,7 +4578,7 @@ function tacticalUnitAdvancedState(entryUid){
 function setTacticalUnitAction(entryUid,field,value){
   if(!entryUid)return;
   const before=snapshotForUndo(),t=ensureTacticalState(),key=String(entryUid);
-  const old=tacticalUnitActionState(entryUid);
+  const old=tacticalAdvisorActionState(entryUid);
   const next={...old,round:Math.max(1,Number(state.round)||1),playerTurn:state.currentTurn};
   if(field==='movement'){
     next.movement=['unknown','remained','normal','advance','fallback'].includes(value)?value:'unknown';
@@ -4594,7 +4594,7 @@ function setTacticalUnitAdvanced(entryUid,advanced){
   setTacticalUnitAction(entryUid,'movement',advanced?'advance':'remained');
 }
 function tacticalPhaseActionAvailable(entryUid,phase){
-  const a=tacticalUnitActionState(entryUid);
+  const a=tacticalAdvisorActionState(entryUid);
   if(phase==='Shooting')return !a.shootingDone;
   if(phase==='Charge')return !a.chargeDone;
   if(phase==='Fight')return !a.fightDone;
@@ -4813,7 +4813,7 @@ function tacticalContextHtml(){
   if(!ae||!targets.length)return '<div class="card tactical-context-card"><h3 style="margin-top:0">Tactical Context</h3><div class="muted">Build both armies and select an attacker/target to record range and battlefield context.</div></div>';
   const selectedUid=(state.tactical?.selectedTargetUid&&targets.some(e=>e.uid===state.tactical.selectedTargetUid))?state.tactical.selectedTargetUid:targets[0].uid;
   ensureTacticalState().selectedTargetUid=selectedUid;
-  const te=entry('opp',selectedUid),ctx=tacticalPairState(ae.uid,selectedUid),leg=tacticalTargetLegality(ae,te,state.phase),actions=tacticalUnitActionState(ae.uid),movementType=tacticalUnitMovementType(ae.uid);
+  const te=entry('opp',selectedUid),ctx=tacticalPairState(ae.uid,selectedUid),leg=tacticalTargetLegality(ae,te,state.phase),actions=tacticalAdvisorActionState(ae.uid),movementType=tacticalUnitMovementType(ae.uid);
   const options=targets.map(e=>'<option value="'+esc(e.uid)+'" '+(e.uid===selectedUid?'selected':'')+'>'+esc(unitDisplayName('opp',e))+'</option>').join('');
   const status=leg.canTarget===true?'Known / eligible':leg.canTarget===false?'Known / not eligible':'Needs battlefield info';
   return '<div class="card tactical-context-card"><div class="split"><div><h3 style="margin:0">Tactical Context</h3><div class="muted">Optional phone-friendly battlefield state for the Tactical Advisor. Unknown values are never guessed.</div></div><span class="pill">'+esc(state.phase||'Command')+' • '+esc(status)+'</span></div>'+
