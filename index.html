@@ -5235,8 +5235,11 @@ function tacticalPreRollCheck(attackerEntryUid,targetEntryUid,weaponName=null){
   if(!ae||!te)return {status:'missing-context',steps:[],warnings:['Select an attacker and target.']};
   const a=combatTargetUnit('my',ae)||get(ae.unitId),t=combatTargetUnit('opp',te)||get(te.unitId);
   if(!a||!t)return {status:'missing-units',steps:[],warnings:['Unit data is unavailable.']};
-  const w=(a.weapons||[]).find(x=>x.name===weaponName)||(a.weapons||[]).find(x=>x.name===state.weapon)||(a.weapons||[])[0];
-  if(!w)return {status:'missing-weapon',steps:[],warnings:['No weapon is available for this attack.']};
+  const phase=String(state.phase||'Shooting');
+  const phaseWeapons=(a.weapons||[]).filter(x=>tacticalWeaponPhaseEligible(x,phase,ae,te));
+  const requested=(a.weapons||[]).find(x=>x.name===weaponName)||(a.weapons||[]).find(x=>x.name===state.weapon);
+  const w=(requested&&tacticalWeaponPhaseEligible(requested,phase,ae,te))?requested:phaseWeapons[0];
+  if(!w)return {status:'missing-weapon',steps:[],warnings:[phase==='Fight'?'No melee weapon is currently eligible for this attack.':'No phase-eligible weapon is available for this attack.']};
   const ctx=tacticalPairState(ae.uid,te.uid),movementEntry=combatRootEntry('my',ae)||ae;
   const actions=tacticalAdvisorActionState(movementEntry.uid),movementType=tacticalUnitMovementType(movementEntry.uid);
   const advanced=movementType==='advance',stationary=movementType==='remained';
@@ -5262,7 +5265,6 @@ function tacticalPreRollCheck(attackerEntryUid,targetEntryUid,weaponName=null){
   };
   m.indirectStationaryFriendlyVisible=m.indirectShooting&&stationary&&ctx.los==='yes';
   const c=engineContext(a,w,t,m);
-  const phase=String(state.phase||'Shooting');
   const steps=[];
   const warnings=[];
   const modifiers=[];
