@@ -2564,28 +2564,34 @@ function bodyguardCandidatesForLeader(side,leaderUid){
   });
 }
 function attachLeader(side,leaderUid,bodyguardUid){
+  const fullBefore=snapshotForUndo();
   const leader=entry(side,leaderUid),body=entry(side,bodyguardUid);if(!leader||!body)return;
   const lu=get(leader.unitId),bu=get(body.unitId);if(!isLeaderUnit(lu)||!leaderNamesForBodyguard(bu).includes(lu.name))return;
-  const oldBody=leaderBodyguard(side,leaderUid);if(oldBody){
-    oldBody.leaderUids=(Array.isArray(oldBody.leaderUids)?oldBody.leaderUids:[]).filter(id=>id!==leaderUid);
-    syncBodyguardLeaderFields(oldBody);
-  }
+  const oldBody=leaderBodyguard(side,leaderUid);
   const current=bodyguardLeaders(side,bodyguardUid);
   const already=current.some(x=>x.uid===leaderUid);if(already)return;
   const specialCatoPair=bu?.name==='Victrix Honour Guard' && lu?.name==='Cato Sicarius' && current.some(x=>get(x.unitId)?.name==='Marneus Calgar in Armour of Antilochus');
   if(current.length && !specialCatoPair)return;
+  if(oldBody){
+    oldBody.leaderUids=(Array.isArray(oldBody.leaderUids)?oldBody.leaderUids:[]).filter(id=>id!==leaderUid);
+    syncBodyguardLeaderFields(oldBody);
+  }
   body.leaderUids=Array.isArray(body.leaderUids)?body.leaderUids.slice():[];
   body.leaderUids.push(leader.uid);syncBodyguardLeaderFields(body);
   leader.attachedTo=body.uid;leader.attachedRole='leader';
+  event('LEADER_ATTACHED',{side,leaderUid,bodyguardUid,leader:lu.name,bodyguard:bu.name,action:'Leader attached to Bodyguard'});
   save();state.leaderAttachmentModal=null;state.bodyguardAttachmentModal=null;render();
 }
 function detachLeader(side,leaderUid){
+  const fullBefore=snapshotForUndo();
   const leader=entry(side,leaderUid);if(!leader)return;
-  const body=leaderBodyguard(side,leaderUid);delete leader.attachedTo;
+  const body=leaderBodyguard(side,leaderUid),lu=get(leader.unitId),bu=body?get(body.unitId):null;
+  delete leader.attachedTo;delete leader.attachedRole;
   if(body){
     body.leaderUids=(Array.isArray(body.leaderUids)?body.leaderUids:[]).filter(id=>id!==leaderUid);
     syncBodyguardLeaderFields(body);
   }
+  event('LEADER_DETACHED',{side,leaderUid,bodyguardUid:body?.uid||null,leader:lu?.name||'Leader',bodyguard:bu?.name||'',action:'Leader detached from Bodyguard'});
   save();state.leaderAttachmentModal=null;state.bodyguardAttachmentModal=null;render();
 }
 function openLeaderAttachment(side,bodyguardUid){state.leaderAttachmentModal={side,bodyguardUid};state.bodyguardAttachmentModal=null;render()}
@@ -3074,8 +3080,34 @@ function modelRosterIssues(e,u){
   }
   return out;
 }
+function attachmentIssues(side){
+  const out=[];
+  const list=Array.isArray(state[side])?state[side]:[];
+  const byId=new Map(list.map(e=>[e.uid,e]));
+  list.forEach(e=>{
+    const u=get(e.unitId);
+    if(e.attachedTo){
+      const parent=byId.get(e.attachedTo);
+      if(!parent)out.push(u.name+': attachment target '+e.attachedTo+' is missing');
+      else if(e.attachedRole==='leader'){
+        const leaders=Array.isArray(parent.leaderUids)?parent.leaderUids:[];
+        if(!leaders.includes(e.uid))out.push(u.name+': Leader attachment is missing from Bodyguard leaderUids');
+      }
+    }
+    const ids=Array.isArray(e.leaderUids)?e.leaderUids:[];
+    ids.forEach(id=>{
+      const leader=byId.get(id);
+      if(!leader)out.push(u.name+': leader '+id+' is missing');
+      else if(leader.attachedTo!==e.uid||leader.attachedRole!=='leader')out.push(u.name+': leader '+id+' points to a different Bodyguard');
+      else if(!isLeaderUnit(get(leader.unitId)))out.push(u.name+': attached entry '+id+' is not a Leader');
+    });
+    if(e.leaderUid&& !ids.includes(e.leaderUid))out.push(u.name+': legacy leaderUid is not synchronized with leaderUids');
+  });
+  return out;
+}
 function issues(side){
  let out=[],seen={};
+ attachmentIssues(side).forEach(x=>out.push(x));
  for(const e of state[side]){
    const u=get(e.unitId),r=unitRules(u);
    seen[e.unitId]=(seen[e.unitId]||0)+e.qty;
