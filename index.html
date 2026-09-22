@@ -4667,6 +4667,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     };
   }).filter(Boolean);
   const friendlyRoots=(state.my||[]).filter(e=>!e.attachedTo);
+  const attackerRoot=combatRootEntry('my',atkEntry)||atkEntry;
   results.forEach(x=>{
     const targetEntry=entry('opp',x.entryUid);if(!targetEntry)return;
     const enemyGroupsRaw=attachedCombatWeaponGroups('opp',targetEntry);
@@ -4676,7 +4677,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
       return u.available?{...g,count:Math.min(g.count,u.count)}:null;
     }).filter(Boolean);
     if(!enemyGroups.length)return;
-    let threat=0;
+    let attackerThreat=0,armyThreat=0;
     friendlyRoots.forEach(fr=>{
       const ft=combatTargetUnit('my',fr)||get(fr.unitId);if(!ft)return;
       const friendlySnap=combatSnapshot('my',fr);
@@ -4689,13 +4690,17 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
         :Array.from({length:fg},()=>Math.max(1,Number(ft.profile?.W)||1));
       const tm={...(state.mathRules||{}),defenderModels:fg,defenderWoundsRemaining:friendlyWounds,defenderWoundsState:friendlyWoundsState,quickSamples:1000,_skipSim:true};
       const tr=calculateMathMixed(get(targetEntry.unitId),ft,enemyGroups,tm);
-      threat+=Math.max(0,Number(tr.damage)||0);
+      const damage=Math.max(0,Number(tr.damage)||0);
+      armyThreat+=damage;
+      if(attackerRoot&&fr.uid===attackerRoot.uid)attackerThreat+=damage;
     });
-    x.incomingThreat=Math.min(999,threat);
-    x.threatPerPoint=threat/Math.max(1,x.points);
-    x.exchangeExposure=Math.min(1,threat/Math.max(1,Number(x.expectedDamage)||1));
+    x.incomingThreat=Math.min(999,attackerThreat);
+    x.armyIncomingThreat=Math.min(999,armyThreat);
+    x.threatPerPoint=attackerThreat/Math.max(1,x.points);
+    x.exchangeExposure=Math.min(1,attackerThreat/Math.max(1,Number(x.expectedDamage)||1));
     x.exchangeComponents={
       incomingThreat:x.incomingThreat,
+      armyIncomingThreat:x.armyIncomingThreat,
       outgoingDamage:x.expectedDamage,
       threatPerPoint:x.threatPerPoint,
       exposure:x.exchangeExposure
