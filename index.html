@@ -4754,9 +4754,9 @@ function tacticalWeaponUseState(entryUid,weaponName,side='my'){
 function tacticalWeaponHasRule(w,rule){
   return (w?.abilities||[]).some(a=>String(a||'').toUpperCase().replace(/-/g,' ').includes(String(rule||'').toUpperCase()));
 }
-function tacticalWeaponAvailable(entryUid,w,maxCount){
+function tacticalWeaponAvailable(entryUid,w,maxCount,side='my'){
   if(!w)return {available:false,count:0,reason:'missing weapon'};
-  const limit=Math.max(1,Number(maxCount)||1),use=tacticalWeaponUseState(entryUid,w.name);
+  const limit=Math.max(1,Number(maxCount)||1),use=tacticalWeaponUseState(entryUid,w.name,side);
   if(tacticalWeaponHasRule(w,'ONE SHOT')){
     const remaining=Math.max(0,limit-Math.min(limit,use.usedCount));
     return {available:remaining>0,count:remaining,reason:remaining?'':'All One Shot weapons used',use};
@@ -5203,7 +5203,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
       const exactRemaining=exactModelIds.length?unusedModelIds.length:null;
       let count=0,phaseUsed=0;
       if(exactRemaining!==null){
-        const manualUse=tacticalWeaponUseState(uid,g.weapon.name);
+        const manualUse=tacticalWeaponUseState(uid,g.weapon.name,side);
         const manualRemaining=tacticalWeaponHasRule(g.weapon,'ONE SHOT')
           ?Math.max(0,exactRemaining-Math.min(exactRemaining,manualUse.usedCount))
           :exactRemaining;
@@ -5283,7 +5283,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     const enemyGroupsRaw=attachedCombatWeaponGroups('opp',targetEntry);
     if(!enemyGroupsRaw.length)return;
     const enemyGroups=enemyGroupsRaw.map(g=>{
-      const u=tacticalWeaponAvailable(g.entry?.uid||targetEntry?.uid,g.weapon,g.count);
+      const u=tacticalWeaponAvailable(g.entry?.uid||targetEntry?.uid,g.weapon,g.count,'opp');
       return u.available?{...g,count:Math.min(g.count,u.count)}:null;
     }).filter(Boolean);
     if(!enemyGroups.length)return;
