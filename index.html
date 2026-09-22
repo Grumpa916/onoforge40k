@@ -2860,19 +2860,65 @@ function unitRules(u){
 }
 function compositionRule(u){return UNIT_COMPOSITION_11E[(u?.faction||'')+'|'+(u?.name||'')]||null}
 function compositionSummary(u){const c=compositionRule(u);return c?.notes||''}
+/*
+ * Shared model-roster architecture.
+ * New factions should register model composition here instead of adding
+ * another faction-specific branch to the battle engine. Faction rules/data
+ * remain responsible for defining the rule; the shared engine consumes it.
+ */
+const MODEL_ROSTER_RULES_11E={
+  'Tyranids|Tyranid Warriors with Ranged Bio-Weapons':{kind:'warriors'},
+  'Tyranids|Tyranid Warriors with Melee Bio-Weapons':{kind:'warriors'},
+  'Tyranids|Zoanthropes':{kind:'zoanthropes'},
+  'Tyranids|Neurogaunts':{kind:'neurogaunts'},
+  'Tyranids|Hyperadapted Raveners':{kind:'hyperadapted-raveners'},
+  'Space Marines|Intercessor Squad':{kind:'sergeant-squad',sergeant:'Intercessor Sergeant'},
+  'Space Marines|Assault Intercessor Squad':{kind:'sergeant-squad',sergeant:'Assault Intercessor Sergeant'},
+  'Space Marines|Heavy Intercessor Squad':{kind:'sergeant-squad',sergeant:'Heavy Intercessor Sergeant'},
+  'Space Marines|Sternguard Veteran Squad':{kind:'sergeant-squad',sergeant:'Sternguard Veteran Sergeant'},
+  'Space Marines|Hellblaster Squad':{kind:'sergeant-squad',sergeant:'Hellblaster Sergeant'},
+  'Space Marines|Infernus Squad':{kind:'sergeant-squad',sergeant:'Infernus Sergeant'},
+  'Space Marines|Devastator Squad':{kind:'sergeant-squad',sergeant:'Devastator Sergeant'},
+  'Space Marines|Tactical Squad':{kind:'sergeant-squad',sergeant:'Tactical Sergeant'},
+  'Space Marines|Scout Squad':{kind:'sergeant-squad',sergeant:'Scout Sergeant'},
+  'Space Marines|Reiver Squad':{kind:'sergeant-squad',sergeant:'Reiver Sergeant'},
+  'Space Marines|Infiltrator Squad':{kind:'sergeant-squad',sergeant:'Infiltrator Sergeant'},
+  'Space Marines|Incursor Squad':{kind:'sergeant-squad',sergeant:'Incursor Sergeant'},
+  'Space Marines|Aggressor Squad':{kind:'specialist-squad'},
+  'Space Marines|Eradicator Squad':{kind:'specialist-squad'},
+  'Space Marines|Inceptor Squad':{kind:'specialist-squad'},
+  'Space Marines|Bladeguard Veteran Squad':{kind:'specialist-squad'},
+  'Space Marines|Terminator Squad':{kind:'specialist-squad'},
+  'Space Marines|Terminator Assault Squad':{kind:'specialist-squad'},
+  'Space Marines|Vanguard Veteran Squad with Jump Packs':{kind:'specialist-squad'},
+  'Space Marines|Centurion Assault Squad':{kind:'specialist-squad'},
+  'Space Marines|Centurion Devastator Squad':{kind:'specialist-squad'},
+  'Space Marines|Assault Intercessors with Jump Packs':{kind:'specialist-squad'},
+  'Space Marines|Outrider Squad':{kind:'outrider-squad'},
+  'Space Marines|Company Heroes':{kind:'company-heroes'}
+};
 function modelRosterRule(u){
-  const key=(u?.faction||'')+'|'+(u?.name||''),name=u?.name||'';
-  if(key==='Tyranids|Tyranid Warriors with Ranged Bio-Weapons'||key==='Tyranids|Tyranid Warriors with Melee Bio-Weapons')return {kind:'warriors'};
-  if(key==='Tyranids|Zoanthropes')return {kind:'zoanthropes'};
-  if(key==='Tyranids|Neurogaunts')return {kind:'neurogaunts'};
-  if(key==='Tyranids|Hyperadapted Raveners')return {kind:'hyperadapted-raveners'};
-  if(['Space Marines','Ultramarines'].includes(u?.faction)){
-    if(['Intercessor Squad','Assault Intercessor Squad','Heavy Intercessor Squad','Sternguard Veteran Squad','Hellblaster Squad','Infernus Squad','Devastator Squad','Tactical Squad','Scout Squad','Reiver Squad','Infiltrator Squad','Incursor Squad'].includes(name))return {kind:'sergeant-squad',sergeant:name==='Sternguard Veteran Squad'?'Sternguard Veteran Sergeant':name==='Tactical Squad'?'Tactical Sergeant':name.replace(' Squad','')+' Sergeant'};
-    if(['Aggressor Squad','Eradicator Squad','Inceptor Squad','Bladeguard Veteran Squad','Terminator Squad','Terminator Assault Squad','Vanguard Veteran Squad with Jump Packs','Centurion Assault Squad','Centurion Devastator Squad','Assault Intercessors with Jump Packs'].includes(name))return {kind:'specialist-squad'};
-    if(name==='Outrider Squad')return {kind:'outrider-squad'};
-    if(name==='Company Heroes')return {kind:'company-heroes'};
-  }
-  return null;
+  if(!u)return null;
+  const key=(u.faction||'')+'|'+(u.name||'');
+  return MODEL_ROSTER_RULES_11E[key]||MODEL_ROSTER_RULES_11E[(u.faction==='Ultramarines'?'Space Marines|'+u.name:'') ]||null;
+}
+function registerModelRosterRule(faction,name,rule){
+  if(!faction||!name||!rule)return;
+  MODEL_ROSTER_RULES_11E[faction+'|'+name]={...rule};
+}
+function survivingModelRoster(e,u){
+  if(!e||!u)return [];
+  return ensureModelRoster(e,u).filter(m=>m.alive!==false);
+}
+function modelRosterWeaponCounts(e,u){
+  const counts={};
+  survivingModelRoster(e,u).forEach(m=>(Array.isArray(m.weapons)?m.weapons:[]).forEach(w=>{
+    if(w)counts[w]=(counts[w]||0)+1;
+  }));
+  return counts;
+}
+function modelRosterWeaponNames(e,u){
+  return Object.keys(modelRosterWeaponCounts(e,u));
 }
 function nameFromUnitRole(u){
   const n=u?.name||'';
