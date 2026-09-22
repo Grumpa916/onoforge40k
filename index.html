@@ -4817,7 +4817,8 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     const engagedTargetMonsterVehicle=pairCtx.engagement==='engaged'&&tacticalUnitIsMonsterVehicle(targetEntry);
     const attackerEngagedWithTarget=pairCtx.engagement==='engaged';
     const m={...(state.mathRules||{}),defenderModels:defModels,defenderWoundsState:woundsState,engagedTargetMonsterVehicle,attackerEngagedWithTarget,quickSamples:Math.min(10000,Math.max(2000,Number(options.samples)||4000)),_skipSim:false};
-    const targetPhaseGroups=groups.filter(g=>tacticalWeaponPhaseEligible(g.weapon,state.phase,g.entry,targetEntry));
+    const targetGroups=attachedCombatWeaponGroups(side,atkEntry,target);
+    const targetPhaseGroups=targetGroups.filter(g=>tacticalWeaponPhaseEligible(g.weapon,state.phase,g.entry,targetEntry));
     const availableGroups=targetPhaseGroups.map(g=>{
       const uid=g.entry?.uid||atkEntry?.uid;
       const u=tacticalWeaponAvailableForPhase(uid,g.weapon,g.count,state.round,state.phase,side);
@@ -5361,7 +5362,7 @@ function engineMonteCarlo(a,w,t,m,samples){samples=Math.max(100,Math.min(20000,N
 function simulateOne(a,w,t,m){const r=engineMonteCarlo(a,w,t,m,1);return {damage:r.avgDamage,killed:r.avgKilled,dead:r.wipeChance>=1}}
 function runMathSimulation(){
   const a=mathUnit('my'),t=mathUnit('opp'); if(!a||!t)return;
-  const ae=mathRosterEntry('my'),de=mathRosterEntry('opp'),groups=attachedCombatWeaponGroups('my',ae);
+  const ae=mathRosterEntry('my'),de=mathRosterEntry('opp'),groups=attachedCombatWeaponGroups('my',ae,t);
   const atkModels=Math.max(1,attachedCombatEntries('my',ae).reduce((n,e)=>{const u=get(e.unitId);return n+(modelRosterRule(u)?survivingModelRoster(e,u).length:Number(e.models)||u?.models||0)},0));
   const defModels=de&&modelRosterRule(t)?Math.max(1,survivingModelRoster(de,t).length):Math.max(1,Number(de?.models)||Number(t?.models)||1);
   const m={...(state.mathRules||{}),attackerModels:atkModels,defenderModels:defModels}; if(ae){const snapAtt=combatSnapshot('my',ae);if(snapAtt?.survivingModels===1)m.attackerWoundsRemaining=Math.max(0,Number(snapAtt.totalWounds)||0);}
