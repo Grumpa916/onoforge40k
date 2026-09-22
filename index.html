@@ -1829,13 +1829,14 @@ function ensureSecondaryRoundLedger(){
     const roundMapKey=side==='my'?'secondaryMyScoredRound':'secondaryOppScoredRound';
     const end=state[key].END;
     if(end&&typeof end==='object'){
-      if(!state[key]['5']||typeof state[key]['5']!=='object')state[key]['5']={};
-      let room=Math.max(0,15-Object.values(state[key]['5']).reduce((s,v)=>s+Math.max(0,Number(v)||0),0));
+      const finalRound=String(Math.max(1,Number(state.round)||1));
+      if(!state[key][finalRound]||typeof state[key][finalRound]!=='object')state[key][finalRound]={};
+      let room=Math.max(0,15-Object.values(state[key][finalRound]).reduce((s,v)=>s+Math.max(0,Number(v)||0),0));
       for(const [name,value] of Object.entries(end)){
         const amount=Math.min(Math.max(0,Number(value)||0),room);
-        if(amount>0)state[key]['5'][name]=Math.max(0,Number(state[key]['5'][name])||0)+amount;
+        if(amount>0)state[key][finalRound][name]=Math.max(0,Number(state[key][finalRound][name])||0)+amount;
         room-=amount;
-        if(state[roundMapKey]?.[name]==='END')state[roundMapKey][name]=5;
+        if(state[roundMapKey]?.[name]==='END')state[roundMapKey][name]=Number(finalRound);
       }
       delete state[key].END;
     }
