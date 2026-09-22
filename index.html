@@ -5386,7 +5386,12 @@ function tacticalPreRollCheck(attackerEntryUid,targetEntryUid,weaponName=null){
   const steps=[];
   const warnings=[];
   if(c.precision){
-    warnings.push('Precision: if the target is an Attached unit and a CHARACTER model is visible to at least one attacking model, you may select that CHARACTER allocation group when resolving these attacks.');
+    const precisionAttached=tacticalTargetIsAttached('opp',te);
+    if(precisionAttached){
+      warnings.push('Precision: target is Attached. Before resolving attacks, confirm which CHARACTER allocation group is visible to at least one attacking model; only a confirmed visible Character can be selected for Precision allocation.');
+    }else{
+      warnings.push('Precision: this weapon has Precision, but the selected target is not currently identified as an Attached unit, so Precision Character allocation is not available.');
+    }
   }
   const modifiers=[];
   if(phase==='Charge'){
