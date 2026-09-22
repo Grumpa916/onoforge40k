@@ -4974,6 +4974,27 @@ function tacticalWeaponModelUseEvents(entryUid,round=state.round,phase=state.pha
     Array.isArray(e.payload?.modelIds)
   );
 }
+function tacticalWeaponModelWeaponInstanceCount(entryUid,modelId,weaponName,side='my'){
+  if(!entryUid||!modelId||!weaponName)return 0;
+  const e=entry(side==='opp'?'opp':'my',entryUid),u=e?get(e.unitId):null;
+  const roster=e&&u?ensureModelRoster(e,u):[];
+  const model=roster.find(x=>String(x.id)===String(modelId));
+  return model?(Array.isArray(model.weapons)?model.weapons:[]).filter(x=>String(x)===String(weaponName)).length:0;
+}
+function tacticalWeaponModelUseCount(entryUid,modelId,weaponName,round=state.round,phase=state.phase,side='my'){
+  const wanted=String(modelId);
+  return tacticalWeaponModelUseEvents(entryUid,round,phase,side).reduce((n,e)=>{
+    const ids=Array.isArray(e.payload?.modelIds)?e.payload.modelIds.map(id=>String(id)):[];
+    return ids.includes(wanted)&&String(e.payload?.weapon||'')===String(weaponName)?n+1:n;
+  },0);
+}
+function tacticalWeaponModelAvailable(entryUid,modelId,w,round=state.round,phase=state.phase,side='my'){
+  if(!w)return false;
+  const instances=tacticalWeaponModelWeaponInstanceCount(entryUid,modelId,w.name,side);
+  if(instances<=0)return false;
+  const used=tacticalWeaponModelUseCount(entryUid,modelId,w.name,round,phase,side);
+  return tacticalWeaponHasRule(w,'ONE SHOT')?used<instances:used<1;
+}
 function tacticalWeaponModelAlreadyUsed(entryUid,modelId,weaponName,round=state.round,phase=state.phase,side='my'){
   const wanted=String(modelId);
   return tacticalWeaponModelUseEvents(entryUid,round,phase,side).some(e=>{
@@ -6576,7 +6597,7 @@ function resolveAttack(){
     :[];
   const eligibleWeaponModels=exactWeaponModels.length
     ?exactWeaponModels.filter(model=>
-        !tacticalWeaponModelAlreadyUsed(ae.uid,model.id,w.name,state.round,state.phase,'my') &&
+        tacticalWeaponModelAvailable(ae.uid,model.id,w,state.round,state.phase,'my') &&
         !tacticalWeaponModelModeConflict(ae.uid,model.id,w,ae,state.round,state.phase,'my')
       )
     :[];
