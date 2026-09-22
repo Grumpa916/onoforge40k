@@ -5704,40 +5704,6 @@ function engineSelectAllocationIndex(s,woundsState,preferredIndex=null){
     return Number(woundsState[i])>0&&Number(woundsState[i])<Number(max);
   })??g.indices.find(i=>Number(woundsState[i])>0);
 }
-function engineApplyDamageToWoundsState(d,woundsState,t,targetIndex=null){
-  let remainingDamage=Math.max(0,Number(d)||0),applied=0;
-  const s=t?.__allocationState||null;
-  while(remainingDamage>0){
-    const explicitIndex=Number.isInteger(targetIndex)&&targetIndex>=0&&targetIndex<woundsState.length;
-    if(explicitIndex&&Number(woundsState[targetIndex])<=0)return applied;
-    const idx=explicitIndex?targetIndex:(s?engineSelectAllocationIndex(s,woundsState):woundsState.findIndex(x=>Number(x)>0));
-    if(idx<0)break;
-    const remaining=Math.max(0,Number(woundsState[idx])||Number(t?.profile?.W)||1);
-    const dealt=Math.min(remaining,remainingDamage);
-    woundsState[idx]=Math.max(0,remaining-dealt);
-    applied+=dealt;
-    break;
-  }
-  return applied;
-}
-function engineTargetForAttack(t,m,woundsState){
-  const s=m?.attachedTargetState;
-  if(!s)return t;
-  const bodyguardLive=s.bodyguardSlots.filter((_,i)=>Number(woundsState[i])>0);
-  if(bodyguardLive.length){
-    // While any Bodyguard model remains, wound rolls use the highest Toughness
-    // among the surviving Bodyguard models. Save/damage profiles are resolved
-    // separately at allocation time.
-    const highestT=Math.max(...bodyguardLive.map(slot=>Number(slot.profile?.T)||Number(t.profile?.T)||4));
-    return {...t,profile:{...(t.profile||{}),T:highestT},wounds:Math.max(1,Number(t.wounds)||1),models:bodyguardLive.length,__allocationState:s};
-  }
-  const characterLive=s.characterSlots.filter((_,i)=>Number(woundsState[s.bodyguardCount+i])>0);
-  if(characterLive.length){
-    const highestT=Math.max(...characterLive.map(slot=>Number(slot.profile?.T)||Number(t.profile?.T)||4));
-    return {...t,profile:{...(t.profile||{}),T:highestT},wounds:Math.max(1,Number(t.wounds)||1),models:characterLive.length,__allocationState:s};
-  }
-  return t;
-}
 function enginePrecisionTargetId(m){
   return m?.precisionTargetModelId?String(m.precisionTargetModelId):'';
 }
