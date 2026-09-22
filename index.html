@@ -242,7 +242,18 @@
     ));
     x.tacticalIndexAdjusted=Math.max(-1,Number(x.tacticalIndex)||0)*(1-0.20*exposure);
   });
-  results.sort((a,b)=>(Number(b.decisionScore??b.tacticalIndexAdjusted??b.tacticalIndex)-Number(a.decisionScore??a.tacticalIndexAdjusted??a.tacticalIndex)));
+  // Stable ordering: score first, then confidence, then objective value, then
+  // expected damage. This prevents equal/near-equal scores from jumping around
+  // between evaluations while keeping the ranking explainable.
+  results.sort((a,b)=>{
+    const scoreDiff=Number(b.decisionScore??b.tacticalIndexAdjusted??b.tacticalIndex)-Number(a.decisionScore??a.tacticalIndexAdjusted??a.tacticalIndex);
+    if(Math.abs(scoreDiff)>0.01)return scoreDiff;
+    const confidenceDiff=Number(b.decisionComponents?.decisionConfidence||0)-Number(a.decisionComponents?.decisionConfidence||0);
+    if(Math.abs(confidenceDiff)>0.01)return confidenceDiff;
+    const objectiveDiff=Number(b.decisionComponents?.objectiveValue||0)-Number(a.decisionComponents?.objectiveValue||0);
+    if(Math.abs(objectiveDiff)>0.01)return objectiveDiff;
+    return Number(b.expectedDamage||0)-Number(a.expectedDamage||0);
+  });
   const eligibleResults=results.filter(x=>x.recommendationEligible!==false);
   const naturalTargets=eligibleResults
     .filter(x=>x.antiMatches.length||x.damageFraction>=0.75)
