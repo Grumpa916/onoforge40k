@@ -4070,14 +4070,29 @@ function changeModelWounds(side,id,modelId,delta){
 function setUnitDestroyed(side,id){
   const fullBefore=snapshotForUndo();const e=entry(side,id);if(!e)return;const u=get(e.unitId);if(!u)return;const perModelWounds=Math.max(1,Number(u.wounds)||1);
   if(!e.game)e.game={entryId:e.uid,models:e.models,wounds:e.models*perModelWounds,status:'Alive',battleshocked:false};
-  if(e.game.entryId!==e.uid)e.game={...e.game,entryId:e.uid};const before=JSON.parse(JSON.stringify(e.game));
+  if(e.game.entryId!==e.uid)e.game={...e.game,entryId:e.uid};
+  const before=JSON.parse(JSON.stringify(e.game));
   if(e.game.status==='Destroyed'){
-    e.game.wounds=Math.min(perModelWounds,e.models*perModelWounds);
-    e.game.models=Math.max(1,Math.min(e.models,Math.ceil(e.game.wounds/perModelWounds)));
-    e.game.status='Damaged';
-    if(modelRosterRule(u)){const roster=ensureModelRoster(e,u);roster.forEach(m=>{m.alive=true;m.woundsRemaining=Math.max(1,Number(u.wounds)||1)});syncModelRosterBattleState(e,u);}
+    const restore=e.game.preDestroyedState&&typeof e.game.preDestroyedState==='object'?e.game.preDestroyedState:null;
+    if(restore){
+      const restoredGame={...restore.game};
+      delete restoredGame.preDestroyedState;
+      e.game=restoredGame;
+      if(modelRosterRule(u)&&Array.isArray(restore.modelRoster)){
+        e.modelRoster=JSON.parse(JSON.stringify(restore.modelRoster));
+        e.game.modelRoster=e.modelRoster.map(m=>({...m,weapons:Array.isArray(m.weapons)?[...m.weapons]:[]}));
+        syncModelRosterBattleState(e,u);
+      }
+    }else{
+      e.game.wounds=Math.min(perModelWounds,e.models*perModelWounds);
+      e.game.models=Math.max(1,Math.min(e.models,Math.ceil(e.game.wounds/perModelWounds)));
+      e.game.status='Damaged';
+      if(modelRosterRule(u)){const roster=ensureModelRoster(e,u);roster.forEach(m=>{m.alive=true;m.woundsRemaining=Math.max(1,Number(u.wounds)||1)});syncModelRosterBattleState(e,u);}
+    }
   } else {
-    e.game.models=0;e.game.wounds=0;e.game.status='Destroyed';
+    const priorRoster=modelRosterRule(u)?JSON.parse(JSON.stringify(ensureModelRoster(e,u))):null;
+    const priorGame=JSON.parse(JSON.stringify(e.game));
+    e.game={...e.game,models:0,wounds:0,status:'Destroyed',preDestroyedState:{game:priorGame,modelRoster:priorRoster}};
     if(modelRosterRule(u)){const roster=ensureModelRoster(e,u);roster.forEach(m=>{m.alive=false;m.woundsRemaining=0});syncModelRosterBattleState(e,u);}
   }
   event('UNIT_STATE_CHANGED',{side,unitId:e.unitId,entryId:id,unit:u.name,action:e.game.status==='Destroyed'?'Destroyed':'Destroyed cleared',modelsBefore:before.models,modelsAfter:e.game.models,woundsBefore:before.wounds,woundsAfter:e.game.wounds,statusBefore:before.status,statusAfter:e.game.status,before,after:e.game},fullBefore);save();render();
