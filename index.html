@@ -5040,7 +5040,7 @@ function calculateMath(a,w,t,m){
   const normalHitEvents=Math.max(0,hits-lethalAuto);
   const woundDist=engineWoundDistribution(c,normalHitEvents);
   const critWounds=normalHitEvents*woundDist.crit;
-  const normalWounds=normalHitEvents*woundDist.success;
+  const normalWounds=normalHitEvents*Math.max(0,woundDist.success-woundDist.crit);
   const totalWounds=lethalAuto+normalWounds+critWounds;
   const devastating=c.devastating;
   const devCount=devastating?critWounds:0;
