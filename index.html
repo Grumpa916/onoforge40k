@@ -4195,7 +4195,13 @@ function combatComponentRole(side,root,ce,u){
 }
 function combatModelSnapshot(side,ce,u){
   const rosterRule=modelRosterRule(u);
-  const roster=ensureModelRoster(ce,u);
+  const desired=buildModelRoster(ce,u);
+  const prior=Array.isArray(ce.game?.modelRoster)?ce.game.modelRoster:(Array.isArray(ce.modelRoster)?ce.modelRoster:[]);
+  const priorById=new Map(prior.map(m=>[m.id,m]));
+  const roster=desired.map(m=>{
+    const old=priorById.get(m.id);
+    return old?{...m,alive:old.alive!==false,woundsRemaining:old.woundsRemaining==null?m.woundsRemaining:Math.max(0,Number(old.woundsRemaining)||0)}:m;
+  });
   if(rosterRule){
     return roster.map((m,i)=>({
       id:m.id||('model-'+i),sourceEntryUid:ce.uid,sourceUnitId:u.id,
@@ -4251,7 +4257,9 @@ function combatSnapshot(side,entryUidOrEntry){
   }));
   const alive=models.filter(m=>m.alive!==false);
   const bodyguardModels=components.filter(c=>c.role==='bodyguard').flatMap(c=>c.models.filter(m=>m.alive!==false));
-  const toughnessPool=(bodyguardModels.length?bodyguardModels:alive).map(m=>Number(m.profile?.T)).filter(Number.isFinite);
+  const targetModels=bodyguardModels.length?bodyguardModels:alive;
+  const toughnessPool=targetModels.map(m=>Number(m.profile?.T)).filter(Number.isFinite);
+  const uniqueToughness=Array.from(new Set(toughnessPool));
   const componentStates={};
   components.forEach(c=>{
     const ce=entry(side,c.entryUid);
@@ -4266,7 +4274,8 @@ function combatSnapshot(side,entryUidOrEntry){
     components,models,weapons,survivingModels:alive.length,
     totalWounds:alive.reduce((n,m)=>n+Math.max(0,Number(m.woundsRemaining)||0),0),
     maxWounds:models.reduce((n,m)=>n+Math.max(0,Number(m.maxWounds)||0),0),
-    targetToughness:toughnessPool.length?Math.max(...toughnessPool):0,
+    targetToughness:uniqueToughness.length===1?uniqueToughness[0]:null,
+    targetToughnessByModel:targetModels.map(m=>({modelId:m.id,sourceEntryUid:m.sourceEntryUid,T:Number(m.profile?.T)||0})),
     exactModelIdentity:components.every(c=>c.models.every(m=>m.modelIdentityExact!==false)),
     exactWeaponIdentity:components.every(c=>c.models.every(m=>m.weaponIdentityExact!==false)),
     battleState:{round:Math.max(1,Number(state.round)||1),phase:state.phase||'Command',currentTurn:state.currentTurn||state.turn||'my',componentStates}
