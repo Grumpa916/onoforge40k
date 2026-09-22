@@ -4281,6 +4281,35 @@ function combatSnapshot(side,entryUidOrEntry){
     battleState:{round:Math.max(1,Number(state.round)||1),phase:state.phase||'Command',currentTurn:state.currentTurn||state.turn||'my',componentStates}
   };
 }
+function combatTargetUnit(side,entryUidOrEntry){
+  const selected=typeof entryUidOrEntry==='string'?entry(side,entryUidOrEntry):entryUidOrEntry;
+  const root=combatRootEntry(side,selected);if(!root)return null;
+  const snap=combatSnapshot(side,root);if(!snap)return get(root.unitId)||null;
+  const body= snap.components.find(c=>c.role==='bodyguard'&&c.models.some(m=>m.alive!==false));
+  if(body){
+    const u=get(body.unitId);
+    if(u){
+      const alive=body.models.filter(m=>m.alive!==false);
+      const highestT=Math.max(...alive.map(m=>Number(m.profile?.T)||Number(u.profile?.T)||0));
+      const profile={...(u.profile||{})};
+      if(highestT)profile.T=highestT;
+      return {...u,profile,models:alive.length,__combatTarget:true,__attachedRootUid:root.uid,__bodyguardEntryUid:body.entryUid};
+    }
+  }
+  const liveLeader=snap.components.find(c=>(c.role==='leader'||c.role==='support')&&c.models.some(m=>m.alive!==false));
+  if(liveLeader){
+    const u=get(liveLeader.unitId);if(u){
+      const alive=liveLeader.models.filter(m=>m.alive!==false);
+      return {...u,models:alive.length,__combatTarget:true,__attachedRootUid:root.uid,__leaderEntryUid:liveLeader.entryUid};
+    }
+  }
+  return get(root.unitId)||null;
+}
+function combatTargetEntry(side,entryUidOrEntry){
+  const selected=typeof entryUidOrEntry==='string'?entry(side,entryUidOrEntry):entryUidOrEntry;
+  const root=combatRootEntry(side,selected);
+  return root||selected||null;
+}
 function combatUnit(side,entryUidOrEntry){return combatSnapshot(side,entryUidOrEntry)}
 function attachedCombatWeaponGroups(side,e){
   const snap=combatSnapshot(side,e);if(!snap)return [];
@@ -4369,7 +4398,7 @@ function engineMonteCarloMixed(a,t,groups,m,samples){
 function math(){
   const rules=state.mathRules||{};
   const ae=mathRosterEntry('my'),de=mathRosterEntry('opp');
-  const a=ae?get(ae.unitId):get(state.attacker),t=de?get(de.unitId):get(state.target); normalizeMathWeaponForUnit(a);
+  const a=ae?get(ae.unitId):get(state.attacker),t=de?(combatTargetUnit('opp',de)||get(de.unitId)):get(state.target); normalizeMathWeaponForUnit(a);
   const survivingCount=(entry,unit)=>{
     if(!entry||!unit||!modelRosterRule(unit))return null;
     return survivingModelRoster(entry,unit).length;
@@ -4380,7 +4409,8 @@ function math(){
     const u=get(e.unitId);
     return sum+(modelRosterRule(u)?survivingModelRoster(e,u).length:Math.max(1,Number(e.models)||Number(u?.models)||1));
   },0)||1;
-  const defRosterModels=survivingCount(de,t);
+  const defTargetEntry=de?combatTargetEntry('opp',de):null;
+  const defRosterModels=(de&&t?.__combatTarget)?Math.max(0,Number(t.models)||0):survivingCount(de,t);
   const defModels=defRosterModels!=null?defRosterModels:(de?Math.max(1,Number(de.models)||t.models||1):Math.max(1,Number(rules.defenderModels)||t.models||1));
   if(!groups.length&&a.weapons?.[0])groups.push({entry:ae,attacker:a,weapon:a.weapons[0],count:atkModels});
   const r=calculateMathMixed(a,t,groups,{...rules,defenderModels:defModels,quickSamples:rules.quickSamples||5000});
