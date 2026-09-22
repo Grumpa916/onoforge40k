@@ -50,7 +50,8 @@
 @media(max-width:1000px){.battle-layout{grid-template-columns:1fr}.battle-log{position:static;max-height:none}}
 @media(max-width:700px){.engine-state-card .check-grid{grid-template-columns:1fr}.battle-dashboard{grid-template-columns:1fr}.round-card{min-height:150px}.round-number{font-size:54px}.score-grid{grid-template-columns:1fr}.vp-number{font-size:44px}}
 
-.battle-actions .btn{min-width:130px;font-weight:800}.battle-actions{display:flex;gap:10px;justify-content:center}.secondary-battle-card{margin-bottom:14px}.battle-log{min-width:0}.battle-layout{align-items:start}.battle-side{min-width:0}.battle-side>.card{margin-bottom:14px}
+.battle-actions .btn{min-width:130px;font-weight:800}.battle-actions{display:flex;gap:10px;justify-content:center}.secondary-battle-card{margin-bottom:14px}.model-roster-list{display:grid;gap:5px;margin-top:8px;padding:7px;background:#0b1420;border:1px solid #29445b;border-radius:8px}.model-roster-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:6px 7px;background:#101b28;border:1px solid #263b50;border-radius:6px}.model-roster-row.destroyed{opacity:.5}.model-roster-name{font-size:10px;font-weight:700}.model-roster-weapons{margin-top:2px;font-size:9px;color:#8fa7bb;line-height:1.3}.model-roster-wounds{font-size:9px;color:#c8d8e7;margin-top:2px}.model-roster-actions{display:flex;gap:3px;flex-wrap:wrap;justify-content:flex-end}.model-roster-actions .btn{padding:3px 6px;font-size:9px;min-height:24px}.model-roster-title{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#8fc8ff;font-weight:800;margin-bottom:4px}@media(max-width:700px){.model-roster-row{grid-template-columns:1fr}.model-roster-actions{justify-content:flex-start}}
+.battle-log{min-width:0}.battle-layout{align-items:start}.battle-side{min-width:0}.battle-side>.card{margin-bottom:14px}
 .battle-bottom-actions{margin-top:16px;display:flex;align-items:center;justify-content:space-between;gap:16px;border:1px solid var(--line)}.battle-control-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;flex:1}.battle-control-row .btn{width:100%}
 .bottom-action-title h3{margin:0 0 3px}
 .bottom-action-buttons{display:flex;gap:10px;flex-wrap:wrap}.battle-inline-controls{margin:12px 0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}.battle-inline-controls .btn{width:100%;white-space:nowrap}
@@ -3927,7 +3928,62 @@ function gameRow(side,e){
     ? (e.models>1?(g.models+'/'+e.models+' models'):'1 model')+' • '+g.status
     : (e.models>1?(g.models+'/'+e.models+' models • '):'')+g.wounds+'/'+maxWounds+' wounds • '+g.status;
   const woundControls=perModelWounds>1?'<button class="btn" type="button" onclick="changeUnit(\''+side+'\',\''+e.uid+'\',0,-1);return false;">W−</button><button class="btn" type="button" onclick="changeUnit(\''+side+'\',\''+e.uid+'\',0,1);return false;">W+</button>':'';
-  return '<div class="game-unit-row '+(g.battleshocked?'is-battleshocked':'')+'" data-entry-id="'+esc(e.uid)+'"><div class="game-unit-name"><strong>'+esc(displayName)+'</strong>'+(g.battleshocked?'<span class="battleshock-badge">BATTLESHOCKED</span>':'')+'</div><div class="game-unit-controls"><div class="game-unit-stats">'+stats+'</div><div class="row game-unit-actions game-status-actions">'+shockControl+destroyedControl+'</div><div class="row game-unit-actions game-modifier-actions">'+modelControls+woundControls+'</div></div>'+gameUnitReferenceHtml(u,state.phase)+'</div></div>';
+  return '<div class="game-unit-row '+(g.battleshocked?'is-battleshocked':'')+'" data-entry-id="'+esc(e.uid)+'"><div class="game-unit-name"><strong>'+esc(displayName)+'</strong>'+(g.battleshocked?'<span class="battleshock-badge">BATTLESHOCKED</span>':'')+'</div><div class="game-unit-controls"><div class="game-unit-stats">'+stats+'</div><div class="row game-unit-actions game-status-actions">'+shockControl+destroyedControl+'</div><div class="row game-unit-actions game-modifier-actions">'+modelControls+woundControls+'</div></div>'+gameUnitReferenceHtml(u,state.phase)+modelRosterHtml(side,e,u)+'</div></div>';
+}
+function syncModelRosterBattleState(e,u){
+  if(!e||!u)return;
+  if(!e.game)e.game={entryId:e.uid,models:e.models,wounds:e.models*Math.max(1,Number(u.wounds)||1),status:'Alive',battleshocked:false};
+  const roster=ensureModelRoster(e,u);
+  const maxWounds=Math.max(0,e.models*Math.max(1,Number(u.wounds)||1));
+  const alive=roster.filter(m=>m.alive!==false);
+  const wounds=alive.reduce((sum,m)=>sum+Math.max(0,Number(m.woundsRemaining)||0),0);
+  e.game.models=alive.length;
+  e.game.wounds=Math.max(0,Math.min(maxWounds,wounds));
+  e.game.status=alive.length===0?'Destroyed':(wounds<maxWounds?'Damaged':'Alive');
+}
+function modelRosterHtml(side,e,u){
+  if(!modelRosterRule(u))return '';
+  const roster=ensureModelRoster(e,u);
+  return '<div class="model-roster-list"><div class="model-roster-title">Model-level casualties</div>'+
+    roster.map(m=>{
+      const alive=m.alive!==false,max=Math.max(1,Number(u.wounds)||1),remaining=Math.max(0,Math.min(max,Number(m.woundsRemaining)==null?max:Number(m.woundsRemaining)));
+      m.woundsRemaining=remaining;
+      const weapons=(Array.isArray(m.weapons)?m.weapons:[]).join(' • ')||'Standard weapons';
+      const woundText=alive?(max>1?remaining+'/'+max+' wounds remaining':'Alive'):'Destroyed';
+      const woundButtons=alive&&max>1?'<button class="btn" type="button" onclick="changeModelWounds(\''+side+'\',\''+e.uid+'\',\''+m.id+'\',-1);return false;">W−</button><button class="btn" type="button" onclick="changeModelWounds(\''+side+'\',\''+e.uid+'\',\''+m.id+'\',1);return false;">W+</button>':'';
+      const stateButton=alive?'<button class="btn danger" type="button" onclick="setModelDestroyed(\''+side+'\',\''+e.uid+'\',\''+m.id+'\');return false;">Dead</button>':'<button class="btn" type="button" onclick="restoreModel(\''+side+'\',\''+e.uid+'\',\''+m.id+'\');return false;">Restore</button>';
+      return '<div class="model-roster-row '+(alive?'':'destroyed')+'"><div><div class="model-roster-name">'+esc(m.role||('Model '+m.index))+'</div><div class="model-roster-weapons">'+esc(weapons)+'</div><div class="model-roster-wounds">'+woundText+'</div></div><div class="model-roster-actions">'+woundButtons+stateButton+'</div></div>';
+    }).join('')+'</div>';
+}
+function setModelDestroyed(side,id,modelId){
+  const fullBefore=snapshotForUndo(),e=entry(side,id);if(!e)return;
+  const u=get(e.unitId);if(!u||!modelRosterRule(u))return;
+  const roster=ensureModelRoster(e,u),m=roster.find(x=>x.id===modelId);if(!m||m.alive===false)return;
+  const before=JSON.parse(JSON.stringify(e.game||{})),modelBefore={alive:m.alive,woundsRemaining:m.woundsRemaining};
+  m.alive=false;m.woundsRemaining=0;syncModelRosterBattleState(e,u);
+  event('MODEL_STATE_CHANGED',{side,unitId:e.unitId,entryId:id,unit:u.name,modelId:m.id,modelRole:m.role,action:'Model destroyed',modelBefore,modelAfter:{alive:false,woundsRemaining:0},before,after:e.game},fullBefore);
+  save();render();
+}
+function restoreModel(side,id,modelId){
+  const fullBefore=snapshotForUndo(),e=entry(side,id);if(!e)return;
+  const u=get(e.unitId);if(!u||!modelRosterRule(u))return;
+  const roster=ensureModelRoster(e,u),m=roster.find(x=>x.id===modelId);if(!m||m.alive!==false)return;
+  const before=JSON.parse(JSON.stringify(e.game||{}));
+  m.alive=true;m.woundsRemaining=Math.max(1,Number(u.wounds)||1);syncModelRosterBattleState(e,u);
+  event('MODEL_STATE_CHANGED',{side,unitId:e.unitId,entryId:id,unit:u.name,modelId:m.id,modelRole:m.role,action:'Model restored',before,after:e.game},fullBefore);
+  save();render();
+}
+function changeModelWounds(side,id,modelId,delta){
+  const d=Math.trunc(Number(delta)||0);if(!d)return;
+  const fullBefore=snapshotForUndo(),e=entry(side,id);if(!e)return;
+  const u=get(e.unitId);if(!u||!modelRosterRule(u))return;
+  const roster=ensureModelRoster(e,u),m=roster.find(x=>x.id===modelId);if(!m||m.alive===false)return;
+  const max=Math.max(1,Number(u.wounds)||1),beforeModel={alive:m.alive,woundsRemaining:Number(m.woundsRemaining)||max};
+  m.woundsRemaining=Math.max(0,Math.min(max,beforeModel.woundsRemaining+d));
+  if(m.woundsRemaining<=0){m.woundsRemaining=0;m.alive=false;}
+  syncModelRosterBattleState(e,u);
+  event('MODEL_STATE_CHANGED',{side,unitId:e.unitId,entryId:id,unit:u.name,modelId:m.id,modelRole:m.role,action:'Model wounds '+(d>0?'+':'')+d,modelBefore:beforeModel,modelAfter:{alive:m.alive,woundsRemaining:m.woundsRemaining},before,after:e.game},fullBefore);
+  save();render();
 }
 function setUnitDestroyed(side,id){
   const fullBefore=snapshotForUndo();const e=entry(side,id);if(!e)return;const u=get(e.unitId);if(!u)return;const perModelWounds=Math.max(1,Number(u.wounds)||1);
