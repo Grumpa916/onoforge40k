@@ -4916,6 +4916,7 @@ function tacticalWeaponPhaseEligible(w,phase,attackerEntry,targetEntry){
     if(!tacticalPhaseActionAvailable(attackerEntry?.uid,'Shooting'))return false;
     if(raw==='MELEE')return false;
     if(movementType==='fallback')return false;
+    if(tacticalWeaponIsIndirect(w)&&tacticalUnitIsEngagedAny(attackerEntry?.uid))return false;
     // Assault Shooting is the only core-rule shooting mode available to a unit
     // that Advanced this turn. Close-quarters shooting additionally requires
     // that the unit did not Advance.
