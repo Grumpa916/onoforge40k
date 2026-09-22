@@ -5170,6 +5170,9 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     x.exchangeComponents.denyOpponentScore=denyOpponentScore;
     x.exchangeComponents.preserveFriendlyUnit=preserveFriendlyUnit;
     x.exchangeComponents.tradeValue=tradeValue;
+    x.exchangeComponents.targetPointsAtRisk=targetPointsAtRisk;
+    x.exchangeComponents.friendlyPointsAtRisk=friendlyPointsAtRisk;
+    x.exchangeComponents.pointExchangeRatio=pointExchangeRatio;
     x.exchangeComponents.futureScoringValue=futureScoringValue;
     x.exchangeComponents.decisionMode=decisionMode;
     x.exchangeComponents.objectiveValue=objectiveValue;
@@ -5181,23 +5184,33 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     x.exchangeComponents.contextConfidence=contextConfidence;
     x.exchangeComponents.contextSignals=contextSignals;
     x.exchangeComponents.knownContextSignals=knownContextSignals;
-    x.decisionScore=(x.tacticalLegality?.canTarget===false)?-1:Math.max(0,Math.min(1,
-      0.36*lethality+
-      0.18*threatSuppression+
-      0.08*efficiency+
-      0.08*objectiveValue+
-      0.06*scoringUrgency+
-      0.06*scoreNow+
-      0.05*denyOpponentScore+
+    const pointRiskFraction=Math.max(0,Math.min(1,
+      Number(friendlyPointsAtRisk||0)/Math.max(1,attackerPoints)
+    ));
+    x.exchangeComponents.pointRiskFraction=pointRiskFraction;
+    const rawDecisionScore=Math.max(0,Math.min(1,
+      0.32*lethality+
+      0.16*threatSuppression+
+      0.06*efficiency+
+      0.10*objectiveValue+
+      0.07*scoringUrgency+
+      0.07*scoreNow+
+      0.06*denyOpponentScore+
       0.04*preserveFriendlyUnit+
       0.03*tradeValue+
-      0.01*futureScoringValue+
+      0.02*futureScoringValue+
       0.03*dataConfidence+
-      0.02*simulationConfidence
+      0.01*simulationConfidence+
+      0.03*contextConfidence
     ));
+    const confidencePenalty=0.85+0.15*decisionConfidence;
+    x.rawDecisionScore=rawDecisionScore;
+    x.confidencePenalty=confidencePenalty;
+    x.decisionScore=(x.tacticalLegality?.canTarget===false)?-1:rawDecisionScore*confidencePenalty;
     x.decisionComponents={
-      lethality,threatSuppression,efficiency,objectiveValue,objectiveContext,scoringUrgency,scoreNow,denyOpponentScore,preserveFriendlyUnit,tradeValue,futureScoringValue,decisionMode,dataConfidence,simulationConfidence,contextConfidence,knownContextSignals,decisionConfidence,
-      weights:{lethality:0.36,threatSuppression:0.18,efficiency:0.08,objectiveValue:0.08,scoringUrgency:0.06,scoreNow:0.06,denyOpponentScore:0.05,preserveFriendlyUnit:0.04,tradeValue:0.03,futureScoringValue:0.01,dataConfidence:0.03,simulationConfidence:0.02},
+      lethality,threatSuppression,efficiency,objectiveValue,objectiveContext,scoringUrgency,scoreNow,denyOpponentScore,preserveFriendlyUnit,tradeValue,targetPointsAtRisk,friendlyPointsAtRisk,pointExchangeRatio,futureScoringValue,decisionMode,dataConfidence,simulationConfidence,contextConfidence,knownContextSignals,decisionConfidence,
+      rawDecisionScore,confidencePenalty,
+      weights:{lethality:0.32,threatSuppression:0.16,efficiency:0.06,objectiveValue:0.10,scoringUrgency:0.07,scoreNow:0.07,denyOpponentScore:0.06,preserveFriendlyUnit:0.04,tradeValue:0.03,futureScoringValue:0.02,dataConfidence:0.03,simulationConfidence:0.01,contextConfidence:0.03},
       interpretation:decisionMode==='LOW_CONFIDENCE'?'Confidence is limited; treat this as a candidate action and verify the underlying rules, range, and board state.':
         decisionMode==='SCORE_NOW'?'Immediate scoring opportunity should dominate this target choice.':
         decisionMode==='DENY_SCORE'?'Removing or displacing this target can reduce the opponent scoring opportunity.':
@@ -5206,12 +5219,51 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
         decisionMode==='SET_UP_FUTURE_SCORE'?'The target is linked to a future scoring opportunity; immediate damage is not the only value.':
         'No single mission mode dominates; use the combat and threat components together.'
     };
+    x.naturalTargetScore=Math.max(0,Math.min(1,
+      (x.antiMatches.length?0.65:0)+
+      0.35*Math.max(Number(x.damageFraction)||0,Number(x.killFraction)||0)
+    ));
+    x.avoidScore=Math.max(0,Math.min(1,
+      0.45*(1-Math.max(Number(x.damageFraction)||0,Number(x.killFraction)||0))+
+      0.30*Math.min(1,Number(x.exchangeExposure)||0)+
+      0.25*pointRiskFraction
+    ));
     x.tacticalIndexAdjusted=Math.max(-1,Number(x.tacticalIndex)||0)*(1-0.20*exposure);
   });
-  results.sort((a,b)=>(Number(b.decisionScore??b.tacticalIndexAdjusted??b.tacticalIndex)-Number(a.decisionScore??a.tacticalIndexAdjusted??a.tacticalIndex)));
+  results.sort((a,b)=>{
+    const scoreDiff=Number(b.decisionScore??b.tacticalIndexAdjusted??b.tacticalIndex)-Number(a.decisionScore??a.tacticalIndexAdjusted??a.tacticalIndex);
+    if(Math.abs(scoreDiff)>0.01)return scoreDiff;
+    const confidenceDiff=Number(b.decisionComponents?.decisionConfidence||0)-Number(a.decisionComponents?.decisionConfidence||0);
+    if(Math.abs(confidenceDiff)>0.01)return confidenceDiff;
+    const objectiveDiff=Number(b.decisionComponents?.objectiveValue||0)-Number(a.decisionComponents?.objectiveValue||0);
+    if(Math.abs(objectiveDiff)>0.01)return objectiveDiff;
+    return Number(b.expectedDamage||0)-Number(a.expectedDamage||0);
+  });
   const eligibleResults=results.filter(x=>x.recommendationEligible!==false);
-  const naturalTargets=eligibleResults.filter(x=>x.antiMatches.length||x.damageFraction>=0.75).slice(0,5);
-  const avoid=eligibleResults.filter(x=>x.damageFraction<0.25&&x.wipeChance<0.15).sort((a,b)=>a.damageFraction-b.damageFraction).slice(0,5);
+  const nearTieThreshold=0.01;
+  eligibleResults.forEach((x,i)=>{
+    const next=eligibleResults[i+1];
+    const margin=next?Math.max(0,Number(x.decisionScore||0)-Number(next.decisionScore||0)):1;
+    const d=x.decisionComponents||{};
+    const confidenceValue=Math.max(0,Math.min(1,Number(d.decisionConfidence)||0));
+    const confidenceLabel=confidenceValue>=0.80?'High':confidenceValue>=0.55?'Medium':'Limited';
+    const unknowns=(d.contextSignals||[]).filter(s=>!s.known).map(s=>s.name==='line_of_sight'?'line of sight':s.name);
+    const changes=[];
+    if(unknowns.length)changes.push('Confirm '+unknowns.join(', ')+' before committing.');
+    if(Number(d.simulationConfidence||0)<0.55)changes.push('More simulation sampling could change a close result.');
+    if(d.objectiveContext?.status==='unknown')changes.push('Objective ownership/context is not confirmed.');
+    x.recommendationExplanation={
+      rank:i+1,
+      nearTie:margin<=nearTieThreshold,
+      margin,
+      headline:i===0?(margin<=nearTieThreshold?'Close call — verify battlefield context':'Top candidate'):'Ranked candidate',
+      why:d.interpretation||'Combat and mission factors are combined.',
+      expected:{damage:Number(x.expectedDamage)||0,modelsKilled:Number(x.modelsKilled)||0,wipeChance:Number(x.wipeChance)||0},
+      risk:{band:x.exchangeComponents?.exposureBand||'unknown',incomingThreat:Number(x.incomingThreat)||0,pointsAtRisk:Number(x.friendlyPointsAtRisk||0),pointRiskFraction:Number(x.pointRiskFraction||0)},
+      confidence:{label:confidenceLabel,value:confidenceValue},
+      whatCouldChange:changes.length?changes:['Re-check if range, line of sight, engagement, or objective state changes.']
+    };
+  });
   return {
     version:'tactical-advisor-v1',status:'ok',
     missionDecisionContext:missionCtx,attacker:{entryUid:atkEntry?.uid,unitId:attacker.id,name:attacker.name},
@@ -5219,7 +5271,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     recommendations:eligibleResults.slice(0,8),avoid,naturalTargets,
     stateSnapshot:tacticalAdvisorStateSnapshot(atkEntry?.uid),
     legality:tacticalLegalityForUnit('my',atkEntry),attackerActionState:attackerLegality.action,
-    limitations:['Combat outcome is based on the shared rules engine and current tracked roster state.','Position, range, line-of-sight, engagement, and limited-use weapon state are consumed when the corresponding battle state is known; unknown context is surfaced rather than guessed.','Mission/objective value uses explicit tracked objective ownership plus the target/objective tactical link; missing objective context remains unknown/neutral rather than being inferred.','Decision scoring now includes current VP gap, remaining primary/secondary scoring capacity, round urgency, and tracked objective context.','Attached units are evaluated against their currently targetable Bodyguard models before Leaders/Support models become targetable.']
+    limitations:['Combat outcome is based on the shared rules engine and current tracked roster state.','Position, range, line-of-sight, engagement, and limited-use weapon state are consumed when the corresponding battle state is known; unknown context is surfaced rather than guessed.','Mission/objective value uses explicit tracked objective ownership plus the target/objective tactical link; missing objective context remains unknown/neutral rather than being inferred.','Decision scoring now includes current VP gap, remaining primary/secondary scoring capacity, round urgency, and tracked objective context.','Near-tied recommendations are surfaced as close calls rather than implying false precision.','Recommendation explanations translate combat, mission, exchange-risk, and confidence signals into game-time guidance without exposing raw engine weights.','Attached units are evaluated against their currently targetable Bodyguard models before Leaders/Support models become targetable.']
   };
 }
 function math(){
