@@ -5133,7 +5133,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
       contextSignals.push({name:'range',known:Number.isFinite(Number(pairDecisionCtx?.distanceInches)),value:Number(pairDecisionCtx?.distanceInches)});
       contextSignals.push({name:'line_of_sight',known:pairDecisionCtx?.los==='yes'||pairDecisionCtx?.los==='no',value:pairDecisionCtx?.los||'unknown'});
     }
-    contextSignals.push({name:'engagement',known:pairDecisionCtx?.engagement==='engaged'||pairDecisionCtx?.engagement==='not_engaged',value:pairDecisionCtx?.engagement||'unknown'});
+    contextSignals.push({name:'engagement',known:pairDecisionCtx?.engagement==='engaged'||pairDecisionCtx?.engagement==='notEngaged',value:pairDecisionCtx?.engagement||'unknown'});
     const knownContextSignals=contextSignals.filter(s=>s.known).length;
     const contextConfidence=contextSignals.length
       ? 0.45+0.55*(knownContextSignals/contextSignals.length)
