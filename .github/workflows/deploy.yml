@@ -71,7 +71,7 @@ jobs:
               return candidates.filter(x=>x&&typeof x==='object').sort((a,b)=>(Number(b.decisionScore)||-1)-(Number(a.decisionScore)||-1));
             }
             function modeLabel(m){
-              return ({SCORE_NOW:'SCORE NOW',DENY_SCORE:'DENY SCORE',PRESERVE_UNIT:'PRESERVE UNIT',TRADE_UP:'TRADE UP',SET_UP_FUTURE_SCORE:'SET UP FUTURE SCORE',TACTICAL:'TACTICAL'})[m]||'TACTICAL';
+              return ({SCORE_NOW:'SCORE NOW',DENY_SCORE:'DENY SCORE',PRESERVE_UNIT:'PRESERVE UNIT',TRADE_UP:'TRADE UP',SET_UP_FUTURE_SCORE:'SET UP FUTURE SCORE',TACTICAL:'TACTICAL',LOW_CONFIDENCE:'LOW CONFIDENCE'})[m]||'TACTICAL';
             }
             function renderAdvisor(){
               const host=document.getElementById('onoforge-advisor-render');
