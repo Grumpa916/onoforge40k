@@ -2241,14 +2241,13 @@ function wargearGroups(u){
 function activeWeaponNames(e,u){
   if(!e)e={models:u?.models||1,wargearSelections:{}};
   const catalog=Array.isArray(u?.weapons)?u.weapons.map(w=>w.name).filter(Boolean):[];
+  if(modelRosterRule(u)){
+    const rosterNames=modelRosterWeaponNames(e,u);
+    if(rosterNames.length)return rosterNames;
+  }
   const groups=wargearGroups(u);
   if(!groups.some(g=>g.type!=='fixed'))return catalog;
   ensureWargear(e,u);
-  if(modelRosterRule(u)){
-    const roster=ensureModelRoster(e,u);
-    const rosterNames=Array.from(new Set(roster.flatMap(m=>Array.isArray(m.weapons)?m.weapons:[]).filter(Boolean)));
-    if(rosterNames.length)return rosterNames;
-  }
   const names=catalog.slice();
   const remove=new Set(),add=[];
   for(const g of groups){
@@ -4131,6 +4130,10 @@ function mathRosterEntry(side){
 }
 function mathUnit(side){const e=mathRosterEntry(side);return e?get(e.unitId):get(side==='my'?state.attacker:state.target)}
 function mathWeaponAlloc(e,u){
+  if(modelRosterRule(u)){
+    const exact=modelRosterWeaponCounts(e,u);
+    if(Object.keys(exact).length)return exact;
+  }
   const rules=state.mathRules||{}; const key=e?.uid||u?.id||'catalogue'; const saved=(rules.weaponAlloc&&rules.weaponAlloc[key])||{};
   const names=activeWeaponNames(e,u);
   let alloc={}; let remaining=Math.max(0,Number(e?.models)||Number(u?.models)||1);
