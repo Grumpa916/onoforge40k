@@ -4776,11 +4776,7 @@ function tacticalWeaponCanonicalEntryUid(entryUid,side='my'){
 }
 function tacticalWeaponUseState(entryUid,weaponName,side='my'){
   const t=ensureTacticalState();
-  const direct=t.unitUse[tacticalWeaponUseKey(entryUid,weaponName)];
-  if(direct)return {used:!!direct.used,usedCount:Math.max(0,Number(direct.usedCount)||0)};
-  const canonical=tacticalWeaponCanonicalEntryUid(entryUid,side);
-  const rootRaw=canonical&&canonical!==entryUid?t.unitUse[tacticalWeaponUseKey(canonical,weaponName)]:null;
-  const raw=rootRaw||{};
+  const raw=t.unitUse[tacticalWeaponUseKey(entryUid,weaponName)]||{};
   return {used:!!raw.used,usedCount:Math.max(0,Number(raw.usedCount)||0)};
 }
 function tacticalWeaponHasRule(w,rule){
@@ -5975,6 +5971,7 @@ function runMathSimulation(){
 }
 
 function resolveAttack(){
+  if(state.battleEnded)return;
   const fullBefore=snapshotForUndo();
   const ae=mathRosterEntry('my'),de=mathRosterEntry('opp');
   const a=get(state.attacker),t=get(state.target),w=(a.weapons||[]).find(x=>x.name===state.weapon)||a.weapons[0];
