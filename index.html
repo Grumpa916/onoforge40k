@@ -5328,7 +5328,7 @@ function engineOneAttack(a,w,t,m,modelsRemaining,woundsState){
     if(m.minusDamage1)d=Math.max(0,d-1);
     // Devastating Wounds may damage at most one model for each critical wound.
     d=engineApplyFnp(d,m);
-    if(d>0)totalDamage+=engineApplyDamageToWoundsState(d,woundsState,alloc={...t,__allocationState:s},idx);
+    if(d>0)totalDamage+=engineApplyDamageToWoundsState(d,woundsState,{...t,__allocationState:s},idx);
   }
   return {damage:totalDamage,hits,wounds,saved,critHits,critWounds,rollLog,remaining:woundsState};
 }
