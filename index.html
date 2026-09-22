@@ -3750,7 +3750,34 @@ state.myCP=0;state.oppCP=0;state.newOrdersCompletedMy=false;state.newOrdersCompl
 if(Array.isArray(state.stratagemsOpp))state.stratagemsOpp.forEach(s=>{if(s)s.used=false});
 state.secondaryMyDiscard=[];state.secondaryOppDiscard=[];state.secondaryTacticalDrawKeys={};state.secondaryMyScored=[];state.secondaryOppScored=[];state.secondaryMyDeck=[];state.secondaryOppDeck=[];state.secondaryMyDeckInitialized=false;state.secondaryOppDeckInitialized=false;if(state.secondaryMy==='tactical'){state.secondaryMyCards=[];initTacticalDeck('my')}else{state.secondaryMyCards=state.secondaryMyCards.slice(0,2)} if(state.secondaryOpp==='tactical'){state.secondaryOppCards=[];initTacticalDeck('opp')}else{state.secondaryOppCards=state.secondaryOppCards.slice(0,2)}ensureTacticalTurnDraw(state.currentTurn);state.my.forEach(e=>{const u=get(e.unitId),roster=ensureModelRoster(e,u);e.game={entryId:e.uid,models:e.models,wounds:e.models*get(e.unitId).wounds,status:'Alive',battleshocked:false,modelRoster:roster.map(m=>({...m,alive:true,woundsRemaining:Number(u.wounds)||1}))};});
 state.opp.forEach(e=>{const u=get(e.unitId),roster=ensureModelRoster(e,u);e.game={entryId:e.uid,models:e.models,wounds:e.models*get(e.unitId).wounds,status:'Alive',battleshocked:false,modelRoster:roster.map(m=>({...m,alive:true,woundsRemaining:Number(u.wounds)||1}))};});event('GAME_STARTED',{unit:'Game',action:'Start / Reset Battle',round:state.round,phase:state.phase,attacker:state.attackerSide,defender:state.attackerSide==='my'?'opp':'my',firstTurn:state.firstTurn,secondaryMy:state.secondaryMy,secondaryOpp:state.secondaryOpp,battleReadyMy:state.battleReadyMy,battleReadyOpp:state.battleReadyOpp,myStartingVP:state.myVP,oppStartingVP:state.oppVP,myDetachment:state.detachmentSelections,oppDetachment:state.oppDetachmentSelections,myDetachmentDP:detachmentDP('my'),oppDetachmentDP:detachmentDP('opp'),myForceDisposition:forceDisposition('my'),oppForceDisposition:forceDisposition('opp'),myPrimaryMission:primaryMission('my'),oppPrimaryMission:primaryMission('opp')},before);save();render()}
-function snapshotForUndo(){const x=JSON.parse(JSON.stringify(state));delete x.events;delete x._undoSnapshot;return x}
+function snapshotForUndo(){
+  const x=JSON.parse(JSON.stringify(state));
+  delete x.events;
+  delete x._undoSnapshot;
+  // Materialize the live game/turn clocks into the snapshot so undo restores
+  // the logical time at which the action began rather than stale timer fields.
+  const t=ensureGameTimer();
+  if(t&&typeof t==='object'){
+    const elapsed=gameTimerElapsed();
+    const currentSide=state.currentTurn==='opp'?'opp':'my';
+    const turnKey=currentSide==='opp'?'turnOppMs':'turnMyMs';
+    const otherKey=currentSide==='opp'?'turnMyMs':'turnOppMs';
+    const savedTurn=Math.max(0,Number(t[turnKey])||0);
+    const turnStarted=Math.max(0,Number(t.turnStartedGameMs)||0);
+    const liveTurn=!t.turnPaused&&t.running&&!t.finishedAt
+      ?savedTurn+Math.max(0,elapsed-turnStarted)
+      :savedTurn;
+    x.gameTimer={...x.gameTimer,elapsedMs:elapsed};
+    x.gameTimer[turnKey]=liveTurn;
+    x.gameTimer[otherKey]=Math.max(0,Number(t[otherKey])||0);
+    if(t.running&&!t.finishedAt){
+      // Rebase the restored running timer to the moment the snapshot was taken.
+      x.gameTimer.startedAt=Date.now();
+      x.gameTimer.turnStartedGameMs=elapsed;
+    }
+  }
+  return x;
+}
 
 function actionText(e){return e?.payload?.action||((typeof actionLabel==='function')?actionLabel(e):(e?.kind||'Action'))}
 function actionResultText(e){
@@ -3823,7 +3850,35 @@ function actionLabel(e){
  return labels[e?.kind]||String(e?.kind||'Action').replaceAll('_',' ');
 }
 function event(kind,payload,before){const p={...(payload||{})};if(!p.phase)p.phase=state.phase;if(!p.unit)p.unit=kind==='PHASE_CHANGED'?'Game':kind==='ROUND_CHANGED'?'Game':'Game';if(!p.action)p.action=actionLabel({kind,payload:p});const playerTurn=state.currentTurn==='opp'?'opp':'my';state.events.unshift({id:uid(),at:new Date().toISOString(),round:state.round,phase:state.phase,playerTurn,kind,payload:p,before:before||state._undoSnapshot||null});state.events=state.events.slice(0,100);state._undoSnapshot=null}
-function undoLastAction(){const e=state.events[0];if(!e){alert('No action to undo.');return}if(!e.before){alert('This action has no reversible snapshot.');return}const keepEvents=state.events.slice(1);const restored=e.before;restored.events=keepEvents;restored._undoSnapshot=null;Object.keys(state).forEach(k=>delete state[k]);Object.assign(state,restored);save();render()}
+function syncGameTimerRuntime(){
+  if(gameTimerInterval!==null){
+    clearInterval(gameTimerInterval);
+    gameTimerInterval=null;
+  }
+  const t=ensureGameTimer();
+  if(t.running&&!t.finishedAt){
+    // Undo restores a snapshot from the action boundary; resume from that
+    // boundary instead of charging time spent while the action was undone.
+    t.startedAt=Date.now();
+    t.turnStartedGameMs=Math.max(0,Number(t.elapsedMs)||0);
+    gameTimerInterval=setInterval(updateGameTimerDisplay,100);
+  }
+  updateGameTimerDisplay();
+}
+function undoLastAction(){
+  const e=state.events[0];
+  if(!e){alert('No action to undo.');return}
+  if(!e.before){alert('This action has no reversible snapshot.');return}
+  const keepEvents=state.events.slice(1);
+  const restored=JSON.parse(JSON.stringify(e.before));
+  restored.events=keepEvents;
+  restored._undoSnapshot=null;
+  Object.keys(state).forEach(k=>delete state[k]);
+  Object.assign(state,restored);
+  syncGameTimerRuntime();
+  save();
+  render();
+}
 function battle(){const recent=state.events.slice(0,12);return `${gameTimerHtml()}<div class="battle-layout"><div>
 <div class="card">
   <div class="split"><div><h2 style="margin-bottom:4px">Battle Mode</h2><div class="muted">Live game control center</div></div><div class="battle-army-vs">${esc(state.myName)} vs ${esc(state.oppName)}</div></div>
