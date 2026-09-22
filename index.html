@@ -5473,7 +5473,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     const effectiveMovementDistance=stationary?0:movementActions?.movementDistanceInches;
     const setUpThisTurn=movementActions?.setUpThisTurn;
     const heavyEligible=!attackerEngagedAny&&setUpThisTurn!==true&&effectiveMovementDistance!==null&&Number.isFinite(Number(effectiveMovementDistance))&&Number(effectiveMovementDistance)<=3;
-    const indirectShooting=phase==='Shooting'&&tacticalWeaponIsIndirect(groups[0]?.weapon||null)&&!advanced&&!attackerEngagedAny;
+    const indirectShooting=phase==='Shooting'&&!advanced&&!attackerEngagedAny;
     const indirectStationaryFriendlyVisible=indirectShooting&&!advanced&&pairCtx.los==='yes';
     const m={...(state.mathRules||{}),defenderModels:defModels,defenderWoundsState:woundsState,engagedTargetMonsterVehicle,attackerEngagedWithTarget,attackerEngagedAny,attackerMonsterVehicle,stationary,heavyEligible,setUpThisTurn,movementDistanceInches:effectiveMovementDistance,chargeMade:!!movementActions?.chargeMade,indirectShooting,indirectStationaryFriendlyVisible,quickSamples:Math.min(10000,Math.max(2000,Number(options.samples)||4000)),_skipSim:false};
     // Tactical ranking must use the same attached-unit allocation state as the
