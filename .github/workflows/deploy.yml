@@ -22,6 +22,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Validate JavaScript syntax
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          html = Path("index.html").read_text(encoding="utf-8")
+          scripts = re.findall(r"<script(?:\\s[^>]*)?>(.*?)</script>", html, flags=re.S|re.I)
+          if not scripts:
+              raise SystemExit("No script blocks found")
+          Path("/tmp/onoforge.js").write_text("\n\n".join(scripts), encoding="utf-8")
+          print(f"Validated {len(scripts)} script block(s)")
+          PY
+          node --check /tmp/onoforge.js
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
