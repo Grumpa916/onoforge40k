@@ -1877,7 +1877,7 @@ function secondaryDetailTarget(side){
 }
 function setSecondaryDetailScore(side,name,vp){
  const n=Math.max(0,Math.min(20,Math.floor(Number(vp)||0)));
- if(n===0){if(secScored(side).includes(name))resetSecondaryScore(side,name);return}
+ if(n===0){const vk=side==='my'?'secondaryMyScoredVP':'secondaryOppScoredVP';if(secScored(side).includes(name)||Number(state[vk]?.[name])>0)resetSecondaryScore(side,name);return}
  if(!secState(side).includes(name)){alert('Track this secondary mission first.');return}
  scoreSecondary(side,name,n);
 }
@@ -1995,63 +1995,77 @@ function recordSecondaryRoundVP(side,name,actual,round=state.round){
   const key=side==='my'?'secondaryMyScoredVPByRound':'secondaryOppScoredVPByRound';
   const roundKey=String(Math.max(1,Number(round)||1));
   if(!state[key][roundKey]||typeof state[key][roundKey]!=='object')state[key][roundKey]={};
-  state[key][roundKey][name]=Math.max(0,Number(actual)||0);
+  state[key][roundKey][name]=Math.max(0,Number(state[key][roundKey][name])||0)+Math.max(0,Number(actual)||0);
 }
 function removeSecondaryRoundVP(side,name,round=null){
   ensureSecondaryRoundLedger();
   const key=side==='my'?'secondaryMyScoredVPByRound':'secondaryOppScoredVPByRound';
   const roundMapKey=side==='my'?'secondaryMyScoredRound':'secondaryOppScoredRound';
-  const storedRound=state[roundMapKey]?.[name];
-  const roundKey=String(Math.max(1,Number(storedRound??round??state.round)||1));
-  if(state[key][roundKey])delete state[key][roundKey][name];
+  for(const roundKey of Object.keys(state[key]||{})){
+    if(state[key][roundKey]&&Object.prototype.hasOwnProperty.call(state[key][roundKey],name))delete state[key][roundKey][name];
+  }
   if(state[roundMapKey])delete state[roundMapKey][name];
 }
 function scoreSecondary(side,name,vpInput){
  const active=secState(side);if(!active.includes(name))return;
  let vp=Number(vpInput);if(!Number.isFinite(vp))vp=0;vp=Math.floor(vp);if(vp<1){alert('Enter at least 1 VP to score.');return;}
  const card=secondaryByName(name);const mode=side==='my'?state.secondaryMy:state.secondaryOpp;
- const max=Number.isFinite(Number(card.maxVP))?Number(card.maxVP):null;
+ const fixed=mode==='fixed';
+ const max=fixed?20:(Number.isFinite(Number(card.maxVP))?Number(card.maxVP):null);
  const fullBefore=snapshotForUndo();
  const before=side==='my'?Number(state.myVP)||0:Number(state.oppVP)||0;
  const round=Math.max(1,Number(state.round)||1);
  const roundTotalBefore=secondaryRoundScoredVP(side,round);
- const allowedVP=Math.min(vp,Math.max(0,15-roundTotalBefore),Math.max(0,45-Number(secondaryTotalScoredVP(side)||0)));
- if(allowedVP<=0){alert(secondaryTotalScoredVP(side)>=45?'Secondary Missions are capped at 45 VP for the game.':'Secondary scoring is capped at 15 VP for this round.');return;}
- const after=max?Math.min(before+allowedVP,max):before+allowedVP;
- const actual=after-before;
- if(actual<=0)return;
- if(side==='my')state.myVP=after;else state.oppVP=after;
- const k=side==='my'?'secondaryMyCards':'secondaryOppCards';
- state[k]=active.filter(x=>x!==name);
- if(mode==='tactical' && !secDiscard(side).includes(name))secDiscard(side).push(name);
- if(!secScored(side).includes(name))secScored(side).push(name);
- const vk=side==='my'?'secondaryMyScoredVP':'secondaryOppScoredVP';if(!state[vk]||typeof state[vk]!=='object')state[vk]={};state[vk][name]=actual;
+ const totalBefore=Number(secondaryTotalScoredVP(side)||0);
+ const missionBefore=fixed?Math.max(0,Number((side==='my'?state.secondaryMyScoredVP:state.secondaryOppScoredVP)?.[name])||0):0;
+ const missionRemaining=max===null?vp:Math.max(0,max-missionBefore);
+ const allowedVP=Math.min(vp,missionRemaining,Math.max(0,15-roundTotalBefore),Math.max(0,45-totalBefore));
+ if(allowedVP<=0){
+   alert(missionRemaining<=0&&fixed?'This Fixed Secondary Mission has reached its 20 VP cap.':totalBefore>=45?'Secondary Missions are capped at 45 VP for the game.':'Secondary scoring is capped at 15 VP for this round.');
+   return;
+ }
+ const actual=allowedVP;
+ if(side==='my')state.myVP=before+actual;else state.oppVP=before+actual;
+ const vk=side==='my'?'secondaryMyScoredVP':'secondaryOppScoredVP';
+ if(!state[vk]||typeof state[vk]!=='object')state[vk]={};
+ state[vk][name]=missionBefore+actual;
+ if(!fixed){
+   const k=side==='my'?'secondaryMyCards':'secondaryOppCards';
+   state[k]=active.filter(x=>x!==name);
+   if(!secScored(side).includes(name))secScored(side).push(name);
+   if(mode==='tactical'&&!secDiscard(side).includes(name))secDiscard(side).push(name);
+ }
  recordSecondaryRoundVP(side,name,actual,round);
- event('SECONDARY_SCORED',{side,unit:name,action:`Secondary scored +${actual} VP`,secondary:name,before,after,delta:actual,mode,discarded:mode==='tactical',round,roundCap:15,roundTotal:roundTotalBefore+actual},fullBefore);
+ event('SECONDARY_SCORED',{side,unit:name,action:'Secondary scored +'+actual+' VP',secondary:name,before,after:before+actual,delta:actual,mode,discarded:!fixed,round,roundCap:15,roundTotal:roundTotalBefore+actual,missionTotal:missionBefore+actual,missionCap:max},fullBefore);
  save();render();
 }
 function secondaryInputId(side,name){return 'score-'+side+'-'+String(name).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}
 function scoreSecondaryFromInput(side,name){const el=document.getElementById(secondaryInputId(side,name));scoreSecondary(side,name,el?el.value:0)}
 function resetSecondaryScore(side,name){
- const scored=secScored(side);if(!scored.includes(name))return;
- const fullBefore=snapshotForUndo();
  const vk=side==='my'?'secondaryMyScoredVP':'secondaryOppScoredVP';
  const mode=side==='my'?state.secondaryMy:state.secondaryOpp;
- const c=secondaryByName(name);
- const fallback=Number(mode==='fixed'?(c.fixedVP||c.tacticalVP||5):(c.tacticalVP||5));
- const actual=Number(state[vk]&&state[vk][name])||fallback;
- if(side==='my')state.myVP=Math.max(0,state.myVP-actual);else state.oppVP=Math.max(0,state.oppVP-actual);
- const sk=side==='my'?'secondaryMyScored':'secondaryOppScored';
- state[sk]=state[sk].filter(x=>x!==name);
+ const scored=secScored(side);
+ const existing=Math.max(0,Number(state[vk]&&state[vk][name])||0);
+ if(existing<=0&&!scored.includes(name))return;
+ const fullBefore=snapshotForUndo();
+ if(side==='my')state.myVP=Math.max(0,(Number(state.myVP)||0)-existing);else state.oppVP=Math.max(0,(Number(state.oppVP)||0)-existing);
  if(state[vk])delete state[vk][name];
  removeSecondaryRoundVP(side,name);
- const k=side==='my'?'secondaryMyCards':'secondaryOppCards';
- if(!secState(side).includes(name)){state[k]=[...secState(side),name];}
- if(mode==='tactical'){const dk=side==='my'?'secondaryMyDeck':'secondaryOppDeck';const rk=side==='my'?'secondaryMyDiscard':'secondaryOppDiscard';if(Array.isArray(state[rk]))state[rk]=state[rk].filter(x=>x!==name);if(Array.isArray(state[dk])&&!state[dk].includes(name)){} }
- event('SECONDARY_SCORE_RESET',{side,unit:name,action:`Secondary score reset −${actual} VP`,secondary:name,beforeVP:(side==='my'?state.myVP+actual:state.oppVP+actual),afterVP:(side==='my'?state.myVP:state.oppVP),delta:-actual,mode},fullBefore);
+ if(mode==='fixed'){
+   event('SECONDARY_SCORE_RESET',{side,unit:name,action:'Fixed Secondary score reset -'+existing+' VP',secondary:name,beforeVP:(side==='my'?state.myVP+existing:state.oppVP+existing),afterVP:(side==='my'?state.myVP:state.oppVP),delta:-existing,mode},fullBefore);
+ }else{
+   const sk=side==='my'?'secondaryMyScored':'secondaryOppScored';
+   state[sk]=Array.isArray(state[sk])?state[sk].filter(x=>x!==name):[];
+   const k=side==='my'?'secondaryMyCards':'secondaryOppCards';
+   if(!secState(side).includes(name))state[k]=[...secState(side),name];
+   if(mode==='tactical'){
+     const rk=side==='my'?'secondaryMyDiscard':'secondaryOppDiscard';
+     if(Array.isArray(state[rk]))state[rk]=state[rk].filter(x=>x!==name);
+   }
+   event('SECONDARY_SCORE_RESET',{side,unit:name,action:'Secondary score reset -'+existing+' VP',secondary:name,beforeVP:(side==='my'?state.myVP+existing:state.oppVP+existing),afterVP:(side==='my'?state.myVP:state.oppVP),delta:-existing,mode},fullBefore);
+ }
  save();render();
 }
-
 function returnSecondaryToList(side,name){
  const fullBefore=snapshotForUndo();
  if(side==='my')state.newOrdersCompletedMy=true;else state.newOrdersCompletedOpp=true;
