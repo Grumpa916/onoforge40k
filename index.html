@@ -5115,17 +5115,30 @@ function tacticalWeaponRange(w){
   const m=raw.match(/(\d+(?:\.\d+)?)/);
   return m?Number(m[1]):null;
 }
+function tacticalWeaponAbilityText(w){
+  return (w?.abilities||[]).map(x=>String(x||'').toUpperCase().replace(/-/g,' ')).join(' | ');
+}
 function tacticalRapidFireValue(w){
-  if(!w)return 0;
-  const abilities=(w.abilities||[]).map(x=>String(x||'').toUpperCase().replace(/-/g,' '));
-  const txt=abilities.join(' | ');
+  const txt=tacticalWeaponAbilityText(w);
   return Number((txt.match(/RAPID FIRE\s*(\d+)/)||[])[1])||0;
 }
+function tacticalMeltaValue(w){
+  const txt=tacticalWeaponAbilityText(w);
+  return Number((txt.match(/MELTA\s*(\d+)/)||[])[1])||0;
+}
+function tacticalHalfRangeState(w,distanceInches){
+  const range=tacticalWeaponRange(w),d=Number(distanceInches);
+  const rapid=tacticalRapidFireValue(w),melta=tacticalMeltaValue(w);
+  if(!Number.isFinite(range)||!Number.isFinite(d))return {rapid,melta,range,halfRange:null,active:null};
+  return {rapid,melta,range,halfRange:range/2,active:d<=range/2};
+}
 function tacticalRapidFireState(w,distanceInches){
-  const rapid=tacticalRapidFireValue(w),range=tacticalWeaponRange(w),d=Number(distanceInches);
-  if(!rapid||!Number.isFinite(range)||!Number.isFinite(d))return {rapid,range,halfRange:null,active:null};
-  const half=range/2;
-  return {rapid,range,halfRange:half,active:d<=half};
+  const h=tacticalHalfRangeState(w,distanceInches);
+  return {...h};
+}
+function tacticalMeltaState(w,distanceInches){
+  const h=tacticalHalfRangeState(w,distanceInches);
+  return {...h};
 }
 function tacticalRapidFireThreats(targetEntry,distanceInches){
   const unit=combatTargetUnit('opp',targetEntry)||get(targetEntry?.unitId);
@@ -5136,6 +5149,16 @@ function tacticalRapidFireThreats(targetEntry,distanceInches){
     const rf=tacticalRapidFireState(w,d);
     return {...rf,weapon:w};
   }).filter(x=>x.rapid>0&&x.range!==null);
+}
+function tacticalMeltaThreats(targetEntry,distanceInches){
+  const unit=combatTargetUnit('opp',targetEntry)||get(targetEntry?.unitId);
+  if(!unit)return [];
+  const d=Number(distanceInches);
+  if(!Number.isFinite(d))return [];
+  return (unit.weapons||[]).map(w=>{
+    const melta=tacticalMeltaState(w,d);
+    return {...melta,weapon:w};
+  }).filter(x=>x.melta>0&&x.range!==null);
 }
 function tacticalTargetLegality(attackerEntry,targetEntry,phase){
   if(!attackerEntry||!targetEntry)return {status:'unknown',known:false,canTarget:null,reasons:['missing-unit']};
@@ -5297,8 +5320,10 @@ function tacticalPreRollCheck(attackerEntryUid,targetEntryUid,weaponName=null){
     indirectStationaryFriendlyVisible:false
   };
   m.indirectStationaryFriendlyVisible=m.indirectShooting&&stationary&&ctx.los==='yes';
-  const rf=tacticalRapidFireState(w,ctx.distanceInches);
-  m.halfRange=rf.active===true;
+  const half=tacticalHalfRangeState(w,ctx.distanceInches);
+  m.halfRange=half.active===true;
+  const rf=half;
+  const melta=tacticalMeltaState(w,ctx.distanceInches);
   const c=engineContext(a,w,t,m);
   const steps=[];
   const warnings=[];
@@ -5316,6 +5341,10 @@ function tacticalPreRollCheck(attackerEntryUid,targetEntryUid,weaponName=null){
   if(legality.canTarget===null)warnings.push(...(legality.reasons||[]));
   if(phase!=='Shooting'&&phase!=='Fight')warnings.push('Pre-roll combat checks are available during Shooting and Fight.');
   if(phase==='Shooting'&&!phaseEligible)warnings.push('This weapon is not currently eligible for Shooting.');
+  const selectedWeaponRange=tacticalWeaponRange(w);
+  if(phase==='Shooting'&&Number.isFinite(Number(ctx.distanceInches))&&Number.isFinite(selectedWeaponRange)&&Number(ctx.distanceInches)>selectedWeaponRange){
+    return {status:'illegal',attacker:a.name,target:t.name,weapon:w.name,steps:[],warnings:['Weapon is out of range: target is '+String(ctx.distanceInches)+'" away, weapon range is '+selectedWeaponRange+'".']};
+  }
   if(c.closeQuartersHitPenalty)modifiers.push({label:'Close-quarters',value:-1,reason:targetMV&&targetEngaged?'Engaged MONSTER/VEHICLE target':'Attacker is an engaged MONSTER/VEHICLE'});
   if(c.heavy&&(c.hitNeed<Number(String(w.BS||w.WS||'4+').replace('+',''))))modifiers.push({label:'Heavy',value:1,reason:'Unit remained eligible for Heavy'});
   if(c.cover)warnings.push('Cover applies to the target save.');
@@ -5330,10 +5359,22 @@ function tacticalPreRollCheck(attackerEntryUid,targetEntryUid,weaponName=null){
       warnings.push('Rapid Fire '+rf.rapid+' status unresolved: measure target distance.');
     }
   }
+  if(melta.melta){
+    if(melta.active===true){
+      modifiers.push({label:'Melta '+melta.melta,value:melta.melta,reason:'Add '+melta.melta+' to Damage within half range ('+melta.halfRange+'")'});
+    }else if(melta.active===false){
+      warnings.push('Melta '+melta.melta+' is not active: target is '+String(ctx.distanceInches)+'" away; half range is '+melta.halfRange+'".');
+    }else{
+      warnings.push('Melta '+melta.melta+' status unresolved: measure target distance.');
+    }
+  }
   if(phase==='Shooting'&&Number.isFinite(Number(ctx.distanceInches))){
     const threats=tacticalRapidFireThreats(te,ctx.distanceInches);
     const activeThreats=threats.filter(x=>x.active===true);
     const thresholdThreats=threats.filter(x=>x.active===false&&Number(ctx.distanceInches)<=x.range);
+    const meltaThreats=tacticalMeltaThreats(te,ctx.distanceInches);
+    const activeMeltaThreats=meltaThreats.filter(x=>x.active===true);
+    const thresholdMeltaThreats=meltaThreats.filter(x=>x.active===false&&Number(ctx.distanceInches)<=x.range);
     if(activeThreats.length){
       const names=[...new Set(activeThreats.map(x=>x.weapon.name))].slice(0,3).join(', ');
       warnings.push('Enemy Rapid Fire threat active at current distance: '+names+'.');
@@ -5341,12 +5382,23 @@ function tacticalPreRollCheck(attackerEntryUid,targetEntryUid,weaponName=null){
       const nearest=thresholdThreats.sort((x,y)=>(Number(ctx.distanceInches)-x.halfRange)-(Number(ctx.distanceInches)-y.halfRange))[0];
       warnings.push('Enemy Rapid Fire threshold: '+nearest.weapon.name+' gains Rapid Fire '+nearest.rapid+' at '+nearest.halfRange+'".');
     }
+    if(activeMeltaThreats.length){
+      const names=[...new Set(activeMeltaThreats.map(x=>x.weapon.name))].slice(0,3).join(', ');
+      warnings.push('Enemy Melta threat active at current distance: '+names+'. Damage is increased while within half range.');
+    }else if(thresholdMeltaThreats.length){
+      const nearest=thresholdMeltaThreats.sort((x,y)=>(Number(ctx.distanceInches)-x.halfRange)-(Number(ctx.distanceInches)-y.halfRange))[0];
+      warnings.push('Enemy Melta threshold: '+nearest.weapon.name+' gains +'+nearest.melta+' Damage at '+nearest.halfRange+'".');
+    }
   }
   const baseHit=Math.max(2,Number(String(w.BS||w.WS||'4+').replace('+',''))||4);
   const wound=Number(c.woundNeed)||null, save=engineSaveDistribution(t,w,c,m).need;
   if(rf.rapid&&Number.isFinite(rf.range)){
     const attackCount=engineExpectedDice(w.A)+(rf.active===true?rf.rapid:0);
     steps.unshift({label:'Attacks',value:String(attackCount),detail:'Base '+String(w.A)+' attacks'+(rf.active===true?' • Rapid Fire '+rf.rapid+' active within '+rf.halfRange+'"':' • Rapid Fire threshold at '+rf.halfRange+'"')});
+  }
+  if(melta.melta){
+    const baseDamage=String(w.D??'—');
+    steps.push({label:'Damage',value:melta.active===true?baseDamage+' + '+melta.melta:baseDamage,detail:melta.active===true?'Melta '+melta.melta+' active within '+melta.halfRange+'"':'Melta threshold at '+melta.halfRange+'"'});
   }
   steps.push({label:'Hit',value:c.torrent?'Automatic':c.hitNeed+'+',detail:baseHit+'+ base'+(modifiers.length?' • '+modifiers.map(x=>(x.value>0?'+':'')+x.value+' '+x.label).join(' • '):'')});
   if(!c.torrent)steps.push({label:'Wound',value:wound?Math.min(6,Math.max(2,wound))+'+':'—',detail:'Strength '+String(w.S??'?')+' vs Toughness '+String(t.profile?.T??'?')});
@@ -6059,8 +6111,8 @@ function mathCheck(key,label){const on=!!(state.mathRules&&state.mathRules[key])
 function rerollExpected(p,mode){if(mode==='all')return 1-((1-p)**2);if(mode==='ones')return p+(1-p)*p;return p}
 function calculateMath(a,w,t,m){
   m=m||{};
-  const rfState=tacticalRapidFireState(w,m.distanceInches);
-  const effectiveHalfRange=rfState.active===true||m.halfRange===true;
+  const halfState=tacticalHalfRangeState(w,m.distanceInches);
+  const effectiveHalfRange=halfState.active===true||m.halfRange===true;
   const c=engineContext(a,w,t,{...m,halfRange:effectiveHalfRange});
   const models=Math.max(1,Number(m.attackerModels)||a.models||1);
   const defModels=Math.max(1,Number(m.defenderModels)||t.models||1);
