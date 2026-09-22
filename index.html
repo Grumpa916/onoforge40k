@@ -4595,6 +4595,17 @@ function tacticalWeaponIsBlast(w){
 function tacticalWeaponIsAssault(w){
   return tacticalWeaponHasRule(w,'ASSAULT');
 }
+function tacticalWeaponIsIndirect(w){
+  return tacticalWeaponHasRule(w,'INDIRECT FIRE');
+}
+function tacticalUnitIsEngagedAny(entryUid){
+  if(!entryUid)return false;
+  const pairs=ensureTacticalState().pairs||{};
+  return Object.values(pairs).some(v=>v&&v.engagement==='engaged'&&(
+    String(v.attackerUid||'')===String(entryUid)||
+    String(v.targetUid||'')===String(entryUid)
+  ));
+}
 function tacticalWeaponPhaseEligible(w,phase,attackerEntry,targetEntry){
   if(!w)return false;
   const p=String(phase||state.phase||'Command');
@@ -4604,6 +4615,9 @@ function tacticalWeaponPhaseEligible(w,phase,attackerEntry,targetEntry){
   const assault=tacticalWeaponIsAssault(w);
   const monsterVehicle=tacticalUnitIsMonsterVehicle(attackerEntry);
   const ctx=attackerEntry&&targetEntry?tacticalPairState(attackerEntry.uid,targetEntry.uid):null;
+  const targetEngaged=!!targetEntry&&(
+    ctx?.engagement==='engaged'||tacticalUnitIsEngagedAny(targetEntry.uid)
+  );
   const movementEntry=attackerEntry?combatRootEntry('my',attackerEntry):null;
   const advanced=tacticalUnitAdvancedState(movementEntry?.uid||attackerEntry?.uid);
   if(p==='Shooting'){
@@ -4615,8 +4629,8 @@ function tacticalWeaponPhaseEligible(w,phase,attackerEntry,targetEntry){
       if(ctx?.engagement==='engaged')return false;
       return assault;
     }
+    if(targetEngaged&&blast)return false;
     if(ctx?.engagement==='engaged'){
-      if(blast)return false;
       if(!monsterVehicle&&!closeQuarters)return false;
       return true;
     }
@@ -4637,14 +4651,23 @@ function tacticalTargetLegality(attackerEntry,targetEntry,phase){
   const ctx=tacticalPairState(attackerEntry.uid,targetEntry.uid),p=String(phase||state.phase||'Command');
   const reasons=[];
   if(p==='Shooting'){
-    if(ctx.los==='no')return {status:'known',known:true,canTarget:false,reasons:['line of sight confirmed unavailable'],context:ctx};
-    const engaged=tacticalUnitIsEngaged(attackerEntry.uid);
+    const engaged=tacticalUnitIsEngagedAny(attackerEntry.uid);
     const advanced=tacticalUnitAdvancedState(attackerEntry.uid);
+    const targetEngaged=ctx.engagement==='engaged'||tacticalUnitIsEngagedAny(targetEntry.uid);
+    const targetIsMonsterVehicle=tacticalUnitIsMonsterVehicle(targetEntry);
     if(advanced===null)reasons.push('movement state unknown');
     if(engaged&&ctx.engagement!=='engaged'){
-      return {status:'known',known:true,canTarget:false,reasons:['engaged unit can only target enemy units it is engaged with during Close-quarters Shooting'],context:ctx};
+      return {status:'known',known:true,canTarget:false,reasons:['engaged unit can only target an enemy unit it is engaged with during Close-quarters Shooting'],context:ctx};
+    }
+    if(!engaged&&targetEngaged&&!targetIsMonsterVehicle){
+      return {status:'known',known:true,canTarget:false,reasons:['engaged non-MONSTER/VEHICLE targets cannot be selected by normal/assault/indirect shooting'],context:ctx};
     }
     const groups=attachedCombatWeaponGroups('my',attackerEntry).filter(g=>tacticalWeaponPhaseEligible(g.weapon,'Shooting',attackerEntry,targetEntry));
+    const hasIndirect=groups.some(g=>tacticalWeaponIsIndirect(g.weapon));
+    if(ctx.los==='no'&&!hasIndirect){
+      return {status:'known',known:true,canTarget:false,reasons:['line of sight confirmed unavailable and no Indirect Fire weapon is eligible'],context:ctx};
+    }
+    if(ctx.los==='no'&&hasIndirect)reasons.push('using Indirect Fire; attacking model lacks line of sight');
     const ranges=groups.map(g=>tacticalWeaponRange(g.weapon)).filter(Number.isFinite);
     if(!groups.length)return {status:'known',known:true,canTarget:false,reasons:['attacker has no phase-eligible ranged weapons'],context:ctx};
     if(!ranges.length)reasons.push('weapon range unknown');
@@ -5001,7 +5024,13 @@ function engineRoll(v){const s=String(v??'1').trim().toUpperCase().replace(/\s+/
 function engineFnp(m){return m.fnp4?4:m.fnp5?5:m.fnp6?6:null}
 function engineSustained(c,m){return m.sustained3?3:m.sustained2?2:m.sustained1?1:c.sustained}
 function engineAntiForTarget(w,t,m){const abilities=(w.abilities||[]).map(x=>String(x).toUpperCase().replace(/-/g,' '));let best=null;for(const a of abilities){const q=a.match(/ANTI[- ]([A-Z]+)\s*(2|3|4|5)\+/);if(q&&(t.keywords||[]).some(k=>String(k).toUpperCase()===q[1]))best=best?Math.min(best,Number(q[2])):Number(q[2])}const manual=m.anti3?3:m.anti4?4:m.anti5?5:null;return manual?Math.min(best||99,manual):best}
-function engineContext(a,w,t,m){const abilities=(w.abilities||[]).map(x=>String(x).toUpperCase().replace(/-/g,' '));const txt=abilities.join(' | ');const c={};c.lethal=abilities.some(x=>x.includes('LETHAL HITS'))||!!m.lethal;c.sustained=Number((txt.match(/SUSTAINED HITS\s*(D\d+|\d+)/)||[])[1]?.replace('D',''))||0;c.devastating=abilities.some(x=>x.includes('DEVASTATING WOUNDS'))||!!m.devastating||!!m.abilityViciousInsight;c.torrent=abilities.some(x=>x.includes('TORRENT'))||!!m.torrent;const blastMatch=txt.match(/BLAST(?:\s*(\d+))?/);c.blast=blastMatch?(Number(blastMatch[1])||1):0;const cleaveMatch=txt.match(/CLEAVE(?:\s*(\d+))?/);c.cleave=cleaveMatch?(Number(cleaveMatch[1])||1):0;c.rapidFire=Number((txt.match(/RAPID FIRE\s*(\d+)/)||[])[1])||0;c.heavy=abilities.some(x=>x.trim()==='HEAVY');c.twin=abilities.some(x=>x.includes('TWIN-LINKED'));c.melta=Number((txt.match(/MELTA\s*(\d+)/)||[])[1])||0;c.precision=abilities.some(x=>x.includes('PRECISION'));c.ignoreCover=abilities.some(x=>x.includes('IGNORES COVER'));c.closeQuarters=abilities.some(x=>x.includes('CLOSE QUARTERS'));c.closeQuartersHitPenalty=!!m.engagedTargetMonsterVehicle&&!(c.closeQuarters&&m.attackerEngagedWithTarget);c.anti=engineAntiForTarget(w,t,m);const damagedAttacker=DAMAGED_HIT_PENALTY_11E.has(String(a?.faction||'')+'|'+String(a?.name||''))&&Number(a?.models||1)===1&&Number(m.attackerWoundsRemaining)>0&&Number(m.attackerWoundsRemaining)<=5;c.cover=!!m.cover&&!c.ignoreCover&&!!w.rng;c.hitNeed=Math.max(2,Number(String(w.BS||w.WS||'4+').replace('+',''))||4)-((m.plusHit||m.abilityNodeLash||c.heavy&&(m.heavyEligible===true||m.stationary===true))?1:0)+(m.minusHit||m.abilityHypnoticGaze?1:0)+(c.cover?1:0)+(damagedAttacker?1:0)+(c.closeQuartersHitPenalty?1:0);c.hitNeed=Math.max(2,Math.min(6,c.hitNeed));c.hitReroll=(m.rerollHits||m.abilitySingularPurpose)?'all':(m.rerollHit1||m.abilitySymbioticTargeting)?'ones':'none';let S=(Number(w.S)||4)+(m.plusStrength?1:0);let T=Number(t.profile.T)||4;c.woundNeed=targetNeed(S,T);if(m.plusWound||((m.abilityNodeLash)&&m.targetBattleShocked))c.woundNeed=Math.max(2,c.woundNeed-1);if(c.anti)c.woundNeed=Math.min(c.woundNeed,c.anti);c.woundNeed=Math.max(2,Math.min(6,c.woundNeed));c.woundReroll=(m.rerollWounds||m.abilitySingularPurpose)?'all':m.rerollWound1?'ones':c.twin?'all':'none';c.critHitThreshold=m.critHit5?5:m.critHit4?4:6;c.critWoundThreshold=m.critWound5?5:m.critWound4?4:6;return c}
+function engineContext(a,w,t,m){const abilities=(w.abilities||[]).map(x=>String(x).toUpperCase().replace(/-/g,' '));const txt=abilities.join(' | ');const c={};c.indirect=abilities.some(x=>x.includes('INDIRECT FIRE'))&&!!m.indirectShooting;c.lethal=abilities.some(x=>x.includes('LETHAL HITS'))||!!m.lethal;c.sustained=Number((txt.match(/SUSTAINED HITS\s*(D\d+|\d+)/)||[])[1]?.replace('D',''))||0;c.devastating=abilities.some(x=>x.includes('DEVASTATING WOUNDS'))||!!m.devastating||!!m.abilityViciousInsight;c.torrent=abilities.some(x=>x.includes('TORRENT'))||!!m.torrent;const blastMatch=txt.match(/BLAST(?:\s*(\d+))?/);c.blast=blastMatch?(Number(blastMatch[1])||1):0;const cleaveMatch=txt.match(/CLEAVE(?:\s*(\d+))?/);c.cleave=cleaveMatch?(Number(cleaveMatch[1])||1):0;c.rapidFire=Number((txt.match(/RAPID FIRE\s*(\d+)/)||[])[1])||0;c.heavy=abilities.some(x=>x.trim()==='HEAVY');c.twin=abilities.some(x=>x.includes('TWIN-LINKED'));c.melta=Number((txt.match(/MELTA\s*(\d+)/)||[])[1])||0;c.precision=abilities.some(x=>x.includes('PRECISION'));c.ignoreCover=abilities.some(x=>x.includes('IGNORES COVER'));c.closeQuarters=abilities.some(x=>x.includes('CLOSE QUARTERS'));c.closeQuartersHitPenalty=!!m.engagedTargetMonsterVehicle&&!(c.closeQuarters&&m.attackerEngagedWithTarget);c.anti=engineAntiForTarget(w,t,m);const damagedAttacker=DAMAGED_HIT_PENALTY_11E.has(String(a?.faction||'')+'|'+String(a?.name||''))&&Number(a?.models||1)===1&&Number(m.attackerWoundsRemaining)>0&&Number(m.attackerWoundsRemaining)<=5;c.cover=(!!m.cover||c.indirect)&&!c.ignoreCover&&!!w.rng;
+if(c.indirect){
+  c.hitReroll='none';
+  c.indirectHitNeed=m.indirectStationaryFriendlyVisible?4:6;
+}
+c.hitNeed=Math.max(2,Number(String(w.BS||w.WS||'4+').replace('+',''))||4)-((m.plusHit||m.abilityNodeLash||c.heavy&&(m.heavyEligible===true||m.stationary===true))?1:0)+(m.minusHit||m.abilityHypnoticGaze?1:0)+(c.cover?1:0)+(damagedAttacker?1:0)+(c.closeQuartersHitPenalty?1:0);
+if(c.indirect)c.hitNeed=Math.max(c.hitNeed,c.indirectHitNeed);c.hitNeed=Math.max(2,Math.min(6,c.hitNeed));c.hitReroll=(m.rerollHits||m.abilitySingularPurpose)?'all':(m.rerollHit1||m.abilitySymbioticTargeting)?'ones':'none';let S=(Number(w.S)||4)+(m.plusStrength?1:0);let T=Number(t.profile.T)||4;c.woundNeed=targetNeed(S,T);if(m.plusWound||((m.abilityNodeLash)&&m.targetBattleShocked))c.woundNeed=Math.max(2,c.woundNeed-1);if(c.anti)c.woundNeed=Math.min(c.woundNeed,c.anti);c.woundNeed=Math.max(2,Math.min(6,c.woundNeed));c.woundReroll=(m.rerollWounds||m.abilitySingularPurpose)?'all':m.rerollWound1?'ones':c.twin?'all':'none';c.critHitThreshold=m.critHit5?5:m.critHit4?4:6;c.critWoundThreshold=m.critWound5?5:m.critWound4?4:6;return c}
 function engineDistForNeed(need,critThreshold,reroll){let success=0,crit=0;for(let d=1;d<=6;d++){let p=1/6;if((reroll==='all')||(reroll==='ones'&&d===1)){for(let r=1;r<=6;r++){const q=1/36;if(r>=need||r>=critThreshold)success+=q;if(r>=critThreshold)crit+=q}}else{if(d>=need||d>=critThreshold)success+=p;if(d>=critThreshold)crit+=p}}return {success,crit}}
 function engineRollDistribution(need,reroll,torrent,critThreshold){if(torrent)return {success:1,crit:0};return engineDistForNeed(need,critThreshold,reroll)}
 function engineWoundDistribution(c,events){const d=engineDistForNeed(c.woundNeed,c.critWoundThreshold,c.woundReroll);return {success:d.success,crit:d.crit}}
@@ -5053,8 +5082,18 @@ function resolveAttack(){
   const attackerRoot=ae?combatRootEntry('my',ae):ae;
   const movementEntry=attackerRoot||ae;
   const advanced=tacticalUnitAdvancedState(movementEntry?.uid);
+  const pairCtx=ae&&te?tacticalPairState(ae.uid,te.uid):null;
+  const targetEngaged=!!te&&(pairCtx?.engagement==='engaged'||tacticalUnitIsEngagedAny(te.uid));
+  m.engagedTargetMonsterVehicle=targetEngaged&&tacticalUnitIsMonsterVehicle(te);
+  m.attackerEngagedWithTarget=pairCtx?.engagement==='engaged';
+  m.indirectShooting=state.phase==='Shooting'&&tacticalWeaponIsIndirect(w)&&advanced!==true&&tacticalUnitIsEngagedAny(ae?.uid)===false;
+  m.indirectStationaryFriendlyVisible=m.indirectShooting&&advanced===false&&pairCtx?.los==='yes';
   const phaseEligible=tacticalWeaponPhaseEligible(w,state.phase,ae,te||null);
-  if(state.phase==='Shooting'&&advanced===true&&!phaseEligible)return;
+  if(state.phase==='Shooting'){
+    const leg=tacticalTargetLegality(ae,te,state.phase);
+    if(leg.canTarget===false)return;
+    if(advanced===true&&!phaseEligible)return;
+  }
   const exactWeaponModels=attackerRoster.length
     ?attackerRoster.filter(model=>(Array.isArray(model.weapons)?model.weapons:[]).includes(w.name))
     :[];
