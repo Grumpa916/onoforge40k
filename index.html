@@ -4928,7 +4928,7 @@ function math(){
   const precisionSnap=de?combatSnapshot('opp',de):null;
   const precisionCharacters=(precisionSnap?.characterModels||[]).filter(m=>m.alive!==false);
   const precisionTarget=precisionCharacters.find(m=>String(m.id)===String(rules.precisionTargetModelId));
-  const precisionState=precisionTarget?{precisionTargetModelId:precisionTarget.id,attachedTargetState:{
+  const precisionState=precisionTarget?{precisionTargetModelId:precisionTarget.id,precisionTargetProfile:{...(precisionTarget.profile||{})},attachedTargetState:{
     bodyguardCount:(precisionSnap?.models||[]).filter(m=>m.componentRole==='bodyguard'&&m.alive!==false).length,
     bodyguardSlots:(precisionSnap?.models||[]).filter(m=>m.componentRole==='bodyguard'&&m.alive!==false).map(model=>({model,profile:{...(model.profile||{})},maxWounds:model.maxWounds})),
     characterSlots:precisionCharacters.map(model=>({model,profile:{...(model.profile||{})},maxWounds:model.maxWounds}))
@@ -5014,7 +5014,8 @@ function calculateMath(a,w,t,m){
   const devastating=c.devastating;
   const devCount=devastating?critWounds:0;
   const saveableWounds=Math.max(0,totalWounds-devCount);
-  const save=engineSaveDistribution(t,w,c,m);
+  const saveTarget=m.precisionTargetProfile?{...t,profile:{...t.profile,...m.precisionTargetProfile}}:t;
+  const save=engineSaveDistribution(saveTarget,w,c,m);
   const failedSaves=saveableWounds*save.fail;
   const dmgAvg=engineExpectedDice(w.D)+(c.melta&&m.halfRange?c.melta:0);
   let damage=(failedSaves*dmgAvg)+(devCount*dmgAvg);
