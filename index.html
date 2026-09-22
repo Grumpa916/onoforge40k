@@ -3921,13 +3921,13 @@ function gameRow(side,e){
   if(g.models<=0||g.wounds<=0)g.status='Destroyed';
   else if(g.wounds<maxWounds)g.status='Damaged';
   else g.status='Alive';
-  const modelControls=e.models>1?'<button class="btn" type="button" onclick="changeUnit(\''+side+'\',\''+e.uid+'\',-1,0);return false;">M−</button><button class="btn" type="button" onclick="changeUnit(\''+side+'\',\''+e.uid+'\',1,0);return false;">M+</button>':'';
+  const rosterTracked=!!modelRosterRule(u);const modelControls=e.models>1&&!rosterTracked?'<button class="btn" type="button" onclick="changeUnit(\''+side+'\',\''+e.uid+'\',-1,0);return false;">M−</button><button class="btn" type="button" onclick="changeUnit(\''+side+'\',\''+e.uid+'\',1,0);return false;">M+</button>':'';
   const shockControl='<button class="btn'+(g.battleshocked?' danger':'')+'" type="button" onclick="toggleBattleshocked(\''+side+'\',\''+e.uid+'\');return false;">'+(g.battleshocked?'✓ Shocked':'Shock')+'</button>';
-  const destroyedControl='<button class="btn'+(g.status==='Destroyed'?' danger':'')+'" type="button" onclick="setUnitDestroyed(\''+side+'\',\''+e.uid+'\');return false;">'+(g.status==='Destroyed'?'✓ Dead':'Dead')+'</button>';
+  const destroyedControl=rosterTracked?'':'<button class="btn'+(g.status==='Destroyed'?' danger':'')+'" type="button" onclick="setUnitDestroyed(\''+side+'\',\''+e.uid+'\');return false;">'+(g.status==='Destroyed'?'✓ Dead':'Dead')+'</button>';
   const stats=perModelWounds===1
     ? (e.models>1?(g.models+'/'+e.models+' models'):'1 model')+' • '+g.status
     : (e.models>1?(g.models+'/'+e.models+' models • '):'')+g.wounds+'/'+maxWounds+' wounds • '+g.status;
-  const woundControls=perModelWounds>1?'<button class="btn" type="button" onclick="changeUnit(\''+side+'\',\''+e.uid+'\',0,-1);return false;">W−</button><button class="btn" type="button" onclick="changeUnit(\''+side+'\',\''+e.uid+'\',0,1);return false;">W+</button>':'';
+  const woundControls=perModelWounds>1&&!rosterTracked?'<button class="btn" type="button" onclick="changeUnit(\''+side+'\',\''+e.uid+'\',0,-1);return false;">W−</button><button class="btn" type="button" onclick="changeUnit(\''+side+'\',\''+e.uid+'\',0,1);return false;">W+</button>':'';
   return '<div class="game-unit-row '+(g.battleshocked?'is-battleshocked':'')+'" data-entry-id="'+esc(e.uid)+'"><div class="game-unit-name"><strong>'+esc(displayName)+'</strong>'+(g.battleshocked?'<span class="battleshock-badge">BATTLESHOCKED</span>':'')+'</div><div class="game-unit-controls"><div class="game-unit-stats">'+stats+'</div><div class="row game-unit-actions game-status-actions">'+shockControl+destroyedControl+'</div><div class="row game-unit-actions game-modifier-actions">'+modelControls+woundControls+'</div></div>'+gameUnitReferenceHtml(u,state.phase)+modelRosterHtml(side,e,u)+'</div></div>';
 }
 function syncModelRosterBattleState(e,u){
