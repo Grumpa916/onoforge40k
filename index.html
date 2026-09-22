@@ -4286,11 +4286,21 @@ function previousRound(){
  if(!Number.isFinite(current)||current<=1){return}
  const before=snapshotForUndo();
  state.round=Math.max(1,current-1);
+ const nextTurn=state.firstTurn==='opp'?'opp':'my';
+ if(state.currentTurn!==nextTurn)switchTurnClock(nextTurn);
+ state.currentTurn=nextTurn;
+ state.objectiveTurnStartOwners={...(state.objectiveTurnStartOwners||{})};
+ state.objectiveTurnStartOwners[String(state.round)+'|'+nextTurn]=Object.fromEntries(
+   Object.entries(state.objectives||{}).map(([name,owner])=>[
+     name,['my','opp','contested','none'].includes(owner)?owner:'none'
+   ])
+ );
+ ensureTacticalTurnDraw(nextTurn);
  syncPrimaryScoringRound();
  state.phase='Command';
  state.my=sortBattleState(state.my);
  state.opp=sortBattleState(state.opp);
- event('ROUND_CHANGED',{round:state.round,phase:'Command',action:'Previous Round'},before);
+ event('ROUND_CHANGED',{round:state.round,phase:'Command',action:'Previous Round',currentTurn:nextTurn},before);
  save();
  render();
 }
