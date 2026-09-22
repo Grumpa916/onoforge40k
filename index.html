@@ -5190,6 +5190,8 @@ function tacticalContextHtml(){
   const te=entry('opp',selectedUid),ctx=tacticalPairState(ae.uid,selectedUid),leg=tacticalTargetLegality(ae,te,state.phase),actions=tacticalAdvisorActionState(ae.uid),movementType=tacticalUnitMovementType(ae.uid);
   const options=targets.map(e=>'<option value="'+esc(e.uid)+'" '+(e.uid===selectedUid?'selected':'')+'>'+esc(unitDisplayName('opp',e))+'</option>').join('');
   const status=leg.canTarget===true?'Known / eligible':leg.canTarget===false?'Known / not eligible':'Needs battlefield info';
+  const fightState=tacticalFightOrderState(ae);
+  const fightPriority=fightState.fightsFirst?'Fights First':fightState.eligible?'Remaining Combats':'Not eligible';
   return '<div class="card tactical-context-card"><div class="split"><div><h3 style="margin:0">Tactical Context</h3><div class="muted">Optional phone-friendly battlefield state for the Tactical Advisor. Unknown values are never guessed.</div></div><span class="pill">'+esc(state.phase||'Command')+' • '+esc(status)+'</span></div>'+
     '<div class="grid2" style="margin-top:12px">'+
     '<div class="field"><label>Attacker</label><div class="status">'+esc(unitDisplayName('my',ae))+'</div></div>'+
@@ -5202,7 +5204,7 @@ function tacticalContextHtml(){
     '</div>'+
     '<div class="grid2" style="margin-top:10px">'+
     '<div class="field"><label>Objective / battlefield note</label><input type="text" value="'+esc(ctx.objective)+'" placeholder="e.g. Objective 2" onchange="setTacticalPairField(\''+ae.uid+'\',\''+selectedUid+'\',\'objective\',this.value)"></div>'+
-    '<div class="field"><label>Context</label><div class="status">Distance: <b>'+esc(tacticalDistanceLabel(ctx))+'</b> • LOS: <b>'+esc(ctx.los)+'</b> • Engagement: <b>'+esc(ctx.engagement)+'</b></div></div>'+
+    '<div class="field"><label>Context</label><div class="status">Distance: <b>'+esc(tacticalDistanceLabel(ctx))+'</b> • LOS: <b>'+esc(ctx.los)+'</b> • Engagement: <b>'+esc(ctx.engagement)+'</b> • Fight: <b>'+esc(fightPriority)+'</b></div></div>'+
     '</div>'+
     '<div class="grid2" style="margin-top:10px">'+
     '<div class="field"><label>Movement</label><select onchange="setTacticalUnitAction(\''+ae.uid+'\',\'movement\',this.value)"><option value="unknown" '+(movementType==='unknown'?'selected':'')+'>Unknown</option><option value="remained" '+(movementType==='remained'?'selected':'')+'>Remained</option><option value="normal" '+(movementType==='normal'?'selected':'')+'>Normal Move</option><option value="advance" '+(movementType==='advance'?'selected':'')+'>Advanced</option><option value="fallback" '+(movementType==='fallback'?'selected':'')+'>Fell Back</option></select></div><div class="field" style="margin-top:8px"><label>Maximum model movement this turn (inches)</label><input type="number" min="0" max="60" step="0.1" value="${actions.movementDistanceInches==null?'':esc(String(actions.movementDistanceInches))}" placeholder="Unknown" onchange="setTacticalUnitAction('${ae.uid}','movementDistanceInches',this.value)"></div><div class="field" style="margin-top:8px"><label>Set up on battlefield this turn</label><select onchange="setTacticalUnitAction('${ae.uid}','setUpThisTurn',this.value)"><option value="" ${actions.setUpThisTurn===null?'selected':''}>Unknown</option><option value="false" ${actions.setUpThisTurn===false?'selected':''}>No</option><option value="true" ${actions.setUpThisTurn===true?'selected':''}>Yes</option></select></div>'+
