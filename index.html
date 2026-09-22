@@ -4033,6 +4033,27 @@ function scoreTotalForSide(side){
   const manual=Math.max(0,Number(state[side==='my'?'manualVPMy':'manualVPOpp'])||0);
   return Math.min(100,ready+primary+secondary+manual);
 }
+function scoreIntegrityAudit(){
+  ensureScoreLedger();
+  const out=[];
+  for(const side of ['my','opp']){
+    const primary=Math.max(0,Math.min(45,Number(state[side==='my'?'primaryMyScoredVP':'primaryOppScoredVP'])||0));
+    const secondary=Math.max(0,Math.min(45,Number(secondaryTotalScoredVP(side))||0));
+    const ready=side==='my'?(state.battleReadyMy?10:0):(state.battleReadyOpp?10:0);
+    const manual=Math.max(0,Number(state[side==='my'?'manualVPMy':'manualVPOpp'])||0);
+    const derived=Math.min(100,ready+primary+secondary+manual);
+    const shown=Number(state[side==='my'?'myVP':'oppVP'])||0;
+    if(shown!==derived)out.push(side+': displayed VP differs from ledger');
+    if(primary>45)out.push(side+': primary exceeds 45');
+    if(secondary>45)out.push(side+': secondary exceeds 45');
+    if(shown>100)out.push(side+': total exceeds 100');
+    const roundPrimary=primaryRoundScoredVP(side);
+    const roundSecondary=secondaryRoundScoredVP(side,Math.max(1,Number(state.round)||1));
+    if(roundPrimary>15)out.push(side+': primary round exceeds 15');
+    if(roundSecondary>15)out.push(side+': secondary round exceeds 15');
+  }
+  return {ok:out.length===0,issues:out};
+}
 function changeVP(side,d){
   d=Number(d)||0;ensureScoreLedger();
   const fullBefore=snapshotForUndo();
