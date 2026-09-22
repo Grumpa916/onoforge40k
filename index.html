@@ -5491,6 +5491,7 @@ function tacticalPreRollOpenResolution(){
     key,signature,stage:plan.torrent?'wounds':'hits',
     counts:{},specials:{},plan,startedAt:new Date().toISOString()
   };
+  if(plan.torrent && session.counts.hits==null) session.counts.hits=plan.attacks;
   session.plan=plan;session.signature=signature;
   map[key]=session;
   ensureTacticalState().preRollResolutionOpen=key;
@@ -5511,7 +5512,7 @@ function tacticalPreRollResolutionSet(field,value){
   if(field==='hits'){
     if(n>plan.attacks){alert('Successful hit count cannot exceed the number of attacks.');return;}
     s.counts.hits=n;
-    if(plan.hitCritThreshold){s.stage=plan.lethal||plan.sustained||plan.devastating?'hitSpecial':'wounds';}
+    if(plan.hitCritThreshold){s.stage=plan.lethal||plan.sustained?'hitSpecial':'wounds';}
     else s.stage='wounds';
   }else if(field==='criticalHits'){
     const max=Number(s.counts.hits)||0;
