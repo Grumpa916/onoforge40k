@@ -3929,7 +3929,7 @@ function battle(){const recent=state.events.slice(0,12);return `${gameTimerHtml(
 </div>
  <div class="tabs"><button class="active">Current State</button><button onclick="openMyListFromBattle()">My List</button><button onclick="openOpponentListFromBattle()">Opponent List</button><button onclick="state.page='log';state.builderView='full';render()">Full Action Log</button><button onclick="state.page='scorelog';render()">Scoring Log</button></div>
 ${primaryMissionPanel('battle')}
-${gameAssistantHtml()}
+${gameAssistantHtml()}${tacticalContextHtml()}
 <details class="card secondary-battle-card secondary-missions-collapsible" ${state.secondaryMissionsOpen===true?"open":""} ontoggle="state.secondaryMissionsOpen=this.open;save()">
 <summary><div class="split"><div><h3 style="margin:0">Secondary Missions</h3><div class="muted">All 18 missions • Active player: ${esc(state.currentTurn==='opp'?state.oppName:state.myName)} • Secondary VP ${state.myVP||0}–${state.oppVP||0}</div></div><div class="pill">Click to ${state.secondaryMissionsOpen===true?'collapse':'open'}</div></div></summary>
 <div class="secondary-missions-body"><div class="grid2">${secondaryActiveSide()==='my'?secondaryCatalogHtml('my')+secondaryCatalogHtml('opp'):secondaryCatalogHtml('opp')+secondaryCatalogHtml('my')}</div>${secondaryDetailHtml(secondaryActiveSide())}</div></details>
@@ -4403,7 +4403,98 @@ function engineMonteCarloMixed(a,t,groups,m,samples){
   }
   return {samples,avgDamage:totalDamage/samples,avgKilled:totalKilled/samples,wipeChance:wipes/samples};
 }
-const TACTICAL_STATE_VERSION='1.0';
+const TACTICAL_STATE_VERSION='1.1';
+function ensureTacticalState(){
+  if(!state.tactical||typeof state.tactical!=='object')state.tactical={version:TACTICAL_STATE_VERSION,pairs:{},unitUse:{}};
+  if(!state.tactical.pairs||typeof state.tactical.pairs!=='object')state.tactical.pairs={};
+  if(!state.tactical.unitUse||typeof state.tactical.unitUse!=='object')state.tactical.unitUse={};
+  state.tactical.version=TACTICAL_STATE_VERSION;
+  return state.tactical;
+}
+function tacticalPairKey(attackerUid,targetUid){return String(attackerUid||'')+'>'+String(targetUid||'')}
+function tacticalPairState(attackerUid,targetUid){
+  const t=ensureTacticalState(),key=tacticalPairKey(attackerUid,targetUid);
+  const raw=t.pairs[key]&&typeof t.pairs[key]==='object'?t.pairs[key]:{};
+  return {key,attackerUid:attackerUid||null,targetUid:targetUid||null,
+    distanceInches:Number.isFinite(Number(raw.distanceInches))?Math.max(0,Number(raw.distanceInches)):null,
+    los:['yes','no','unknown'].includes(raw.los)?raw.los:'unknown',
+    engagement:['engaged','notEngaged','unknown'].includes(raw.engagement)?raw.engagement:'unknown',
+    objective:raw.objective==null?'':String(raw.objective),
+    notes:raw.notes==null?'':String(raw.notes)};
+}
+function setTacticalPairField(attackerUid,targetUid,field,value){
+  if(!attackerUid||!targetUid)return;
+  const before=snapshotForUndo(),t=ensureTacticalState(),key=tacticalPairKey(attackerUid,targetUid);
+  const cur=tacticalPairState(attackerUid,targetUid);
+  const next={...cur,[field]:value};
+  if(field==='distanceInches'){
+    const n=Number(value);
+    next[field]=Number.isFinite(n)&&n>=0?Math.round(n*10)/10:null;
+  }
+  t.pairs[key]={attackerUid,targetUid,distanceInches:next.distanceInches,los:next.los,engagement:next.engagement,objective:next.objective,notes:next.notes};
+  event('TACTICAL_CONTEXT_CHANGED',{attackerUid,targetUid,field,action:'Tactical context '+field+' changed',before:cur,after:t.pairs[key]},before);
+  save();render();
+}
+function clearTacticalPair(attackerUid,targetUid){
+  if(!attackerUid||!targetUid)return;
+  const before=snapshotForUndo(),t=ensureTacticalState(),key=tacticalPairKey(attackerUid,targetUid);
+  const old=t.pairs[key]||null;
+  delete t.pairs[key];
+  event('TACTICAL_CONTEXT_CHANGED',{attackerUid,targetUid,action:'Tactical context cleared',before:old,after:null},before);
+  save();render();
+}
+function tacticalTargetLegality(attackerEntry,targetEntry,phase){
+  if(!attackerEntry||!targetEntry)return {status:'unknown',reasons:['missing-unit']};
+  const ctx=tacticalPairState(attackerEntry.uid,targetEntry.uid),p=String(phase||state.phase||'Command');
+  const reasons=[];
+  if(p==='Shooting'){
+    if(ctx.distanceInches===null)reasons.push('range unknown');
+    if(ctx.los==='unknown')reasons.push('line of sight unknown');
+    if(ctx.distanceInches!==null&&ctx.distanceInches<=0)reasons.push('invalid distance');
+    return {status:reasons.length?'unknown':'known',known:!reasons.length,canTarget:reasons.length?null:true,reasons,context:ctx};
+  }
+  if(p==='Charge'){
+    if(ctx.distanceInches===null)reasons.push('distance unknown');
+    if(ctx.engagement==='unknown')reasons.push('engagement status unknown');
+    return {status:reasons.length?'unknown':'known',known:!reasons.length,canTarget:reasons.length?null:ctx.engagement!=='engaged',reasons,context:ctx};
+  }
+  if(p==='Fight'){
+    if(ctx.engagement==='unknown')reasons.push('engagement status unknown');
+    return {status:reasons.length?'unknown':'known',known:!reasons.length,canTarget:reasons.length?null:ctx.engagement==='engaged',reasons,context:ctx};
+  }
+  return {status:'notRequired',known:true,canTarget:true,reasons,context:ctx};
+}
+function tacticalDistanceLabel(ctx){
+  return ctx.distanceInches===null?'Unknown':ctx.distanceInches+'"';
+}
+function tacticalContextHtml(){
+  const ae=mathRosterEntry('my');
+  const targets=(state.opp||[]).filter(e=>!e.attachedTo&&!tacticalUnitState('opp',e)?.destroyed);
+  if(!ae||!targets.length)return '<div class="card tactical-context-card"><h3 style="margin-top:0">Tactical Context</h3><div class="muted">Build both armies and select an attacker/target to record range and battlefield context.</div></div>';
+  const selectedUid=(state.tactical?.selectedTargetUid&&targets.some(e=>e.uid===state.tactical.selectedTargetUid))?state.tactical.selectedTargetUid:targets[0].uid;
+  ensureTacticalState().selectedTargetUid=selectedUid;
+  const te=entry('opp',selectedUid),ctx=tacticalPairState(ae.uid,selectedUid),leg=tacticalTargetLegality(ae,te,state.phase);
+  const options=targets.map(e=>'<option value="'+esc(e.uid)+'" '+(e.uid===selectedUid?'selected':'')+'>'+esc(unitDisplayName('opp',e))+'</option>').join('');
+  const status=leg.canTarget===true?'Known / eligible':leg.canTarget===false?'Known / not eligible':'Needs battlefield info';
+  return '<div class="card tactical-context-card"><div class="split"><div><h3 style="margin:0">Tactical Context</h3><div class="muted">Optional phone-friendly battlefield state for the Tactical Advisor. Unknown values are never guessed.</div></div><span class="pill">'+esc(state.phase||'Command')+' • '+esc(status)+'</span></div>'+
+    '<div class="grid2" style="margin-top:12px">'+
+    '<div class="field"><label>Attacker</label><div class="status">'+esc(unitDisplayName('my',ae))+'</div></div>'+
+    '<div class="field"><label>Enemy target</label><select onchange="ensureTacticalState().selectedTargetUid=this.value;save();render()">'+options+'</select></div>'+
+    '</div>'+
+    '<div class="grid3" style="margin-top:10px">'+
+    '<div class="field"><label>Distance (inches)</label><input type="number" min="0" step="0.1" value="'+(ctx.distanceInches===null?'':ctx.distanceInches)+'" placeholder="Unknown" onchange="setTacticalPairField(\''+ae.uid+'\',\''+selectedUid+'\',\'distanceInches\',this.value)"></div>'+
+    '<div class="field"><label>Line of sight</label><select onchange="setTacticalPairField(\''+ae.uid+'\',\''+selectedUid+'\',\'los\',this.value)"><option value="unknown" '+(ctx.los==='unknown'?'selected':'')+'>Unknown</option><option value="yes" '+(ctx.los==='yes'?'selected':'')+'>Yes</option><option value="no" '+(ctx.los==='no'?'selected':'')+'>No</option></select></div>'+
+    '<div class="field"><label>Engagement</label><select onchange="setTacticalPairField(\''+ae.uid+'\',\''+selectedUid+'\',\'engagement\',this.value)"><option value="unknown" '+(ctx.engagement==='unknown'?'selected':'')+'>Unknown</option><option value="engaged" '+(ctx.engagement==='engaged'?'selected':'')+'>Engaged</option><option value="notEngaged" '+(ctx.engagement==='notEngaged'?'selected':'')+'>Not engaged</option></select></div>'+
+    '</div>'+
+    '<div class="grid2" style="margin-top:10px">'+
+    '<div class="field"><label>Objective / battlefield note</label><input type="text" value="'+esc(ctx.objective)+'" placeholder="e.g. Objective 2" onchange="setTacticalPairField(\''+ae.uid+'\',\''+selectedUid+'\',\'objective\',this.value)"></div>'+
+    '<div class="field"><label>Context</label><div class="status">Distance: <b>'+esc(tacticalDistanceLabel(ctx))+'</b> • LOS: <b>'+esc(ctx.los)+'</b> • Engagement: <b>'+esc(ctx.engagement)+'</b></div></div>'+
+    '</div>'+
+    (leg.reasons.length?'<div class="warn" style="margin-top:10px">Advisor status: '+esc(leg.reasons.join(' • '))+'.</div>':'<div class="ok" style="margin-top:10px">Advisor has the minimum battlefield context needed for the current phase.</div>')+
+    '<div class="row" style="margin-top:10px"><button class="btn" type="button" onclick="clearTacticalPair(\''+ae.uid+'\',\''+selectedUid+'\')">Clear Context</button></div>'+
+    '</div>';
+}
+
 function tacticalUnitState(side,e){
   const u=get(e?.unitId);if(!u||!e)return null;
   const g=e.game||{};
@@ -4413,6 +4504,7 @@ function tacticalUnitState(side,e){
   return {entryUid:e.uid,unitId:u.id,name:u.name,models,wounds,maxWounds:Math.max(1,Number(u.wounds)||1)*Math.max(1,Number(e.models)||Number(u.models)||1),destroyed:g.status==='Destroyed'||models<=0,battleshocked:!!g.battleshocked,attachedTo:e.attachedTo||null,keywords:[...(u.keywords||[])],profile:u.profile||{}};
 }
 function tacticalBattleState(){
+  ensureTacticalState();
   const objectives=Object.entries(state.objectives||{}).map(([name,owner])=>({name,owner:owner||'none'}));
   return {version:TACTICAL_STATE_VERSION,round:Math.max(1,Number(state.round)||1),phase:state.phase||'Command',turn:state.currentTurn==='opp'?'opp':'my',
     vp:{my:Number(state.myVP)||0,opp:Number(state.oppVP)||0},cp:{my:Number(state.myCP)||0,opp:Number(state.oppCP)||0},
@@ -4432,7 +4524,7 @@ function tacticalAdvisorStateSnapshot(attackerEntryUid){
   const atk=entry('my',attackerEntryUid)||mathRosterEntry('my');
   const targets=(state.opp||[]).filter(e=>!e.attachedTo&&!tacticalUnitState('opp',e)?.destroyed);
   return {battle:tacticalBattleState(),attacker:atk?tacticalUnitState('my',atk):null,targetCount:targets.length,
-    targets:targets.map(e=>tacticalUnitState('opp',e)).filter(Boolean)};
+    targets:targets.map(e=>{const s=tacticalUnitState('opp',e);return s?{...s,tacticalContext:tacticalPairState(atk?.uid,e.uid)}:null}).filter(Boolean)};
 }
 function tacticalAdvisorV1(attackerEntryUid,options={}){
   const side='my',atkEntry=entry(side,attackerEntryUid)||mathRosterEntry(side);
