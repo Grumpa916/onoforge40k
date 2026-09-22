@@ -4845,7 +4845,7 @@ function tacticalDistanceLabel(ctx){
   return ctx.distanceInches===null?'Unknown':ctx.distanceInches+'"';
 }
 function tacticalContextHtml(){
-  const ae=mathRosterEntry('my');
+  const ae=tacticalAdvisorAttackerEntry();
   const targets=(state.opp||[]).filter(e=>!e.attachedTo&&!tacticalUnitState('opp',e)?.destroyed);
   if(!ae||!targets.length)return '<div class="card tactical-context-card"><h3 style="margin-top:0">Tactical Context</h3><div class="muted">Build both armies and select an attacker/target to record range and battlefield context.</div></div>';
   const selectedUid=(state.tactical?.selectedTargetUid&&targets.some(e=>e.uid===state.tactical.selectedTargetUid))?state.tactical.selectedTargetUid:targets[0].uid;
