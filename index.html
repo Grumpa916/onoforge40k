@@ -3959,15 +3959,18 @@ function gameUnitReferenceHtml(u,phase){
 function gameRow(side,e){
   const u=get(e.unitId),displayName=unitDisplayName(side,e),perModelWounds=Math.max(1,Number(u.wounds)||1);
   const g=e.game||{models:e.models,wounds:e.models*perModelWounds,status:'Alive',battleshocked:false};
-  const rosterTracked=!!modelRosterRule(u);if(rosterTracked)syncModelRosterBattleState(e,u);
+  const rosterTracked=!!modelRosterRule(u);
+  if(rosterTracked)syncModelRosterBattleState(e,u);
   if(g.battleshocked==null)g.battleshocked=false;
   const maxWounds=Math.max(0,e.models*perModelWounds);
-  g.wounds=Math.max(0,Math.min(maxWounds,Number(g.wounds)||0));
-  if(perModelWounds>1)g.models=Math.max(0,Math.min(e.models,g.wounds>0?Math.ceil(g.wounds/perModelWounds):0));
-  else g.models=Math.max(0,Math.min(e.models,Number(g.models)||0));
-  if(g.models<=0||g.wounds<=0)g.status='Destroyed';
-  else if(g.wounds<maxWounds)g.status='Damaged';
-  else g.status='Alive';
+  if(!rosterTracked){
+    g.wounds=Math.max(0,Math.min(maxWounds,Number(g.wounds)||0));
+    if(perModelWounds>1)g.models=Math.max(0,Math.min(e.models,g.wounds>0?Math.ceil(g.wounds/perModelWounds):0));
+    else g.models=Math.max(0,Math.min(e.models,Number(g.models)||0));
+    if(g.models<=0||g.wounds<=0)g.status='Destroyed';
+    else if(g.wounds<maxWounds)g.status='Damaged';
+    else g.status='Alive';
+  }
   const modelControls=e.models>1&&!rosterTracked?'<button class="btn" type="button" onclick="changeUnit(\''+side+'\',\''+e.uid+'\',-1,0);return false;">M−</button><button class="btn" type="button" onclick="changeUnit(\''+side+'\',\''+e.uid+'\',1,0);return false;">M+</button>':'';
   const shockControl='<button class="btn'+(g.battleshocked?' danger':'')+'" type="button" onclick="toggleBattleshocked(\''+side+'\',\''+e.uid+'\');return false;">'+(g.battleshocked?'✓ Shocked':'Shock')+'</button>';
   const destroyedControl=rosterTracked?'':'<button class="btn'+(g.status==='Destroyed'?' danger':'')+'" type="button" onclick="setUnitDestroyed(\''+side+'\',\''+e.uid+'\');return false;">'+(g.status==='Destroyed'?'✓ Dead':'Dead')+'</button>';
