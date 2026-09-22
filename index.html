@@ -1504,7 +1504,6 @@ const SECONDARY_SCORING={
 
 function gameAssistantHtml(){
  const phase=state.phase||'Command';
- const notes=ensurePersonalArmyNotes();
  if(!state.gameAssistantChecks||typeof state.gameAssistantChecks!=='object')state.gameAssistantChecks={};
  return '<details class="card game-assistant-card" '+(state.gameAssistantOpen!==false?'open':'')+' ontoggle="state.gameAssistantOpen=this.open;save()">'+
   '<summary><div class="split"><div><h3>Game Assistant</h3><div class="muted">Generic game-state reminders • '+esc(phase)+' Phase</div></div><div class="pill">'+esc(phase)+'</div></div></summary>'+
