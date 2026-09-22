@@ -3873,7 +3873,7 @@ function battle(){const recent=state.events.slice(0,12);return `${gameTimerHtml(
 </div>
  <div class="tabs"><button class="active">Current State</button><button onclick="openMyListFromBattle()">My List</button><button onclick="openOpponentListFromBattle()">Opponent List</button><button onclick="state.page='log';state.builderView='full';render()">Full Action Log</button><button onclick="state.page='scorelog';render()">Scoring Log</button></div>
 ${primaryMissionPanel('battle')}
-${gameAssistantHtml()}${tacticalContextHtml()}
+${gameAssistantHtml()}${tacticalContextHtml()}${tacticalAdvisorHtml()}
 <details class="card secondary-battle-card secondary-missions-collapsible" ${state.secondaryMissionsOpen===true?"open":""} ontoggle="state.secondaryMissionsOpen=this.open;save()">
 <summary><div class="split"><div><h3 style="margin:0">Secondary Missions</h3><div class="muted">All 18 missions • Active player: ${esc(state.currentTurn==='opp'?state.oppName:state.myName)} • Secondary VP ${state.myVP||0}–${state.oppVP||0}</div></div><div class="pill">Click to ${state.secondaryMissionsOpen===true?'collapse':'open'}</div></div></summary>
 <div class="secondary-missions-body"><div class="grid2">${secondaryActiveSide()==='my'?secondaryCatalogHtml('my')+secondaryCatalogHtml('opp'):secondaryCatalogHtml('opp')+secondaryCatalogHtml('my')}</div>${secondaryDetailHtml(secondaryActiveSide())}</div></details>
@@ -4875,6 +4875,52 @@ function tacticalContextHtml(){
     (leg.reasons.length?'<div class="warn" style="margin-top:10px">Advisor status: '+esc(leg.reasons.join(' • '))+'.</div>':'<div class="ok" style="margin-top:10px">Advisor has the minimum battlefield context needed for the current phase.</div>')+
     '<div class="row" style="margin-top:10px"><button class="btn" type="button" onclick="clearTacticalPair(\''+ae.uid+'\',\''+selectedUid+'\')">Clear Context</button></div>'+
     '</div>';
+}
+
+function tacticalAdvisorConfidenceLabel(value){
+  const v=Math.max(0,Math.min(1,Number(value)||0));
+  return v>=0.80?'High':v>=0.55?'Medium':'Limited';
+}
+function tacticalAdvisorHtml(){
+  const ae=mathRosterEntry('my');
+  if(!ae){
+    return '<div class="card tactical-advisor-card"><div class="split"><div><h3 style="margin:0">Tactical Advisor</h3><div class="muted">Build your army and select an attacker to receive target recommendations.</div></div></div></div>';
+  }
+  const result=tacticalAdvisorV1(ae.uid,{samples:4000});
+  if(result.status!=='ok'){
+    const detail=result.attacker?(' • '+esc(result.attacker)):'';
+    return '<div class="card tactical-advisor-card"><div class="split"><div><h3 style="margin:0">Tactical Advisor</h3><div class="muted">'+esc(result.status||'Advisor unavailable')+detail+'</div></div><span class="pill">Needs input</span></div></div>';
+  }
+  const recs=Array.isArray(result.recommendations)?result.recommendations:[];
+  const top=recs[0];
+  const confidenceClass=v=>v==='High'?'ok':v==='Medium'?'status':'warn';
+  const recCard=(r)=>{
+    const e=r.recommendationExplanation||{};
+    const expected=e.expected||{};
+    const risk=e.risk||{};
+    const conf=e.confidence||{};
+    const changes=Array.isArray(e.whatCouldChange)?e.whatCouldChange:[];
+    return '<div class="card tactical-recommendation-card" style="margin-top:10px">'+
+      '<div class="split"><div><b>#'+esc(e.rank||'')+' '+esc(r.name||'Target')+'</b><div class="muted small">'+esc(e.headline||'Ranked candidate')+(e.nearTie?' • close decision':'')+'</div></div><span class="pill">'+esc(conf.label||tacticalAdvisorConfidenceLabel(conf.value))+'</span></div>'+
+      '<div class="grid3" style="margin-top:10px">'+
+        '<div class="status"><div class="muted small">Expected</div><b>'+Number(expected.damage||0).toFixed(1)+'W</b><div class="tiny">'+Number(expected.modelsKilled||0).toFixed(1)+' models • '+(Number(expected.wipeChance||0)*100).toFixed(0)+'% wipe</div></div>'+
+        '<div class="status"><div class="muted small">Risk</div><b>'+esc(String(risk.band||'unknown'))+'</b><div class="tiny">'+Number(risk.incomingThreat||0).toFixed(1)+' incoming W • '+Number(risk.pointsAtRisk||0).toFixed(0)+' pts at risk</div></div>'+
+        '<div class="'+confidenceClass(conf.label)+'"><div class="muted small">Confidence</div><b>'+esc(conf.label||'Limited')+'</b><div class="tiny">'+(Number(conf.value||0)*100).toFixed(0)+'% decision confidence</div></div>'+
+      '</div>'+
+      '<div style="margin-top:10px"><b>Why:</b> '+esc(e.why||'Combat and mission factors are combined.')+'</div>'+
+      '<div style="margin-top:8px"><b>What could change it:</b><ul style="margin:4px 0 0 18px">'+changes.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul></div>'+
+    '</div>';
+  };
+  const natural=(result.naturalTargets||[]).slice(0,3).map(r=>'<span class="pill" style="margin:2px">'+esc(r.name)+'</span>').join('');
+  const avoid=(result.avoid||[]).slice(0,3).map(r=>'<span class="pill" style="margin:2px">'+esc(r.name)+'</span>').join('');
+  return '<details class="card tactical-advisor-card" open>'+
+    '<summary><div class="split"><div><h3 style="margin:0">Tactical Advisor</h3><div class="muted">Target selection • exchange risk • mission context • confidence</div></div><span class="pill">'+esc(result.evaluatedAt?.phase||state.phase||'Command')+'</span></div></summary>'+
+    '<div style="margin-top:12px">'+
+      (top?'<div class="status tactical-advisor-top"><div class="muted small">Top recommendation</div><div style="font-size:1.2em;font-weight:700;margin-top:2px">'+esc(top.name)+'</div><div style="margin-top:5px">'+esc(top.recommendationExplanation?.why||'Combat and mission factors are combined.')+'</div>'+(top.recommendationExplanation?.nearTie?'<div class="warn" style="margin-top:8px">Close call — verify the battlefield context before committing.</div>':'')+'</div>':'<div class="empty">No eligible target recommendations for the current phase.</div>')+
+      recs.slice(0,5).map(recCard).join('')+
+      '<div class="grid2" style="margin-top:10px"><div class="status"><b>Natural targets</b><div style="margin-top:6px">'+(natural||'<span class="muted">None identified</span>')+'</div></div><div class="status"><b>Avoid / high-risk targets</b><div style="margin-top:6px">'+(avoid||'<span class="muted">None identified</span>')+'</div></div></div>'+
+      '<div class="muted small" style="margin-top:10px">Recommendations update from the current army roster, weapon availability, battlefield context, objectives, and tracked game state. Unknown inputs reduce confidence rather than being guessed.</div>'+
+    '</div></details>';
 }
 
 function tacticalUnitState(side,e){
