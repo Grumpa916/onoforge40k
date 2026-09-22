@@ -4459,10 +4459,18 @@ function calculateMathMixed(a,t,groups,m){
 }
 function engineMonteCarloMixed(a,t,groups,m,samples){
   samples=Math.max(100,Math.min(20000,Number(samples)||2000));
-  const defModels=Math.max(1,Number(m.defenderModels)||t.models||1),hp=Math.max(1,Number(t.profile.W)||1);
-  const baseWounds=Array.isArray(m?.defenderWoundsState)
-    ?m.defenderWoundsState.slice(0,defModels).map(v=>Math.max(0,Number(v)||0))
-    :Array.from({length:defModels},()=>hp);
+  const attachedState=m?.attachedTargetState||null;
+  const attachedWounds=attachedState
+    ?[...(attachedState.bodyguardSlots||[]),...(attachedState.characterSlots||[])].map(slot=>Math.max(0,Number(slot.model?.woundsRemaining)||Number(slot.maxWounds)||Number(slot.profile?.W)||1))
+    :null;
+  const defModels=attachedWounds?.length
+    ?attachedWounds.length
+    :Math.max(1,Number(m.defenderModels)||t.models||1),hp=Math.max(1,Number(t.profile.W)||1);
+  const baseWounds=attachedWounds?.length
+    ?attachedWounds
+    :Array.isArray(m?.defenderWoundsState)
+      ?m.defenderWoundsState.slice(0,defModels).map(v=>Math.max(0,Number(v)||0))
+      :Array.from({length:defModels},()=>hp);
   while(baseWounds.length<defModels)baseWounds.push(hp);
   let totalDamage=0,totalKilled=0,wipes=0;
   for(let s=0;s<samples;s++){
@@ -5381,7 +5389,19 @@ function runMathSimulation(){
   const ae=mathRosterEntry('my'),de=mathRosterEntry('opp'),groups=attachedCombatWeaponGroups('my',ae,t);
   const atkModels=Math.max(1,attachedCombatEntries('my',ae).reduce((n,e)=>{const u=get(e.unitId);return n+(modelRosterRule(u)?survivingModelRoster(e,u).length:Number(e.models)||u?.models||0)},0));
   const defModels=de&&modelRosterRule(t)?Math.max(1,survivingModelRoster(de,t).length):Math.max(1,Number(de?.models)||Number(t?.models)||1);
-  const m={...(state.mathRules||{}),attackerModels:atkModels,defenderModels:defModels}; if(ae){const snapAtt=combatSnapshot('my',ae);if(snapAtt?.survivingModels===1)m.attackerWoundsRemaining=Math.max(0,Number(snapAtt.totalWounds)||0);}
+  const m={...(state.mathRules||{}),attackerModels:atkModels,defenderModels:defModels};
+  if(ae){const snapAtt=combatSnapshot('my',ae);if(snapAtt?.survivingModels===1)m.attackerWoundsRemaining=Math.max(0,Number(snapAtt.totalWounds)||0);}
+  const targetRoot=de?combatRootEntry('opp',de):null, targetSnap=targetRoot?combatSnapshot('opp',targetRoot):null;
+  const attachedTarget=!!(targetSnap&&targetSnap.components?.length>1&&targetSnap.components.some(x=>x.role==='bodyguard')&&targetSnap.components.some(x=>x.role==='leader'||x.role==='support'));
+  if(attachedTarget){
+    const bodyComp=targetSnap.components.find(x=>x.role==='bodyguard')||null;
+    const charComps=targetSnap.components.filter(x=>x.role==='leader'||x.role==='support');
+    const bodySlots=(bodyComp?.models||[]).filter(x=>x.alive!==false).map(x=>({model:x,profile:{...(x.profile||{})},maxWounds:Math.max(1,Number(x.maxWounds)||Number(x.profile?.W)||1)}));
+    const charSlots=charComps.flatMap(comp=>(comp.models||[]).filter(x=>x.alive!==false).map(x=>({model:x,profile:{...(x.profile||{})},maxWounds:Math.max(1,Number(x.maxWounds)||Number(x.profile?.W)||1)})));
+    m.attachedTargetState={bodyguardCount:bodySlots.length,bodyguardSlots:bodySlots,characterSlots:charSlots};
+    m.defenderModels=Math.max(1,bodySlots.length+charSlots.length);
+    if(Array.isArray(m.defenderWoundsState)&&m.defenderWoundsState.length!==m.defenderModels)delete m.defenderWoundsState;
+  }
   const n=Math.max(100,Math.min(20000,Number(document.getElementById('simCount')?.value)||5000)); const r=engineMonteCarloMixed(a,t,groups,m,n); const el=document.getElementById('simResult');
   if(el)el.innerHTML=`<div class="grid3"><div class="result-card"><div class="result-label">Average Damage</div><div class="result-value">${r.avgDamage.toFixed(2)}</div></div><div class="result-card"><div class="result-label">Average Models Killed</div><div class="result-value">${r.avgKilled.toFixed(2)}</div></div><div class="result-card"><div class="result-label">Full Unit Destroyed</div><div class="result-value">${(r.wipeChance*100).toFixed(1)}%</div></div></div><div class="status">${n.toLocaleString()} complete mixed-loadout attack sequences • ${esc(a.name)} → ${esc(t.name)}</div>`;
 }
