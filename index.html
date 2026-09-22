@@ -1937,6 +1937,8 @@ function setSecondaryMode(side,value){
  const rk=side==='my'?'secondaryMyDiscard':'secondaryOppDiscard';state[rk]=[];
  const sk=side==='my'?'secondaryMyScored':'secondaryOppScored';state[sk]=[];
  const vk=side==='my'?'secondaryMyScoredVP':'secondaryOppScoredVP';state[vk]={};
+ if(!state.secondaryTacticalDrawKeys||typeof state.secondaryTacticalDrawKeys!=='object')state.secondaryTacticalDrawKeys={};
+ Object.keys(state.secondaryTacticalDrawKeys).filter(k=>k.endsWith('|'+(side==='opp'?'opp':'my'))).forEach(k=>delete state.secondaryTacticalDrawKeys[k]);
  save();render();
 }
 function toggleFixedSecondary(side,name){
@@ -1970,6 +1972,16 @@ function replenishTactical(side){
  if((side==='my'?state.secondaryMy:state.secondaryOpp)!=='tactical')return 0;
  if(!secDeck(side).length)initTacticalDeck(side);
  return drawTactical(side,2,false);
+}
+function ensureTacticalTurnDraw(side){
+  const next=side==='opp'?'opp':'my';
+  if((next==='my'?state.secondaryMy:state.secondaryOpp)!=='tactical')return 0;
+  if(!state.secondaryTacticalDrawKeys||typeof state.secondaryTacticalDrawKeys!=='object')state.secondaryTacticalDrawKeys={};
+  const key=Math.max(1,Number(state.round)||1)+'|'+next;
+  if(state.secondaryTacticalDrawKeys[key])return 0;
+  const drawn=replenishTactical(next);
+  state.secondaryTacticalDrawKeys[key]=true;
+  return drawn;
 }
 function ensureSecondaryRoundLedger(){
   if(!state.secondaryMyScoredVPByRound||typeof state.secondaryMyScoredVPByRound!=='object')state.secondaryMyScoredVPByRound={};
@@ -4129,16 +4141,20 @@ function setCurrentTurn(side){
   const fullBefore=snapshotForUndo();
   const next=side==='opp'?'opp':'my';
   const before=state.currentTurn==='opp'?'opp':'my';
-  if(before===next)return;
+  if(before===next){
+    if(ensureTacticalTurnDraw(next)>0){save();render();}
+    return;
+  }
   switchTurnClock(next);
   state.currentTurn=next;
   state.objectiveTurnStartOwners={...(state.objectiveTurnStartOwners||{})};
   const turnKey=Math.max(1,Number(state.round)||1)+'|'+next;
-  state.objectiveTurnStartOwners[turnKey]=Object.fromEntries(Object.entries(state.objectives||{}).map(([name,owner])=>[name,['my','opp','contested','none'].includes(owner)?owner:'none']));
+  state.objectiveTurnStartOwners[turnKey]=Object.fromEntries(Object.entries(state.objectives||{}).map(([name,owner])=>[name,['my','opp','contested','none'].includes(owner)?owner:'none'));
+  ensureTacticalTurnDraw(next);
   event('TURN_CHANGED',{
     side:next,
     unit:next==='my'?state.myName:state.oppName,
-    action:'Current Player Turn → '+(next==='my'?state.myName:state.oppName),
+    action:'Current Player Turn → '+(next=== 'my'?state.myName:state.oppName),
     before,
     after:next
   },fullBefore);
@@ -4194,14 +4210,17 @@ function nextRound(){
  const current=Number(state.round);
  if((Number.isFinite(current)?current:1)>=MAX_ROUND){return}
  state.round=Math.min(MAX_ROUND,(Number.isFinite(current)&&current>0?current:1)+1);
+ const nextTurn=state.firstTurn==='opp'?'opp':'my';
+ if(state.currentTurn!==nextTurn)switchTurnClock(nextTurn);
+ state.currentTurn=nextTurn;
  state.objectiveTurnStartOwners={...(state.objectiveTurnStartOwners||{})};
- state.objectiveTurnStartOwners[String(state.round)+'|'+(state.currentTurn==='opp'?'opp':'my')]=Object.fromEntries(Object.entries(state.objectives||{}).map(([name,owner])=>[name,['my','opp','contested','none'].includes(owner)?owner:'none']));
+ state.objectiveTurnStartOwners[String(state.round)+'|'+nextTurn]=Object.fromEntries(Object.entries(state.objectives||{}).map(([name,owner])=>[name,['my','opp','contested','none'].includes(owner)?owner:'none']));
+ ensureTacticalTurnDraw(nextTurn);
  syncPrimaryScoringRound();
  state.phase='Command';
  state.my=sortBattleState(state.my);
  state.opp=sortBattleState(state.opp);
- 
- event('ROUND_CHANGED',{round:state.round,phase:'Command',action:'Next Round'},before);
+ event('ROUND_CHANGED',{round:state.round,phase:'Command',action:'Next Round',currentTurn:nextTurn},before);
  save();
  render();
 }
