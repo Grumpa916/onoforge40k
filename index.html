@@ -768,6 +768,7 @@ function saveCurrentArmyList(){
     detachment:state.detachment||state.detachmentSelections?.[0]||'',
     units:JSON.parse(JSON.stringify(state.my||[])),
     secondaryPlans:JSON.parse(JSON.stringify(ensureSecondaryPersonalPlans())),
+    personalNotes:String(state.personalArmyNotes||''),
     created:new Date().toISOString(),
     updated:new Date().toISOString()
   };
@@ -783,7 +784,7 @@ function loadSavedArmyList(id){
   state.myName=list.name||'My Army';
   state.faction=list.faction||'';
   state.my=JSON.parse(JSON.stringify(list.units||[]));
-  state.secondaryPersonalPlans=JSON.parse(JSON.stringify(list.secondaryPlans||defaultSecondaryPersonalPlans()));ensureSecondaryPersonalPlans();state.gameReferencePersonal=JSON.parse(JSON.stringify(list.gameReferencePersonal||defaultGameReferencePersonal()));ensureGameReferencePersonal();
+  state.secondaryPersonalPlans=JSON.parse(JSON.stringify(list.secondaryPlans||defaultSecondaryPersonalPlans()));ensureSecondaryPersonalPlans();state.personalArmyNotes=String(list.personalNotes||'');state.gameReferencePersonal={phases:{Command:[],Movement:[],Shooting:[],Charge:[],Fight:[],End:[]},quick:[],primary:[],custom:''};
   state.detachmentSelections=list.detachment?[list.detachment]:[];
   state.detachment=list.detachment||'';
   state.activeRosterId=list.id;
@@ -1367,263 +1368,33 @@ function stratagemsUI(){
 }
 let state={
   savedArmyLists:[],
-  stratagemsMy:[], stratagemsOpp:[], stratagemsOpen:false,primaryMissionsOpen:false,secondaryMissionsOpen:false,page:'builder',myName:'My Army',oppName:'Opponent Army',faction:'Tyranids',detachment:'Invasion Fleet',detachmentSelections:['Invasion Fleet'],oppFaction:'Ultramarines',oppDetachment:'Gladius Task Force',oppDetachmentSelections:['Gladius Task Force'],limit:2000,my:[],opp:[],searchMy:'',searchOpp:'',configure:null,attacker:'norn',weapon:'Rupture Cannon',target:'marine',round:1,phase:'Command',myVP:0,oppVP:0,myCP:0,oppCP:0,battleReadyMy:false,battleReadyOpp:false,secondaryMy:'tactical',secondaryOpp:'tactical',secondaryMyCards:[],secondaryOppCards:[],secondaryMyDeck:[],secondaryOppDeck:[],secondaryMyDeckInitialized:false,secondaryOppDeckInitialized:false,secondaryMyDiscard:[],secondaryOppDiscard:[],newOrdersCompletedMy:false,newOrdersCompletedOpp:false,secondaryMyScored:[],secondaryOppScored:[],secondaryMyScoredVP:{},secondaryOppScoredVP:{},secondaryMyScoredVPByRound:{},secondaryOppScoredVPByRound:{},secondaryMyScoredRound:{},secondaryOppScoredRound:{},secondaryPersonalPlans:{},secondaryPlanEdit:'',secondaryDetailSide:'',secondaryDetailName:'',gameReferencePersonal:{},myForceDisposition:'',oppForceDisposition:'',attackerSide:'my',firstTurn:'my',currentTurn:'my',objectives:{},events:[],gameAssistantChecks:{},gameAssistantNotes:'',lists:[],activeRosterId:'',activeOpponentRosterId:'',dataStatus:'Expanded Tyranid + Ultramarines community catalogue',source:'BSData wh40k-11e (community)',revision:'current-community-catalogue',cloud:{email:'',userId:'',status:'Not connected',lastSync:'',error:''},cloudBattles:[],rulesLog:[],mathRules:{},gameTimer:{elapsedMs:0,running:false,paused:false,startedAt:0,pausedAt:0,finishedAt:0,turnMyMs:0,turnOppMs:0,turnStartedGameMs:0,turnPaused:false},cloudPasswordRecovery:false,localSavedAt:''};
+  stratagemsMy:[], stratagemsOpp:[], stratagemsOpen:false,primaryMissionsOpen:false,secondaryMissionsOpen:false,page:'builder',myName:'My Army',oppName:'Opponent Army',faction:'Tyranids',detachment:'Invasion Fleet',detachmentSelections:['Invasion Fleet'],oppFaction:'Ultramarines',oppDetachment:'Gladius Task Force',oppDetachmentSelections:['Gladius Task Force'],limit:2000,my:[],opp:[],searchMy:'',searchOpp:'',configure:null,attacker:'norn',weapon:'Rupture Cannon',target:'marine',round:1,phase:'Command',myVP:0,oppVP:0,myCP:0,oppCP:0,battleReadyMy:false,battleReadyOpp:false,secondaryMy:'tactical',secondaryOpp:'tactical',secondaryMyCards:[],secondaryOppCards:[],secondaryMyDeck:[],secondaryOppDeck:[],secondaryMyDeckInitialized:false,secondaryOppDeckInitialized:false,secondaryMyDiscard:[],secondaryOppDiscard:[],newOrdersCompletedMy:false,newOrdersCompletedOpp:false,secondaryMyScored:[],secondaryOppScored:[],secondaryMyScoredVP:{},secondaryOppScoredVP:{},secondaryMyScoredVPByRound:{},secondaryOppScoredVPByRound:{},secondaryMyScoredRound:{},secondaryOppScoredRound:{},secondaryPersonalPlans:{},secondaryPlanEdit:'',secondaryDetailSide:'',secondaryDetailName:'',gameReferencePersonal:{},myForceDisposition:'',oppForceDisposition:'',attackerSide:'my',firstTurn:'my',currentTurn:'my',objectives:{},events:[],gameAssistantChecks:{},gameAssistantNotes:'',personalArmyNotes:'',lists:[],activeRosterId:'',activeOpponentRosterId:'',dataStatus:'Expanded Tyranid + Ultramarines community catalogue',source:'BSData wh40k-11e (community)',revision:'current-community-catalogue',cloud:{email:'',userId:'',status:'Not connected',lastSync:'',error:''},cloudBattles:[],rulesLog:[],mathRules:{},gameTimer:{elapsedMs:0,running:false,paused:false,startedAt:0,pausedAt:0,finishedAt:0,turnMyMs:0,turnOppMs:0,turnStartedGameMs:0,turnPaused:false},cloudPasswordRecovery:false,localSavedAt:''};
 
-const GAME_REFERENCE_PHASES={
- Command:[
-  {group:'My phase',items:[
-   ['Endless swarm the hormagaunts (2 units in synapse) 1CP','1 CP'],
-   ['Predatory imperative hormagaunts and 1 melee unit (2 units in synapse) 1CP','1 CP'],
-   ['Predatory imperative shooters for anti-tank (2 units in synapse) 1CP','1 CP'],
-   ['Shadows: -1ld if within 6” of synapse unit','Reminder'],
-   ['Enemies within 6” of synapse creature test -1','Reminder'],
-   ['Norn Emissary: 15OC if on selected objective','Reminder'],
-   ['Stratagem: predatory imperative- 2 units in synapse get additional hyperadaptation 1CP','1 CP'],
-   ['Stratagem: endless swarm- 2 endless multitude units return d3+3 models 1CP','1 CP'],
-   ['Base stratagem: new orders- discard a secondary objective (one use per battle) 1CP','1 CP']
-  ]},
-  {group:'Opponent phase',items:[
-   ['Shadows: -1ld if within 6” of synapse unit','Reminder'],
-   ['Deathleaper: enemy units below starting strength within 6” must take battle shock test at Ld -1','Reminder']
-  ]}
- ],
- Movement:[
-  {group:'Offense',items:[
-   ['Swarmlord: 9” synapse for Exocrine and Tyrannofex','Reminder'],
-   ['Hormogaunts: advance and charge','Reminder'],
-   ['Base stratagem: command re-roll 1CP','1 CP']
-  ]},
-  {group:'Defense',items:[
-   ['Spore mine: 6” advance bubble, 3” explosion bubble','Reminder'],
-   ['Lictor: rapid ingress free','Reminder'],
-   ['Norn Assimilator: on enemy fall back, 1d6 on 2+ roll 1d6 mortal wounds','Reminder'],
-   ['Exocrine: overwatch','Reminder'],
-   ['Base stratagem: rapid ingress: 6” table edge, 8” enemy distance, round 3 ok in enemy deployment zone','Reminder'],
-   ['Base stratagem: fire overwatch','Reminder']
-  ]}
- ],
- Shooting:[
-  {group:'Offense',items:[
-   ['Exocrine: other units re roll 1s at target','Reminder'],
-   ['Exocrine [heavy 3”move] +1 to hit','Reminder'],
-   ['Synapse +1 Str, hyperaggression lethal on vehicles','Reminder'],
-   ['Tyrannofex: [heavy 3”move] +1 to hit command re-roll the rupture cannon','Reminder'],
-   ['Synapse +1 Str, hyperaggression lethal on vehicles,','Reminder'],
-   ['Base stratagem: command re-roll 1CP','1 CP']
-  ]},
-  {group:'Defense',items:[
-   ['Norn Emmisary: +4 FNP against mortal wounds','Reminder'],
-   ['Norn Emmisary: +5 FNP if on selected objective','Reminder'],
-   ['Tyranid Prime: d6 surge move if shot at','Reminder'],
-   ['Tyrannofex: 0 damage','Reminder'],
-   ['Swarmlord: 12” malign presence','Reminder'],
-   ['Stratagem: Rapid Regen: give a unit FNP 6+ or FNP 5+','1 CP'],
-   ['Rapid Regeneration -One TYRANIDS unit from your army that was selected as the target of one or more of the attacking unit’s attacks. just after an enemy unit has selected its targets.','Rule text'],
-   ['Effect Until the end of the phase, models in your unit have the Feel No Pain 6+ ability. If your unit is within Synapse Range of your army, models in your unit have the Feel No Pain 5+ ability instead 1CP','Rule text'],
-   ['Swarmlord: Malign Presence -Once per turn, when your opponent targets a unit from their army within 12” of this model with a stratagem, you can use this ability. If you do increase the CP cost of that use of that stratagem by 1CP.','Rule text'],
-   ['Base stratagem: command re-roll 1CP','1 CP']
-  ]}
- ],
- Charge:[
-  {group:'Charge',items:[
-   ['Crushing Impact - Your Charge phase, just after a friendly MONSTER/VEHICLE unit ends a charge move.','Reminder'],
-   ['Roll a number of D6 equal to the T characteristic of that model: for each 1, your unit suffers 1 mortal wound; for each 5+, that enemy unit suffers 1 mortal wound (to a maximum of 6 mortal wounds per unit) MAX 6','Rule text'],
-   ['Norn Assimilator: previously shot Harpooned unit- +2 to charge','Reminder'],
-   ['Base stratagem: command re-roll 1CP','1 CP'],
-   ['Base stratagem: heroic intervention','1 CP']
-  ]}
- ],
- Fight:[
-  {group:'Offense',items:[
-   ['within synapse +1 strength','Reminder'],
-   ['Tyranid prime unit: sustained 1, +1 Str, adrenal surge 5+ crits, predatory imperative for monster/vehicle lethal hits','Reminder'],
-   ['Hormogaunts: advance and charge','Reminder'],
-   ['Deathleaper: kill character +1CP','Reminder'],
-   ['Exocrine / Tyrannofex in synapse +1 Str','Reminder'],
-   ['Adrenal Surge- unmodified Hit roll of 5+ scores a Critical Hit. 2CP','2 CP'],
-   ['Overrun -just before a TYRANIDS unit from your army Consolidates.','Reminder'],
-   ['Until the end of the phase, each time your unit Consolidates, models in it can move an additional 3” as long as your unit can end that move within Engagement Range of one or more enemy units. If your unit is within Synapse Range of your army and not within Engagement Range of any enemy units, instead of making that Consolidation move, it can make a Normal move of up to 6”.','Rule text'],
-   ['Base stratagem: command re-roll 1CP','1 CP'],
-   ['Base stratagem: epic challenge 1CP','1 CP']
-  ]},
-  {group:'Defense',items:[
-   ['Norn Emmisary: +4 FNP against mortal wounds','Reminder'],
-   ['Norn Emmisary: +5 FNP if on selected objective','Reminder'],
-   ['Rapid Regen: give a unit FNP 6+ or FNP 5+','1 CP'],
-   ['Swarmlord: 12” malign presence','Reminder'],
-   ['Stratagem: death frenzy','1 CP'],
-   ['Rapid Regeneration - just after an enemy unit has selected its targets.','Rule text'],
-   ['Effect Until the end of the phase, models in your unit have the Feel No Pain 6+ ability. If your unit is within Synapse Range of your army, models in your unit have the Feel No Pain 5+ ability instead 1CP','Rule text'],
-   ['Death Frenzy- Fight phase, just after an enemy unit has selected its targets.','Rule text'],
-   ['One TYRANIDS unit from your army that was selected as the target of one or more of the attacking unit’s attacks. Effect Until the end of the phase, each time a model in your unit is destroyed, if that model has not fought this phase, roll one D6: on a 4+, do not remove it from play. The destroyed model can fight after the attacking model’s unit has finished making its attacks, and is then removed from play. 1CP','Rule text'],
-   ['Swarmlord: Malign Presence -Once per turn, when your opponent targets a unit from their army within 12” of this model with a stratagem, you can use this ability. If you do increase the CP cost of that use of that stratagem by 1CP.','Rule text'],
-   ['Norn Assimilator: Harpoon Barbs','Reminder'],
-   ['Once per turn, when an enemy unit within Engagement Range of this model is selected to Fall Back, roll one D6: on a 2+, that unit suffers D6 mortal wounds.','Rule text'],
-   ['Base stratagem: command re-roll 1CP','1 CP'],
-   ['Base stratagem: heroic intervention ::: unit within 12”, resolved a charge','1 CP'],
-   ['Leap to defend: target enemy unit that charged 1CP','1 CP'],
-   ['Into the frey: enemy within 6” can be charged, max move 6” 2CP','2 CP'],
-   ['Base stratagem: counteroffensive: fight first after enemy attacks 2CP','2 CP']
-  ]}
- ]};
+const GAME_REFERENCE_PHASES={Command:[],Movement:[],Shooting:[],Charge:[],Fight:[],End:[]};
+const GAME_REFERENCE_QUICK=[];
+const GAME_REFERENCE_SECONDARIES=[];
+const GAME_REFERENCE_PRIMARY=[];
 
-const GAME_REFERENCE_QUICK=[
- ['Synapse','+1STRENGTH in synapse 6” of (norns, maleceptor, tyranid prime, raveners)'],
- ['Norn Assimilator','RRhits/RRwounds Norn Assimilator target'],
- ['Norn Emissary','on objective OC15, FNP 5+ Norn emmisaries'],
- ['Deathleaper','BS / Ld-1 (deathleaper)'],
- ['Exocrine','RR1s (exocrines x2)'],
- ['Tyranid Prime','sustained 1'],
- ['Hormogaunts','sustained 1 (hormogaunts in tyrranid prime unit)'],
- ['Tyrannofex','0 damage ability (Tfex)'],
- ['CP plan','2-3, 5-6, 8-9, 11-12, 14-15'],
- ['Hormogaunts w prime tank killers','(3cp) Sustained 1 from prime; Strength 1 from prime; Command: predatory imperative, select lethals on monsters/vehicles 1CP; Fight: adrenal surge 5+ criticals 2CP'],
- ['Suped up Shooting','Sustained 1; Strength +1 from a synapse creature; Command: predatory imperative, select [lethals] on monsters/vehicles 1CP; Fight: adrenal surge 5+ criticals 2CP']
-];
-
-const GAME_REFERENCE_SECONDARIES=[
- ['A Grievous Blow','toss',''],
- ['Assassination','hold','big kill turn'],
- ['Bring it Down','hold','big kill turn'],
- ['Display of Might','4+','could push models up quickly'],
- ['Forward Position','4+','expansion capture'],
- ['No Prisoners','hold','big kill turn'],
- ['Overwhelming Force','hold','big kill turn'],
- ['A Tempting Target','-',''],
- ['Beacon','hold',''],
- ['Centre ground','1+','center assault group'],
- ['Behind Enemy Lines','now','biovore'],
- ['Burden of Trust','now','incorporated into basic strategy'],
- ['Cleanse','now','incorporated into basic strategy'],
- ['Defend Stronghold','now','incorporated into basic strategy'],
- ['Engage on All Fronts','now','biovore'],
- ['Outflank','now','biovore'],
- ['Plunder','3+','? Reserves, push hormogaunts'],
- ['Secure No Mans Land','now','incorporated into basic strategy']
-];
-
-const GAME_REFERENCE_SECONDARY_DETAILS={
- 'A Grievous Blow':{when:'any turn',task:'destroy enemy starting strength 13+',vp:'5',oppVP:'',action:'toss',unit:''},
- 'Assassination':{when:'any turn',task:'kill character or all characters dead',vp:'5',oppVP:'',action:'hold',unit:'big kill turn'},
- 'Bring it Down':{when:'any turn',task:'destroy 10W model',vp:'5',oppVP:'',action:'hold',unit:'big kill turn'},
- 'Display of Might':{when:'my turn',task:'outnumber no mans land (wholly within)',vp:'2',oppVP:'5',oppWhen:'opponents turn',action:'4+',unit:'could push models up quickly'},
- 'Forward Position':{when:'my turn',task:'opponents home or each expansion',vp:'5',oppVP:'',action:'4+',unit:'expansion capture'},
- 'No Prisoners':{when:'any turn',task:'destroy a unit (3)',vp:'2 (max 5)',oppVP:'',action:'hold',unit:'big kill turn'},
- 'Overwhelming Force':{when:'any turn',task:'destroy enemy off of objective (2)',vp:'3 (max 5)',oppVP:'',action:'hold',unit:'big kill turn'},
- 'A Tempting Target':{when:'my turn',task:'control selected target',vp:'5',oppVP:'',action:'-',unit:''},
- 'Beacon':{when:'opponents turn',task:'beacon outside deployment (unit on field)',vp:'3',oppVP:'5',oppWhen:'beacon outside territory',action:'hold',unit:''},
- 'Centre Ground':{when:'my turn',task:'3" center and no enemies 3" center',vp:'3',oppVP:'5',oppWhen:'3" center no enemies 6"',action:'1+',unit:'center assault group'},
- 'Behind Enemy Lines':{when:'my turn',task:'within enemy deployment (2)',vp:'3 (max 5)',oppVP:'',action:'now',unit:'biovore'},
- 'Burden of Trust':{when:'opponents turn',task:'guard objectives (3)',vp:'2 (max 5)',oppVP:'',action:'now',unit:'incorporated into basic strategy'},
- 'Cleanse':{when:'my shooting phase',task:'*action* cleanse 1 objective (non-home)',vp:'2',oppVP:'5',oppWhen:'cleanse 2 objectives',action:'now',unit:'incorporated into basic strategy'},
- 'Defend Stronghold':{when:'opponents turn',task:'control home objective',vp:'3',oppVP:'2',oppWhen:'no enemy units in deployment',action:'now',unit:'incorporated into basic strategy'},
- 'Engage on All Fronts':{when:'my turn',task:'4 quarters 6" from center',vp:'5',oppVP:'3',oppWhen:'3 quarters',action:'now',unit:'biovore'},
- 'Outflank':{when:'my turn',task:'outside territory, 6" from any edge: 1 unit',vp:'3',oppVP:'5',oppWhen:'2 units and opposite edges',action:'now',unit:'biovore'},
- 'Plunder':{when:'my shooting phase',task:'*action* terrain area outside of territory',vp:'5',oppVP:'',action:'3+',unit:'? Reserves, push hormagaunts'},
- 'Secure No Man’s Land':{when:'my turn',task:'2 objectives in no mans land',vp:'5',oppVP:'',action:'now',unit:'incorporated into basic strategy'}
-};
-
-function defaultSecondaryPersonalPlans(){
- const out={};
- Object.entries(GAME_REFERENCE_SECONDARY_DETAILS).forEach(([name,d])=>{out[name]={when:d.when||'',task:d.task||'',vp:d.vp||'',oppVP:d.oppVP||'',oppWhen:d.oppWhen||'',action:d.action||'',unit:d.unit||''};});
- return out;
+function ensurePersonalArmyNotes(){
+  if(typeof state.personalArmyNotes!=='string')state.personalArmyNotes='';
+  return state.personalArmyNotes;
 }
-function ensureSecondaryPersonalPlans(){
- if(!state.secondaryPersonalPlans||typeof state.secondaryPersonalPlans!=='object')state.secondaryPersonalPlans={};
- const defaults=defaultSecondaryPersonalPlans();
- Object.entries(defaults).forEach(([name,d])=>{const cur=state.secondaryPersonalPlans[name];state.secondaryPersonalPlans[name]=cur&&typeof cur==='object'?{...d,...cur}:{...d};});
- return state.secondaryPersonalPlans;
+function updatePersonalArmyNotes(value){
+  state.personalArmyNotes=String(value??'');
+  const id=state.activeRosterId||'';
+  const list=id?(state.savedArmyLists||[]).find(x=>x.id===id):null;
+  if(list){
+    list.personalNotes=state.personalArmyNotes;
+    list.updated=new Date().toISOString();
+    if(state.cloud?.userId)cloudUpsertArmyList(list).catch(()=>{});
+  }
+  save();
 }
-function secondaryPlanFor(name){
- ensureSecondaryPersonalPlans();
- const e=Object.entries(state.secondaryPersonalPlans).find(([k])=>k.toLowerCase()===String(name||'').toLowerCase());
- return e?e[1]:null;
-}
-function updateSecondaryPlanField(name,key,value){
- ensureSecondaryPersonalPlans();
- const e=Object.entries(state.secondaryPersonalPlans).find(([k])=>k.toLowerCase()===String(name||'').toLowerCase());
- const actual=e?e[0]:name;
- if(!state.secondaryPersonalPlans[actual])state.secondaryPersonalPlans[actual]={};
- state.secondaryPersonalPlans[actual][key]=String(value??'');
- save();
- const id=state.activeRosterId||'';
- const list=id?(state.savedArmyLists||[]).find(x=>x.id===id):null;
- if(list){list.secondaryPlans=JSON.parse(JSON.stringify(state.secondaryPersonalPlans));list.updated=new Date().toISOString();if(state.cloud?.userId)cloudUpsertArmyList(list).catch(()=>{});else save();}
-}
-function openSecondaryPlanEditor(name){state.secondaryPlanEdit=name||'';render();}
-function secondaryPlanEditorModal(){
- const name=state.secondaryPlanEdit||'';if(!name)return '';
- const d=secondaryPlanFor(name)||{},q=esc(name).replace(/'/g,"\'");
- const f=(key,label,value,wide=false)=>wide
-  ? '<div class="field" style="grid-column:1/-1"><label>'+esc(label)+'</label><textarea onchange="updateSecondaryPlanField(\''+q+'\',\''+key+'\',this.value)">'+esc(value||'')+'</textarea></div>'
-  : '<div class="field"><label>'+esc(label)+'</label><input type="text" value="'+esc(value||'')+'" onchange="updateSecondaryPlanField(\''+q+'\',\''+key+'\',this.value)"></div>';
- return '<div class="modal secondary-plan-modal"><div class="card"><div class="split"><div><h2 style="margin:0">Edit Secondary Plan</h2><div class="muted" style="margin-top:4px">'+esc(name)+'</div></div><button class="btn" type="button" onclick="state.secondaryPlanEdit=\'\';render()">Close</button></div><div class="secondary-plan-editor-fields">'+f('when','When',d.when)+f('vp','My VP',d.vp)+f('oppVP','Opponent VP',d.oppVP)+f('oppWhen','Opponent timing',d.oppWhen)+f('action','Plan / trigger',d.action)+f('unit','Unit / note',d.unit)+f('task','What to do',d.task,true)+'</div><div class="secondary-plan-editor-note" style="margin-top:10px">Changes save to this browser immediately. Saved army lists also keep a copy of these plans.</div><div class="secondary-plan-editor-actions"><button class="btn primary" type="button" onclick="state.secondaryPlanEdit=\'\';save();render()">Save &amp; Close</button><button class="btn" type="button" onclick="state.secondaryPlanEdit=\'\';render()">Cancel</button></div></div></div>';
-}
-function secondaryPlanEditorHtml(){
- ensureSecondaryPersonalPlans();
- const cards=SECONDARY_CARDS.map(c=>{
-  const d=secondaryPlanFor(c.name)||{},q=esc(c.name).replace(/'/g,"\'");
-  const input=(key,label,value)=>'<div class="field"><label>'+esc(label)+'</label><input type="text" value="'+esc(value||'')+'" onchange="updateSecondaryPlanField(\''+q+'\',\''+key+'\',this.value)"></div>';
-  return '<details class="secondary-plan-editor-card"><summary>'+esc(c.name)+'</summary><div class="secondary-plan-editor-fields">'+input('when','When',d.when)+input('vp','My VP',d.vp)+input('oppVP','Opponent VP',d.oppVP)+input('oppWhen','Opponent timing',d.oppWhen)+input('action','Plan / trigger',d.action)+input('unit','Unit / note',d.unit)+'<div class="field" style="grid-column:1/-1"><label>What to do</label><textarea onchange="updateSecondaryPlanField(\''+q+'\',\'task\',this.value)">'+esc(d.task||'')+'</textarea></div></div><div class="secondary-plan-editor-actions"><button class="btn" type="button" onclick="openSecondaryPlanEditor(\''+q+'\');return false;">Open full editor</button></div></details>';
- }).join('');
- return '<div class="card secondary-plan-editor"><div class="split"><div><h3 style="margin:0">My Secondary Plans</h3><div class="muted" style="margin-top:4px">Edit the personal notes that appear directly on active secondary cards during Battle Mode.</div></div><span class="pill">18 missions</span></div><div class="secondary-plan-editor-note" style="margin-top:8px">These are personal game plans, not official mission wording. They are stored locally and copied into saved army lists.</div><div class="secondary-plan-editor-grid" style="margin-top:10px">'+cards+'</div></div>';
-}
-
-
-function secondaryWorkbookHtml(){
- const active=[...secState('my'),...secState('opp')].filter((v,i,a)=>v&&a.indexOf(v)===i);
- const cards=active.map(name=>{
-   const d=GAME_REFERENCE_SECONDARY_DETAILS[name];
-   if(!d)return '';
-   return `<div class="game-assistant-secondary"><b>${esc(name)}</b><span><b>When:</b> ${esc(d.when)}<br><b>Task:</b> ${esc(d.task)}<br><b>VP:</b> ${esc(d.vp)}${d.oppVP?` • Opp: ${esc(d.oppVP)}`:''}</span><em><b>Plan:</b> ${esc(d.action||'')}<br>${esc(d.unit||'')}</em></div>`;
- }).join('');
- const all=Object.entries(GAME_REFERENCE_SECONDARY_DETAILS).map(([name,d])=>`<div class="game-assistant-secondary"><b>${esc(name)}</b><span><b>${esc(d.when)}</b> • ${esc(d.task)}<br>VP ${esc(d.vp)}${d.oppVP?` / Opp ${esc(d.oppVP)}`:''}</span><em>${esc(d.action||'')} ${esc(d.unit||'')}</em></div>`).join('');
- return `<details class="game-assistant-sub"><summary>Active secondary plans (${active.length})</summary>${cards||'<div class="empty">No active secondaries selected.</div>'}</details><details class="game-assistant-sub"><summary>All spreadsheet secondary notes</summary>${all}</details>`;
-}
-
-
-const GAME_REFERENCE_PRIMARY=[
- ['Inescapable Dominion','Command: 2obj - 5vp; 4obj -9vp; Turn: 3+obj - 4vp; End of game: enemy home 5vp'],
- ['Secure Asset','Command: 1 exp obj - 4vp; any 3obj - 4vp; Turn: 1 obj action - 4vp'],
- ['Purge and Secure','Command: non-home obj 4vp each; Turn: On objective, kill a unit 3vp OR kill an enemy off an objective 3vp; Control a new objective 3vp'],
- ['Reconnaissance Sweep','Command: 1 non-home obj 3vp; Turn: 3 quarters 3vp :: 4 quarters 6vp; Destroy unit 1vp']
-];
-
-function defaultGameReferencePersonal(){return {phases:JSON.parse(JSON.stringify(GAME_REFERENCE_PHASES)),quick:JSON.parse(JSON.stringify(GAME_REFERENCE_QUICK)),primary:JSON.parse(JSON.stringify(GAME_REFERENCE_PRIMARY)),custom:''};}
-function ensureGameReferencePersonal(){
- const d=defaultGameReferencePersonal(),cur=state.gameReferencePersonal;
- if(!cur||typeof cur!=='object'){state.gameReferencePersonal=d;return state.gameReferencePersonal;}
- state.gameReferencePersonal={phases:cur.phases&&typeof cur.phases==='object'?cur.phases:d.phases,quick:Array.isArray(cur.quick)?cur.quick:d.quick,primary:Array.isArray(cur.primary)?cur.primary:d.primary,custom:String(cur.custom||'')};
- Object.keys(d.phases).forEach(p=>{if(!Array.isArray(state.gameReferencePersonal.phases[p]))state.gameReferencePersonal.phases[p]=d.phases[p];});
- return state.gameReferencePersonal;
-}
-function gameReferencePersonalForBattle(){return ensureGameReferencePersonal();}
-function updateGameReferenceItem(section,key,index,field,value,groupIndex){
- const r=ensureGameReferencePersonal();
- if(section==='quick'&&r.quick[index])r.quick[index][field]=String(value??'');
- else if(section==='primary'&&r.primary[index])r.primary[index][field]=String(value??'');
- else if(section==='phase'&&r.phases[key]?.[groupIndex]?.items?.[index])r.phases[key][groupIndex].items[index][field]=String(value??'');
- save();
- const id=state.activeRosterId||'',list=id?(state.savedArmyLists||[]).find(x=>x.id===id):null;
- if(list){list.gameReferencePersonal=JSON.parse(JSON.stringify(r));list.updated=new Date().toISOString();if(state.cloud?.userId)cloudUpsertArmyList(list).catch(()=>{});else save();}
-}
-function updateGameReferenceCustom(value){
- const r=ensureGameReferencePersonal();r.custom=String(value??'');save();
- const id=state.activeRosterId||'',list=id?(state.savedArmyLists||[]).find(x=>x.id===id):null;
- if(list){list.gameReferencePersonal=JSON.parse(JSON.stringify(r));list.updated=new Date().toISOString();if(state.cloud?.userId)cloudUpsertArmyList(list).catch(()=>{});else save();}
-}
-function resetGameReferencePersonal(){if(!confirm('Reset all editable Game Assistant notes to the imported Triple Norn Word-document notes?'))return;state.gameReferencePersonal=defaultGameReferencePersonal();save();render();}
+function gameReferencePersonalForBattle(){return {phases:{Command:[],Movement:[],Shooting:[],Charge:[],Fight:[],End:[]},quick:[],primary:[],custom:''};}
 function gameReferenceEditorHtml(){
- const r=ensureGameReferencePersonal();
- const tf=(s,k,i,f,v,g)=>'<textarea rows="2" onchange="updateGameReferenceItem('+JSON.stringify(s)+','+JSON.stringify(k)+','+i+','+JSON.stringify(f)+',this.value,'+(g==null?'null':g)+')">'+esc(v||'')+'</textarea>';
- const phaseHtml=Object.entries(r.phases).map(([phase,groups])=>'<details class="game-ref-phase"><summary>'+esc(phase)+' Phase ('+(groups||[]).reduce((n,g)=>n+(g.items||[]).length,0)+' notes)</summary>'+((groups||[]).map((g,gi)=>'<div class="game-ref-group"><h4>'+esc(g.group)+'</h4>'+((g.items||[]).map((it,ii)=>'<div class="game-ref-row"><div class="game-ref-label"><b>'+esc(it[1]||'Reminder')+'</b><select onchange="updateGameReferenceItem(\'phase\','+JSON.stringify(phase)+','+ii+',1,this.value,'+gi+')"><option value="Reminder" '+(it[1]==='Reminder'?'selected':'')+'>Reminder</option><option value="1 CP" '+(it[1]==='1 CP'?'selected':'')+'>1 CP</option><option value="2 CP" '+(it[1]==='2 CP'?'selected':'')+'>2 CP</option><option value="Rule text" '+(it[1]==='Rule text'?'selected':'')+'>Rule text</option></select></div>'+tf('phase',phase,ii,0,it[0],gi)+'</div>').join(''))+'</div>').join(''))+'</details>').join('');
- const quick=(r.quick||[]).map((x,i)=>'<div class="game-ref-row"><input type="text" value="'+esc(x[0]||'')+'" onchange="updateGameReferenceItem(\'quick\',null,'+i+',0,this.value,null)"><textarea rows="2" onchange="updateGameReferenceItem(\'quick\',null,'+i+',1,this.value,null)">'+esc(x[1]||'')+'</textarea></div>').join('');
- const primary=(r.primary||[]).map((x,i)=>'<div class="game-ref-row"><input type="text" value="'+esc(x[0]||'')+'" onchange="updateGameReferenceItem(\'primary\',null,'+i+',0,this.value,null)"><textarea rows="2" onchange="updateGameReferenceItem(\'primary\',null,'+i+',1,this.value,null)">'+esc(x[1]||'')+'</textarea></div>').join('');
- return '<div class="card game-reference-editor"><div class="split"><div><h3 style="margin:0">My Game Notes</h3><div class="muted" style="margin-top:4px">Editable copy of the Triple Norn Word-document notes used by Game Assistant.</div></div><button class="btn" type="button" onclick="resetGameReferencePersonal()">Reset to Word Notes</button></div><div class="game-reference-note">Edit any reminder below. Changes save immediately and are used in Battle Mode. Saved army lists keep their own copy.</div><h4 style="margin-top:14px">Phase Reminders</h4>'+phaseHtml+'<h4 style="margin-top:14px">Quick Reference</h4>'+quick+'<h4 style="margin-top:14px">Primary Mission Notes</h4>'+primary+'<h4 style="margin-top:14px">Custom General Notes</h4><textarea rows="4" placeholder="Add your own notes from the Word document or new reminders..." onchange="updateGameReferenceCustom(this.value)">'+esc(r.custom||'')+'</textarea></div>';
+  const notes=ensurePersonalArmyNotes();
+  return '<div class="card game-reference-editor"><div class="split"><div><h3 style="margin:0">Personal Army Notes</h3><div class="muted" style="margin-top:4px">Private notes associated with the currently selected army list. Rules and tactical recommendations are generated by the Tactical Advisor instead.</div></div></div><div class="field" style="margin-top:12px"><textarea rows="7" placeholder="Add your own reminders, matchup observations, deployment ideas, or game notes..." onchange="updatePersonalArmyNotes(this.value)">'+esc(notes)+'</textarea></div></div>';
 }
-
-
-
 const SECONDARY_CARDS=[
  {name:'A Grievous Blow',fixed:true,type:'Destroy enemy units with Starting Strength 13+',cardNumber:1},
  {name:'A Tempting Target',fixed:false,type:'Control the opponent-selected No Man’s Land objective',cardNumber:2},
@@ -1709,29 +1480,21 @@ const SECONDARY_SCORING={
 
 function gameAssistantHtml(){
  const phase=state.phase||'Command';
- const ref=gameReferencePersonalForBattle();
+ const notes=ensurePersonalArmyNotes();
  if(!state.gameAssistantChecks||typeof state.gameAssistantChecks!=='object')state.gameAssistantChecks={};
- const groups=ref.phases[phase]||[];
- const checkHtml=groups.map(g=>`<div class="game-assistant-group"><div class="game-assistant-group-title">${esc(g.group)}</div>${g.items.map((it,i)=>{
-   const key=phase+'|'+g.group+'|'+i;
-   const checked=!!state.gameAssistantChecks[key];
-   return `<label class="game-assistant-item ${checked?'checked':''}"><input type="checkbox" ${checked?'checked':''} onchange="toggleGameAssistantCheck('${esc(key)}',this.checked)"><span><b>${esc(it[1])}</b> ${esc(it[0])}</span></label>`;
- }).join('')}</div>`).join('');
- const quick=(ref.quick||[]).map(x=>`<div class="game-assistant-quick"><b>${esc(x[0])}</b><span>${esc(x[1])}</span></div>`).join('');
- const second=GAME_REFERENCE_SECONDARIES.map(x=>`<div class="game-assistant-secondary"><b>${esc(x[0])}</b><span>${esc(x[1])}</span><em>${esc(x[2]||'')}</em></div>`).join('');
- const primary=(ref.primary||[]).map(x=>`<div class="game-assistant-primary"><b>${esc(x[0])}</b><span>${esc(x[1])}</span></div>`).join('');
- return `<details class="card game-assistant-card" ${state.gameAssistantOpen!==false?'open':''} ontoggle="state.gameAssistantOpen=this.open;save()">
-  <summary><div class="split"><div><h3>Game Assistant</h3><div class="muted">Your imported game reminders • ${esc(phase)} Phase</div></div><div class="pill">${esc(phase)}</div></div></summary>
-  <div class="game-assistant-body">
-   <div class="game-assistant-current"><h4>${esc(phase)} Phase Reminders</h4>${checkHtml||'<div class="empty">No imported reminders for this phase.</div>'}</div>
-   <div class="grid2">
-    <div><h4>Quick Reference</h4>${quick}</div>
-    <div><h4>Mission Notes</h4>${secondaryWorkbookHtml()}<details class="game-assistant-sub"><summary>Primary notes</summary>${primary}</details></div>
-   </div>
-   <div class="field" style="margin-top:12px"><label>Live Game Notes</label><textarea rows="4" placeholder="Add a reminder, opponent action, target, CP plan, or anything you want to remember..." onchange="state.gameAssistantNotes=this.value;save()">${esc(state.gameAssistantNotes||'')}</textarea>${ref.custom?`<div class="game-reference-note" style="margin-top:6px"><b>Custom Reference:</b> ${esc(ref.custom)}</div>`:''}</div>
-  </div>
- </details>`;
+ return '<details class="card game-assistant-card" '+(state.gameAssistantOpen!==false?'open':'')+' ontoggle="state.gameAssistantOpen=this.open;save()">'+
+  '<summary><div class="split"><div><h3>Game Assistant</h3><div class="muted">Generic game-state reminders • '+esc(phase)+' Phase</div></div><div class="pill">'+esc(phase)+'</div></div></summary>'+
+  '<div class="game-assistant-body">'+
+   '<div class="game-assistant-current"><h4>'+esc(phase)+' Phase</h4><div class="empty">Rules, unit abilities, matchup guidance and tactical recommendations are handled by the Tactical Advisor.</div></div>'+
+   '<div class="grid2">'+
+    '<div><h4>Current Game State</h4><div class="game-assistant-quick"><b>Turn</b><span>Round '+esc(state.round||1)+' • '+esc(state.currentTurn==='opp'?'Opponent':'Your')+' turn</span></div><div class="game-assistant-quick"><b>Primary</b><span>'+esc(primaryMission('my')||'Mission not selected')+'</span></div><div class="game-assistant-quick"><b>Objectives</b><span>Track ownership in the battlefield state for scoring and Tactical Advisor decisions.</span></div></div>'+
+    '<div><h4>Mission Scoring</h4>'+primaryScoringHtml(primaryMission('my'))+'</div>'+
+   '</div>'+
+   '<div class="field" style="margin-top:12px"><label>Personal Army Notes</label><textarea rows="5" placeholder="Add your own reminders, matchup observations, deployment ideas, or game notes..." onchange="updatePersonalArmyNotes(this.value)">'+esc(notes)+'</textarea><div class="muted small" style="margin-top:5px">Saved with the selected army list. These notes are not part of the rules engine.</div></div>'+
+   '<div class="field" style="margin-top:12px"><label>Live Game Notes</label><textarea rows="4" placeholder="Add a temporary opponent action, target, CP plan, or anything you want to remember..." onchange="state.gameAssistantNotes=this.value;save()">'+esc(state.gameAssistantNotes||'')+'</textarea></div>'+
+  '</div></details>';
 }
+
 function toggleGameAssistantCheck(key,checked){
  if(!state.gameAssistantChecks||typeof state.gameAssistantChecks!=='object')state.gameAssistantChecks={};
  state.gameAssistantChecks[key]=!!checked;
