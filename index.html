@@ -4602,6 +4602,12 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
       antiMatches:[...new Set(antiMatches)],confidence,
       tacticalLegality,
       recommendationEligible:!legalityBlocked,
+      scoreComponents:{
+        wipeChance:wipe,
+        killFraction,
+        damageFraction,
+        weights:{wipeChance:0.50,killFraction:0.30,damageFraction:0.20}
+      },
       attached:!!target.__combatTarget,
       bodyguardTarget:!!target.__bodyguardEntryUid,
       strategicHook:{objectiveControl:Number(target.profile?.OC)||0,keywords:[...(target.keywords||[])]},
