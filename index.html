@@ -4647,7 +4647,14 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
       exposure:x.exchangeExposure
     };
   });
-  results.sort((a,b)=>b.tacticalIndex-a.tacticalIndex);
+  results.forEach(x=>{
+    if(x.recommendationEligible===false)return;
+    const exposure=Number(x.exchangeExposure)||0;
+    x.exchangeComponents=x.exchangeComponents||{};
+    x.exchangeComponents.exposureBand=exposure>=0.75?'high':exposure>=0.40?'moderate':'low';
+    x.tacticalIndexAdjusted=Math.max(-1,Number(x.tacticalIndex)||0)*(1-0.20*exposure);
+  });
+  results.sort((a,b)=>(Number(b.tacticalIndexAdjusted??b.tacticalIndex)-Number(a.tacticalIndexAdjusted??a.tacticalIndex)));
   const eligibleResults=results.filter(x=>x.recommendationEligible!==false);
   const naturalTargets=eligibleResults.filter(x=>x.antiMatches.length||x.damageFraction>=0.75).slice(0,5);
   const avoid=eligibleResults.filter(x=>x.damageFraction<0.25&&x.wipeChance<0.15).sort((a,b)=>a.damageFraction-b.damageFraction).slice(0,5);
