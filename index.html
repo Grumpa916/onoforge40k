@@ -4163,6 +4163,44 @@ function mathRosterEntry(side){
   if(!e&&arr.length)e=arr[0];
   return e||null;
 }
+function combatRootEntry(side,e){
+  if(!e)return null;
+  if(e.attachedTo){
+    const parent=entry(side,e.attachedTo);
+    if(parent)return parent;
+  }
+  return e;
+}
+function attachedCombatEntries(side,e){
+  const root=combatRootEntry(side,e);
+  if(!root)return [];
+  const out=[root];
+  const leaders=bodyguardLeaders(side,root.uid);
+  leaders.forEach(l=>{if(l&&!out.some(x=>x.uid===l.uid))out.push(l);});
+  return out;
+}
+function attachedCombatWeaponGroups(side,e){
+  const entries=attachedCombatEntries(side,e);
+  const groups=[];
+  entries.forEach(ce=>{
+    const u=get(ce.unitId); if(!u)return;
+    const rosterCount=!!modelRosterRule(u);
+    if(rosterCount){
+      const counts=modelRosterWeaponCounts(ce,u);
+      Object.entries(counts).forEach(([name,count])=>{
+        const weapon=(u.weapons||[]).find(w=>w.name===name);
+        if(weapon&&count>0)groups.push({entry:ce,attacker:u,weapon,count:Number(count)||0});
+      });
+      return;
+    }
+    const alloc=mathWeaponAlloc(ce,u);
+    (u.weapons||[]).forEach(w=>{
+      const count=Number(alloc[w.name])||0;
+      if(count>0)groups.push({entry:ce,attacker:u,weapon:w,count});
+    });
+  });
+  return groups;
+}
 function mathUnit(side){const e=mathRosterEntry(side);return e?get(e.unitId):get(side==='my'?state.attacker:state.target)}
 function mathWeaponAlloc(e,u){
   if(modelRosterRule(u)){
@@ -4202,7 +4240,7 @@ function calculateMathMixed(a,t,groups,m){
   const details=[];
   for(const g of groups){
     if(g.count<=0)continue;
-    const rr=calculateMath(a,g.weapon,t,{...safe,attackerModels:g.count});
+    const rr=calculateMath(g.attacker||a,g.weapon,t,{...safe,attackerModels:g.count});
     ['attacks','hits','wounds','failedSaves','damage','critHits','critWounds'].forEach(k=>totals[k]+=Number(rr[k])||0);
     details.push({weapon:g.weapon.name,count:g.count,result:rr});
   }
@@ -4221,7 +4259,7 @@ function engineMonteCarloMixed(a,t,groups,m,samples){
     const woundsState=Array.from({length:defModels},()=>hp); let dmg=0;
     for(const g of groups){
       for(let model=0;model<g.count;model++){
-        const r=engineOneAttack(a,g.weapon,t,m,defModels,woundsState); dmg+=r.damage;
+        const r=engineOneAttack(g.attacker||a,g.weapon,t,m,defModels,woundsState); dmg+=r.damage;
         if(woundsState.every(x=>x<=0))break;
       }
       if(woundsState.every(x=>x<=0))break;
@@ -4249,10 +4287,10 @@ function math(){
   const rosterEmpty=!state.my.length||!state.opp.length;
   const pct=v=>Math.max(0,Math.min(100,v*100));
   const rosterWeaponMode=!!(ae&&modelRosterRule(a));
-  const activeNames=activeWeaponNames(ae,a);
-  const rows=a.weapons.map(w=>{
-    const n=Number(alloc[w.name])||0;
-    if(rosterWeaponMode&&!activeNames.includes(w.name))return '';
+  const activeNames=Array.from(new Set(groups.map(g=>g.weapon.name)));
+  const rows=(a.weapons||[]).map(w=>{
+    const n=groups.filter(g=>g.weapon.name===w.name).reduce((sum,g)=>sum+g.count,0);
+    if(!activeNames.includes(w.name))return '';
     const control=rosterWeaponMode
       ? '<span>'+n+' surviving models</span>'
       : '<input type="number" min="0" max="'+atkModels+'" value="'+n+'" onchange="setMathWeaponCount(\''+(ae?.uid||'catalogue')+'\',\''+esc(w.name).replace(/'/g,"\\'")+'\',this.value)"><span>models</span>';
