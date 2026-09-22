@@ -1820,11 +1820,18 @@ function removeSecondaryRoundVP(side,name,round=null){
   }
   if(state[roundMapKey])delete state[roundMapKey][name];
 }
+function secondaryHasEndOfBattleCondition(name){
+ const data=SECONDARY_SCORING[name]||{};
+ return Object.values(data).some(items=>Array.isArray(items)&&items.some(row=>String(row?.[1]||'').toLowerCase().includes('end of battle')));
+}
 function scoreSecondary(side,name,vpInput){
  const active=secState(side);if(!active.includes(name))return;
  let vp=Number(vpInput);if(!Number.isFinite(vp))vp=0;vp=Math.floor(vp);if(vp<1){alert('Enter at least 1 VP to score.');return;}
  const card=secondaryByName(name);const mode=side==='my'?state.secondaryMy:state.secondaryOpp;
  const fixed=mode==='fixed';
+ const endOfBattleCard=secondaryHasEndOfBattleCondition(name);
+ if(state.battleEnded&&!endOfBattleCard){alert('The battle is ended. Only end-of-battle secondary scoring can be added.');return;}
+ if(!state.battleEnded&&endOfBattleCard){alert('This secondary includes an end-of-battle scoring condition. End the battle before scoring that condition.');return;}
  const max=fixed?20:(Number.isFinite(Number(card.maxVP))?Number(card.maxVP):null);
  const fullBefore=snapshotForUndo();
  const before=side==='my'?Number(state.myVP)||0:Number(state.oppVP)||0;
@@ -1833,7 +1840,8 @@ function scoreSecondary(side,name,vpInput){
  const totalBefore=Number(secondaryTotalScoredVP(side)||0);
  const missionBefore=fixed?Math.max(0,Number((side==='my'?state.secondaryMyScoredVP:state.secondaryOppScoredVP)?.[name])||0):0;
  const missionRemaining=max===null?vp:Math.max(0,max-missionBefore);
- const allowedVP=Math.min(vp,missionRemaining,Math.max(0,15-roundTotalBefore),Math.max(0,45-totalBefore));
+ const roundAllowance=endOfBattleCard&&state.battleEnded?vp:Math.max(0,15-roundTotalBefore);
+ const allowedVP=Math.min(vp,missionRemaining,roundAllowance,Math.max(0,45-totalBefore));
  if(allowedVP<=0){
    alert(missionRemaining<=0&&fixed?'This Fixed Secondary Mission has reached its 20 VP cap.':totalBefore>=45?'Secondary Missions are capped at 45 VP for the game.':'Secondary scoring is capped at 15 VP for this round.');
    return;
@@ -1851,7 +1859,7 @@ function scoreSecondary(side,name,vpInput){
  }
  recordSecondaryRoundVP(side,name,actual,round);
  state[side==='my'?'myVP':'oppVP']=scoreTotalForSide(side);
- event('SECONDARY_SCORED',{side,unit:name,action:'Secondary scored +'+actual+' VP',secondary:name,before,after:before+actual,delta:actual,mode,discarded:!fixed,round,roundCap:15,roundTotal:roundTotalBefore+actual,missionTotal:missionBefore+actual,missionCap:max},fullBefore);
+ event('SECONDARY_SCORED',{side,unit:name,action:'Secondary scored +'+actual+' VP',secondary:name,before,after:before+actual,delta:actual,mode,discarded:!fixed,round,roundCap:endOfBattleCard&&state.battleEnded?null:15,roundTotal:roundTotalBefore+actual,missionTotal:missionBefore+actual,missionCap:max},fullBefore);
  save();render();
 }
 function secondaryInputId(side,name){return 'score-'+side+'-'+String(name).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}
@@ -3593,11 +3601,23 @@ function gameTimerHtml(){
   </div>`;
 }
 
+function endBattle(){
+ const before=snapshotForUndo();
+ if(state.battleEnded)return;
+ finalizeCurrentTurnTime();
+ const t=ensureGameTimer();
+ if(t.running){t.elapsedMs=gameTimerElapsed();t.running=false;t.paused=false;t.finishedAt=Date.now();}
+ if(gameTimerInterval){clearInterval(gameTimerInterval);gameTimerInterval=null;}
+ state.battleEnded=true;
+ event('BATTLE_ENDED',{side:'my',unit:'Battle',action:'Battle marked complete',round:Math.max(1,Number(state.round)||1)},before);
+ save();render();
+}
 function startBattle(){
   const before=snapshotForUndo();
   startGameTimer();
 
   state.round=1;
+  state.battleEnded=false;
   state.phase='Command';
   state.primaryScoringRound=1;
   state.primaryMyScoredVP=0;
@@ -3801,7 +3821,7 @@ function battle(){const recent=state.events.slice(0,12);return `${gameTimerHtml(
   <button type="button" class="btn" id="next-phase-btn" onclick="window.advancePhase();return false;">Next Phase</button>
   <button type="button" class="btn" id="prev-round-btn" onclick="window.previousRound();return false;">Previous Round</button>
   <button type="button" class="btn" id="next-round-btn" onclick="window.nextRound();return false;" ${state.round>=MAX_ROUND?'disabled':''}>Next Round</button>
-  <button type="button" class="btn danger" onclick="startBattle();return false;">Start / Reset Battle</button>
+  <button type="button" class="btn" onclick="endBattle();return false;"  ${state.battleEnded?'disabled':''}>End Battle</button><button type="button" class="btn danger" onclick="startBattle();return false;">Start / Reset Battle</button>
 </div>
  <div class="tabs"><button class="active">Current State</button><button onclick="openMyListFromBattle()">My List</button><button onclick="openOpponentListFromBattle()">Opponent List</button><button onclick="state.page='log';state.builderView='full';render()">Full Action Log</button><button onclick="state.page='scorelog';render()">Scoring Log</button></div>
 ${primaryMissionPanel('battle')}
