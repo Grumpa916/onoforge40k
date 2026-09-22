@@ -4429,7 +4429,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
       bodyguardTarget:!!target.__bodyguardEntryUid,
       strategicHook:{objectiveControl:Number(target.profile?.OC)||0,keywords:[...(target.keywords||[])]},
       // Internal tactical index: balances immediate removal chance with damage efficiency and avoids rewarding excessive overkill.
-      tacticalIndex:(0.45*wipe)+(0.30*killFrac)+(0.15*damageFrac)+(0.10*Math.min(1,efficiency*100))
+      tacticalIndex:(0.50*wipe)+(0.30*killFrac)+(0.20*damageFrac)
     };
   }).filter(Boolean);
   results.sort((a,b)=>b.tacticalIndex-a.tacticalIndex);
