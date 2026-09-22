@@ -2180,6 +2180,24 @@ function load(){
   state.secondaryOppScored=Array.isArray(state.secondaryOppScored)?state.secondaryOppScored:[];
   state.secondaryMyScoredVP=state.secondaryMyScoredVP&&typeof state.secondaryMyScoredVP==='object'?state.secondaryMyScoredVP:{};
   state.secondaryOppScoredVP=state.secondaryOppScoredVP&&typeof state.secondaryOppScoredVP==='object'?state.secondaryOppScoredVP:{};
+  state.secondaryMyDeck=Array.isArray(state.secondaryMyDeck)?state.secondaryMyDeck:[];
+  state.secondaryOppDeck=Array.isArray(state.secondaryOppDeck)?state.secondaryOppDeck:[];
+  state.secondaryMyDiscard=Array.isArray(state.secondaryMyDiscard)?state.secondaryMyDiscard:[];
+  state.secondaryOppDiscard=Array.isArray(state.secondaryOppDiscard)?state.secondaryOppDiscard:[];
+  state.secondaryMyDeckInitialized=typeof state.secondaryMyDeckInitialized==='boolean'
+    ? state.secondaryMyDeckInitialized
+    : (state.secondaryMyDeck.length>0||state.secondaryMyDiscard.length>0||state.secondaryMyCards?.length>0||state.secondaryMyScored?.length>0);
+  state.secondaryOppDeckInitialized=typeof state.secondaryOppDeckInitialized==='boolean'
+    ? state.secondaryOppDeckInitialized
+    : (state.secondaryOppDeck.length>0||state.secondaryOppDiscard.length>0||state.secondaryOppCards?.length>0||state.secondaryOppScored?.length>0);
+  state.secondaryTacticalDrawKeys=state.secondaryTacticalDrawKeys&&typeof state.secondaryTacticalDrawKeys==='object'?state.secondaryTacticalDrawKeys:{};
+  const loadedTurnKey=Math.max(1,Number(state.round)||1)+'|'+(state.currentTurn==='opp'?'opp':'my');
+  const loadedSide=state.currentTurn==='opp'?'opp':'my';
+  const loadedMode=loadedSide==='my'?state.secondaryMy:state.secondaryOpp;
+  const loadedActive=loadedSide==='my'?state.secondaryMyCards:state.secondaryOppCards;
+  if(loadedMode==='tactical'&&Array.isArray(loadedActive)&&loadedActive.length){
+    state.secondaryTacticalDrawKeys[loadedTurnKey]=true;
+  }
   ensureSecondaryRoundLedger();
   state.objectives=state.objectives&&typeof state.objectives==='object'?state.objectives:{};state.objectiveTurnStartOwners=state.objectiveTurnStartOwners&&typeof state.objectiveTurnStartOwners==='object'?state.objectiveTurnStartOwners:{};state.mathRules=state.mathRules&&typeof state.mathRules==='object'?state.mathRules:{};
   state.lists=Array.isArray(state.lists)?state.lists:[];
