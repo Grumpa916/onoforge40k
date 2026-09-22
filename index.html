@@ -5118,6 +5118,18 @@ function tacticalWeaponRange(w){
 function tacticalWeaponAbilityText(w){
   return (w?.abilities||[]).map(x=>String(x||'').toUpperCase().replace(/-/g,' ')).join(' | ');
 }
+function tacticalLoneOperativeRange(unit){
+  const abilities=[...(unit?.abilities||[]),...(unit?.specialRules||[])].map(x=>String(x||'').toUpperCase().replace(/-/g,' '));
+  const text=abilities.join(' | ');
+  const match=text.match(/LONE OPERATIVE\s*(\d+(?:\.\d+)?)?/);
+  if(!match)return null;
+  return Number.isFinite(Number(match[1]))?Number(match[1]):12;
+}
+function tacticalTargetIsAttached(side,targetEntry){
+  if(!targetEntry)return false;
+  if(targetEntry.attachedTo)return true;
+  return bodyguardLeaders(side,targetEntry.uid).length>0;
+}
 function tacticalRapidFireValue(w){
   const txt=tacticalWeaponAbilityText(w);
   return Number((txt.match(/RAPID FIRE\s*(\d+)/)||[])[1])||0;
@@ -5176,6 +5188,12 @@ function tacticalTargetLegality(attackerEntry,targetEntry,phase){
     const targetEngaged=ctx.engagement==='engaged'||tacticalUnitIsEngagedAny(targetEntry.uid);
     const targetCombatUnit=combatTargetUnit('opp',targetEntry)||get(targetEntry.unitId);
     const targetIsMonsterVehicle=!!targetCombatUnit&&((targetCombatUnit.keywords||[]).map(k=>String(k||'').toUpperCase().trim()).some(k=>k==='MONSTER'||k==='VEHICLE'));
+    const loneRange=tacticalLoneOperativeRange(targetCombatUnit);
+    const targetAttached=tacticalTargetIsAttached('opp',targetEntry);
+    if(loneRange!==null&&!targetAttached){
+      if(ctx.distanceInches===null)reasons.push('Lone Operative range unknown');
+      else if(ctx.distanceInches>loneRange)return {status:'known',known:true,canTarget:false,reasons:['Lone Operative: attacker is '+String(ctx.distanceInches)+'" away; target must be within '+loneRange+'".'],context:ctx};
+    }
     if(advanced===null)reasons.push('movement state unknown');
     if(engaged&&ctx.engagement!=='engaged'){
       if(!attackerMV){
