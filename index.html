@@ -4201,37 +4201,6 @@ function attachedCombatWeaponGroups(side,e){
   });
   return groups;
 }
-function entryByUid(side,uid){return (state[side]||[]).find(e=>e.uid===uid)||null}
-function combatUnitRootEntry(side,entry){
-  if(!entry)return null;
-  let e=entry,guard=0;
-  while(e.attachedTo&&guard++<10){const p=entryByUid(side,e.attachedTo);if(!p)break;e=p;}
-  return e;
-}
-function combatParticipants(side,entry){
-  const root=combatUnitRootEntry(side,entry);if(!root)return [];
-  const out=[root];
-  bodyguardLeaders(side,root.uid).forEach(e=>{if(!out.some(x=>x.uid===e.uid))out.push(e)});
-  bodyguardSupports(side,root.uid).forEach(e=>{if(!out.some(x=>x.uid===e.uid))out.push(e)});
-  return out;
-}
-function combatWeaponGroups(side,entry){
-  const groups=[];
-  combatParticipants(side,entry).forEach(e=>{
-    const u=get(e.unitId);if(!u)return;
-    const roster=modelRosterRule(u)?survivingModelRoster(e,u):[];
-    if(roster.length){
-      Object.entries(modelRosterWeaponCounts(e,u)).forEach(([name,count])=>{
-        const weapon=(u.weapons||[]).find(w=>w.name===name);
-        if(weapon&&count>0)groups.push({unit:u,entry:e,weapon,count});
-      });
-    }else{
-      const alloc=mathWeaponAlloc(e,u);
-      (u.weapons||[]).forEach(w=>{const count=Number(alloc[w.name])||0;if(count>0)groups.push({unit:u,entry:e,weapon:w,count})});
-    }
-  });
-  return groups;
-}
 function mathUnit(side){const e=mathRosterEntry(side);return e?get(combatUnitRootEntry(side,e)?.unitId||e.unitId):get(side==='my'?state.attacker:state.target)}
 function mathWeaponAlloc(e,u){
   if(modelRosterRule(u)){
