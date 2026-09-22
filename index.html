@@ -4773,43 +4773,44 @@ function tacticalFightPhaseState(){
   const t=ensureTacticalState(),r=Math.max(1,Number(state.round)||1),turn=state.currentTurn;
   const raw=t.fightPhase;
   if(raw.round!==r||raw.playerTurn!==turn){
-    return {round:r,playerTurn:turn,step:'unknown',selected:[],nextSide:turn,notes:''};
+    return {round:r,playerTurn:turn,step:'unknown',selected:[],nextSide:turn,notes:'',units:{}};
   }
   return {
     round:r,playerTurn:turn,
     step:['fightsFirst','remaining','unknown'].includes(raw.step)?raw.step:'unknown',
     selected:Array.isArray(raw.selected)?raw.selected.map(String):[],
     nextSide:raw.nextSide==='opp'?'opp':'my',
-    notes:raw.notes==null?'':String(raw.notes)
+    notes:raw.notes==null?'':String(raw.notes),
+    units:raw.units&&typeof raw.units==='object'?raw.units:{}
   };
 }
-function setTacticalFightPhase(field,value){
+function tacticalFightUnitState(entryUid){
+  const phase=tacticalFightPhaseState(),raw=phase.units?.[String(entryUid)]||{};
+  return {
+    engagedAtFightStart:raw.engagedAtFightStart===true?true:(raw.engagedAtFightStart===false?false:null),
+    becameEngagedDuringFight:raw.becameEngagedDuringFight===true?true:(raw.becameEngagedDuringFight===false?false:null),
+    pileInDone:raw.pileInDone===true,
+    consolidationDone:raw.consolidationDone===true
+  };
+}
+function setTacticalFightUnitState(entryUid,field,value){
+  if(!entryUid)return;
   const before=snapshotForUndo(),t=ensureTacticalState(),r=Math.max(1,Number(state.round)||1),turn=state.currentTurn;
-  const cur=tacticalFightPhaseState();
-  const next={...cur,round:r,playerTurn:turn};
-  if(field==='step')next.step=['fightsFirst','remaining','unknown'].includes(value)?value:'unknown';
-  else if(field==='nextSide')next.nextSide=value==='opp'?'opp':'my';
-  else if(field==='notes')next.notes=String(value||'');
-  else if(field==='select'){
-    const uid=String(value||'');
-    next.selected=uid?[...new Set([...next.selected,uid])]:next.selected;
-  }else if(field==='unselect'){
-    const uid=String(value||'');
-    next.selected=next.selected.filter(x=>x!==uid);
-  }else return;
-  t.fightPhase=next;
-  event('TACTICAL_FIGHT_PHASE_CHANGED',{field,value,action:'Fight phase sequencing changed',before:cur,after:next},before);
+  const cur=tacticalFightPhaseState(),uid=String(entryUid),old={...tacticalFightUnitState(uid)},units={...cur.units},next={...old};
+  if(field==='engagedAtFightStart'||field==='becameEngagedDuringFight')next[field]=value===true||value==='true'?true:(value===false||value==='false'?false:null);
+  else if(field==='pileInDone'||field==='consolidationDone')next[field]=!!value;
+  else return;
+  units[uid]=next;t.fightPhase={...cur,round:r,playerTurn:turn,units};
+  event('TACTICAL_FIGHT_UNIT_CHANGED',{entryUid,field,value:next[field],action:'Fight unit state changed',before:old,after:next},before);
   save();render();
 }
 function tacticalFightOrderState(entry){
-  const f=tacticalUnitFightState(entry),phase=tacticalFightPhaseState();
-  const selected=phase.selected.includes(String(entry?.uid||''));
-  return {
-    ...f,
-    selected,
-    stepEligible:f.fightsFirst?'fightsFirst':f.eligible?'remaining':'ineligible',
-    availableNow:f.eligible&&!selected&&(phase.step==='unknown'||phase.step===(f.fightsFirst?'fightsFirst':'remaining'))
-  };
+  const f=tacticalUnitFightState(entry),phase=tacticalFightPhaseState(),unit=tacticalFightUnitState(entry?.uid),selected=phase.selected.includes(String(entry?.uid||''));
+  const overrunEligible=unit.engagedAtFightStart===true||unit.becameEngagedDuringFight===true,effectiveEligible=f.eligible||overrunEligible;
+  return {...f,...unit,selected,overrunEligible,effectiveEligible,
+    fightType:f.engaged?'NORMAL_FIGHT':f.chargeMade?'CHARGE_FIGHT':overrunEligible?'OVERRUN_FIGHT':'INELIGIBLE',
+    stepEligible:f.fightsFirst?'fightsFirst':effectiveEligible?'remaining':'ineligible',
+    availableNow:effectiveEligible&&!selected&&(phase.step==='unknown'||phase.step===(f.fightsFirst?'fightsFirst':'remaining'))};
 }
 function tacticalPairKey(attackerUid,targetUid){return String(attackerUid||'')+'>'+String(targetUid||'')}
 function tacticalPairState(attackerUid,targetUid){
@@ -5159,22 +5160,19 @@ function tacticalTargetLegality(attackerEntry,targetEntry,phase){
   }
   if(p==='Fight'){
     if(!tacticalPhaseActionAvailable(attackerEntry.uid,'Fight'))return {status:'known',known:true,canTarget:false,reasons:['attacker has already completed its Fight action'],context:ctx};
-    const fightState=tacticalUnitFightState(attackerEntry);
-    if(!fightState.eligible&&!fightState.chargeMade&&ctx.engagement==='unknown')reasons.push('engagement status unknown');
-    if(!fightState.eligible&&ctx.engagement==='notEngaged')reasons.push('unit is not engaged and did not make a Charge move this turn');
-    if(fightState.chargeMade&&ctx.engagement!=='engaged')reasons.push('unit made a Charge move this turn; current engagement/pile-in state is needed to determine the legal fight type and target');
+    const fightState=tacticalUnitFightState(attackerEntry),unitState=tacticalFightUnitState(attackerEntry.uid);
+    const overrunEligible=unitState.engagedAtFightStart===true||unitState.becameEngagedDuringFight===true,effectiveEligible=fightState.eligible||overrunEligible;
+    if(!effectiveEligible&&ctx.engagement==='unknown')reasons.push('engagement status unknown');
+    if(!effectiveEligible&&ctx.engagement==='notEngaged')reasons.push('unit is not engaged, did not make a Charge move, and has no confirmed Overrun eligibility');
+    if(fightState.chargeMade&&ctx.engagement!=='engaged')reasons.push('unit made a Charge move; pile-in/engagement state is needed before selecting melee targets');
+    if(overrunEligible&&ctx.engagement!=='engaged')reasons.push('Overrun eligibility is confirmed, but a current engaged target is still required');
+    if(unitState.pileInDone===false&&effectiveEligible)reasons.push('pile-in status is unresolved');
     if(tacticalUnitHasKeyword(attackerEntry,'AIRCRAFT'))reasons.push('AIRCRAFT units can only make melee attacks against FLYING units');
     if(tacticalUnitHasKeyword(targetEntry,'AIRCRAFT')&&!tacticalUnitCanFly(attackerEntry))reasons.push('only FLYING models can make melee attacks against AIRCRAFT units');
     const blockedAircraft=reasons.some(x=>x==='AIRCRAFT units can only make melee attacks against FLYING units'||x==='only FLYING models can make melee attacks against AIRCRAFT units');
-    const hardBlocked=!fightState.eligible&&ctx.engagement==='notEngaged'&&!fightState.chargeMade;
-    const targetEligible=fightState.eligible&&ctx.engagement==='engaged';
-    return {
-      status:blockedAircraft||hardBlocked?'known':(targetEligible?'known':'unknown'),
-      known:blockedAircraft||hardBlocked||targetEligible,
-      canTarget:blockedAircraft||hardBlocked?false:(targetEligible?true:null),
-      reasons,context:ctx,
-      fightState
-    };
+    const hardBlocked=!effectiveEligible&&ctx.engagement==='notEngaged',targetEligible=effectiveEligible&&ctx.engagement==='engaged';
+    return {status:blockedAircraft||hardBlocked?'known':(targetEligible?'known':'unknown'),known:blockedAircraft||hardBlocked||targetEligible,canTarget:blockedAircraft||hardBlocked?false:(targetEligible?true:null),reasons,context:ctx,
+      fightState:{...fightState,...unitState,overrunEligible,effectiveEligible,fightType:fightState.engaged?'NORMAL_FIGHT':fightState.chargeMade?'CHARGE_FIGHT':overrunEligible?'OVERRUN_FIGHT':'INELIGIBLE'}};
   }
   return {status:'notRequired',known:true,canTarget:true,reasons,context:ctx};
 }
