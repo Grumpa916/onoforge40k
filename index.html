@@ -4491,7 +4491,7 @@ function tacticalWeaponPhaseUseCount(entryUid,weaponName,round=state.round,phase
   const r=Math.max(1,Number(round)||1),p=String(phase||'Command'),s=side==='opp'?'opp':'my';
   return (state.events||[]).filter(e=>
     e?.kind==='ATTACK_RESOLUTION' &&
-    Number(e.round)||1===r &&
+    (Number(e.round)||1)===r &&
     String(e.phase||'')===p &&
     String(e.playerTurn||'')===s &&
     String(e.payload?.attackerEntryUid||'')===String(entryUid) &&
