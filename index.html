@@ -5025,6 +5025,8 @@ function resolveAttack(){
   const a=get(state.attacker),t=get(state.target),w=(a.weapons||[]).find(x=>x.name===state.weapon)||a.weapons[0];
   if(!w)return;
   const m={...(state.mathRules||{})};
+  const selectedTargetEntry=de&&get(de.unitId)?.id===t.id?de:null;
+  const te=selectedTargetEntry||state.opp.find(e=>e.unitId===t.id)||state.my.find(e=>e.unitId===t.id);
   const attackerRoster=ae&&modelRosterRule(a)?survivingModelRoster(ae,a):[];
   const attackerRoot=ae?combatRootEntry('my',ae):ae;
   const movementEntry=attackerRoot||ae;
@@ -5045,8 +5047,6 @@ function resolveAttack(){
     :Math.max(1,Number(mathWeaponAlloc(ae,a)?.[w.name])||0);
   if(ae&&attackerRoster.length===1)m.attackerWoundsRemaining=Math.max(0,Number(attackerRoster[0]?.woundsRemaining)||0);
   if(modelsAvailable<=0)return; 
-  const selectedTargetEntry=de&&get(de.unitId)?.id===t.id?de:null;
-  const te=selectedTargetEntry||state.opp.find(e=>e.unitId===t.id)||state.my.find(e=>e.unitId===t.id);
   const rosterTracked=!!(te&&modelRosterRule(t));
   const modelsResolved=Math.max(1,modelsAvailable);
   const resolvedModelIds=eligibleWeaponModels.length?eligibleWeaponModels.slice(0,modelsResolved).map(model=>model.id):[];
