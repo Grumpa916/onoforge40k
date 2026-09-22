@@ -1070,8 +1070,14 @@ function scorePrimaryItem(side,index,mission,amountOverride){
     }
     const replacementBaseVP=Math.max(0,before-groupExistingVP);
     const replacementRoundBase=Math.max(0,roundTotalBefore-groupExistingVP);
-    const allowedVP=Math.min(requestedVP,Math.max(0,15-replacementRoundBase),Math.max(0,45-replacementBaseVP));
-    if(allowedVP<=0){alert('Primary scoring is capped at 15 VP for this round.');return;}
+    const endOfBattle=String(row[0]||'').toLowerCase().includes('end of battle');
+    const roundAllowance=endOfBattle?requestedVP:Math.max(0,15-replacementRoundBase);
+    const gameAllowance=Math.max(0,45-replacementBaseVP);
+    const allowedVP=Math.min(requestedVP,roundAllowance,gameAllowance);
+    if(allowedVP<=0){
+      alert(gameAllowance<=0?'Primary Missions are capped at 45 VP for the game.':'Primary scoring is capped at 15 VP for this round.');
+      return;
+    }
 
     if(group){
       for(const otherIndex of [...scored]){
@@ -1091,7 +1097,7 @@ function scorePrimaryItem(side,index,mission,amountOverride){
     state[valueKey][roundKey][index]=allowedVP;
     state[amountKey][roundKey][index]=amount;
     state[listKey]=state[byRoundKey][roundKey];
-    event('PRIMARY_SCORED',{side,unit:side==='my'?'Primary Mission':'Opponent Primary Mission',action:'Primary scored '+(delta>=0?'+':'')+delta+' VP',before,after,delta,mission,round,scoringItem:row[2],scoringTiming:row[0],amount,roundCap:15,roundTotal:replacementRoundBase+allowedVP},fullBefore);
+    event('PRIMARY_SCORED',{side,unit:side==='my'?'Primary Mission':'Opponent Primary Mission',action:'Primary scored '+(delta>=0?'+':'')+delta+' VP',before,after,delta,mission,round,scoringItem:row[2],scoringTiming:row[0],amount,roundCap:endOfBattle?null:15,roundTotal:replacementRoundBase+allowedVP},fullBefore);
   }
   save();
   render();
