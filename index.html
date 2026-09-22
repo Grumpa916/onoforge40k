@@ -4403,6 +4403,37 @@ function engineMonteCarloMixed(a,t,groups,m,samples){
   }
   return {samples,avgDamage:totalDamage/samples,avgKilled:totalKilled/samples,wipeChance:wipes/samples};
 }
+const TACTICAL_STATE_VERSION='1.0';
+function tacticalUnitState(side,e){
+  const u=get(e?.unitId);if(!u||!e)return null;
+  const g=e.game||{};
+  const roster=modelRosterRule(u)?survivingModelRoster(e,u):[];
+  const models=roster.length?roster.length:Math.max(0,Number(g.models??e.models??u.models)||0);
+  const wounds=roster.length?roster.reduce((n,m)=>n+Math.max(0,Number(m.woundsRemaining)||0),0):Math.max(0,Number(g.wounds??models*(u.wounds||1))||0);
+  return {entryUid:e.uid,unitId:u.id,name:u.name,models,wounds,maxWounds:Math.max(1,Number(u.wounds)||1)*Math.max(1,Number(e.models)||Number(u.models)||1),destroyed:g.status==='Destroyed'||models<=0,battleshocked:!!g.battleshocked,attachedTo:e.attachedTo||null,keywords:[...(u.keywords||[])],profile:u.profile||{}};
+}
+function tacticalBattleState(){
+  const objectives=Object.entries(state.objectives||{}).map(([name,owner])=>({name,owner:owner||'none'}));
+  return {version:TACTICAL_STATE_VERSION,round:Math.max(1,Number(state.round)||1),phase:state.phase||'Command',turn:state.currentTurn==='opp'?'opp':'my',
+    vp:{my:Number(state.myVP)||0,opp:Number(state.oppVP)||0},cp:{my:Number(state.myCP)||0,opp:Number(state.oppCP)||0},
+    objectives,units:{my:(state.my||[]).map(e=>tacticalUnitState('my',e)).filter(Boolean),opp:(state.opp||[]).map(e=>tacticalUnitState('opp',e)).filter(Boolean)},
+    recentEvents:(state.events||[]).slice(0,20).map(e=>({kind:e.kind,round:e.round,phase:e.phase,playerTurn:e.playerTurn,payload:e.payload||{}}))};
+}
+function tacticalLegalityForUnit(side,e){
+  const p=state.phase||'Command',isMine=side==='my',turn=state.currentTurn==='opp'?'opp':'my';
+  const s=tacticalUnitState(side,e);if(!s)return {legal:false,reason:'missing-unit'};
+  if(s.destroyed)return {legal:false,reason:'destroyed'};
+  if(isMine&&turn!=='my')return {legal:false,reason:'not-your-turn'};
+  if(!isMine&&turn==='my')return {legal:false,reason:'opponent-turn'};
+  const legalPhases={shooting:['Shooting'],charge:['Charge'],fight:['Fight'],movement:['Movement'],command:['Command']};
+  return {legal:true,phase:p,available:{movement:p==='Movement',shooting:p==='Shooting',charge:p==='Charge',fight:p==='Fight',command:p==='Command'}};
+}
+function tacticalAdvisorStateSnapshot(attackerEntryUid){
+  const atk=entry('my',attackerEntryUid)||mathRosterEntry('my');
+  const targets=(state.opp||[]).filter(e=>!e.attachedTo&&!tacticalUnitState('opp',e)?.destroyed);
+  return {battle:tacticalBattleState(),attacker:atk?tacticalUnitState('my',atk):null,targetCount:targets.length,
+    targets:targets.map(e=>tacticalUnitState('opp',e)).filter(Boolean)};
+}
 function tacticalAdvisorV1(attackerEntryUid,options={}){
   const side='my',atkEntry=entry(side,attackerEntryUid)||mathRosterEntry(side);
   const attacker=atkEntry?get(atkEntry.unitId):get(state.attacker);
@@ -4468,7 +4499,9 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     version:'tactical-advisor-v1',status:'ok',attacker:{entryUid:atkEntry?.uid,unitId:attacker.id,name:attacker.name},
     evaluatedAt:{round:Math.max(1,Number(state.round)||1),phase:state.phase||'Command',turn:state.currentTurn||state.turn||'my'},
     recommendations:results.slice(0,8),avoid,naturalTargets,
-    limitations:['Combat outcome is based on the shared rules engine and current tracked roster state.','Strategic mission/objective value is exposed as a hook but is not yet weighted into the combat index.','Attached units are evaluated against their currently targetable Bodyguard models before Leaders/Support models become targetable.']
+    stateSnapshot:tacticalAdvisorStateSnapshot(atkEntry?.uid),
+    legality:tacticalLegalityForUnit('my',atkEntry),
+    limitations:['Combat outcome is based on the shared rules engine and current tracked roster state.','Position, range, line-of-sight, engagement, and weapon-use state are not yet tracked and therefore are not assumed.','Mission/objective value is exposed as state but is not yet allowed to override combat outcomes.','Attached units are evaluated against their currently targetable Bodyguard models before Leaders/Support models become targetable.']
   };
 }
 function math(){
