@@ -5497,8 +5497,15 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     const availableGroups=targetPhaseGroups.map(g=>{
       const uid=g.entry?.uid||atkEntry?.uid;
       const exactModelIds=Array.isArray(g.modelIds)?g.modelIds.filter(Boolean):[];
-      const unusedModelIds=exactModelIds.length
-        ?exactModelIds.filter(modelId=>!tacticalWeaponModelAlreadyUsed(uid,modelId,g.weapon.name,state.round,state.phase,side))
+      // In 11th edition, a non-MONSTER/VEHICLE model using another shooting
+      // type cannot mix [CLOSE-QUARTERS] weapons with other ranged weapons.
+      // Filter model identities here so Tactical Advisor cannot simulate a
+      // model firing both modes in the same Shooting phase.
+      const modeEligibleIds=exactModelIds.length
+        ?exactModelIds.filter(modelId=>!tacticalWeaponModelModeConflict(uid,modelId,g.weapon,g.entry||atkEntry,state.round,state.phase,side))
+        :[];
+      const unusedModelIds=modeEligibleIds.length
+        ?modeEligibleIds.filter(modelId=>!tacticalWeaponModelAlreadyUsed(uid,modelId,g.weapon.name,state.round,state.phase,side))
         :[];
       const exactRemaining=exactModelIds.length?unusedModelIds.length:null;
       let count=0,phaseUsed=0;
