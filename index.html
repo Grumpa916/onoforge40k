@@ -4557,19 +4557,32 @@ function tacticalWeaponIsCloseQuarters(w){
 function tacticalWeaponIsBlast(w){
   return (w?.abilities||[]).some(a=>String(a||'').toUpperCase().replace(/-/g,' ').includes('BLAST'));
 }
+function tacticalWeaponIsAssault(w){
+  return tacticalWeaponHasRule(w,'ASSAULT');
+}
 function tacticalWeaponPhaseEligible(w,phase,attackerEntry,targetEntry){
   if(!w)return false;
   const p=String(phase||state.phase||'Command');
   const raw=String(w.rng??w.range??'').trim().toUpperCase();
   const closeQuarters=tacticalWeaponIsCloseQuarters(w);
   const blast=tacticalWeaponIsBlast(w);
+  const assault=tacticalWeaponIsAssault(w);
   const monsterVehicle=tacticalUnitIsMonsterVehicle(attackerEntry);
   const ctx=attackerEntry&&targetEntry?tacticalPairState(attackerEntry.uid,targetEntry.uid):null;
+  const advanced=tacticalUnitAdvancedState(attackerEntry?.uid);
   if(p==='Shooting'){
     if(raw==='MELEE')return false;
+    // Assault Shooting is the only core-rule shooting mode available to a unit
+    // that Advanced this turn. Close-quarters shooting additionally requires
+    // that the unit did not Advance.
+    if(advanced===true){
+      if(ctx?.engagement==='engaged')return false;
+      return assault;
+    }
     if(ctx?.engagement==='engaged'){
       if(blast)return false;
       if(!monsterVehicle&&!closeQuarters)return false;
+      return true;
     }
     return true;
   }
@@ -4591,6 +4604,7 @@ function tacticalTargetLegality(attackerEntry,targetEntry,phase){
     if(ctx.los==='no')return {status:'known',known:true,canTarget:false,reasons:['line of sight confirmed unavailable'],context:ctx};
     const engaged=tacticalUnitIsEngaged(attackerEntry.uid);
     const advanced=tacticalUnitAdvancedState(attackerEntry.uid);
+    if(advanced===null)reasons.push('movement state unknown');
     if(engaged&&ctx.engagement!=='engaged'){
       return {status:'known',known:true,canTarget:false,reasons:['engaged unit can only target enemy units it is engaged with during Close-quarters Shooting'],context:ctx};
     }
@@ -4647,7 +4661,7 @@ function tacticalContextHtml(){
     '</div>'+
     '<div class="grid2" style="margin-top:10px">'+
     '<div class="field"><label>Movement</label><select onchange="setTacticalUnitAdvanced(\''+ae.uid+'\',this.value===\'true\')"><option value="unknown" '+(advanced===null?'selected':'')+'>Advance: Unknown</option><option value="false" '+(advanced===false?'selected':'')+'>Did not Advance</option><option value="true" '+(advanced===true?'selected':'')+'>Advanced</option></select></div>'+
-    '<div class="field"><label>Advisor rule state</label><div class="status">Close-quarters shooting requires <b>Did not Advance</b>.</div></div>'+
+    '<div class="field"><label>Advisor rule state</label><div class="status">Advance restricts shooting to <b>Assault</b> weapons; Close-quarters shooting also requires <b>Did not Advance</b>.</div></div>'+
     '</div>'+
     (leg.reasons.length?'<div class="warn" style="margin-top:10px">Advisor status: '+esc(leg.reasons.join(' • '))+'.</div>':'<div class="ok" style="margin-top:10px">Advisor has the minimum battlefield context needed for the current phase.</div>')+
     '<div class="row" style="margin-top:10px"><button class="btn" type="button" onclick="clearTacticalPair(\''+ae.uid+'\',\''+selectedUid+'\')">Clear Context</button></div>'+
