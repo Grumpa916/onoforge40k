@@ -4486,6 +4486,31 @@ function setTacticalWeaponUsed(entryUid,weaponName,count){
   event('TACTICAL_WEAPON_USE_CHANGED',{entryUid,weaponName,action:'Weapon use count changed',before:old,after:t.unitUse[key]},before);
   save();render();
 }
+function tacticalWeaponPhaseUseCount(entryUid,weaponName,round=state.round,phase=state.phase,side='my'){
+  if(!entryUid||!weaponName)return 0;
+  const r=Math.max(1,Number(round)||1),p=String(phase||'Command'),s=side==='opp'?'opp':'my';
+  return (state.events||[]).filter(e=>
+    e?.kind==='ATTACK_RESOLUTION' &&
+    Number(e.round)||1===r &&
+    String(e.phase||'')===p &&
+    String(e.playerTurn||'')===s &&
+    String(e.payload?.attackerEntryUid||'')===String(entryUid) &&
+    String(e.payload?.weapon||'')===String(weaponName)
+  ).length;
+}
+function tacticalWeaponAvailableForPhase(entryUid,w,maxCount,round=state.round,phase=state.phase,side='my'){
+  const limit=Math.max(0,Math.floor(Number(maxCount)||0));
+  if(!w||limit<=0)return {available:false,count:0,reason:'No remaining models'};
+  const phaseUsed=tacticalWeaponPhaseUseCount(entryUid,w.name,round,phase,side);
+  const use=tacticalWeaponUseState(entryUid,w.name);
+  if(tacticalWeaponHasRule(w,'ONE SHOT')){
+    const used=Math.max(phaseUsed,Math.min(limit,use.usedCount));
+    const remaining=Math.max(0,limit-used);
+    return {available:remaining>0,count:remaining,reason:remaining?'':'All available One Shot weapons used',use,phaseUsed};
+  }
+  const remaining=Math.max(0,limit-phaseUsed);
+  return {available:remaining>0,count:remaining,reason:remaining?'':'Weapon capacity already resolved this phase',use,phaseUsed};
+}
 function tacticalWeaponRange(w){
   if(!w)return null;
   const raw=String(w.rng??w.range??'').trim().toUpperCase();
@@ -4599,7 +4624,11 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     while(woundsState.length<defModels)woundsState.push(woundFallback);
     const totalWounds=woundsState.reduce((sum,w)=>sum+Math.max(0,Number(w)||0),0);
     const m={...(state.mathRules||{}),defenderModels:defModels,defenderWoundsState:woundsState,quickSamples:Math.min(10000,Math.max(2000,Number(options.samples)||4000)),_skipSim:false};
-    const availableGroups=groups.map(g=>{const u=tacticalWeaponAvailable(g.entry?.uid||atkEntry?.uid,g.weapon,g.count);return u.available?{...g,count:Math.min(g.count,u.count)}:null}).filter(Boolean);
+    const availableGroups=groups.map(g=>{
+      const uid=g.entry?.uid||atkEntry?.uid;
+      const u=tacticalWeaponAvailableForPhase(uid,g.weapon,g.count,state.round,state.phase,side);
+      return u.available?{...g,count:Math.min(g.count,u.count),phaseUsed:u.phaseUsed||0}:null;
+    }).filter(Boolean);
     const calc=calculateMathMixed(attacker,target,availableGroups,m);
     const damage=Math.max(0,Number(calc.damage)||0);
     const killed=Math.max(0,Number(calc.modelsKilled)||0);
@@ -4867,7 +4896,7 @@ function resolveAttack(){
       te.game.status=te.game.wounds<=0?'Destroyed':te.game.wounds<te.models*t.wounds?'Damaged':'Alive';
     }
     event('ATTACK_RESOLUTION',{
-      attacker:a.name,weapon:w.name,target:t.name,unit:a.name,
+      attacker:a.name,attackerEntryUid:ae?.uid||null,weapon:w.name,target:t.name,targetEntryUid:te?.uid||null,unit:a.name,
       action:'Attack with '+w.name+' → '+t.name,
       attacks:Math.round(engineExpectedDice(w.A)),hits:r.hits,wounds:r.wounds,saved:r.saved,damage:r.damage,
       critHits:r.critHits,critW:r.critWounds,before,after:te.game,rollLog:r.rollLog,
@@ -4875,7 +4904,7 @@ function resolveAttack(){
     },fullBefore);
   }else{
     event('ATTACK_RESOLUTION',{
-      attacker:a.name,weapon:w.name,target:t.name,unit:a.name,
+      attacker:a.name,attackerEntryUid:ae?.uid||null,weapon:w.name,target:t.name,targetEntryUid:te?.uid||null,unit:a.name,
       action:'Attack with '+w.name+' → '+t.name,
       hits:r.hits,wounds:r.wounds,saved:r.saved,damage:r.damage,critHits:r.critHits,critW:r.critWounds,rollLog:r.rollLog
     },fullBefore);
