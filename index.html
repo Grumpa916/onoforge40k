@@ -4443,15 +4443,26 @@ function clearTacticalPair(attackerUid,targetUid){
   event('TACTICAL_CONTEXT_CHANGED',{attackerUid,targetUid,action:'Tactical context cleared',before:old,after:null},before);
   save();render();
 }
+function tacticalWeaponRange(w){
+  if(!w)return null;
+  const raw=String(w.rng??w.range??'').trim().toUpperCase();
+  if(!raw||raw==='MELEE'||raw==='—'||raw==='-')return null;
+  const m=raw.match(/(\\d+(?:\\.\\d+)?)/);
+  return m?Number(m[1]):null;
+}
 function tacticalTargetLegality(attackerEntry,targetEntry,phase){
   if(!attackerEntry||!targetEntry)return {status:'unknown',reasons:['missing-unit']};
   const ctx=tacticalPairState(attackerEntry.uid,targetEntry.uid),p=String(phase||state.phase||'Command');
   const reasons=[];
   if(p==='Shooting'){
+    if(ctx.los==='no')return {status:'known',known:true,canTarget:false,reasons:['line of sight confirmed unavailable'],context:ctx};
     if(ctx.distanceInches===null)reasons.push('range unknown');
     if(ctx.los==='unknown')reasons.push('line of sight unknown');
     if(ctx.distanceInches!==null&&ctx.distanceInches<=0)reasons.push('invalid distance');
-    return {status:reasons.length?'unknown':'known',known:!reasons.length,canTarget:reasons.length?null:true,reasons,context:ctx};
+    const groups=attachedCombatWeaponGroups('my',attackerEntry);
+    const ranges=groups.map(g=>tacticalWeaponRange(g.weapon)).filter(Number.isFinite);
+    if(ctx.distanceInches!==null&&ranges.length&&Math.max(...ranges)<ctx.distanceInches)reasons.push('target is beyond all known weapon ranges');
+    return {status:reasons.length?'unknown':'known',known:!reasons.length,canTarget:reasons.some(x=>x.includes('confirmed')||x.includes('beyond all'))?false:(reasons.length?null:true),reasons,context:ctx};
   }
   if(p==='Charge'){
     if(ctx.distanceInches===null)reasons.push('distance unknown');
@@ -4561,6 +4572,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
       models:defModels,targetWounds:totalWounds,expectedDamage:damage,modelsKilled:killed,wipeChance:wipe,
       damageFraction:damageFrac,killFraction,damagePerPoint:efficiency,weaponProfiles:weaponKeys,
       antiMatches:[...new Set(antiMatches)],confidence,
+      tacticalLegality:tacticalTargetLegality(atkEntry,targetEntry,state.phase),
       attached:!!target.__combatTarget,
       bodyguardTarget:!!target.__bodyguardEntryUid,
       strategicHook:{objectiveControl:Number(target.profile?.OC)||0,keywords:[...(target.keywords||[])]},
