@@ -4516,8 +4516,10 @@ function tacticalWeaponPhaseEligible(w,phase,attackerEntry,targetEntry){
   const p=String(phase||state.phase||'Command');
   const raw=String(w.rng??w.range??'').trim().toUpperCase();
   const abilities=(w.abilities||[]).map(a=>String(a||'').toUpperCase().replace(/-/g,' '));
-  const pistol=abilities.some(a=>a.includes('PISTOL'));
-  const bigGuns=abilities.some(a=>a.includes('BIG GUNS NEVER TIRE')||a.includes('BIG GUNS'));
+  const pistol=abilities.some(a=>a.includes('PISTOL')||a.includes('CLOSE QUARTERS'));
+  const attackerUnit=attackerEntry?get(attackerEntry.unitId):null;
+  const keywords=(attackerUnit?.keywords||[]).map(k=>String(k).toUpperCase());
+  const bigGuns=abilities.some(a=>a.includes('BIG GUNS NEVER TIRE')||a.includes('BIG GUNS'))||keywords.includes('VEHICLE')||keywords.includes('MONSTER');
   const ctx=attackerEntry&&targetEntry?tacticalPairState(attackerEntry.uid,targetEntry.uid):null;
   if(p==='Shooting'){
     if(raw==='MELEE')return false;
@@ -4648,7 +4650,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
   if(!attacker)return {version:'tactical-advisor-v1',status:'no-attacker',recommendations:[],avoid:[],naturalTargets:[]};
   const attackerLegality=tacticalLegalityForUnit('my',atkEntry);
   if(!attackerLegality.legal)return {version:'tactical-advisor-v1',status:'attacker-not-legal',attacker:attacker.name,recommendations:[],avoid:[],naturalTargets:[],attackerLegality};
-  const groups=attachedCombatWeaponGroups(side,atkEntry).filter(g=>tacticalWeaponPhaseEligible(g.weapon,state.phase,g.entry,entry('opp',ensureTacticalState().selectedTargetUid)));
+  const groups=attachedCombatWeaponGroups(side,atkEntry).filter(g=>tacticalWeaponPhaseEligible(g.weapon,state.phase));
   if(!groups.length)return {version:'tactical-advisor-v1',status:'no-phase-eligible-weapons',attacker:attacker.name,recommendations:[],avoid:[],naturalTargets:[],phase:state.phase};
   const roots=(state.opp||[]).filter(e=>!e.attachedTo);
   const results=roots.map(targetEntry=>{
@@ -4663,7 +4665,8 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     while(woundsState.length<defModels)woundsState.push(woundFallback);
     const totalWounds=woundsState.reduce((sum,w)=>sum+Math.max(0,Number(w)||0),0);
     const m={...(state.mathRules||{}),defenderModels:defModels,defenderWoundsState:woundsState,quickSamples:Math.min(10000,Math.max(2000,Number(options.samples)||4000)),_skipSim:false};
-    const availableGroups=groups.map(g=>{
+    const targetPhaseGroups=groups.filter(g=>tacticalWeaponPhaseEligible(g.weapon,state.phase,g.entry,targetEntry));
+    const availableGroups=targetPhaseGroups.map(g=>{
       const uid=g.entry?.uid||atkEntry?.uid;
       const u=tacticalWeaponAvailableForPhase(uid,g.weapon,g.count,state.round,state.phase,side);
       if(!u.available)return null;
