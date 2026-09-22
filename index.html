@@ -4364,15 +4364,19 @@ function engineWeaponPoolKey(w,target){
     abilities
   });
 }
+function engineWeaponVariantKey(w){const p=w?.weapon||w||{};return JSON.stringify({A:String(p.A??'')});}
 function attachedCombatWeaponGroups(side,e,target=null){
   const snap=combatSnapshot(side,e);if(!snap)return [];
   return snap.weapons.reduce((groups,w)=>{
     const key=w.sourceEntryUid+'|'+String(w.sourceModelId||'')+'|'+engineWeaponPoolKey(w.weapon,target);
     const poolKey=engineWeaponPoolKey(w.weapon,target),existing=groups.find(g=>g.poolKey===poolKey);
-    if(existing){existing.count++;existing.modelIds.push(w.sourceModelId)}
-    else{
+    if(existing){
+      existing.count++;existing.modelIds.push(w.sourceModelId);
+      const v=existing.weaponVariants.find(x=>engineWeaponVariantKey(x.weapon)===engineWeaponVariantKey(w.weapon));
+      if(v)v.count++;else existing.weaponVariants.push({weapon:w.weapon,count:1});
+    }else{
       const ce=entry(side,w.sourceEntryUid),u=get(w.unitId);
-      groups.push({key,poolKey,entry:ce,attacker:u,weapon:w.weapon,count:1,modelIds:[w.sourceModelId],role:w.componentRole,identityExact:!!w.identityExact});
+      groups.push({key,poolKey,entry:ce,attacker:u,weapon:w.weapon,count:1,modelIds:[w.sourceModelId],role:w.componentRole,identityExact:!!w.identityExact,weaponVariants:[{weapon:w.weapon,count:1}]});
     }
     return groups;
   },[]);
@@ -4455,7 +4459,7 @@ function engineMonteCarloMixed(a,t,groups,m,samples){
     const woundsState=baseWounds.slice(); let dmg=0;
     for(const g of groups){
       if(g.count<=0)continue;
-      const r=engineOneAttack(g.attacker||a,g.weapon,t,m,defModels,woundsState,g.count);
+      const r=engineOneAttack(g.attacker||a,g.weapon,t,{...m,attackWeaponVariants:g.weaponVariants||[{weapon:g.weapon,count:g.count}]},defModels,woundsState,g.count);
       dmg+=r.damage;
       if(woundsState.every(x=>x<=0))break;
     }
@@ -5259,10 +5263,10 @@ function engineOneAttack(a,w,t,m,modelsRemaining,woundsState,attackingModels=1){
   const baseTarget=engineTargetForAttack(t,m,woundsState);
   const baseC=engineContext(a,w,baseTarget,m);
   let attacks=0;
-  const perModelAttacks=[];
-  for(let model=0;model<Math.max(1,Math.floor(Number(attackingModels)||1));model++){
-    const modelAttacks=Math.max(0,Math.round(engineRoll(w.A)+(baseC.rapidFire&&m.halfRange?baseC.rapidFire:0)+(baseC.blast?baseC.blast*Math.floor(modelsRemaining/5):0)+(baseC.cleave?baseC.cleave*Math.floor(modelsRemaining/5):0)));
-    perModelAttacks.push(modelAttacks);attacks+=modelAttacks;
+  const variants=Array.isArray(m?.attackWeaponVariants)&&m.attackWeaponVariants.length?m.attackWeaponVariants:[{weapon:w,count:Math.max(1,Math.floor(Number(attackingModels)||1))}];
+  for(const variant of variants){
+    const vw=variant.weapon||w,vc=engineContext(a,vw,baseTarget,m),count=Math.max(1,Math.floor(Number(variant.count)||1));
+    for(let model=0;model<count;model++)attacks+=Math.max(0,Math.round(engineRoll(vw.A)+(vc.rapidFire&&m.halfRange?vc.rapidFire:0)+(vc.blast?vc.blast*Math.floor(modelsRemaining/5):0)+(vc.cleave?vc.cleave*Math.floor(modelsRemaining/5):0)));
   }
   let hits=0,wounds=0,saved=0,critHits=0,critWounds=0,rollLog=[];
   const woundEvents=[];
