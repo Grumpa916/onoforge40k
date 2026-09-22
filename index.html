@@ -4911,11 +4911,13 @@ function tacticalObjectiveValueForTarget(targetEntry,pairCtx){
   if(!label)return {value:0,status:'unknown',reason:'no-objective-context',objective:''};
   const rawOwner=state.objectives?.[label];
   const owner=['my','opp','contested','none'].includes(rawOwner)?rawOwner:'unknown';
-  if(owner==='unknown'||owner==='none')return {value:0,status:'unknown',reason:'objective-owner-unknown',objective:label,owner};
+  const startOwner=objectiveTurnStartOwner(label);
+  const changedThisTurn=owner!==startOwner;
+  if(owner==='unknown'||owner==='none')return {value:0,status:'unknown',reason:'objective-owner-unknown',objective:label,owner,startOwner,changedThisTurn};
   const oc=Math.max(0,Number(targetEntry?.profile?.OC)||0);
-  if(owner==='opp')return {value:Math.min(1,0.65+0.35*Math.min(1,oc/5)),status:'positive',reason:'target-linked-to-opponent-controlled-objective',objective:label,owner,oc};
-  if(owner==='contested')return {value:Math.min(1,0.40+0.25*Math.min(1,oc/5)),status:'contested',reason:'target-linked-to-contested-objective',objective:label,owner,oc};
-  return {value:0.05*Math.min(1,oc/5),status:'negative',reason:'target-linked-to-friendly-controlled-objective',objective:label,owner,oc};
+  if(owner==='opp')return {value:Math.min(1,0.65+0.35*Math.min(1,oc/5)),status:'positive',reason:changedThisTurn?'target-linked-to-newly-opponent-controlled-objective':'target-linked-to-opponent-controlled-objective',objective:label,owner,startOwner,changedThisTurn,oc};
+  if(owner==='contested')return {value:Math.min(1,0.40+0.25*Math.min(1,oc/5)),status:'contested',reason:changedThisTurn?'target-linked-to-newly-contested-objective':'target-linked-to-contested-objective',objective:label,owner,startOwner,changedThisTurn,oc};
+  return {value:0.05*Math.min(1,oc/5),status:'negative',reason:changedThisTurn?'target-linked-to-newly-friendly-controlled-objective':'target-linked-to-friendly-controlled-objective',objective:label,owner,startOwner,changedThisTurn,oc};
 }
 
 function tacticalAdvisorStateSnapshot(attackerEntryUid){
