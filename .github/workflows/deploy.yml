@@ -95,7 +95,6 @@ jobs:
                 const mc=r.missionDecisionContext||{};
                 const mode=top.decisionMode||dc.mode||'TACTICAL';
                 const interpretation=top.decisionInterpretation||dc.interpretation||'No single mission mode dominates the current exchange.';
-                const obj=mc.objectives||mc.objectiveSummary||{};
                 host.innerHTML=
                   '<div class="ta-decision-render">'+
                   '<div class="ta-decision-head"><div><div class="ta-decision-title">Tactical Advisor</div><div class="ta-decision-sub">8-factor mission-aware decision model • active combat recommendation</div></div>'+
@@ -120,7 +119,13 @@ jobs:
             }
             function ensureHost(){
               let h=document.getElementById('onoforge-advisor-render');
-              if(!h){h=document.createElement('div');h.id='onoforge-advisor-render';const app=document.getElementById('app');if(app)app.parentNode.insertBefore(h,app.nextSibling)}
+              if(!h){
+                h=document.createElement('div');h.id='onoforge-advisor-render';
+                const battle=document.querySelector('.battle-layout');
+                const app=document.getElementById('app');
+                if(battle) battle.insertBefore(h,battle.firstChild);
+                else if(app) app.parentNode.insertBefore(h,app);
+              }
               renderAdvisor();
             }
             window.addEventListener('load',function(){setTimeout(ensureHost,500);setInterval(ensureHost,1200)});
