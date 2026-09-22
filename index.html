@@ -5073,7 +5073,13 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     ));
     x.decisionComponents={
       lethality,threatSuppression,efficiency,objectiveValue,objectiveContext,scoringUrgency,scoreNow,denyOpponentScore,preserveFriendlyUnit,tradeValue,futureScoringValue,decisionMode,dataConfidence,simulationConfidence,decisionConfidence,
-      weights:{lethality:0.36,threatSuppression:0.18,efficiency:0.08,objectiveValue:0.08,scoringUrgency:0.06,scoreNow:0.06,denyOpponentScore:0.05,preserveFriendlyUnit:0.04,tradeValue:0.03,futureScoringValue:0.01,dataConfidence:0.03,simulationConfidence:0.02}
+      weights:{lethality:0.36,threatSuppression:0.18,efficiency:0.08,objectiveValue:0.08,scoringUrgency:0.06,scoreNow:0.06,denyOpponentScore:0.05,preserveFriendlyUnit:0.04,tradeValue:0.03,futureScoringValue:0.01,dataConfidence:0.03,simulationConfidence:0.02},
+      interpretation:decisionMode==='SCORE_NOW'?'Immediate scoring opportunity should dominate this target choice.':
+        decisionMode==='DENY_SCORE'?'Removing or displacing this target can reduce the opponent scoring opportunity.':
+        decisionMode==='PRESERVE_UNIT'?'The exchange is exposing the attacker; preserving the unit should materially affect the choice.':
+        decisionMode==='TRADE_UP'?'The expected damage/threat exchange is favorable enough to consider a trade.':
+        decisionMode==='SET_UP_FUTURE_SCORE'?'The target is linked to a future scoring opportunity; immediate damage is not the only value.':
+        'No single mission mode dominates; use the combat and threat components together.'
     };
     x.tacticalIndexAdjusted=Math.max(-1,Number(x.tacticalIndex)||0)*(1-0.20*exposure);
   });
