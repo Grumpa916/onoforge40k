@@ -4921,12 +4921,24 @@ function tacticalWeaponUseState(entryUid,weaponName,side='my'){
 function tacticalWeaponHasRule(w,rule){
   return (w?.abilities||[]).some(a=>String(a||'').toUpperCase().replace(/-/g,' ').includes(String(rule||'').toUpperCase()));
 }
+function tacticalWeaponBattleUseCount(entryUid,weaponName,side='my'){
+  if(!entryUid||!weaponName)return 0;
+  const s=side==='opp'?'opp':'my';
+  return (state.events||[]).filter(e=>
+    e?.kind==='ATTACK_RESOLUTION' &&
+    String(e.playerTurn||'')===s &&
+    tacticalWeaponEventEntryMatches(entryUid,e,s) &&
+    String(e.payload?.weapon||'')===String(weaponName)
+  ).reduce((n,e)=>n+Math.max(1,Number(e.payload?.modelsResolved||e.payload?.modelsRemaining||e.payload?.modelIds?.length)||1),0);
+}
 function tacticalWeaponAvailable(entryUid,w,maxCount,side='my'){
   if(!w)return {available:false,count:0,reason:'missing weapon'};
   const limit=Math.max(1,Number(maxCount)||1),use=tacticalWeaponUseState(entryUid,w.name,side);
   if(tacticalWeaponHasRule(w,'ONE SHOT')){
-    const remaining=Math.max(0,limit-Math.min(limit,use.usedCount));
-    return {available:remaining>0,count:remaining,reason:remaining?'':'All One Shot weapons used',use};
+    const eventCount=tacticalWeaponBattleUseCount(entryUid,w.name,side);
+    const consumed=Math.max(use.usedCount,eventCount);
+    const remaining=Math.max(0,limit-Math.min(limit,consumed));
+    return {available:remaining>0,count:remaining,reason:remaining?'':'All One Shot weapons used',use,eventCount};
   }
   return {available:true,count:limit,reason:null,use};
 }
@@ -5363,6 +5375,9 @@ function tacticalPreRollCheck(attackerEntryUid,targetEntryUid,weaponName=null){
   if(legality.canTarget===null)warnings.push(...(legality.reasons||[]));
   if(phase!=='Shooting'&&phase!=='Fight')warnings.push('Pre-roll combat checks are available during Shooting and Fight.');
   if(phase==='Shooting'&&!phaseEligible)warnings.push('This weapon is not currently eligible for Shooting.');
+  const weaponAvailability=tacticalWeaponAvailable(ae.uid,w,1,'my');
+  if(phase==='Shooting'&&weaponAvailability.available===false)return {status:'illegal',attacker:a.name,target:t.name,weapon:w.name,steps:[],warnings:[weaponAvailability.reason||'Weapon is no longer available this battle.']};
+  if(phase==='Shooting'&&tacticalWeaponHasRule(w,'ONE SHOT'))warnings.push('ONE SHOT: this weapon can only be selected once per battle.');
   const selectedWeaponRange=tacticalWeaponRange(w);
   if(phase==='Shooting'&&Number.isFinite(Number(ctx.distanceInches))&&Number.isFinite(selectedWeaponRange)&&Number(ctx.distanceInches)>selectedWeaponRange){
     return {status:'illegal',attacker:a.name,target:t.name,weapon:w.name,steps:[],warnings:['Weapon is out of range: target is '+String(ctx.distanceInches)+'" away, weapon range is '+selectedWeaponRange+'".']};
