@@ -4395,6 +4395,53 @@ function engineMonteCarloMixed(a,t,groups,m,samples){
   }
   return {samples,avgDamage:totalDamage/samples,avgKilled:totalKilled/samples,wipeChance:wipes/samples};
 }
+function tacticalAdvisorV1(attackerEntryUid,options={}){
+  const side='my',atkEntry=entry(side,attackerEntryUid)||mathRosterEntry(side);
+  const attacker=atkEntry?get(atkEntry.unitId):get(state.attacker);
+  if(!attacker)return {version:'tactical-advisor-v1',status:'no-attacker',recommendations:[],avoid:[],naturalTargets:[]};
+  const groups=attachedCombatWeaponGroups(side,atkEntry);
+  if(!groups.length)return {version:'tactical-advisor-v1',status:'no-weapons',attacker:attacker.name,recommendations:[],avoid:[],naturalTargets:[]};
+  const roots=(state.opp||[]).filter(e=>!e.attachedTo);
+  const results=roots.map(targetEntry=>{
+    const target=combatTargetUnit('opp',targetEntry)||get(targetEntry.unitId);
+    if(!target)return null;
+    const snap=combatSnapshot('opp',targetEntry);
+    const defModels=Math.max(1,Number(target.models)||Number(targetEntry.models)||1);
+    const totalWounds=defModels*Math.max(1,Number(target.profile?.W)||1);
+    const m={...(state.mathRules||{}),defenderModels:defModels,quickSamples:Math.min(10000,Math.max(2000,Number(options.samples)||4000)),_skipSim:false};
+    const calc=calculateMathMixed(attacker,target,groups,m);
+    const damage=Math.max(0,Number(calc.damage)||0);
+    const killed=Math.max(0,Number(calc.modelsKilled)||0);
+    const wipe=Math.max(0,Math.min(1,Number(calc.killChance)||0));
+    const damageFrac=Math.min(1,damage/Math.max(1,totalWounds));
+    const killFrac=Math.min(1,killed/defModels);
+    const points=Math.max(1,Number(targetEntry.points)||Number(target.points)||1);
+    const efficiency=damage/points;
+    const weaponKeys=[...new Set(groups.filter(g=>g.count>0).map(g=>g.weapon.name))];
+    const antiMatches=groups.flatMap(g=>(g.weapon.abilities||[]).filter(a=>/ANTI/i.test(String(a))&&String(a).toUpperCase().includes(String(target.keywords||[]).join(' ').toUpperCase())));
+    const confidence=snap?.exactModelIdentity&&snap?.exactWeaponIdentity?'high':(snap?.exactWeaponIdentity?'medium':'limited');
+    return {
+      entryUid:targetEntry.uid,unitId:target.id,name:target.name,faction:target.faction,points,
+      models:defModels,targetWounds:totalWounds,expectedDamage:damage,modelsKilled:killed,wipeChance:wipe,
+      damageFraction:damageFrac,killFraction,damagePerPoint:efficiency,weaponProfiles:weaponKeys,
+      antiMatches:[...new Set(antiMatches)],confidence,
+      attached:!!target.__combatTarget,
+      bodyguardTarget:!!target.__bodyguardEntryUid,
+      strategicHook:{objectiveControl:Number(target.profile?.OC)||0,keywords:[...(target.keywords||[])]},
+      // Internal tactical index: balances immediate removal chance with damage efficiency and avoids rewarding excessive overkill.
+      tacticalIndex:(0.45*wipe)+(0.30*killFrac)+(0.15*damageFrac)+(0.10*Math.min(1,efficiency*100))
+    };
+  }).filter(Boolean);
+  results.sort((a,b)=>b.tacticalIndex-a.tacticalIndex);
+  const naturalTargets=results.filter(x=>x.antiMatches.length||x.damageFraction>=0.75).slice(0,5);
+  const avoid=results.filter(x=>x.damageFraction<0.25&&x.wipeChance<0.15).sort((a,b)=>a.damageFraction-b.damageFraction).slice(0,5);
+  return {
+    version:'tactical-advisor-v1',status:'ok',attacker:{entryUid:atkEntry?.uid,unitId:attacker.id,name:attacker.name},
+    evaluatedAt:{round:Math.max(1,Number(state.round)||1),phase:state.phase||'Command',turn:state.currentTurn||state.turn||'my'},
+    recommendations:results.slice(0,8),avoid,naturalTargets,
+    limitations:['Combat outcome is based on the shared rules engine and current tracked roster state.','Strategic mission/objective value is exposed as a hook but is not yet weighted into the combat index.','Attached units are evaluated against their currently targetable Bodyguard models before Leaders/Support models become targetable.']
+  };
+}
 function math(){
   const rules=state.mathRules||{};
   const ae=mathRosterEntry('my'),de=mathRosterEntry('opp');
