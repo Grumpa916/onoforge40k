@@ -22,6 +22,123 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Render Tactical Advisor decision surface
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("index.html")
+          html = p.read_text(encoding="utf-8")
+          css = r"""
+          <style id="onoforge-advisor-render-css">
+          .ta-decision-render{background:#0d1621;border:1px solid #3d6688;border-radius:12px;padding:14px;margin:0 0 14px}
+          .ta-decision-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+          .ta-decision-title{font-size:16px;font-weight:900}.ta-decision-sub{font-size:11px;color:#9fb4c8;margin-top:3px}
+          .ta-mode{padding:6px 9px;border:1px solid #4f789c;border-radius:999px;background:#16283a;font-size:10px;font-weight:900;letter-spacing:.06em}
+          .ta-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-top:10px}
+          .ta-metric{background:#0b1018;border:1px solid #2b3b4e;border-radius:8px;padding:8px;min-width:0}
+          .ta-metric b{display:block;font-size:16px}.ta-metric span{display:block;color:#8798aa;font-size:9px;text-transform:uppercase;letter-spacing:.07em;margin-top:2px}
+          .ta-reason{margin-top:10px;padding:9px 10px;background:#111e2b;border-left:3px solid #4f9ad6;border-radius:6px;font-size:11px;line-height:1.35}
+          .ta-targets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
+          .ta-target{background:#0b1018;border:1px solid #2b3b4e;border-radius:8px;padding:9px}
+          .ta-target-name{font-weight:800;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+          .ta-target-score{font-size:20px;font-weight:900;margin-top:3px}.ta-target-meta{font-size:9px;color:#8fa0b1;line-height:1.35;margin-top:3px}
+          .ta-unknown{color:#9ca8b8;font-size:10px}.ta-foot{font-size:9px;color:#75879a;margin-top:9px}
+          @media(max-width:900px){.ta-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ta-targets{grid-template-columns:1fr}}
+          </style>
+          """
+          js = r"""
+          <script id="onoforge-advisor-render-js">
+          (function(){
+            let lastSig='';
+            let busy=false;
+            function pct(v){return Number.isFinite(Number(v))?Math.round(Math.max(0,Math.min(1,Number(v)))*100)+'%':'—'}
+            function num(v,d=0){return Number.isFinite(Number(v))?Number(v).toFixed(d):'—'}
+            function firstFriendly(){
+              const arr=Array.isArray(window.state?.my)?window.state.my:[];
+              return arr.find(x=>x&&x.uid&&x.alive!==false&&!x.destroyed&&!x.isDestroyed)||arr.find(x=>x&&x.uid)||null;
+            }
+            function extractTargets(result){
+              const candidates=[];
+              for(const k of ['targets','recommendations','results','enemyTargets','targetResults']){
+                if(Array.isArray(result?.[k])) candidates.push(...result[k]);
+              }
+              if(!candidates.length){
+                for(const v of Object.values(result||{})){
+                  if(Array.isArray(v)&&v.some(x=>x&&typeof x==='object'&&('decisionScore' in x||'decisionMode' in x))) candidates.push(...v);
+                }
+              }
+              return candidates.filter(x=>x&&typeof x==='object').sort((a,b)=>(Number(b.decisionScore)||-1)-(Number(a.decisionScore)||-1));
+            }
+            function modeLabel(m){
+              return ({SCORE_NOW:'SCORE NOW',DENY_SCORE:'DENY SCORE',PRESERVE_UNIT:'PRESERVE UNIT',TRADE_UP:'TRADE UP',SET_UP_FUTURE_SCORE:'SET UP FUTURE SCORE',TACTICAL:'TACTICAL'})[m]||'TACTICAL';
+            }
+            function renderAdvisor(){
+              const host=document.getElementById('onoforge-advisor-render');
+              if(!host)return;
+              if(window.state?.page!=='battle'){host.innerHTML='';return}
+              const a=firstFriendly();
+              if(!a||typeof window.tacticalAdvisorV1!=='function'){
+                host.innerHTML='<div class="ta-decision-render"><div class="ta-decision-title">Tactical Advisor</div><div class="ta-unknown">Waiting for an active friendly unit and legal combat state.</div></div>';
+                return;
+              }
+              const sig=[window.state.round,window.state.phase,window.state.turn,window.state.myVP,window.state.oppVP,a.uid].join('|');
+              if(sig===lastSig)return;
+              lastSig=sig;
+              if(busy)return;
+              busy=true;
+              try{
+                const r=window.tacticalAdvisorV1(a.uid)||{};
+                const targets=extractTargets(r).slice(0,3);
+                const top=targets[0]||{};
+                const dc=top.decisionComponents||{};
+                const mc=r.missionDecisionContext||{};
+                const mode=top.decisionMode||dc.mode||'TACTICAL';
+                const interpretation=top.decisionInterpretation||dc.interpretation||'No single mission mode dominates the current exchange.';
+                const obj=mc.objectives||mc.objectiveSummary||{};
+                host.innerHTML=
+                  '<div class="ta-decision-render">'+
+                  '<div class="ta-decision-head"><div><div class="ta-decision-title">Tactical Advisor</div><div class="ta-decision-sub">8-factor mission-aware decision model • active combat recommendation</div></div>'+
+                  '<div class="ta-mode">'+modeLabel(mode)+'</div></div>'+
+                  '<div class="ta-grid">'+
+                  '<div class="ta-metric"><b>'+pct(top.lethality)+'</b><span>Lethality</span></div>'+
+                  '<div class="ta-metric"><b>'+pct(top.scoreNow)+'</b><span>Score now</span></div>'+
+                  '<div class="ta-metric"><b>'+pct(top.denyOpponentScore)+'</b><span>Deny score</span></div>'+
+                  '<div class="ta-metric"><b>'+pct(top.preserveFriendlyUnit)+'</b><span>Preserve</span></div>'+
+                  '<div class="ta-metric"><b>'+pct(top.tradeValue)+'</b><span>Trade</span></div>'+
+                  '<div class="ta-metric"><b>'+pct(top.objectiveValue)+'</b><span>Objective</span></div>'+
+                  '<div class="ta-metric"><b>'+pct(top.futureScoringValue)+'</b><span>Future score</span></div>'+
+                  '<div class="ta-metric"><b>'+pct(top.decisionConfidence)+'</b><span>Confidence</span></div>'+
+                  '</div>'+
+                  '<div class="ta-reason"><b>Why:</b> '+String(interpretation)+'</div>'+
+                  (targets.length?'<div class="ta-targets">'+targets.map((t,i)=>'<div class="ta-target"><div class="ta-target-name">'+String(t.targetName||t.name||t.defenderName||'Target '+(i+1))+'</div><div class="ta-target-score">'+pct(t.decisionScore)+'</div><div class="ta-target-meta">'+modeLabel(t.decisionMode||'TACTICAL')+' • damage '+num(t.expectedDamage,1)+' • kill '+pct(t.killFraction||t.wipeChance)+'</div></div>').join('')+'</div>':'<div class="ta-unknown" style="margin-top:10px">No legal target recommendation is available from the current state.</div>')+
+                  '<div class="ta-foot">Mission context: Round '+String(mc.round??window.state.round??'—')+' • VP '+String(mc.myVP??window.state.myVP??'—')+'–'+String(mc.oppVP??window.state.oppVP??'—')+' • objective data is used only when known; unknown state is not guessed.</div>'+
+                  '</div>';
+              }catch(e){
+                host.innerHTML='<div class="ta-decision-render"><div class="ta-decision-title">Tactical Advisor</div><div class="ta-unknown">Decision analysis unavailable for this state.</div></div>';
+              }finally{busy=false}
+            }
+            function ensureHost(){
+              let h=document.getElementById('onoforge-advisor-render');
+              if(!h){h=document.createElement('div');h.id='onoforge-advisor-render';const app=document.getElementById('app');if(app)app.parentNode.insertBefore(h,app.nextSibling)}
+              renderAdvisor();
+            }
+            window.addEventListener('load',function(){setTimeout(ensureHost,500);setInterval(ensureHost,1200)});
+            const oldRender=window.render;
+            if(typeof oldRender==='function'){
+              window.render=function(){const out=oldRender.apply(this,arguments);setTimeout(ensureHost,0);return out}
+            }
+          })();
+          </script>
+          """
+          if 'id="onoforge-advisor-render-css"' not in html:
+              html = html.replace('</head>', css + '</head>', 1)
+          if 'id="onoforge-advisor-render-js"' not in html:
+              html = html.replace('</body>', js + '</body>', 1)
+          p.write_text(html, encoding="utf-8")
+          print("Rendered Tactical Advisor decision surface into deploy artifact")
+          PY
+
       - name: Validate JavaScript syntax
         shell: bash
         run: |
@@ -29,7 +146,7 @@ jobs:
           from pathlib import Path
           import re
           html = Path("index.html").read_text(encoding="utf-8")
-          scripts = re.findall(r"<script(?:\\s[^>]*)?>(.*?)</script>", html, flags=re.S|re.I)
+          scripts = re.findall(r"<script(?:\s[^>]*)?>(.*?)</script>", html, flags=re.S|re.I)
           if not scripts:
               raise SystemExit("No script blocks found")
           Path("/tmp/onoforge.js").write_text("\n\n".join(scripts), encoding="utf-8")
