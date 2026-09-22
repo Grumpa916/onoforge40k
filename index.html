@@ -5004,7 +5004,36 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
   if(!attacker)return {version:'tactical-advisor-v1',status:'no-attacker',recommendations:[],avoid:[],naturalTargets:[]};
   const attackerLegality=tacticalLegalityForUnit('my',atkEntry);
   if(!attackerLegality.legal)return {version:'tactical-advisor-v1',status:'attacker-not-legal',attacker:attacker.name,recommendations:[],avoid:[],naturalTargets:[],attackerLegality};
-  const groups=attachedCombatWeaponGroups(side,atkEntry).filter(g=>tacticalWeaponPhaseEligible(g.weapon,state.phase));
+  const advisorActionEntry=combatRootEntry(side,atkEntry)||atkEntry;
+  const phase=String(state.phase||'Command');
+  if(!['Shooting','Fight'].includes(phase)){
+    return {
+      version:'tactical-advisor-v1',
+      status:phase==='Charge'?'charge-target-evaluation-not-yet-modeled':'no-combat-targeting-in-phase',
+      attacker:attacker.name,
+      phase,
+      actionState:tacticalAdvisorActionState(advisorActionEntry?.uid||atkEntry?.uid),
+      recommendations:[],avoid:[],naturalTargets:[],
+      missionContext:missionCtx,
+      note:phase==='Charge'
+        ?'Charge declarations use charge-specific legality and distance logic rather than weapon-damage simulation.'
+        :'Weapon-target recommendations are limited to Shooting and Fight phases.'
+    };
+  }
+  const phaseActionAvailable=tacticalPhaseActionAvailable(advisorActionEntry?.uid||atkEntry?.uid,phase);
+  if(!phaseActionAvailable){
+    return {
+      version:'tactical-advisor-v1',
+      status:'action-already-completed',
+      attacker:attacker.name,
+      phase,
+      actionState:tacticalAdvisorActionState(advisorActionEntry?.uid||atkEntry?.uid),
+      recommendations:[],avoid:[],naturalTargets:[],
+      missionContext:missionCtx,
+      note:'This unit has already completed its action for the current phase.'
+    };
+  }
+  const groups=attachedCombatWeaponGroups(side,atkEntry).filter(g=>tacticalWeaponPhaseEligible(g.weapon,phase,atkEntry));
   if(!groups.length)return {version:'tactical-advisor-v1',status:'no-phase-eligible-weapons',attacker:attacker.name,recommendations:[],avoid:[],naturalTargets:[],phase:state.phase};
   const roots=(state.opp||[]).filter(e=>!e.attachedTo);
   const results=roots.map(targetEntry=>{
@@ -5078,7 +5107,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     const confidence=snap?.exactModelIdentity&&snap?.exactWeaponIdentity?'high':(snap?.exactWeaponIdentity?'medium':'limited');
     const tacticalLegality=tacticalTargetLegality(atkEntry,targetEntry,state.phase);
     const legalityBlocked=tacticalLegality.canTarget===false;
-    const phaseActionAvailable=state.phase==='Shooting'?attackerLegality.available.shooting:true;
+    const phaseActionAvailable=tacticalPhaseActionAvailable(advisorActionEntry?.uid||atkEntry?.uid,phase);
     return {
       entryUid:targetEntry.uid,unitId:target.id,name:target.name,faction:target.faction,points,
       models:defModels,targetWounds:totalWounds,expectedDamage:damage,modelsKilled:killed,wipeChance:wipe,
