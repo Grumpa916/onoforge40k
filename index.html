@@ -4071,8 +4071,15 @@ function setUnitDestroyed(side,id){
   const fullBefore=snapshotForUndo();const e=entry(side,id);if(!e)return;const u=get(e.unitId);if(!u)return;const perModelWounds=Math.max(1,Number(u.wounds)||1);
   if(!e.game)e.game={entryId:e.uid,models:e.models,wounds:e.models*perModelWounds,status:'Alive',battleshocked:false};
   if(e.game.entryId!==e.uid)e.game={...e.game,entryId:e.uid};const before=JSON.parse(JSON.stringify(e.game));
-  if(e.game.status==='Destroyed'){e.game.wounds=Math.min(perModelWounds,e.models*perModelWounds);e.game.models=Math.max(1,Math.min(e.models,Math.ceil(e.game.wounds/perModelWounds)));e.game.status='Damaged';}
-  else{e.game.models=0;e.game.wounds=0;e.game.status='Destroyed';}
+  if(e.game.status==='Destroyed'){
+    e.game.wounds=Math.min(perModelWounds,e.models*perModelWounds);
+    e.game.models=Math.max(1,Math.min(e.models,Math.ceil(e.game.wounds/perModelWounds)));
+    e.game.status='Damaged';
+    if(modelRosterRule(u)){const roster=ensureModelRoster(e,u);roster.forEach(m=>{m.alive=true;m.woundsRemaining=Math.max(1,Number(u.wounds)||1)});syncModelRosterBattleState(e,u);}
+  } else {
+    e.game.models=0;e.game.wounds=0;e.game.status='Destroyed';
+    if(modelRosterRule(u)){const roster=ensureModelRoster(e,u);roster.forEach(m=>{m.alive=false;m.woundsRemaining=0});syncModelRosterBattleState(e,u);}
+  }
   event('UNIT_STATE_CHANGED',{side,unitId:e.unitId,entryId:id,unit:u.name,action:e.game.status==='Destroyed'?'Destroyed':'Destroyed cleared',modelsBefore:before.models,modelsAfter:e.game.models,woundsBefore:before.wounds,woundsAfter:e.game.wounds,statusBefore:before.status,statusAfter:e.game.status,before,after:e.game},fullBefore);save();render();
 }
 function toggleBattleshocked(side,id){const fullBefore=snapshotForUndo();const e=entry(side,id);if(!e)return;const u=get(e.unitId);if(!u)return;if(!e.game)e.game={entryId:e.uid,models:e.models,wounds:e.models*u.wounds,status:'Alive',battleshocked:false};
