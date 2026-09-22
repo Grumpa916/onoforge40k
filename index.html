@@ -1317,14 +1317,12 @@ function useStratagem(side,index){
  const before=snapshotForUndo();
  const history=stratagemUseHistory(side);
  const phase=String(state.phase||'Command'),round=Math.max(1,Number(state.round)||1),turn=side==='opp'?'opp':'my';
+ const declaredPhase=String(s.phase||'Any Phase').trim();
+ const phaseLegal=declaredPhase==='Any Phase'||declaredPhase===phase;
+ if(!phaseLegal){alert('That stratagem cannot be used during the current phase.');return;}
  const existingIndex=history.findIndex(x=>x&&String(x.name)===String(s.name)&&Number(x.round)===round&&String(x.phase)===phase&&String(x.playerTurn)===turn);
  if(existingIndex>=0){
-   history.splice(existingIndex,1);
-   const afterCP=beforeCP+s.cp;
-   if(side==='my')state.myCP=afterCP;else state.oppCP=afterCP;
-   event('CP_CHANGED',{side,unit:side==='my'?'My CP':'Opponent CP',action:'CP +'+s.cp,before:beforeCP,after:afterCP,delta:s.cp},before);
-   event('STRATAGEM_UNSELECTED',{name:s.name,side,cp:s.cp,phase,round,playerTurn:turn,source:s.source,detachment:s.detachment||'',action:'Unselected — '+s.name},before);
-   save();render();
+   alert('That stratagem has already been used. Use Undo to reverse the recorded use and refund its CP.');
    return;
  }
  if(s.name==='Insane Bravery'&&stratagemUsedThisBattle(side,s.name)){alert('Insane Bravery can only be used once per battle.');return;}
