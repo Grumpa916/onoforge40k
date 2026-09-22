@@ -4149,7 +4149,7 @@ function setCurrentTurn(side){
   state.currentTurn=next;
   state.objectiveTurnStartOwners={...(state.objectiveTurnStartOwners||{})};
   const turnKey=Math.max(1,Number(state.round)||1)+'|'+next;
-  state.objectiveTurnStartOwners[turnKey]=Object.fromEntries(Object.entries(state.objectives||{}).map(([name,owner])=>[name,['my','opp','contested','none'].includes(owner)?owner:'none'));
+  state.objectiveTurnStartOwners[turnKey]=Object.fromEntries(Object.entries(state.objectives||{}).map(([name,owner])=>[name,['my','opp','contested','none'].includes(owner)?owner:'none']));
   ensureTacticalTurnDraw(next);
   event('TURN_CHANGED',{
     side:next,
