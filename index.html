@@ -45,6 +45,10 @@
   }).filter(Boolean);
   const friendlyRoots=(state.my||[]).filter(e=>!e.attachedTo);
   const attackerRoot=combatRootEntry('my',atkEntry)||atkEntry;
+  const attackerUnit=get(attackerRoot?.unitId)||attacker;
+  const attackerPoints=Math.max(1,Number(attackerRoot?.points)||Number(attackerUnit?.points)||1);
+  const attackerSnap=combatSnapshot('my',attackerRoot);
+  const attackerWounds=Math.max(1,Number(attackerSnap?.remainingWounds)||Number(attackerSnap?.totalWounds)||1);
   results.forEach(x=>{
     const targetEntry=entry('opp',x.entryUid);if(!targetEntry)return;
     const enemyGroupsRaw=attachedCombatWeaponGroups('opp',targetEntry);
@@ -113,11 +117,21 @@
     const preserveFriendlyUnit=Math.max(0,Math.min(1,
       exposure>=0.75?0.95:exposure>=0.40?0.60:0.15
     ));
+    // Point-weighted exchange proxy: compare expected enemy points removed with
+    // expected friendly points exposed to reciprocal damage. It is a proxy rather
+    // than a casualty forecast because model allocation can make point loss nonlinear.
+    const targetPointsAtRisk=Math.max(0,Number(x.points)||0)*Math.max(0,Math.min(1,
+      0.70*(Number(x.damageFraction)||0)+0.30*(Number(x.wipeChance)||0)
+    ));
+    const friendlyPointsAtRisk=attackerPoints*Math.max(0,Math.min(1,
+      incoming/Math.max(1,attackerWounds)
+    ));
+    const pointExchangeRatio=targetPointsAtRisk/Math.max(1,targetPointsAtRisk+friendlyPointsAtRisk);
     const tradeValue=Math.max(0,Math.min(1,
-      (Number(x.wipeChance)||0)*0.45+
-      (Number(x.damageFraction)||0)*0.25+
-      (Number(x.threatPerPoint)||0)*0.15+
-      objectiveValue*0.15
+      0.65*pointExchangeRatio+
+      0.10*(Number(x.wipeChance)||0)+
+      0.10*(Number(x.threatPerPoint)||0)+
+      0.15*objectiveValue
     ));
     const futureScoringValue=Math.max(0,Math.min(1,
       objectiveValue*(missionCtx.round<5?0.65:0.25)+
@@ -159,6 +173,9 @@
     x.exchangeComponents.denyOpponentScore=denyOpponentScore;
     x.exchangeComponents.preserveFriendlyUnit=preserveFriendlyUnit;
     x.exchangeComponents.tradeValue=tradeValue;
+    x.exchangeComponents.targetPointsAtRisk=targetPointsAtRisk;
+    x.exchangeComponents.friendlyPointsAtRisk=friendlyPointsAtRisk;
+    x.exchangeComponents.pointExchangeRatio=pointExchangeRatio;
     x.exchangeComponents.futureScoringValue=futureScoringValue;
     x.exchangeComponents.decisionMode=decisionMode;
     x.exchangeComponents.objectiveValue=objectiveValue;
@@ -186,7 +203,7 @@
       0.03*contextConfidence
     ));
     x.decisionComponents={
-      lethality,threatSuppression,efficiency,objectiveValue,objectiveContext,scoringUrgency,scoreNow,denyOpponentScore,preserveFriendlyUnit,tradeValue,futureScoringValue,decisionMode,dataConfidence,simulationConfidence,contextConfidence,knownContextSignals,decisionConfidence,
+      lethality,threatSuppression,efficiency,objectiveValue,objectiveContext,scoringUrgency,scoreNow,denyOpponentScore,preserveFriendlyUnit,tradeValue,targetPointsAtRisk,friendlyPointsAtRisk,pointExchangeRatio,futureScoringValue,decisionMode,dataConfidence,simulationConfidence,contextConfidence,knownContextSignals,decisionConfidence,
       weights:{lethality:0.32,threatSuppression:0.16,efficiency:0.06,objectiveValue:0.10,scoringUrgency:0.07,scoreNow:0.07,denyOpponentScore:0.06,preserveFriendlyUnit:0.04,tradeValue:0.03,futureScoringValue:0.02,dataConfidence:0.03,simulationConfidence:0.01,contextConfidence:0.03},
       interpretation:decisionMode==='LOW_CONFIDENCE'?'Confidence is limited; treat this as a candidate action and verify the underlying rules, range, and board state.':
         decisionMode==='SCORE_NOW'?'Immediate scoring opportunity should dominate this target choice.':
