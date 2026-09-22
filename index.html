@@ -4308,7 +4308,55 @@ function runMathSimulation(){
   if(el)el.innerHTML=`<div class="grid3"><div class="result-card"><div class="result-label">Average Damage</div><div class="result-value">${r.avgDamage.toFixed(2)}</div></div><div class="result-card"><div class="result-label">Average Models Killed</div><div class="result-value">${r.avgKilled.toFixed(2)}</div></div><div class="result-card"><div class="result-label">Full Unit Destroyed</div><div class="result-value">${(r.wipeChance*100).toFixed(1)}%</div></div></div><div class="status">${n.toLocaleString()} complete mixed-loadout attack sequences • ${esc(a.name)} → ${esc(t.name)}</div>`;
 }
 
-function resolveAttack(){const fullBefore=snapshotForUndo();const a=get(state.attacker),t=get(state.target),w=(a.weapons||[]).find(x=>x.name===state.weapon)||a.weapons[0];if(!w)return;const m=state.mathRules||{};const woundsState=Array.from({length:Math.max(1,Number(t.models)||1)},()=>Number(t.profile.W)||1);const r=engineOneAttack(a,w,t,m,t.models||1,woundsState);const te=state.opp.find(e=>e.unitId===t.id)||state.my.find(e=>e.unitId===t.id);if(te){if(!te.game)te.game={models:te.models,wounds:te.models*t.wounds,status:'Alive'};const before=JSON.parse(JSON.stringify(te.game));te.game.wounds=Math.max(0,te.game.wounds-r.damage);te.game.models=Math.max(0,woundsState.filter(x=>x>0).length);te.game.status=te.game.wounds<=0?'Destroyed':te.game.wounds<te.models*t.wounds?'Damaged':'Alive';event('ATTACK_RESOLUTION',{attacker:a.name,weapon:w.name,target:t.name,unit:a.name,action:'Attack with '+w.name+' → '+t.name,attacks:Math.round(engineExpectedDice(w.A)),hits:r.hits,wounds:r.wounds,saved:r.saved,damage:r.damage,critHits:r.critHits,critW:r.critWounds,before,after:te.game,rollLog:r.rollLog},fullBefore)}else event('ATTACK_RESOLUTION',{attacker:a.name,weapon:w.name,target:t.name,unit:a.name,action:'Attack with '+w.name+' → '+t.name,hits:r.hits,wounds:r.wounds,saved:r.saved,damage:r.damage,critHits:r.critHits,critW:r.critWounds,rollLog:r.rollLog},fullBefore);state.page='battle';save();render()}
+function resolveAttack(){
+  const fullBefore=snapshotForUndo();
+  const a=get(state.attacker),t=get(state.target),w=(a.weapons||[]).find(x=>x.name===state.weapon)||a.weapons[0];
+  if(!w)return;
+  const m={...(state.mathRules||{})};
+  const te=state.opp.find(e=>e.unitId===t.id)||state.my.find(e=>e.unitId===t.id);
+  const rosterTracked=!!(te&&modelRosterRule(t));
+  let woundsState,rosterAlive=[];
+  if(rosterTracked){
+    const roster=ensureModelRoster(te,t);
+    rosterAlive=roster.filter(x=>x.alive!==false);
+    woundsState=rosterAlive.map(x=>Math.max(0,Number(x.woundsRemaining)||Number(t.wounds)||1));
+    m.attackerModels=Math.max(1,Number(m.attackerModels)||a.models||1);
+  }else{
+    woundsState=Array.from({length:Math.max(1,Number(t.models)||1)},()=>Number(t.profile.W)||1);
+    m.defenderModels=Math.max(1,Number(t.models)||1);
+  }
+  const r=engineOneAttack(a,w,t,m,rosterTracked?rosterAlive.length:(t.models||1),woundsState);
+  if(te){
+    if(!te.game)te.game={entryId:te.uid,models:te.models,wounds:te.models*t.wounds,status:'Alive'};
+    const before=JSON.parse(JSON.stringify(te.game));
+    if(rosterTracked){
+      rosterAlive.forEach((model,i)=>{
+        const remaining=Math.max(0,Math.min(Number(t.wounds)||1,Number(woundsState[i])||0));
+        model.woundsRemaining=remaining;
+        if(remaining<=0){model.woundsRemaining=0;model.alive=false;}
+      });
+      syncModelRosterBattleState(te,t);
+    }else{
+      te.game.wounds=Math.max(0,te.game.wounds-r.damage);
+      te.game.models=Math.max(0,woundsState.filter(x=>x>0).length);
+      te.game.status=te.game.wounds<=0?'Destroyed':te.game.wounds<te.models*t.wounds?'Damaged':'Alive';
+    }
+    event('ATTACK_RESOLUTION',{
+      attacker:a.name,weapon:w.name,target:t.name,unit:a.name,
+      action:'Attack with '+w.name+' → '+t.name,
+      attacks:Math.round(engineExpectedDice(w.A)),hits:r.hits,wounds:r.wounds,saved:r.saved,damage:r.damage,
+      critHits:r.critHits,critW:r.critWounds,before,after:te.game,rollLog:r.rollLog,
+      modelLevel:rosterTracked
+    },fullBefore);
+  }else{
+    event('ATTACK_RESOLUTION',{
+      attacker:a.name,weapon:w.name,target:t.name,unit:a.name,
+      action:'Attack with '+w.name+' → '+t.name,
+      hits:r.hits,wounds:r.wounds,saved:r.saved,damage:r.damage,critHits:r.critHits,critW:r.critWounds,rollLog:r.rollLog
+    },fullBefore);
+  }
+  state.page='battle';save();render();
+}
 function rules(){return `<div class="card"><h2>Rules Engine</h2><p class="muted">v46 uses one shared rules-aware combat engine for Mathhammer and Battle Mode. It supports the modeled 11th-edition attack sequence, modifiers, criticals, saves, FNP, non-spillover damage allocation and Monte Carlo simulation. Community data/rules coverage remains versioned and should be verified against authoritative rules.</p><div class="grid"><div><h3>Resolution Stages</h3>${['Attacks','Hit Rolls','Critical Hits','Wound Rolls','Critical Wounds','Saving Throws','Invulnerable Save','Damage','Damage Allocation','Game State Event'].map((x,i)=>`<div class="unit"><b>${i+1}. ${x}</b></div>`).join('')}</div><div><h3>Supported Effect Detectors</h3>${['Lethal Hits','Sustained Hits X','Devastating Wounds','Torrent','Blast X','Rapid Fire X','Heavy','Melta X','Twin-linked','Precision','Ignores Cover','Anti-X (detected)'].map(x=>`<span class="pill">${x}</span>`).join('')}</div></div><div class="status">Rule provenance: ${esc(state.source)} • ${esc(state.revision)}</div></div>`}
 
 const CLOUD_CONFIG_KEY='onoforge-supabase-config-v1';
