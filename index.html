@@ -4069,6 +4069,39 @@ function changeUnit(side,id,dm,dw){
   }
   if(dw&&perModelWounds>1){wounds=Math.max(0,Math.min(maxWounds,wounds+dw));models=wounds>0?Math.min(e.models,Math.ceil(wounds/perModelWounds)):0;}
   e.game.models=models;e.game.wounds=wounds;e.game.status=models<=0||wounds<=0?'Destroyed':(wounds<maxWounds?'Damaged':'Alive');
+  if(modelRosterRule(u)){
+    const roster=ensureModelRoster(e,u);
+    const targetModels=Math.max(0,Math.min(e.models,Number(e.game.models)||0));
+    let alive=roster.filter(m=>m.alive!==false);
+    while(alive.length>targetModels){
+      const m=alive.pop();m.alive=false;m.woundsRemaining=0;
+    }
+    while(alive.length<targetModels){
+      const m=roster.find(x=>x.alive===false);
+      if(!m)break;
+      m.alive=true;m.woundsRemaining=perModelWounds;alive.push(m);
+    }
+    let targetWounds=Math.max(0,Math.min(targetModels*perModelWounds,Number(e.game.wounds)||0));
+    let currentWounds=alive.reduce((sum,m)=>sum+Math.max(0,Number(m.woundsRemaining)||0),0);
+    if(currentWounds>targetWounds){
+      for(let i=alive.length-1;i>=0&&currentWounds>targetWounds;i--){
+        const m=alive[i],beforeW=Math.max(0,Number(m.woundsRemaining)||0);
+        const next=Math.max(0,beforeW-(currentWounds-targetWounds));
+        m.woundsRemaining=next;
+        if(next<=0)m.alive=false;
+        currentWounds-=beforeW-next;
+      }
+    }else if(currentWounds<targetWounds){
+      for(let i=0;i<alive.length&&currentWounds<targetWounds;i++){
+        const m=alive[i],beforeW=Math.max(0,Number(m.woundsRemaining)||0);
+        const next=Math.min(perModelWounds,beforeW+(targetWounds-currentWounds));
+        m.woundsRemaining=next;
+        currentWounds+=next-beforeW;
+      }
+    }
+    syncModelRosterBattleState(e,u);
+    models=e.game.models;wounds=e.game.wounds;
+  }
   if(e.game.models===oldModels&&e.game.wounds===oldWounds)return;
   const action=dm?('Models '+(dm>0?'+':'')+dm):('Wounds '+(dw>0?'+':'')+dw);
   event('UNIT_STATE_CHANGED',{side,unitId:e.unitId,entryId:id,unit:u.name,action,modelsBefore:oldModels,modelsAfter:e.game.models,woundsBefore:oldWounds,woundsAfter:e.game.wounds,statusBefore:before.status,statusAfter:e.game.status,before,after:e.game},fullBefore);save();render();
