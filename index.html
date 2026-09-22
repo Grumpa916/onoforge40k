@@ -4511,19 +4511,28 @@ function tacticalWeaponAvailableForPhase(entryUid,w,maxCount,round=state.round,p
   const remaining=Math.max(0,limit-phaseUsed);
   return {available:remaining>0,count:remaining,reason:remaining?'':'Weapon capacity already resolved this phase',use,phaseUsed};
 }
+function tacticalUnitIsEngaged(entryUid){
+  if(!entryUid)return false;
+  const pairs=ensureTacticalState().pairs||{};
+  return Object.values(pairs).some(v=>v&&String(v.attackerUid||'')===String(entryUid)&&v.engagement==='engaged');
+}
 function tacticalWeaponPhaseEligible(w,phase,attackerEntry,targetEntry){
   if(!w)return false;
   const p=String(phase||state.phase||'Command');
   const raw=String(w.rng??w.range??'').trim().toUpperCase();
   const abilities=(w.abilities||[]).map(a=>String(a||'').toUpperCase().replace(/-/g,' '));
   const pistol=abilities.some(a=>a.includes('PISTOL')||a.includes('CLOSE QUARTERS'));
+  const blast=abilities.some(a=>a.includes('BLAST'));
   const attackerUnit=attackerEntry?get(attackerEntry.unitId):null;
   const keywords=(attackerUnit?.keywords||[]).map(k=>String(k).toUpperCase());
   const bigGuns=abilities.some(a=>a.includes('BIG GUNS NEVER TIRE')||a.includes('BIG GUNS'))||keywords.includes('VEHICLE')||keywords.includes('MONSTER');
   const ctx=attackerEntry&&targetEntry?tacticalPairState(attackerEntry.uid,targetEntry.uid):null;
   if(p==='Shooting'){
     if(raw==='MELEE')return false;
-    if(ctx?.engagement==='engaged'&&!pistol&&!bigGuns)return false;
+    if(ctx?.engagement==='engaged'){
+      if(blast)return false;
+      if(!pistol&&!bigGuns)return false;
+    }
     return true;
   }
   if(p==='Fight')return raw==='MELEE';
@@ -4548,17 +4557,17 @@ function tacticalTargetLegality(attackerEntry,targetEntry,phase){
     if(!ranges.length)reasons.push('weapon range unknown');
     if(ctx.distanceInches===null)reasons.push('range unknown');
     if(ctx.los==='unknown')reasons.push('line of sight unknown');
-    if(ctx.distanceInches!==null&&ctx.distanceInches<=0)reasons.push('invalid distance');
     if(ctx.distanceInches!==null&&ranges.length&&Math.max(...ranges)<ctx.distanceInches)reasons.push('target is beyond all known weapon ranges');
-    const blocked=reasons.some(x=>x==='invalid distance'||x==='target is beyond all known weapon ranges');
+    const blocked=reasons.some(x=>x==='target is beyond all known weapon ranges');
     return {status:blocked?'known':(reasons.length?'unknown':'known'),known:!reasons.length||blocked,canTarget:blocked?false:(reasons.length?null:true),reasons,context:ctx};
   }
   if(p==='Charge'){
+    if(tacticalUnitIsEngaged(attackerEntry.uid))reasons.push('attacker is already engaged');
     if(ctx.distanceInches===null)reasons.push('distance unknown');
     if(ctx.distanceInches!==null&&ctx.distanceInches>12)reasons.push('target is beyond the 12-inch charge declaration range');
     if(ctx.engagement==='unknown')reasons.push('engagement status unknown');
     if(ctx.engagement==='engaged')reasons.push('target is already within engagement range');
-    const blocked=reasons.some(x=>x==='target is beyond the 12-inch charge declaration range'||x==='target is already within engagement range');
+    const blocked=reasons.some(x=>x==='attacker is already engaged'||x==='target is beyond the 12-inch charge declaration range'||x==='target is already within engagement range');
     return {status:blocked?'known':(reasons.length?'unknown':'known'),known:!reasons.length||blocked,canTarget:blocked?false:(reasons.length?null:true),reasons,context:ctx};
   }
   if(p==='Fight'){
