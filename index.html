@@ -4327,7 +4327,6 @@ function advancePhase(){
         return;
       }
       state.round=currentRound+1;
-      state.currentTurn=firstTurn;
       state.phase='Command';
       state.battleRoundComplete=false;
       state.objectiveTurnStartOwners={...(state.objectiveTurnStartOwners||{})};
@@ -4335,6 +4334,7 @@ function advancePhase(){
         Object.entries(state.objectives||{}).map(([name,owner])=>[name,['my','opp','contested','none'].includes(owner)?owner:'none'])
       );
       switchTurnClock(firstTurn);
+      state.currentTurn=firstTurn;
       ensureTacticalTurnDraw(firstTurn);
       syncPrimaryScoringRound();
       state.my=sortBattleState(state.my);
@@ -4344,7 +4344,6 @@ function advancePhase(){
       return;
     }
 
-    state.currentTurn=otherTurn;
     state.phase='Command';
     state.battleRoundComplete=false;
     state.objectiveTurnStartOwners={...(state.objectiveTurnStartOwners||{})};
@@ -4352,6 +4351,7 @@ function advancePhase(){
       Object.entries(state.objectives||{}).map(([name,owner])=>[name,['my','opp','contested','none'].includes(owner)?owner:'none'])
     );
     switchTurnClock(otherTurn);
+    state.currentTurn=otherTurn;
     ensureTacticalTurnDraw(otherTurn);
     state.my=sortBattleState(state.my);
     state.opp=sortBattleState(state.opp);
