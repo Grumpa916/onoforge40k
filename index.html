@@ -4431,10 +4431,9 @@ function engineMonteCarloMixed(a,t,groups,m,samples){
   for(let s=0;s<samples;s++){
     const woundsState=baseWounds.slice(); let dmg=0;
     for(const g of groups){
-      for(let model=0;model<g.count;model++){
-        const r=engineOneAttack(g.attacker||a,g.weapon,t,m,defModels,woundsState); dmg+=r.damage;
-        if(woundsState.every(x=>x<=0))break;
-      }
+      if(g.count<=0)continue;
+      const r=engineOneAttack(g.attacker||a,g.weapon,t,m,defModels,woundsState,g.count);
+      dmg+=r.damage;
       if(woundsState.every(x=>x<=0))break;
     }
     const killed=woundsState.filter(x=>x<=0).length; totalDamage+=dmg; totalKilled+=killed; if(killed>=defModels)wipes++;
@@ -5232,10 +5231,15 @@ function engineAllocationTargetForAttack(w,t,m,woundsState,groupIndex=null){
   const idx=woundsState.findIndex(x=>Number(x)>0);
   return {index:idx,groupIndex:null,unit:t,precision:false};
 }
-function engineOneAttack(a,w,t,m,modelsRemaining,woundsState){
+function engineOneAttack(a,w,t,m,modelsRemaining,woundsState,attackingModels=1){
   const baseTarget=engineTargetForAttack(t,m,woundsState);
   const baseC=engineContext(a,w,baseTarget,m);
-  let attacks=Math.max(0,Math.round(engineRoll(w.A)+(baseC.rapidFire&&m.halfRange?baseC.rapidFire:0)+(baseC.blast?baseC.blast*Math.floor(modelsRemaining/5):0)+(baseC.cleave?baseC.cleave*Math.floor(modelsRemaining/5):0)));
+  let attacks=0;
+  const perModelAttacks=[];
+  for(let model=0;model<Math.max(1,Math.floor(Number(attackingModels)||1));model++){
+    const modelAttacks=Math.max(0,Math.round(engineRoll(w.A)+(baseC.rapidFire&&m.halfRange?baseC.rapidFire:0)+(baseC.blast?baseC.blast*Math.floor(modelsRemaining/5):0)+(baseC.cleave?baseC.cleave*Math.floor(modelsRemaining/5):0)));
+    perModelAttacks.push(modelAttacks);attacks+=modelAttacks;
+  }
   let hits=0,wounds=0,saved=0,critHits=0,critWounds=0,rollLog=[];
   const woundEvents=[];
   for(let ai=0;ai<attacks;ai++){
