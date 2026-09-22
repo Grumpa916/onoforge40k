@@ -4443,29 +4443,6 @@ function clearTacticalPair(attackerUid,targetUid){
   event('TACTICAL_CONTEXT_CHANGED',{attackerUid,targetUid,action:'Tactical context cleared',before:old,after:null},before);
   save();render();
 }
-function tacticalWeaponUseKey(entryUid,weaponName){return String(entryUid||'')+'|'+String(weaponName||'')}
-function tacticalWeaponUseState(entryUid,weaponName){
-  var t=ensureTacticalState(),raw=t.unitUse[tacticalWeaponUseKey(entryUid,weaponName)]||{};
-  return {usedCount:Math.max(0,Number(raw.usedCount)||0)};
-}
-function tacticalWeaponLimited(w){
-  var abilities=w&&Array.isArray(w.abilities)?w.abilities:[];
-  return abilities.some(function(a){return String(a||'').toUpperCase().indexOf('ONE SHOT')>=0;});
-}
-function tacticalWeaponAvailability(entryUid,w,count){
-  var n=Math.max(0,Number(count)||0);
-  if(!tacticalWeaponLimited(w))return {availableCount:n,limited:false,usedCount:0};
-  var used=Math.min(n,tacticalWeaponUseState(entryUid,w.name).usedCount);
-  return {availableCount:Math.max(0,n-used),limited:true,usedCount:used};
-}
-function setTacticalWeaponUseCount(entryUid,weaponName,count){
-  if(!entryUid||!weaponName)return;
-  var before=snapshotForUndo(),t=ensureTacticalState(),key=tacticalWeaponUseKey(entryUid,weaponName);
-  var old=tacticalWeaponUseState(entryUid,weaponName),n=Math.max(0,Math.floor(Number(count)||0));
-  t.unitUse[key]={usedCount:n};
-  event('TACTICAL_WEAPON_USE_CHANGED',{entryUid:entryUid,weaponName:weaponName,action:'One Shot use count changed',before:old,after:{usedCount:n}},before);
-  save();render();
-}
 function tacticalWeaponRange(w){
   if(!w)return null;
   const raw=String(w.rng??w.range??'').trim().toUpperCase();
@@ -4566,7 +4543,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
   if(!attacker)return {version:'tactical-advisor-v1',status:'no-attacker',recommendations:[],avoid:[],naturalTargets:[]};
   const groups=attachedCombatWeaponGroups(side,atkEntry);
   if(!groups.length)return {version:'tactical-advisor-v1',status:'no-weapons',attacker:attacker.name,recommendations:[],avoid:[],naturalTargets:[]};
-  const availableGroups=groups.map(g=>{const u=tacticalWeaponAvailability(g.entry?.uid||atkEntry?.uid,g.weapon,g.count);return u.availableCount>0?{...g,count:u.availableCount}:null}).filter(Boolean);\n  const roots=(state.opp||[]).filter(e=>!e.attachedTo);
+  const roots=(state.opp||[]).filter(e=>!e.attachedTo);
   const results=roots.map(targetEntry=>{
     const snap=combatSnapshot('opp',targetEntry);
     if(!snap||snap.survivingModels<=0)return null;
@@ -4575,7 +4552,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     const defModels=Math.max(1,Number(target.models)||Number(targetEntry.models)||1);
     const totalWounds=defModels*Math.max(1,Number(target.profile?.W)||1);
     const m={...(state.mathRules||{}),defenderModels:defModels,quickSamples:Math.min(10000,Math.max(2000,Number(options.samples)||4000)),_skipSim:false};
-    const calc=calculateMathMixed(attacker,target,availableGroups,m);
+    const calc=calculateMathMixed(attacker,target,groups,m);
     const damage=Math.max(0,Number(calc.damage)||0);
     const killed=Math.max(0,Number(calc.modelsKilled)||0);
     const wipe=Math.max(0,Math.min(1,Number(calc.killChance)||0));
@@ -4583,9 +4560,9 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     const killFrac=Math.min(1,killed/defModels);
     const points=Math.max(1,Number(targetEntry.points)||Number(target.points)||1);
     const efficiency=damage/points;
-    const weaponKeys=[...new Set(availableGroups.filter(g=>g.count>0).map(g=>g.weapon.name))];
+    const weaponKeys=[...new Set(groups.filter(g=>g.count>0).map(g=>g.weapon.name))];
     const targetKeywords=(target.keywords||[]).map(k=>String(k).toUpperCase().replace(/[^A-Z0-9 ]/g,' ').trim()).filter(Boolean);
-    const antiMatches=availableGroups.flatMap(g=>(g.weapon.abilities||[]).filter(a=>{
+    const antiMatches=groups.flatMap(g=>(g.weapon.abilities||[]).filter(a=>{
       const m=String(a).toUpperCase().replace(/-/g,' ').match(/ANTI\s+([A-Z ]+)\s+(\d+)\+/);
       return !!m&&targetKeywords.some(k=>m[1].trim().split(/\s+/).includes(k)||m[1].trim()===k);
     }));
