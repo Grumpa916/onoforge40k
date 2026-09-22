@@ -5271,6 +5271,78 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
   if(!attackerLegality.legal)return {version:'tactical-advisor-v1',status:'attacker-not-legal',attacker:attacker.name,recommendations:[],avoid:[],naturalTargets:[],attackerLegality};
   const advisorActionEntry=combatRootEntry(side,atkEntry)||atkEntry;
   const phase=String(state.phase||'Command');
+  if(phase==='Charge'){
+    const roots=(state.opp||[]).filter(e=>!e.attachedTo);
+    const chargeResults=roots.map(targetEntry=>{
+      const snap=combatSnapshot('opp',targetEntry);
+      if(!snap||snap.survivingModels<=0)return null;
+      const target=combatTargetUnit('opp',targetEntry)||get(targetEntry.unitId);
+      if(!target)return null;
+      const pairCtx=tacticalPairState(atkEntry.uid,targetEntry.uid);
+      const legality=tacticalTargetLegality(atkEntry,targetEntry,'Charge');
+      const distance=Number(pairCtx?.distanceInches);
+      const knownDistance=Number.isFinite(distance);
+      const rolls=[];
+      for(let a=1;a<=6;a++)for(let b=1;b<=6;b++)rolls.push(a+b);
+      const required=knownDistance?Math.max(2,Math.ceil(distance)):null;
+      const successChance=required===null?null:rolls.filter(r=>r>=required).length/36;
+      const targetWounds=Math.max(1,Number(snap.totalWounds)||Number(target.profile?.W)||1);
+      const points=Math.max(1,Number(targetEntry.points)||Number(target.points)||1);
+      const targetObjectiveValue=Math.max(0,Math.min(1,Number(tacticalObjectiveValueForTarget(target,pairCtx)?.value)||0));
+      const counterGroups=attachedCombatWeaponGroups('opp',targetEntry);
+      const counterAttackPotential=counterGroups.reduce((sum,g)=>{
+        const u=tacticalWeaponAvailable(g.entry?.uid||targetEntry.uid,g.weapon,g.count,'opp');
+        return sum+(u.available?Math.max(0,Number(g.count)||0):0);
+      },0);
+      const targetEngaged=pairCtx.engagement==='engaged'||tacticalUnitIsEngagedAny(targetEntry.uid);
+      const eligible=legality.canTarget===true;
+      const unknownPenalty=knownDistance?1:0.65;
+      const chargeValue=Math.max(0,Math.min(1,
+        (successChance===null?0.45:successChance)*0.55+
+        targetObjectiveValue*0.20+
+        Math.min(1,targetWounds/Math.max(1,targetWounds+6))*0.10+
+        (counterAttackPotential>0?0.05:0)+
+        (targetEngaged?0.10:0)
+      ))*unknownPenalty;
+      return {
+        entryUid:targetEntry.uid,unitId:target.id,name:target.name,faction:target.faction,points,
+        models:Math.max(1,Number(snap.survivingModels)||Number(target.models)||1),
+        targetWounds,requiredChargeDistance:required,chargeSuccessChance:successChance,
+        distanceKnown:knownDistance,distance:knownDistance?distance:null,
+        counterAttackPotential,objectiveValue:targetObjectiveValue,
+        tacticalLegality:legality,recommendationEligible:eligible,
+        decisionScore:eligible?chargeValue:-1,
+        decisionMode:!eligible?'INELIGIBLE':successChance===null?'VERIFY_DISTANCE':successChance>=0.70?'HIGH_CHARGE_CONFIDENCE':successChance>=0.50?'MODERATE_CHARGE_CONFIDENCE':'LOW_CHARGE_CONFIDENCE',
+        recommendationExplanation:{
+          headline:successChance===null?'Charge distance required':'Charge probability '+Math.round(successChance*100)+'%',
+          why:successChance===null?'Record the battlefield distance before committing to the charge.':
+            'Charge probability is combined with objective value, target durability, and counter-attack exposure.',
+          expected:{chargeDistance:required,successChance},
+          risk:{counterAttackPotential,failedChargeChance:successChance===null?null:1-successChance},
+          confidence:{label:successChance===null?'Limited':successChance>=0.70?'High':successChance>=0.50?'Medium':'Limited',value:successChance===null?0.45:successChance},
+          whatCouldChange:[
+            ...(knownDistance?[]:['Measured distance between the charging unit and target']),
+            'Target engagement state',
+            'Target counter-attack profile',
+            'Objective and mission state'
+          ]
+        }
+      };
+    }).filter(Boolean);
+    const eligible=chargeResults.filter(x=>x.recommendationEligible).sort((a,b)=>b.decisionScore-a.decisionScore);
+    const recommendations=eligible.map((x,i)=>({...x,recommendationExplanation:{...x.recommendationExplanation,rank:i+1}}));
+    return {
+      version:'tactical-advisor-v1',
+      status:eligible.length?'ok':'no-eligible-charge-targets',
+      attacker:attacker.name,phase,
+      recommendations,
+      avoid:chargeResults.filter(x=>!x.recommendationEligible).slice(0,3),
+      naturalTargets:recommendations.filter(x=>(x.objectiveValue||0)>=0.5).slice(0,3),
+      missionContext:missionCtx,
+      chargeMode:true,
+      note:eligible.length?'Charge recommendations use the 2D6 charge-distance distribution; unknown battlefield distances reduce confidence rather than being guessed.':'No legal charge target is currently established.'
+    };
+  }
   if(!['Shooting','Fight'].includes(phase)){
     return {
       version:'tactical-advisor-v1',
