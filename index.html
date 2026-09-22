@@ -2135,7 +2135,7 @@ function load(){
   state.secondaryMyScoredVP=state.secondaryMyScoredVP&&typeof state.secondaryMyScoredVP==='object'?state.secondaryMyScoredVP:{};
   state.secondaryOppScoredVP=state.secondaryOppScoredVP&&typeof state.secondaryOppScoredVP==='object'?state.secondaryOppScoredVP:{};
   ensureSecondaryRoundLedger();
-  state.objectives=state.objectives&&typeof state.objectives==='object'?state.objectives:{};state.mathRules=state.mathRules&&typeof state.mathRules==='object'?state.mathRules:{};
+  state.objectives=state.objectives&&typeof state.objectives==='object'?state.objectives:{};state.objectiveTurnStartOwners=state.objectiveTurnStartOwners&&typeof state.objectiveTurnStartOwners==='object'?state.objectiveTurnStartOwners:{};state.mathRules=state.mathRules&&typeof state.mathRules==='object'?state.mathRules:{};
   state.lists=Array.isArray(state.lists)?state.lists:[];
   state.newOrdersCompletedMy=!!state.newOrdersCompletedMy;state.newOrdersCompletedOpp=!!state.newOrdersCompletedOpp;
   state.activeOpponentRosterId=state.activeOpponentRosterId||'';
@@ -4108,6 +4108,10 @@ function setCurrentTurn(side){
   const before=state.currentTurn==='opp'?'opp':'my';
   if(before===next)return;
   switchTurnClock(next);
+  state.currentTurn=next;
+  state.objectiveTurnStartOwners={...(state.objectiveTurnStartOwners||{})};
+  const turnKey=Math.max(1,Number(state.round)||1)+'|'+next;
+  state.objectiveTurnStartOwners[turnKey]=Object.fromEntries(Object.entries(state.objectives||{}).map(([name,owner])=>[name,['my','opp','contested','none'].includes(owner)?owner:'none']));
   event('TURN_CHANGED',{
     side:next,
     unit:next==='my'?state.myName:state.oppName,
@@ -4139,6 +4143,25 @@ function changeUnit(side,id,dm,dw){
   event('UNIT_STATE_CHANGED',{side,unitId:e.unitId,entryId:id,unit:u.name,action,modelsBefore:oldModels,modelsAfter:e.game.models,woundsBefore:oldWounds,woundsAfter:e.game.wounds,statusBefore:before.status,statusAfter:e.game.status,before,after:e.game},fullBefore);save();render();
 }
 function changeVP(side,d){d=Number(d)||0;const fullBefore=snapshotForUndo();const before=side==='my'?Number(state.myVP)||0:Number(state.oppVP)||0;const after=Math.max(0,before+d);if(side==='my')state.myVP=after;else state.oppVP=after;event('VP_CHANGED',{side,unit:side==='my'?'My Score':'Opponent Score',action:'VP '+(d>0?'+':'')+d,before,after,delta:d},fullBefore);save();render()}
+function ensureObjectiveTurnSnapshot(){
+  if(!state.objectiveTurnStartOwners||typeof state.objectiveTurnStartOwners!=='object')state.objectiveTurnStartOwners={};
+  const round=Math.max(1,Number(state.round)||1);
+  const turn=state.currentTurn==='opp'?'opp':'my';
+  const key=round+'|'+turn;
+  if(!state.objectiveTurnStartOwners[key]||typeof state.objectiveTurnStartOwners[key]!=='object'){
+    state.objectiveTurnStartOwners[key]=Object.fromEntries(Object.entries(state.objectives||{}).map(([name,owner])=>[name,['my','opp','contested','none'].includes(owner)?owner:'none']));
+  }
+  return state.objectiveTurnStartOwners[key];
+}
+function objectiveTurnStartOwner(name){
+  const snap=ensureObjectiveTurnSnapshot();
+  return snap[String(name||'')]||'none';
+}
+function objectiveStateSummary(){
+  const current=Object.entries(state.objectives||{}).map(([name,owner])=>({name,owner:['my','opp','contested','none'].includes(owner)?owner:'none',startOwner:objectiveTurnStartOwner(name)}));
+  return {current,turnStartOwners:ensureObjectiveTurnSnapshot()};
+}
+
 function objectivePrompt(){const n=String(prompt('Objective name')||'').trim();if(!n)return;const rawOwner=String(prompt('Controlled by: my / opp / contested','my')||'').trim().toLowerCase();const owner=['my','opp','contested','none'].includes(rawOwner)?rawOwner:'';if(!owner){alert('Use my, opp, contested, or none.');return}const fullBefore=snapshotForUndo();const previous=state.objectives[n]||'none';state.objectives[n]=owner;event('OBJECTIVE_CHANGED',{name:n,unit:'Objective '+n,action:'Control → '+owner,owner,previous,after:owner},fullBefore);save();render()}
 function changeCP(side,d){d=Number(d)||0;const fullBefore=snapshotForUndo();const before=side==='my'?Number(state.myCP)||0:Number(state.oppCP)||0;const after=Math.max(0,before+d);if(side==='my')state.myCP=after;else state.oppCP=after;event('CP_CHANGED',{side,unit:side==='my'?'My CP':'Opponent CP',action:'CP '+(d>0?'+':'')+d,before,after,delta:d},fullBefore);save();render()}
 function advancePhase(){const before=snapshotForUndo();const phases=['Command','Movement','Shooting','Charge','Fight','End'];const current=String(state.phase||'Command');let i=phases.indexOf(current);if(i<0)i=0;const next=phases[(i+1)%phases.length];state.phase=next;state.my=sortBattleState(state.my);state.opp=sortBattleState(state.opp);event('PHASE_CHANGED',{from:phases[i],phase:next,action:'Next Phase'},before);save();render()}
@@ -4148,6 +4171,8 @@ function nextRound(){
  const current=Number(state.round);
  if((Number.isFinite(current)?current:1)>=MAX_ROUND){return}
  state.round=Math.min(MAX_ROUND,(Number.isFinite(current)&&current>0?current:1)+1);
+ state.objectiveTurnStartOwners={...(state.objectiveTurnStartOwners||{})};
+ state.objectiveTurnStartOwners[String(state.round)+'|'+(state.currentTurn==='opp'?'opp':'my')]=Object.fromEntries(Object.entries(state.objectives||{}).map(([name,owner])=>[name,['my','opp','contested','none'].includes(owner)?owner:'none']));
  syncPrimaryScoringRound();
  state.phase='Command';
  state.my=sortBattleState(state.my);
