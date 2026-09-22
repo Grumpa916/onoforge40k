@@ -1805,7 +1805,7 @@ function recordSecondaryRoundVP(side,name,actual,round=state.round){
   ensureSecondaryRoundLedger();
   const roundMapKey=side==='my'?'secondaryMyScoredRound':'secondaryOppScoredRound';
   if(!state[roundMapKey]||typeof state[roundMapKey]!=='object')state[roundMapKey]={};
-  state[roundMapKey][name]=Math.max(1,Number(round)||1);
+  state[roundMapKey][name]=String(round)==='END'?'END':Math.max(1,Number(round)||1);
   const key=side==='my'?'secondaryMyScoredVPByRound':'secondaryOppScoredVPByRound';
   const roundKey=String(round)==='END'?'END':String(Math.max(1,Number(round)||1));
   if(!state[key][roundKey]||typeof state[key][roundKey]!=='object')state[key][roundKey]={};
