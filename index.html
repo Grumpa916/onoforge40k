@@ -4443,40 +4443,11 @@ function clearTacticalPair(attackerUid,targetUid){
   event('TACTICAL_CONTEXT_CHANGED',{attackerUid,targetUid,action:'Tactical context cleared',before:old,after:null},before);
   save();render();
 }
-function tacticalWeaponUseKey(entryUid,weaponName){return String(entryUid||'')+'|'+String(weaponName||'')}
-function tacticalWeaponUseState(entryUid,weaponName){
-  const t=ensureTacticalState(),raw=t.unitUse[tacticalWeaponUseKey(entryUid,weaponName)]||{};
-  return {used:!!raw.used,usedCount:Math.max(0,Number(raw.usedCount)||0)};
-}
-function tacticalWeaponHasRule(w,rule){
-  return (w?.abilities||[]).some(a=>String(a||'').toUpperCase().replace(/-/g,' ').includes(String(rule||'').toUpperCase()));
-}
-function tacticalWeaponLimited(w){
-  return tacticalWeaponHasRule(w,'ONE SHOT')||tacticalWeaponHasRule(w,'ONCE PER BATTLE');
-}
-function tacticalWeaponAvailable(entryUid,w,maxCount){
-  if(!w)return {available:false,count:0,reason:'missing weapon'};
-  const use=tacticalWeaponUseState(entryUid,w.name);
-  const limit=Math.max(1,Number(maxCount)||1);
-  if(tacticalWeaponHasRule(w,'ONE SHOT')){
-    const remaining=Math.max(0,limit-Math.min(limit,use.usedCount));
-    return {available:remaining>0,count:remaining,reason:remaining>0?null:'All One Shot weapons used',use};
-  }
-  return {available:true,count:limit,reason:null,use};
-}
-function setTacticalWeaponUsed(entryUid,weaponName,value){
-  if(!entryUid||!weaponName)return;
-  const before=snapshotForUndo(),t=ensureTacticalState(),key=tacticalWeaponUseKey(entryUid,weaponName),old=tacticalWeaponUseState(entryUid,weaponName);
-  const n=Math.max(0,Math.floor(Number(value)||0));
-  t.unitUse[key]={used:n>0,usedCount:n};
-  event('TACTICAL_WEAPON_USE_CHANGED',{entryUid,weaponName,action:n?'Weapon use count changed':'Weapon use restored',before:old,after:t.unitUse[key]},before);
-  save();render();
-}
 function tacticalWeaponRange(w){
   if(!w)return null;
   const raw=String(w.rng??w.range??'').trim().toUpperCase();
   if(!raw||raw==='MELEE'||raw==='—'||raw==='-')return null;
-  const m=raw.match(/(\d+(?:\.\d+)?)/);
+  const m=raw.match(/(\\d+(?:\\.\\d+)?)/);
   return m?Number(m[1]):null;
 }
 function tacticalTargetLegality(attackerEntry,targetEntry,phase){
@@ -4572,7 +4543,6 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
   if(!attacker)return {version:'tactical-advisor-v1',status:'no-attacker',recommendations:[],avoid:[],naturalTargets:[]};
   const groups=attachedCombatWeaponGroups(side,atkEntry);
   if(!groups.length)return {version:'tactical-advisor-v1',status:'no-weapons',attacker:attacker.name,recommendations:[],avoid:[],naturalTargets:[]};
-  const availableGroups=groups.map(g=>{const a=tacticalWeaponAvailable(g.entry?.uid||atkEntry?.uid,g.weapon,g.count);return a.available?{...g,count:Math.min(g.count,a.count)}:null}).filter(Boolean);
   const roots=(state.opp||[]).filter(e=>!e.attachedTo);
   const results=roots.map(targetEntry=>{
     const snap=combatSnapshot('opp',targetEntry);
@@ -4582,7 +4552,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     const defModels=Math.max(1,Number(target.models)||Number(targetEntry.models)||1);
     const totalWounds=defModels*Math.max(1,Number(target.profile?.W)||1);
     const m={...(state.mathRules||{}),defenderModels:defModels,quickSamples:Math.min(10000,Math.max(2000,Number(options.samples)||4000)),_skipSim:false};
-    const calc=calculateMathMixed(attacker,target,availableGroups,m);
+    const calc=calculateMathMixed(attacker,target,groups,m);
     const damage=Math.max(0,Number(calc.damage)||0);
     const killed=Math.max(0,Number(calc.modelsKilled)||0);
     const wipe=Math.max(0,Math.min(1,Number(calc.killChance)||0));
@@ -4590,7 +4560,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     const killFrac=Math.min(1,killed/defModels);
     const points=Math.max(1,Number(targetEntry.points)||Number(target.points)||1);
     const efficiency=damage/points;
-    const weaponKeys=[...new Set(availableGroups.filter(g=>g.count>0).map(g=>g.weapon.name))];
+    const weaponKeys=[...new Set(groups.filter(g=>g.count>0).map(g=>g.weapon.name))];
     const targetKeywords=(target.keywords||[]).map(k=>String(k).toUpperCase().replace(/[^A-Z0-9 ]/g,' ').trim()).filter(Boolean);
     const antiMatches=groups.flatMap(g=>(g.weapon.abilities||[]).filter(a=>{
       const m=String(a).toUpperCase().replace(/-/g,' ').match(/ANTI\s+([A-Z ]+)\s+(\d+)\+/);
@@ -4602,7 +4572,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
       models:defModels,targetWounds:totalWounds,expectedDamage:damage,modelsKilled:killed,wipeChance:wipe,
       damageFraction:damageFrac,killFraction,damagePerPoint:efficiency,weaponProfiles:weaponKeys,
       antiMatches:[...new Set(antiMatches)],confidence,
-      tacticalLegality:tacticalTargetLegality(atkEntry,targetEntry,state.phase),\n      limitedUseExcluded:groups.filter(g=>!tacticalWeaponAvailable(g.entry?.uid||atkEntry?.uid,g.weapon,g.count).available).map(g=>g.weapon.name),\n      hazardousWeapons:[...new Set(availableGroups.filter(g=>tacticalWeaponHasRule(g.weapon,'HAZARDOUS')).map(g=>g.weapon.name))],
+      tacticalLegality:tacticalTargetLegality(atkEntry,targetEntry,state.phase),
       attached:!!target.__combatTarget,
       bodyguardTarget:!!target.__bodyguardEntryUid,
       strategicHook:{objectiveControl:Number(target.profile?.OC)||0,keywords:[...(target.keywords||[])]},
