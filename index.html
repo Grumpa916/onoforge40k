@@ -5857,11 +5857,15 @@ function resolveAttack(){
   m.attackerEngagedWithTarget=pairCtx?.engagement==='engaged';
   m.indirectShooting=state.phase==='Shooting'&&tacticalWeaponIsIndirect(w)&&advanced!==true&&tacticalUnitIsEngagedAny(ae?.uid)===false;
   m.indirectStationaryFriendlyVisible=m.indirectShooting&&advanced===false&&pairCtx?.los==='yes';
-  const phaseEligible=tacticalWeaponPhaseEligible(w,state.phase,ae,te||null);
-  if(state.phase==='Shooting'){
-    const leg=tacticalTargetLegality(ae,te,state.phase);
-    if(leg.canTarget===false)return;
-    if(advanced===true&&!phaseEligible)return;
+  const phase=String(state.phase||'Command');
+  if(!['Shooting','Fight'].includes(phase))return;
+  const actionEntry=attackerRoot||ae;
+  if(!actionEntry||!tacticalPhaseActionAvailable(actionEntry.uid,phase))return;
+  const phaseEligible=tacticalWeaponPhaseEligible(w,phase,ae,te||null);
+  if(!phaseEligible)return;
+  const leg=tacticalTargetLegality(ae,te,phase);
+  if(leg.canTarget===false)return;
+  if(phase==='Shooting'){
     const pairCtxNow=ae&&te?tacticalPairState(ae.uid,te.uid):null;
     if(pairCtxNow?.los==='no'&&!tacticalWeaponIsIndirect(w))return;
     const rangeNow=tacticalWeaponRange(w);
