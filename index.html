@@ -4285,6 +4285,7 @@ function combatSnapshot(side,entryUidOrEntry){
   const bodyguardModels=components.filter(c=>c.role==='bodyguard').flatMap(c=>c.models.filter(m=>m.alive!==false));
   const characterModels=alive.filter(m=>m.character===true);
   const targetModels=bodyguardModels.length?bodyguardModels:alive;
+  const attachedKeywords=[...new Set(components.filter(c=>c.models.some(m=>m.alive!==false)).flatMap(c=>get(c.unitId)?.keywords||[]))];
   const toughnessPool=targetModels.map(m=>Number(m.profile?.T)).filter(Number.isFinite);
   const uniqueToughness=Array.from(new Set(toughnessPool));
   const componentStates={};
@@ -4304,6 +4305,7 @@ function combatSnapshot(side,entryUidOrEntry){
     maxWounds:models.reduce((n,m)=>n+Math.max(0,Number(m.maxWounds)||0),0),
     targetToughness:uniqueToughness.length===1?uniqueToughness[0]:null,
     targetToughnessByModel:targetModels.map(m=>({modelId:m.id,sourceEntryUid:m.sourceEntryUid,T:Number(m.profile?.T)||0})),
+    attachedKeywords,
     targetModels:targetModels.length,
     targetWoundsState:targetModels.map(m=>Math.max(0,Number(m.woundsRemaining)||0)),
     targetWoundsRemaining:targetModels.reduce((n,m)=>n+Math.max(0,Number(m.woundsRemaining)||0),0),
@@ -4324,14 +4326,14 @@ function combatTargetUnit(side,entryUidOrEntry){
       const highestT=Math.max(...alive.map(m=>Number(m.profile?.T)||Number(u.profile?.T)||0));
       const profile={...(u.profile||{})};
       if(highestT)profile.T=highestT;
-      return {...u,profile,models:alive.length,__combatTarget:true,__attachedRootUid:root.uid,__bodyguardEntryUid:body.entryUid};
+      return {...u,profile,keywords:snap.attachedKeywords||u.keywords||[],models:alive.length,__combatTarget:true,__attachedRootUid:root.uid,__bodyguardEntryUid:body.entryUid};
     }
   }
   const liveLeader=snap.components.find(c=>(c.role==='leader'||c.role==='support')&&c.models.some(m=>m.alive!==false));
   if(liveLeader){
     const u=get(liveLeader.unitId);if(u){
       const alive=liveLeader.models.filter(m=>m.alive!==false);
-      return {...u,models:alive.length,__combatTarget:true,__attachedRootUid:root.uid,__leaderEntryUid:liveLeader.entryUid};
+      return {...u,keywords:snap.attachedKeywords||u.keywords||[],models:alive.length,__combatTarget:true,__attachedRootUid:root.uid,__leaderEntryUid:liveLeader.entryUid};
     }
   }
   return get(root.unitId)||null;
@@ -4366,7 +4368,7 @@ function attachedCombatWeaponGroups(side,e,target=null){
   const snap=combatSnapshot(side,e);if(!snap)return [];
   return snap.weapons.reduce((groups,w)=>{
     const key=w.sourceEntryUid+'|'+String(w.sourceModelId||'')+'|'+engineWeaponPoolKey(w.weapon,target);
-    const poolKey=w.sourceEntryUid+'|'+engineWeaponPoolKey(w.weapon,target),existing=groups.find(g=>g.poolKey===poolKey);
+    const poolKey=engineWeaponPoolKey(w.weapon,target),existing=groups.find(g=>g.poolKey===poolKey);
     if(existing){existing.count++;existing.modelIds.push(w.sourceModelId)}
     else{
       const ce=entry(side,w.sourceEntryUid),u=get(w.unitId);
