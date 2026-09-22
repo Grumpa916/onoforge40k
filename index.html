@@ -4967,11 +4967,20 @@ function resolveAttack(){
   const ae=mathRosterEntry('my'),de=mathRosterEntry('opp');
   const a=get(state.attacker),t=get(state.target),w=(a.weapons||[]).find(x=>x.name===state.weapon)||a.weapons[0];
   if(!w)return;
-  const m={...(state.mathRules||{})};  if(ae){const snapAtt=combatSnapshot('my',ae);if(snapAtt?.survivingModels===1)m.attackerWoundsRemaining=Math.max(0,Number(snapAtt.totalWounds)||0);}
+  const m={...(state.mathRules||{})};
+  const attackerRoster=ae&&modelRosterRule(a)?survivingModelRoster(ae,a):[];
+  const exactWeaponModels=attackerRoster.length
+    ?attackerRoster.filter(model=>(Array.isArray(model.weapons)?model.weapons:[]).includes(w.name)).length
+    :Math.max(1,Number(mathWeaponAlloc(ae,a)?.[w.name])||0);
+  const phaseWeaponUsed=ae?tacticalWeaponPhaseUseCount(ae.uid,w.name,state.round,state.phase,'my'):0;
+  const modelsAvailable=Math.max(0,exactWeaponModels-phaseWeaponUsed);
+  if(ae&&attackerRoster.length===1)m.attackerWoundsRemaining=Math.max(0,Number(attackerRoster[0]?.woundsRemaining)||0);
+  if(modelsAvailable<=0)return; 
   const selectedTargetEntry=de&&get(de.unitId)?.id===t.id?de:null;
   const te=selectedTargetEntry||state.opp.find(e=>e.unitId===t.id)||state.my.find(e=>e.unitId===t.id);
   const rosterTracked=!!(te&&modelRosterRule(t));
-  if(ae&&modelRosterRule(a))m.attackerModels=Math.max(1,survivingModelRoster(ae,a).length);
+  const modelsResolved=Math.max(1,modelsAvailable);
+  m.attackerModels=modelsResolved;
   let woundsState,rosterAlive=[];
   if(rosterTracked){
     const roster=ensureModelRoster(te,t);
@@ -5000,7 +5009,7 @@ function resolveAttack(){
     event('ATTACK_RESOLUTION',{
       attacker:a.name,attackerEntryUid:ae?.uid||null,weapon:w.name,target:t.name,targetEntryUid:te?.uid||null,unit:a.name,
       action:'Attack with '+w.name+' → '+t.name,
-      attacks:Math.round(engineExpectedDice(w.A)),modelsResolved:rosterTracked?Math.max(1,rosterAlive.length):1,hits:r.hits,wounds:r.wounds,saved:r.saved,damage:r.damage,
+      attacks:Math.round(engineExpectedDice(w.A)*modelsResolved),modelsResolved,hits:r.hits,wounds:r.wounds,saved:r.saved,damage:r.damage,
       critHits:r.critHits,critW:r.critWounds,before,after:te.game,rollLog:r.rollLog,
       modelLevel:rosterTracked
     },fullBefore);
@@ -5008,7 +5017,7 @@ function resolveAttack(){
     event('ATTACK_RESOLUTION',{
       attacker:a.name,attackerEntryUid:ae?.uid||null,weapon:w.name,target:t.name,targetEntryUid:te?.uid||null,unit:a.name,
       action:'Attack with '+w.name+' → '+t.name,
-      modelsResolved:rosterTracked?Math.max(1,rosterAlive.length):1,hits:r.hits,wounds:r.wounds,saved:r.saved,damage:r.damage,critHits:r.critHits,critW:r.critWounds,rollLog:r.rollLog
+      modelsResolved,hits:r.hits,wounds:r.wounds,saved:r.saved,damage:r.damage,critHits:r.critHits,critW:r.critWounds,rollLog:r.rollLog
     },fullBefore);
   }
   state.page='battle';save();render();
