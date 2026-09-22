@@ -4342,14 +4342,24 @@ function combatTargetEntry(side,entryUidOrEntry){
   return root||selected||null;
 }
 function combatUnit(side,entryUidOrEntry){return combatSnapshot(side,entryUidOrEntry)}
+function engineWeaponPoolKey(w){
+  const p=w?.weapon||w||{};
+  const abilities=Array.isArray(p.abilities)?p.abilities.map(x=>String(x)).sort():[];
+  return JSON.stringify({
+    name:String(p.name||''),A:String(p.A??''),BS:String(p.BS??''),WS:String(p.WS??''),
+    S:String(p.S??''),AP:String(p.AP??''),D:String(p.D??''),range:String(p.range??p.Range??''),
+    abilities
+  });
+}
 function attachedCombatWeaponGroups(side,e){
   const snap=combatSnapshot(side,e);if(!snap)return [];
   return snap.weapons.reduce((groups,w)=>{
-    const key=w.sourceEntryUid+'|'+w.weapon.name,existing=groups.find(g=>g.key===key);
+    const key=w.sourceEntryUid+'|'+String(w.sourceModelId||'')+'|'+engineWeaponPoolKey(w);
+    const poolKey=w.sourceEntryUid+'|'+engineWeaponPoolKey(w),existing=groups.find(g=>g.poolKey===poolKey);
     if(existing){existing.count++;existing.modelIds.push(w.sourceModelId)}
     else{
       const ce=entry(side,w.sourceEntryUid),u=get(w.unitId);
-      groups.push({key,entry:ce,attacker:u,weapon:w.weapon,count:1,modelIds:[w.sourceModelId],role:w.componentRole,identityExact:!!w.identityExact});
+      groups.push({key,poolKey,entry:ce,attacker:u,weapon:w.weapon,count:1,modelIds:[w.sourceModelId],role:w.componentRole,identityExact:!!w.identityExact});
     }
     return groups;
   },[]);
