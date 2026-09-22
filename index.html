@@ -4902,7 +4902,10 @@ function tacticalAdvisorHtml(){
   const result=tacticalAdvisorV1(ae.uid,{samples:4000});
   if(result.status!=='ok'){
     const detail=result.attacker?(' • '+esc(result.attacker)):'';
-    return '<div class="card tactical-advisor-card"><div class="split"><div><h3 style="margin:0">Tactical Advisor</h3><div class="muted">'+esc(result.status||'Advisor unavailable')+detail+'</div></div><span class="pill">Needs input</span></div></div>';
+    const phaseLabel=result.phase?(' • '+esc(result.phase)):'';
+    const gateLabel=result.status==='action-already-completed'?'Action complete':result.status==='charge-target-evaluation-not-yet-modeled'?'Charge targeting':'Phase gate';
+    const note=result.note||'The advisor is not producing a weapon-target recommendation from the current game state.';
+    return '<div class="card tactical-advisor-card"><div class="split"><div><h3 style="margin:0">Tactical Advisor</h3><div class="muted">'+esc(result.status||'Advisor unavailable')+detail+phaseLabel+'</div></div><span class="pill">'+gateLabel+'</span></div><div class="status" style="margin-top:10px">'+esc(note)+'</div></div>';
   }
   const recs=Array.isArray(result.recommendations)?result.recommendations:[];
   const top=recs[0];
