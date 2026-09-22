@@ -1892,8 +1892,8 @@ function setSecondaryDetailScore(side,name,vp){
 function secondaryDetailHtml(side){
  const name=secondaryDetailTarget(side);if(!name)return '';
  const card=secondaryByName(name);
- const active=secState(side).includes(name),scored=secScored(side).includes(name);
  const scoredVP=Number((side==='my'?state.secondaryMyScoredVP:state.secondaryOppScoredVP)?.[name])||0;
+ const active=secState(side).includes(name),scored=secScored(side).includes(name)||scoredVP>0;
  const data=SECONDARY_SCORING[name]||SECONDARY_SCORING[card?.name]||null;
  const mode=side==='my'?state.secondaryMy:state.secondaryOpp;
  const scoringText=data?Object.entries(data).filter(([m])=>m===mode.charAt(0).toUpperCase()+mode.slice(1)).flatMap(([,items])=>items.map(x=>x[0]+' VP — '+x[1])).join(' • '):(card?.type||'Secondary mission');
