@@ -4432,9 +4432,13 @@ function calculateMathMixed(a,t,groups,m){
   const details=[];
   for(const g of groups){
     if(g.count<=0)continue;
-    const rr=calculateMath(g.attacker||a,g.weapon,t,{...safe,attackerModels:g.count});
-    ['attacks','hits','wounds','failedSaves','damage','critHits','critWounds'].forEach(k=>totals[k]+=Number(rr[k])||0);
-    details.push({weapon:g.weapon.name,count:g.count,result:rr});
+    const variants=Array.isArray(g.weaponVariants)&&g.weaponVariants.length?g.weaponVariants:[{weapon:g.weapon,count:g.count}];
+    for(const v of variants){
+      if(v.count<=0)continue;
+      const rr=calculateMath(g.attacker||a,v.weapon,t,{...safe,attackerModels:v.count});
+      ['attacks','hits','wounds','failedSaves','damage','critHits','critWounds'].forEach(k=>totals[k]+=Number(rr[k])||0);
+      details.push({weapon:v.weapon.name,count:v.count,result:rr});
+    }
   }
   const sim=engineMonteCarloMixed(a,t,groups,safe,Math.min(20000,Math.max(1000,Number(m?.quickSamples)||5000)));
   const leadGroup=groups[0];
