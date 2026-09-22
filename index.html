@@ -5661,11 +5661,14 @@ function engineRoll(v){const s=String(v??'1').trim().toUpperCase().replace(/\s+/
 function engineFnp(m){return m.fnp4?4:m.fnp5?5:m.fnp6?6:null}
 function engineSustained(c,m){return m.sustained3?3:m.sustained2?2:m.sustained1?1:c.sustained}
 function engineAntiForTarget(w,t,m){const abilities=(w.abilities||[]).map(x=>String(x).toUpperCase().replace(/-/g,' '));let best=null;for(const a of abilities){const q=a.match(/ANTI[- ]([A-Z]+)\s*(2|3|4|5)\+/);if(q&&(t.keywords||[]).some(k=>String(k).toUpperCase()===q[1]))best=best?Math.min(best,Number(q[2])):Number(q[2])}const manual=m.anti3?3:m.anti4?4:m.anti5?5:null;return manual?Math.min(best||99,manual):best}
-function engineContext(a,w,t,m){const abilities=(w.abilities||[]).map(x=>String(x).toUpperCase().replace(/-/g,' '));const txt=abilities.join(' | ');const c={};c.indirect=abilities.some(x=>x.includes('INDIRECT FIRE'))&&!!m.indirectShooting;c.lethal=abilities.some(x=>x.includes('LETHAL HITS'))||!!m.lethal;c.sustained=Number((txt.match(/SUSTAINED HITS\s*(D\d+|\d+)/)||[])[1]?.replace('D',''))||0;c.devastating=abilities.some(x=>x.includes('DEVASTATING WOUNDS'))||!!m.devastating||!!m.abilityViciousInsight;c.torrent=abilities.some(x=>x.includes('TORRENT'))||!!m.torrent;const blastMatch=txt.match(/BLAST(?:\s*(\d+))?/);c.blast=blastMatch?(Number(blastMatch[1])||1):0;const cleaveMatch=txt.match(/CLEAVE(?:\s*(\d+))?/);c.cleave=cleaveMatch?(Number(cleaveMatch[1])||1):0;c.rapidFire=Number((txt.match(/RAPID FIRE\s*(\d+)/)||[])[1])||0;c.heavy=abilities.some(x=>x.trim()==='HEAVY');c.twin=abilities.some(x=>x.includes('TWIN-LINKED'));c.melta=Number((txt.match(/MELTA\s*(\d+)/)||[])[1])||0;c.precision=abilities.some(x=>x.includes('PRECISION'));c.ignoreCover=abilities.some(x=>x.includes('IGNORES COVER'));c.closeQuarters=abilities.some(x=>x.includes('CLOSE QUARTERS'));const pistolEquivalent=c.closeQuarters||abilities.some(x=>x.includes(' PISTOL'))||abilities.some(x=>x.startsWith('PISTOL'));
+function engineContext(a,w,t,m){const abilities=(w.abilities||[]).map(x=>String(x).toUpperCase().replace(/-/g,' '));const txt=abilities.join(' | ');const c={};c.indirect=abilities.some(x=>x.includes('INDIRECT FIRE'))&&!!m.indirectShooting;c.lethal=abilities.some(x=>x.includes('LETHAL HITS'))||!!m.lethal;c.sustained=Number((txt.match(/SUSTAINED HITS\s*(D\d+|\d+)/)||[])[1]?.replace('D',''))||0;c.devastating=abilities.some(x=>x.includes('DEVASTATING WOUNDS'))||!!m.devastating||!!m.abilityViciousInsight;c.torrent=abilities.some(x=>x.includes('TORRENT'))||!!m.torrent;const blastMatch=txt.match(/BLAST(?:\s*(\d+))?/);c.blast=blastMatch?(Number(blastMatch[1])||1):0;const cleaveMatch=txt.match(/CLEAVE(?:\s*(\d+))?/);c.cleave=cleaveMatch?(Number(cleaveMatch[1])||1):0;c.rapidFire=Number((txt.match(/RAPID FIRE\s*(\d+)/)||[])[1])||0;c.heavy=abilities.some(x=>x.trim()==='HEAVY');c.twin=abilities.some(x=>x.includes('TWIN-LINKED'));c.melta=Number((txt.match(/MELTA\s*(\d+)/)||[])[1])||0;c.precision=abilities.some(x=>x.includes('PRECISION'));c.ignoreCover=abilities.some(x=>x.includes('IGNORES COVER'));
+const targetAbilities=(t?.abilities||t?.specialRules||[]).map(x=>String(x||'').toUpperCase().replace(/-/g,' '));
+c.stealth=targetAbilities.some(x=>x.trim()==='STEALTH'||x.includes(' STEALTH'));
+c.closeQuarters=abilities.some(x=>x.includes('CLOSE QUARTERS'));const pistolEquivalent=c.closeQuarters||abilities.some(x=>x.includes(' PISTOL'))||abilities.some(x=>x.startsWith('PISTOL'));
 c.closeQuartersHitPenalty=(
   (!!m.engagedTargetMonsterVehicle&& !pistolEquivalent) ||
   (!!m.attackerMonsterVehicle&&m.attackerEngagedAny&&!pistolEquivalent)
-);c.anti=engineAntiForTarget(w,t,m);const damagedAttacker=DAMAGED_HIT_PENALTY_11E.has(String(a?.faction||'')+'|'+String(a?.name||''))&&Number(a?.models||1)===1&&Number(m.attackerWoundsRemaining)>0&&Number(m.attackerWoundsRemaining)<=5;c.cover=(!!m.cover||c.indirect)&&!c.ignoreCover&&!!w.rng;
+);c.anti=engineAntiForTarget(w,t,m);const damagedAttacker=DAMAGED_HIT_PENALTY_11E.has(String(a?.faction||'')+'|'+String(a?.name||''))&&Number(a?.models||1)===1&&Number(m.attackerWoundsRemaining)>0&&Number(m.attackerWoundsRemaining)<=5;c.cover=(!!m.cover||c.indirect||c.stealth)&&!c.ignoreCover&&!!w.rng;
 if(c.indirect){
   c.hitReroll='none';
   c.indirectHitNeed=m.indirectStationaryFriendlyVisible?4:6;
@@ -5993,6 +5996,8 @@ function resolveAttack(){
   m.attackerEngagedWithTarget=pairCtx?.engagement==='engaged';
   m.attackerEngagedAny=!!ae&&tacticalUnitIsEngagedAny(ae.uid);
   m.attackerMonsterVehicle=!!ae&&tacticalUnitIsMonsterVehicle(ae);
+  m.stationary=!!movementEntry&&tacticalUnitMovementType(movementEntry.uid)==='remained';
+  m.heavyEligible=m.stationary;
   m.indirectShooting=state.phase==='Shooting'&&tacticalWeaponIsIndirect(w)&&advanced!==true&&tacticalUnitIsEngagedAny(ae?.uid)===false;
   m.indirectStationaryFriendlyVisible=m.indirectShooting&&advanced===false&&pairCtx?.los==='yes';
   const phase=String(state.phase||'Command');
