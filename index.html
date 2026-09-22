@@ -5983,7 +5983,7 @@ function resolveAttack(){
   if(!w)return;
   const m={...(state.mathRules||{})};
   const selectedTargetEntry=de&&get(de.unitId)?.id===t.id?de:null;
-  const te=selectedTargetEntry||state.opp.find(e=>e.unitId===t.id)||state.my.find(e=>e.unitId===t.id);
+  const te=selectedTargetEntry||state.opp.find(e=>e.unitId===t.id)||null;
   const attackerRoster=ae&&modelRosterRule(a)?survivingModelRoster(ae,a):[];
   const attackerRoot=ae?combatRootEntry('my',ae):ae;
   const movementEntry=attackerRoot||ae;
