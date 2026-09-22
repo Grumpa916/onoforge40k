@@ -4475,7 +4475,7 @@ function engineMonteCarloMixed(a,t,groups,m,samples){
       ?m.defenderWoundsState.slice(0,defModels).map(v=>Math.max(0,Number(v)||0))
       :Array.from({length:defModels},()=>hp);
   while(baseWounds.length<defModels)baseWounds.push(hp);
-  let totalDamage=0,totalKilled=0,wipes=0;
+  let totalDamage=0,totalKilled=0,wipes=0,damageM2=0,killedM2=0;
   for(let s=0;s<samples;s++){
     const woundsState=baseWounds.slice(); let dmg=0;
     for(const g of groups){
@@ -4486,7 +4486,12 @@ function engineMonteCarloMixed(a,t,groups,m,samples){
     }
     const killed=woundsState.filter(x=>x<=0).length; totalDamage+=dmg; totalKilled+=killed; if(killed>=defModels)wipes++;
   }
-  return {samples,avgDamage:totalDamage/samples,avgKilled:totalKilled/samples,wipeChance:wipes/samples};
+  const avgDamage=totalDamage/samples,avgKilled=totalKilled/samples;
+  const damageVariance=samples>1?damageM2/(samples-1):0,killedVariance=samples>1?killedM2/(samples-1):0;
+  const damageStdDev=Math.sqrt(Math.max(0,damageVariance)),killedStdDev=Math.sqrt(Math.max(0,killedVariance));
+  return {samples,avgDamage,avgKilled,wipeChance:wipes/samples,damageStdDev,killedStdDev,
+    damageStdError:damageStdDev/Math.sqrt(samples),killedStdError:killedStdDev/Math.sqrt(samples),
+    wipeStdError:Math.sqrt(Math.max(0,(wipes/samples)*(1-wipes/samples)/samples))};
 }
 const TACTICAL_STATE_VERSION='1.3';
 function ensureTacticalState(){
