@@ -4120,6 +4120,11 @@ function scoreIntegrityAudit(){
     const roundSecondary=secondaryRoundScoredVP(side,Math.max(1,Number(state.round)||1));
     if(roundPrimary>15)out.push(side+': primary round exceeds 15');
     if(roundSecondary>15)out.push(side+': secondary round exceeds 15');
+    const primaryRounds=state[side==='my'?'primaryScoringValuesByRoundMy':'primaryScoringValuesByRoundOpp']||{};
+    for(const [round,values] of Object.entries(primaryRounds)){
+      const total=Object.values(values&&typeof values==='object'?values:{}).reduce((sum,v)=>sum+Math.max(0,Number(v)||0),0);
+      if(total>15)out.push(side+': primary round '+round+' exceeds 15');
+    }
     const secondaryRounds=state[side==='my'?'secondaryMyScoredVPByRound':'secondaryOppScoredVPByRound']||{};
     if(Object.prototype.hasOwnProperty.call(secondaryRounds,'END'))out.push(side+': stale END secondary scoring bucket');
     for(const [round,bucket] of Object.entries(secondaryRounds)){
