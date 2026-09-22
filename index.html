@@ -2418,6 +2418,7 @@ function supportCandidatesForUnit(side,supportUid){
   return (state[side]||[]).filter(e=>e.uid!==supportUid&&!e.attachedTo&&allowed.includes(get(e.unitId)?.name)&&!bodyguardSupports(side,e.uid).length);
 }
 function attachSupport(side,supportUid,bodyguardUid){
+  const fullBefore=snapshotForUndo();
   const support=entry(side,supportUid),body=entry(side,bodyguardUid);if(!support||!body)return;
   const su=get(support.unitId),bu=get(body.unitId);if(!isSupportUnit(su)||!supportNamesForBodyguard(bu).includes(su.name)||bodyguardSupports(side,bodyguardUid).length)return;
   const oldBody=supportBodyguard(side,supportUid);if(oldBody){
@@ -2426,12 +2427,16 @@ function attachSupport(side,supportUid,bodyguardUid){
   body.supportUids=Array.isArray(body.supportUids)?body.supportUids.slice():[];
   body.supportUids.push(support.uid);syncBodyguardSupportFields(body);
   support.attachedTo=body.uid;support.attachedRole='support';
+  event('SUPPORT_ATTACHED',{side,supportUid,bodyguardUid,support:su.name,bodyguard:bu.name,action:'Support attached to Bodyguard'},fullBefore);
   save();state.supportAttachmentModal=null;state.supportBodyguardAttachmentModal=null;render();
 }
 function detachSupport(side,supportUid){
+  const fullBefore=snapshotForUndo();
   const support=entry(side,supportUid);if(!support)return;
-  const body=supportBodyguard(side,supportUid);delete support.attachedTo;delete support.attachedRole;
+  const body=supportBodyguard(side,supportUid),su=get(support.unitId),bu=body?get(body.unitId):null;
+  delete support.attachedTo;delete support.attachedRole;
   if(body){body.supportUids=(Array.isArray(body.supportUids)?body.supportUids:[]).filter(id=>id!==supportUid);syncBodyguardSupportFields(body)}
+  event('SUPPORT_DETACHED',{side,supportUid,bodyguardUid:body?.uid||null,support:su?.name||'Support',bodyguard:bu?.name||'',action:'Support detached from Bodyguard'},fullBefore);
   save();state.supportAttachmentModal=null;state.supportBodyguardAttachmentModal=null;render();
 }
 function openSupportAttachment(side,bodyguardUid){state.supportAttachmentModal={side,bodyguardUid};state.supportBodyguardAttachmentModal=null;render()}
