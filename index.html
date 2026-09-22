@@ -1020,6 +1020,26 @@ function primaryRoundScoredVP(side){
   return Object.values(values).reduce((sum,v)=>sum+Math.max(0,Number(v)||0),0);
 }
 function primaryRoundCapRemaining(side){return Math.max(0,15-primaryRoundScoredVP(side));}
+function missionDecisionContext(){
+  ensureScoreLedger();
+  const my=scoreTotalForSide('my'),opp=scoreTotalForSide('opp');
+  const round=Math.max(1,Number(state.round)||1);
+  const primaryMy=Math.max(0,Math.min(45,Number(state.primaryMyScoredVP)||0));
+  const primaryOpp=Math.max(0,Math.min(45,Number(state.primaryOppScoredVP)||0));
+  const secondaryMy=Math.max(0,Math.min(45,Number(secondaryTotalScoredVP('my'))||0));
+  const secondaryOpp=Math.max(0,Math.min(45,Number(secondaryTotalScoredVP('opp'))||0));
+  const myRoundPrimary=primaryRoundScoredVP('my'),oppRoundPrimary=primaryRoundScoredVP('opp');
+  const myRoundSecondary=secondaryRoundScoredVP('my',round),oppRoundSecondary=secondaryRoundScoredVP('opp',round);
+  const objectiveSummary=objectiveStateSummary();
+  const myObjectives=objectiveSummary.current.filter(o=>o.owner==='my').length;
+  const oppObjectives=objectiveSummary.current.filter(o=>o.owner==='opp').length;
+  return {
+    round,turn:state.currentTurn||'my',score:{my,opp,gap:my-opp},
+    primary:{my:primaryMy,opp:primaryOpp,myRemaining:45-primaryMy,oppRemaining:45-primaryOpp,myRound:myRoundPrimary,oppRound:oppRoundPrimary,myRoundRemaining:Math.max(0,15-myRoundPrimary),oppRoundRemaining:Math.max(0,15-oppRoundPrimary)},
+    secondary:{my:secondaryMy,opp:secondaryOpp,myRemaining:45-secondaryMy,oppRemaining:45-secondaryOpp,myRound:myRoundSecondary,oppRound:oppRoundSecondary,myRoundRemaining:Math.max(0,15-myRoundSecondary),oppRoundRemaining:Math.max(0,15-oppRoundSecondary)},
+    objectives:{my:myObjectives,opp:oppObjectives,summary:objectiveSummary.current}
+  };
+}
 function scorePrimaryItem(side,index,mission,amountOverride){
   syncPrimaryScoringRound();
   const round=Math.max(1,Number(state.round)||1);
@@ -1045,7 +1065,7 @@ function scorePrimaryItem(side,index,mission,amountOverride){
     const after=Math.max(0,before-actual);
     const delta=after-before;
     state[vpKey]=after;
-    state[overallKey]=Math.max(0,(Number(state[overallKey])||0)+delta);
+    state[overallKey]=scoreTotalForSide(side);
     state[byRoundKey][roundKey]=scored.filter(i=>i!==index);
     delete values[index];
     delete amounts[index];
@@ -1832,6 +1852,7 @@ function scoreSecondary(side,name,vpInput){
    if(mode==='tactical'&&!secDiscard(side).includes(name))secDiscard(side).push(name);
  }
  recordSecondaryRoundVP(side,name,actual,round);
+ state[side==='my'?'myVP':'oppVP']=scoreTotalForSide(side);
  event('SECONDARY_SCORED',{side,unit:name,action:'Secondary scored +'+actual+' VP',secondary:name,before,after:before+actual,delta:actual,mode,discarded:!fixed,round,roundCap:15,roundTotal:roundTotalBefore+actual,missionTotal:missionBefore+actual,missionCap:max},fullBefore);
  save();render();
 }
@@ -1845,6 +1866,7 @@ function resetSecondaryScore(side,name){
  if(existing<=0&&!scored.includes(name))return;
  const fullBefore=snapshotForUndo();
  if(side==='my')state.myVP=Math.max(0,(Number(state.myVP)||0)-existing);else state.oppVP=Math.max(0,(Number(state.oppVP)||0)-existing);
+ state[side==='my'?'myVP':'oppVP']=scoreTotalForSide(side);
  if(state[vk])delete state[vk][name];
  removeSecondaryRoundVP(side,name);
  if(mode==='fixed'){
@@ -1874,6 +1896,7 @@ function returnSecondaryToList(side,name){
  const scoredVP=Number(state[vk]&&state[vk][name])||0;
  if(scoredVP){
    if(side==='my')state.myVP=Math.max(0,(Number(state.myVP)||0)-scoredVP);
+   state[side==='my'?'myVP':'oppVP']=scoreTotalForSide(side);
    else state.oppVP=Math.max(0,(Number(state.oppVP)||0)-scoredVP);
  }
  state[sk]=Array.isArray(state[sk])?state[sk].filter(x=>x!==name):[];
@@ -3572,6 +3595,7 @@ function gameTimerHtml(){
 }
 
 function startBattle(){
+  const before=snapshotForUndo();
   startGameTimer();
 
   state.round=1;
@@ -3655,7 +3679,7 @@ function startBattle(){
     });
   }
 
-const before=snapshotForUndo();state.myCP=0;state.oppCP=0;state.newOrdersCompletedMy=false;state.newOrdersCompletedOpp=false;if(!forceDisposition('my')&&availableForceDispositions('my').length)state.myForceDisposition=availableForceDispositions('my')[0];if(!forceDisposition('opp')&&availableForceDispositions('opp').length)state.oppForceDisposition=availableForceDispositions('opp')[0];state.page='battle';state.phase='Command';state.currentTurn=state.firstTurn==='opp'?'opp':'my';state.gameTimer.turnMyMs=0;state.gameTimer.turnOppMs=0;state.gameTimer.turnStartedGameMs=gameTimerElapsed();state.gameTimer.turnPaused=false;state.myVP=state.battleReadyMy?10:0;state.oppVP=state.battleReadyOpp?10:0;state.events=[];state.objectives={};if(Array.isArray(state.stratagemsMy))state.stratagemsMy.forEach(s=>{if(s)s.used=false});
+state.myCP=0;state.oppCP=0;state.newOrdersCompletedMy=false;state.newOrdersCompletedOpp=false;if(!forceDisposition('my')&&availableForceDispositions('my').length)state.myForceDisposition=availableForceDispositions('my')[0];if(!forceDisposition('opp')&&availableForceDispositions('opp').length)state.oppForceDisposition=availableForceDispositions('opp')[0];state.page='battle';state.phase='Command';state.currentTurn=state.firstTurn==='opp'?'opp':'my';state.gameTimer.turnMyMs=0;state.gameTimer.turnOppMs=0;state.gameTimer.turnStartedGameMs=gameTimerElapsed();state.gameTimer.turnPaused=false;state.manualVPMy=0;state.manualVPOpp=0;state.myVP=state.battleReadyMy?10:0;state.oppVP=state.battleReadyOpp?10:0;state.events=[];state.objectives={};if(Array.isArray(state.stratagemsMy))state.stratagemsMy.forEach(s=>{if(s)s.used=false});
 if(Array.isArray(state.stratagemsOpp))state.stratagemsOpp.forEach(s=>{if(s)s.used=false});
 state.secondaryMyDiscard=[];state.secondaryOppDiscard=[];state.secondaryTacticalDrawKeys={};state.secondaryMyScored=[];state.secondaryOppScored=[];state.secondaryMyDeck=[];state.secondaryOppDeck=[];state.secondaryMyDeckInitialized=false;state.secondaryOppDeckInitialized=false;if(state.secondaryMy==='tactical'){state.secondaryMyCards=[];initTacticalDeck('my')}else{state.secondaryMyCards=state.secondaryMyCards.slice(0,2)} if(state.secondaryOpp==='tactical'){state.secondaryOppCards=[];initTacticalDeck('opp')}else{state.secondaryOppCards=state.secondaryOppCards.slice(0,2)}ensureTacticalTurnDraw(state.currentTurn);state.my.forEach(e=>{const u=get(e.unitId),roster=ensureModelRoster(e,u);e.game={entryId:e.uid,models:e.models,wounds:e.models*get(e.unitId).wounds,status:'Alive',battleshocked:false,modelRoster:roster.map(m=>({...m,alive:true,woundsRemaining:Number(u.wounds)||1}))};});
 state.opp.forEach(e=>{const u=get(e.unitId),roster=ensureModelRoster(e,u);e.game={entryId:e.uid,models:e.models,wounds:e.models*get(e.unitId).wounds,status:'Alive',battleshocked:false,modelRoster:roster.map(m=>({...m,alive:true,woundsRemaining:Number(u.wounds)||1}))};});event('GAME_STARTED',{unit:'Game',action:'Start / Reset Battle',round:state.round,phase:state.phase,attacker:state.attackerSide,defender:state.attackerSide==='my'?'opp':'my',firstTurn:state.firstTurn,secondaryMy:state.secondaryMy,secondaryOpp:state.secondaryOpp,battleReadyMy:state.battleReadyMy,battleReadyOpp:state.battleReadyOpp,myStartingVP:state.myVP,oppStartingVP:state.oppVP,myDetachment:state.detachmentSelections,oppDetachment:state.oppDetachmentSelections,myDetachmentDP:detachmentDP('my'),oppDetachmentDP:detachmentDP('opp'),myForceDisposition:forceDisposition('my'),oppForceDisposition:forceDisposition('opp'),myPrimaryMission:primaryMission('my'),oppPrimaryMission:primaryMission('opp')},before);save();render()}
@@ -3982,7 +4006,47 @@ function changeUnit(side,id,dm,dw){
   const action=dm?('Models '+(dm>0?'+':'')+dm):('Wounds '+(dw>0?'+':'')+dw);
   event('UNIT_STATE_CHANGED',{side,unitId:e.unitId,entryId:id,unit:u.name,action,modelsBefore:oldModels,modelsAfter:e.game.models,woundsBefore:oldWounds,woundsAfter:e.game.wounds,statusBefore:before.status,statusAfter:e.game.status,before,after:e.game},fullBefore);save();render();
 }
-function changeVP(side,d){d=Number(d)||0;const fullBefore=snapshotForUndo();const before=side==='my'?Number(state.myVP)||0:Number(state.oppVP)||0;const after=Math.max(0,before+d);if(side==='my')state.myVP=after;else state.oppVP=after;event('VP_CHANGED',{side,unit:side==='my'?'My Score':'Opponent Score',action:'VP '+(d>0?'+':'')+d,before,after,delta:d},fullBefore);save();render()}
+function ensureScoreLedger(){
+  const sides=['my','opp'];
+  sides.forEach(side=>{
+    const pk=side==='my'?'primaryMyScoredVP':'primaryOppScoredVP';
+    const sk=side==='my'?'secondaryMyScoredVP':'secondaryOppScoredVP';
+    const mk=side==='my'?'manualVPMy':'manualVPOpp';
+    const totalKey=side==='my'?'myVP':'oppVP';
+    if(!Number.isFinite(Number(state[pk])))state[pk]=0;
+    if(!state[sk]||typeof state[sk]!=='object')state[sk]={};
+    const secondary=Object.values(state[sk]).reduce((s,v)=>s+Math.max(0,Number(v)||0),0);
+    state[pk]=Math.max(0,Math.min(45,Number(state[pk])||0));
+    const expected= (side==='my'?(state.battleReadyMy?10:0):(state.battleReadyOpp?10:0))+Math.min(45,Number(state[pk])||0)+Math.min(45,secondary);
+    if(!Number.isFinite(Number(state[mk])))state[mk]=Math.max(0,(Number(state[totalKey])||0)-expected);
+    state[mk]=Math.max(0,Math.min(100,Number(state[mk])||0));
+    state[totalKey]=Math.min(100,expected+state[mk]);
+  });
+  return state;
+}
+function scoreTotalForSide(side){
+  ensureScoreLedger();
+  const primary=Math.max(0,Math.min(45,Number(state[side==='my'?'primaryMyScoredVP':'primaryOppScoredVP'])||0));
+  const secondary=Math.max(0,Math.min(45,Number(secondaryTotalScoredVP(side))||0));
+  const ready=side==='my'?(state.battleReadyMy?10:0):(state.battleReadyOpp?10:0);
+  const manual=Math.max(0,Number(state[side==='my'?'manualVPMy':'manualVPOpp'])||0);
+  return Math.min(100,ready+primary+secondary+manual);
+}
+function changeVP(side,d){
+  d=Number(d)||0;ensureScoreLedger();
+  const fullBefore=snapshotForUndo();
+  const before=side==='my'?Number(state.myVP)||0:Number(state.oppVP)||0;
+  const mk=side==='my'?'manualVPMy':'manualVPOpp';
+  const manualBefore=Number(state[mk])||0;
+  const maxManual=Math.max(0,100-scoreTotalForSide(side)+manualBefore);
+  const manualAfter=Math.max(0,Math.min(maxManual,manualBefore+d));
+  if(manualAfter===manualBefore&&d>0){alert('Score is already at the 100 VP maximum.');return}
+  state[mk]=manualAfter;
+  const after=scoreTotalForSide(side);
+  const delta=after-before;
+  event('VP_CHANGED',{side,unit:side==='my'?'Manual Score Adjustment':'Opponent Manual Score Adjustment',action:'VP '+(delta>0?'+':'')+delta,before,after,delta,manualBefore,manualAfter},fullBefore);
+  save();render()
+}
 function ensureObjectiveTurnSnapshot(){
   if(!state.objectiveTurnStartOwners||typeof state.objectiveTurnStartOwners!=='object')state.objectiveTurnStartOwners={};
   const round=Math.max(1,Number(state.round)||1);
@@ -4771,6 +4835,7 @@ function tacticalAdvisorStateSnapshot(attackerEntryUid){
 }
 function tacticalAdvisorV1(attackerEntryUid,options={}){
   const side='my',atkEntry=entry(side,attackerEntryUid)||mathRosterEntry(side);
+  const missionCtx=missionDecisionContext();
   const attacker=atkEntry?get(atkEntry.unitId):get(state.attacker);
   if(!attacker)return {version:'tactical-advisor-v1',status:'no-attacker',recommendations:[],avoid:[],naturalTargets:[]};
   const attackerLegality=tacticalLegalityForUnit('my',atkEntry);
@@ -4862,6 +4927,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
       attached:!!target.__combatTarget,
       bodyguardTarget:!!target.__bodyguardEntryUid,
       strategicHook:{objectiveControl:Number(target.profile?.OC)||0,objective:tacticalObjectiveValueForTarget(target,pairCtx),keywords:[...(target.keywords||[])]},
+      missionContext:missionCtx,
       // Internal tactical index: combat-only baseline. Mission value and reciprocal threat are separate dimensions for later advisor weighting.
       tacticalIndex:legalityBlocked?-1:(0.50*wipe)+(0.30*killFrac)+(0.20*damageFrac)
     };
@@ -4916,6 +4982,13 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     const objectiveValue=Math.max(0,Math.min(1,Number(objectiveContext.value)||0));
     const efficiency=Math.max(0,Math.min(1,(Number(x.damagePerPoint)||0)*100));
     const threatSuppression=Math.min(1,incoming/Math.max(1,incoming+outgoing));
+    const scoringUrgency=Math.max(0,Math.min(1,
+      (missionCtx.score.gap<0?0.18:0.08)+
+      (missionCtx.primary.myRoundRemaining>0?0.12:0)+
+      (missionCtx.secondary.myRoundRemaining>0?0.12:0)+
+      (missionCtx.round>=4?0.16:0)
+    ));
+    const targetObjectiveValue=Math.max(0,Math.min(1,objectiveValue));
     const lethality=Math.max(0,Math.min(1,
       0.45*(Number(x.wipeChance)||0)+
       0.30*(Number(x.killFraction)||0)+
@@ -4937,13 +5010,14 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
       0.42*lethality+
       0.24*threatSuppression+
       0.10*efficiency+
-      0.09*objectiveValue+
+      0.07*objectiveValue+
+      0.08*scoringUrgency+
       0.10*dataConfidence+
       0.05*simulationConfidence
     ));
     x.decisionComponents={
-      lethality,threatSuppression,efficiency,objectiveValue,objectiveContext,dataConfidence,simulationConfidence,decisionConfidence,
-      weights:{lethality:0.42,threatSuppression:0.24,efficiency:0.10,objectiveValue:0.09,dataConfidence:0.10,simulationConfidence:0.05}
+      lethality,threatSuppression,efficiency,objectiveValue,objectiveContext,scoringUrgency,dataConfidence,simulationConfidence,decisionConfidence,
+      weights:{lethality:0.42,threatSuppression:0.24,efficiency:0.10,objectiveValue:0.07,scoringUrgency:0.08,dataConfidence:0.10,simulationConfidence:0.05}
     };
     x.tacticalIndexAdjusted=Math.max(-1,Number(x.tacticalIndex)||0)*(1-0.20*exposure);
   });
@@ -4952,12 +5026,13 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
   const naturalTargets=eligibleResults.filter(x=>x.antiMatches.length||x.damageFraction>=0.75).slice(0,5);
   const avoid=eligibleResults.filter(x=>x.damageFraction<0.25&&x.wipeChance<0.15).sort((a,b)=>a.damageFraction-b.damageFraction).slice(0,5);
   return {
-    version:'tactical-advisor-v1',status:'ok',attacker:{entryUid:atkEntry?.uid,unitId:attacker.id,name:attacker.name},
+    version:'tactical-advisor-v1',status:'ok',
+    missionDecisionContext:missionCtx,attacker:{entryUid:atkEntry?.uid,unitId:attacker.id,name:attacker.name},
     evaluatedAt:{round:Math.max(1,Number(state.round)||1),phase:state.phase||'Command',turn:state.currentTurn||state.turn||'my'},
     recommendations:eligibleResults.slice(0,8),avoid,naturalTargets,
     stateSnapshot:tacticalAdvisorStateSnapshot(atkEntry?.uid),
     legality:tacticalLegalityForUnit('my',atkEntry),attackerActionState:attackerLegality.action,
-    limitations:['Combat outcome is based on the shared rules engine and current tracked roster state.','Position, range, line-of-sight, engagement, and limited-use weapon state are consumed when the corresponding battle state is known; unknown context is surfaced rather than guessed.','Mission/objective value uses explicit tracked objective ownership plus the target/objective tactical link; missing objective context remains unknown/neutral rather than being inferred.','Attached units are evaluated against their currently targetable Bodyguard models before Leaders/Support models become targetable.']
+    limitations:['Combat outcome is based on the shared rules engine and current tracked roster state.','Position, range, line-of-sight, engagement, and limited-use weapon state are consumed when the corresponding battle state is known; unknown context is surfaced rather than guessed.','Mission/objective value uses explicit tracked objective ownership plus the target/objective tactical link; missing objective context remains unknown/neutral rather than being inferred.','Decision scoring now includes current VP gap, remaining primary/secondary scoring capacity, round urgency, and tracked objective context.','Attached units are evaluated against their currently targetable Bodyguard models before Leaders/Support models become targetable.']
   };
 }
 function math(){
