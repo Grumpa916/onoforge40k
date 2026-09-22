@@ -4199,8 +4199,13 @@ function math(){
   const rules=state.mathRules||{};
   const ae=mathRosterEntry('my'),de=mathRosterEntry('opp');
   const a=ae?get(ae.unitId):get(state.attacker),t=de?get(de.unitId):get(state.target); normalizeMathWeaponForUnit(a);
-  const atkModels=ae?Math.max(1,Number(ae.models)||a.models||1):Math.max(1,Number(rules.attackerModels)||a.models||1);
-  const defModels=de?Math.max(1,Number(de.models)||t.models||1):Math.max(1,Number(rules.defenderModels)||t.models||1);
+  const survivingCount=(entry,unit)=>{
+    if(!entry||!unit||!modelRosterRule(unit))return null;
+    return survivingModelRoster(entry,unit).length;
+  };
+  const atkRosterModels=survivingCount(ae,a),defRosterModels=survivingCount(de,t);
+  const atkModels=atkRosterModels!=null?atkRosterModels:(ae?Math.max(1,Number(ae.models)||a.models||1):Math.max(1,Number(rules.attackerModels)||a.models||1));
+  const defModels=defRosterModels!=null?defRosterModels:(de?Math.max(1,Number(de.models)||t.models||1):Math.max(1,Number(rules.defenderModels)||t.models||1));
   const alloc=mathWeaponAlloc(ae,a); const groups=(a.weapons||[]).map(w=>({weapon:w,count:Number(alloc[w.name])||0})).filter(g=>g.count>0);
   if(!groups.length&&a.weapons?.[0])groups.push({weapon:a.weapons[0],count:atkModels});
   const r=calculateMathMixed(a,t,groups,{...rules,defenderModels:defModels,quickSamples:rules.quickSamples||5000});
@@ -4208,7 +4213,16 @@ function math(){
   const opOptions=(state.opp||[]).map(e=>`<option value="${e.uid}" ${de?.uid===e.uid?'selected':''}>${esc(get(e.unitId).name)} • ${e.models} models${e.qty>1?' × '+e.qty:''}</option>`).join('');
   const rosterEmpty=!state.my.length||!state.opp.length;
   const pct=v=>Math.max(0,Math.min(100,v*100));
-  const rows=a.weapons.map(w=>{const n=Number(alloc[w.name])||0;return `<div class="weapon-allocation"><div><b>${esc(w.name)}</b><div class="muted">A ${esc(w.A)} • ${esc(w.BS||w.WS||'—')} • S${w.S} • AP${w.AP} • D${esc(w.D)}</div></div><div class="allocation-control"><input type="number" min="0" max="${atkModels}" value="${n}" onchange="setMathWeaponCount('${ae?.uid||'catalogue'}','${esc(w.name).replace(/'/g,"\\'")}',this.value)"><span>models</span></div></div>`}).join('');
+  const rosterWeaponMode=!!(ae&&modelRosterRule(a));
+  const activeNames=activeWeaponNames(ae,a);
+  const rows=a.weapons.map(w=>{
+    const n=Number(alloc[w.name])||0;
+    if(rosterWeaponMode&&!activeNames.includes(w.name))return '';
+    const control=rosterWeaponMode
+      ? '<span>'+n+' surviving models</span>'
+      : '<input type="number" min="0" max="'+atkModels+'" value="'+n+'" onchange="setMathWeaponCount(\''+(ae?.uid||'catalogue')+'\',\''+esc(w.name).replace(/'/g,"\\'")+'\',this.value)"><span>models</span>';
+    return '<div class="weapon-allocation"><div><b>'+esc(w.name)+'</b><div class="muted">A '+esc(w.A)+' • '+esc(w.BS||w.WS||'—')+' • S'+w.S+' • AP'+w.AP+' • D'+esc(w.D)+'</div></div><div class="allocation-control">'+control+'</div></div>';
+  }).join('');
   return `<div class="math-hero"><div class="math-title"><h1>Mathhammer</h1><div class="muted">Army-linked 40K Combat Engine • mixed loadouts + shared Battle Mode rules</div></div><div class="edition-toggle"><button class="active">11th Edition</button><button disabled>10th</button></div></div>
   ${rosterEmpty?'<div class="warn">Build both armies in List Builder to use exact roster loadouts. Catalogue fallback is available until both lists are populated.</div>':''}
   <div class="combat-setup">
