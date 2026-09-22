@@ -4447,7 +4447,7 @@ function tacticalWeaponRange(w){
   if(!w)return null;
   const raw=String(w.rng??w.range??'').trim().toUpperCase();
   if(!raw||raw==='MELEE'||raw==='—'||raw==='-')return null;
-  const m=raw.match(/(\\d+(?:\\.\\d+)?)/);
+  const m=raw.match(/(\d+(?:\.\d+)?)/);
   return m?Number(m[1]):null;
 }
 function tacticalTargetLegality(attackerEntry,targetEntry,phase){
