@@ -4897,6 +4897,12 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     const killFrac=Math.min(1,killed/defModels);
     const points=Math.max(1,Number(targetEntry.points)||Number(target.points)||1);
     const efficiency=damage/points;
+    const simDamageSe=Math.max(0,Number(calc.sim?.damageStdError)||0);
+    const simWipeSe=Math.max(0,Number(calc.sim?.wipeStdError)||0);
+    const simulationConfidence=Math.max(0,Math.min(1,
+      0.65*(1-Math.min(1,(2*simDamageSe)/Math.max(1,damage)))+
+      0.35*(1-Math.min(1,2*simWipeSe))
+    ));
     const weaponKeys=[...new Set(availableGroups.filter(g=>g.count>0).map(g=>g.weapon.name))];
     const targetKeywords=(target.keywords||[]).map(k=>String(k).toUpperCase().replace(/[^A-Z0-9 ]/g,' ').trim()).filter(Boolean);
     const antiMatches=availableGroups.flatMap(g=>(g.weapon.abilities||[]).filter(a=>{
@@ -4911,7 +4917,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
       entryUid:targetEntry.uid,unitId:target.id,name:target.name,faction:target.faction,points,
       models:defModels,targetWounds:totalWounds,expectedDamage:damage,modelsKilled:killed,wipeChance:wipe,
       damageFraction:damageFrac,killFraction,damagePerPoint:efficiency,weaponProfiles:weaponKeys,
-      antiMatches:[...new Set(antiMatches)],confidence,
+      antiMatches:[...new Set(antiMatches)],confidence,simulationConfidence,
       tacticalLegality,
       recommendationEligible:tacticalLegality.canTarget===true&&phaseActionAvailable&&availableGroups.length>0,
       scoreComponents:{
