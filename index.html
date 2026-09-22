@@ -4692,7 +4692,7 @@ function calculateMathMixed(a,t,groups,m){
     const variants=Array.isArray(g.weaponVariants)&&g.weaponVariants.length?g.weaponVariants:[{weapon:g.weapon,count:g.count}];
     for(const v of variants){
       if(v.count<=0)continue;
-      const rr=calculateMath(g.attacker||a,v.weapon,t,{...safe,attackerModels:v.count});
+      const rr=calculateMath(g.attacker||a,v.weapon,t,{...safe,attackerModels:v.count,halfRange:engineHalfRangeActive(v.weapon,safe)});
       ['attacks','hits','wounds','failedSaves','damage','critHits','critWounds'].forEach(k=>totals[k]+=Number(rr[k])||0);
       details.push({weapon:v.weapon.name,count:v.count,result:rr});
     }
@@ -5139,6 +5139,10 @@ function tacticalRapidFireState(w,distanceInches){
 function tacticalMeltaState(w,distanceInches){
   const h=tacticalHalfRangeState(w,distanceInches);
   return {...h};
+}
+function engineHalfRangeActive(w,m){
+  const h=tacticalHalfRangeState(w,m?.distanceInches);
+  return h.active===true||m?.halfRange===true;
 }
 function tacticalRapidFireThreats(targetEntry,distanceInches){
   const unit=combatTargetUnit('opp',targetEntry)||get(targetEntry?.unitId);
@@ -6112,7 +6116,7 @@ function rerollExpected(p,mode){if(mode==='all')return 1-((1-p)**2);if(mode==='o
 function calculateMath(a,w,t,m){
   m=m||{};
   const halfState=tacticalHalfRangeState(w,m.distanceInches);
-  const effectiveHalfRange=halfState.active===true||m.halfRange===true;
+  const effectiveHalfRange=engineHalfRangeActive(w,m);
   const c=engineContext(a,w,t,{...m,halfRange:effectiveHalfRange});
   const models=Math.max(1,Number(m.attackerModels)||a.models||1);
   const defModels=Math.max(1,Number(m.defenderModels)||t.models||1);
@@ -6326,12 +6330,12 @@ function engineAllocationTargetForAttack(w,t,m,woundsState,groupIndex=null){
 }
 function engineOneAttack(a,w,t,m,modelsRemaining,woundsState,attackingModels=1){
   const baseTarget=engineTargetForAttack(t,m,woundsState);
-  const baseC=engineContext(a,w,baseTarget,m);
+  const baseC=engineContext(a,w,baseTarget,{...m,halfRange:engineHalfRangeActive(w,m)});
   let attacks=0;
   const variants=Array.isArray(m?.attackWeaponVariants)&&m.attackWeaponVariants.length?m.attackWeaponVariants:[{weapon:w,count:Math.max(1,Math.floor(Number(attackingModels)||1))}];
   for(const variant of variants){
-    const vw=variant.weapon||w,vc=engineContext(a,vw,baseTarget,m),count=Math.max(1,Math.floor(Number(variant.count)||1));
-    for(let model=0;model<count;model++)attacks+=Math.max(0,Math.round(engineRoll(vw.A)+(vc.rapidFire&&m.halfRange?vc.rapidFire:0)+(vc.blast?vc.blast*Math.floor(modelsRemaining/5):0)+(vc.cleave?vc.cleave*Math.floor(modelsRemaining/5):0)));
+    const vw=variant.weapon||w,variantHalfRange=engineHalfRangeActive(vw,m),vc=engineContext(a,vw,baseTarget,{...m,halfRange:variantHalfRange}),count=Math.max(1,Math.floor(Number(variant.count)||1));
+    for(let model=0;model<count;model++)attacks+=Math.max(0,Math.round(engineRoll(vw.A)+(vc.rapidFire&&engineHalfRangeActive(vw,m)?vc.rapidFire:0)+(vc.blast?vc.blast*Math.floor(modelsRemaining/5):0)+(vc.cleave?vc.cleave*Math.floor(modelsRemaining/5):0)));
   }
   let hits=0,wounds=0,saved=0,critHits=0,critWounds=0,rollLog=[];
   const woundEvents=[];
@@ -6345,7 +6349,7 @@ function engineOneAttack(a,w,t,m,modelsRemaining,woundsState,attackingModels=1){
     if(crit)critHits++;
     if(crit&&c.lethal){
       wounds++;
-      woundEvents.push({hit:h,wound:'AUTO',criticalWound:false,devastating:false,precision:c.precision,context:c,damage:()=>engineRoll(w.D)+(c.melta&&m.halfRange?c.melta:0)});
+      woundEvents.push({hit:h,wound:'AUTO',criticalWound:false,devastating:false,precision:c.precision,context:c,damage:()=>engineRoll(w.D)+(c.melta&&engineHalfRangeActive(w,m)?c.melta:0)});
       continue;
     }
     hits++;
