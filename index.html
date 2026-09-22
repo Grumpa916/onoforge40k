@@ -4739,8 +4739,8 @@ function tacticalUnitMovementType(entryUid){
   return legacy===null?'unknown':legacy;
 }
 function tacticalUnitAdvancedState(entryUid){
-  const movement=tacticalUnitMovementTypeLegacy(entryUid);
-  return movement===null?null:movement==='advance';
+  const movement=tacticalUnitMovementType(entryUid);
+  return movement==='unknown'?null:movement==='advance';
 }
 function setTacticalUnitAction(entryUid,field,value){
   if(!entryUid)return;
