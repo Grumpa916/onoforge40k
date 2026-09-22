@@ -4976,12 +4976,15 @@ function tacticalTargetLegality(attackerEntry,targetEntry,phase){
   }
   if(p==='Charge'){
     if(!tacticalPhaseActionAvailable(attackerEntry.uid,'Charge'))return {status:'known',known:true,canTarget:false,reasons:['attacker has already completed its Charge action'],context:ctx};
+    const movementType=tacticalUnitMovementType(combatRootEntry('my',attackerEntry)?.uid||attackerEntry.uid);
+    if(movementType==='advance')reasons.push('attacker advanced and cannot declare a charge');
+    if(movementType==='fallback')reasons.push('attacker fell back and cannot declare a charge');
     if(tacticalUnitIsEngagedAny(attackerEntry.uid))reasons.push('attacker is already engaged');
     if(ctx.distanceInches===null)reasons.push('distance unknown');
     if(ctx.distanceInches!==null&&ctx.distanceInches>12)reasons.push('target is beyond the 12-inch charge declaration range');
     if(ctx.engagement==='unknown')reasons.push('engagement status unknown');
     if(ctx.engagement==='engaged')reasons.push('target is already within engagement range');
-    const blocked=reasons.some(x=>x==='attacker is already engaged'||x==='target is beyond the 12-inch charge declaration range'||x==='target is already within engagement range');
+    const blocked=reasons.some(x=>x==='attacker advanced and cannot declare a charge'||x==='attacker fell back and cannot declare a charge'||x==='attacker is already engaged'||x==='target is beyond the 12-inch charge declaration range'||x==='target is already within engagement range');
     return {status:blocked?'known':(reasons.length?'unknown':'known'),known:!reasons.length||blocked,canTarget:blocked?false:(reasons.length?null:true),reasons,context:ctx};
   }
   if(p==='Fight'){
