@@ -4516,6 +4516,37 @@ function setTacticalWeaponUsed(entryUid,weaponName,count){
   event('TACTICAL_WEAPON_USE_CHANGED',{entryUid,weaponName,action:'Weapon use count changed',before:old,after:t.unitUse[key]},before);
   save();render();
 }
+function tacticalWeaponShootingMode(w){
+  return tacticalWeaponIsCloseQuarters(w)?'close-quarters':'other-ranged';
+}
+function tacticalWeaponModelUseEvents(entryUid,round=state.round,phase=state.phase,side='my'){
+  if(!entryUid)return [];
+  const r=Math.max(1,Number(round)||1),p=String(phase||'Command'),s=side==='opp'?'opp':'my';
+  return (state.events||[]).filter(e=>
+    e?.kind==='ATTACK_RESOLUTION' &&
+    (Number(e.round)||1)===r &&
+    String(e.phase||'')===p &&
+    String(e.playerTurn||'')===s &&
+    String(e.payload?.attackerEntryUid||'')===String(entryUid) &&
+    Array.isArray(e.payload?.modelIds)
+  );
+}
+function tacticalWeaponModelAlreadyUsed(entryUid,modelId,weaponName,round=state.round,phase=state.phase,side='my'){
+  return tacticalWeaponModelUseEvents(entryUid,round,phase,side).some(e=>
+    e.payload?.modelIds?.includes(modelId)&&String(e.payload?.weapon||'')===String(weaponName)
+  );
+}
+function tacticalWeaponModelModeConflict(entryUid,modelId,w,attackerEntry,round=state.round,phase=state.phase,side='my'){
+  const unit=get(attackerEntry?.unitId);
+  const mv=tacticalUnitIsMonsterVehicle(attackerEntry);
+  if(mv)return false;
+  const mode=tacticalWeaponShootingMode(w);
+  return tacticalWeaponModelUseEvents(entryUid,round,phase,side).some(e=>{
+    if(!e.payload?.modelIds?.includes(modelId))return false;
+    const prior=String(e.payload?.shootingMode||'');
+    return prior&&prior!==mode;
+  });
+}
 function tacticalWeaponPhaseUseCount(entryUid,weaponName,round=state.round,phase=state.phase,side='my'){
   if(!entryUid||!weaponName)return 0;
   const r=Math.max(1,Number(round)||1),p=String(phase||'Command'),s=side==='opp'?'opp':'my';
@@ -4569,7 +4600,8 @@ function tacticalWeaponPhaseEligible(w,phase,attackerEntry,targetEntry){
   const assault=tacticalWeaponIsAssault(w);
   const monsterVehicle=tacticalUnitIsMonsterVehicle(attackerEntry);
   const ctx=attackerEntry&&targetEntry?tacticalPairState(attackerEntry.uid,targetEntry.uid):null;
-  const advanced=tacticalUnitAdvancedState(attackerEntry?.uid);
+  const movementEntry=attackerEntry?combatRootEntry('my',attackerEntry):null;
+  const advanced=tacticalUnitAdvancedState(movementEntry?.uid||attackerEntry?.uid);
   if(p==='Shooting'){
     if(raw==='MELEE')return false;
     // Assault Shooting is the only core-rule shooting mode available to a unit
@@ -4994,17 +5026,30 @@ function resolveAttack(){
   if(!w)return;
   const m={...(state.mathRules||{})};
   const attackerRoster=ae&&modelRosterRule(a)?survivingModelRoster(ae,a):[];
+  const attackerRoot=ae?combatRootEntry('my',ae):ae;
+  const movementEntry=attackerRoot||ae;
+  const advanced=tacticalUnitAdvancedState(movementEntry?.uid);
+  const phaseEligible=tacticalWeaponPhaseEligible(w,state.phase,ae,te||null);
+  if(state.phase==='Shooting'&&advanced===true&&!phaseEligible)return;
   const exactWeaponModels=attackerRoster.length
-    ?attackerRoster.filter(model=>(Array.isArray(model.weapons)?model.weapons:[]).includes(w.name)).length
+    ?attackerRoster.filter(model=>(Array.isArray(model.weapons)?model.weapons:[]).includes(w.name))
+    :[];
+  const eligibleWeaponModels=exactWeaponModels.length
+    ?exactWeaponModels.filter(model=>
+        !tacticalWeaponModelAlreadyUsed(ae.uid,model.id,w.name,state.round,state.phase,'my') &&
+        !tacticalWeaponModelModeConflict(ae.uid,model.id,w,ae,state.round,state.phase,'my')
+      )
+    :[];
+  const modelsAvailable=attackerRoster.length
+    ?eligibleWeaponModels.length
     :Math.max(1,Number(mathWeaponAlloc(ae,a)?.[w.name])||0);
-  const phaseWeaponUsed=ae?tacticalWeaponPhaseUseCount(ae.uid,w.name,state.round,state.phase,'my'):0;
-  const modelsAvailable=Math.max(0,exactWeaponModels-phaseWeaponUsed);
   if(ae&&attackerRoster.length===1)m.attackerWoundsRemaining=Math.max(0,Number(attackerRoster[0]?.woundsRemaining)||0);
   if(modelsAvailable<=0)return; 
   const selectedTargetEntry=de&&get(de.unitId)?.id===t.id?de:null;
   const te=selectedTargetEntry||state.opp.find(e=>e.unitId===t.id)||state.my.find(e=>e.unitId===t.id);
   const rosterTracked=!!(te&&modelRosterRule(t));
   const modelsResolved=Math.max(1,modelsAvailable);
+  const resolvedModelIds=eligibleWeaponModels.length?eligibleWeaponModels.slice(0,modelsResolved).map(model=>model.id):[];
   m.attackerModels=modelsResolved;
   let woundsState,rosterAlive=[];
   if(rosterTracked){
@@ -5036,13 +5081,15 @@ function resolveAttack(){
       action:'Attack with '+w.name+' → '+t.name,
       attacks:Math.round(engineExpectedDice(w.A)*modelsResolved),modelsResolved,hits:r.hits,wounds:r.wounds,saved:r.saved,damage:r.damage,
       critHits:r.critHits,critW:r.critWounds,before,after:te.game,rollLog:r.rollLog,
+      modelIds:resolvedModelIds,shootingMode:state.phase==='Shooting'?tacticalWeaponShootingMode(w):null,
       modelLevel:rosterTracked
     },fullBefore);
   }else{
     event('ATTACK_RESOLUTION',{
       attacker:a.name,attackerEntryUid:ae?.uid||null,weapon:w.name,target:t.name,targetEntryUid:te?.uid||null,unit:a.name,
       action:'Attack with '+w.name+' → '+t.name,
-      modelsResolved,hits:r.hits,wounds:r.wounds,saved:r.saved,damage:r.damage,critHits:r.critHits,critW:r.critWounds,rollLog:r.rollLog
+      modelsResolved,modelIds:resolvedModelIds,shootingMode:state.phase==='Shooting'?tacticalWeaponShootingMode(w):null,
+      hits:r.hits,wounds:r.wounds,saved:r.saved,damage:r.damage,critHits:r.critHits,critW:r.critWounds,rollLog:r.rollLog
     },fullBefore);
   }
   state.page='battle';save();render();
