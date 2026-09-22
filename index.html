@@ -5115,6 +5115,28 @@ function tacticalWeaponRange(w){
   const m=raw.match(/(\d+(?:\.\d+)?)/);
   return m?Number(m[1]):null;
 }
+function tacticalRapidFireValue(w){
+  if(!w)return 0;
+  const abilities=(w.abilities||[]).map(x=>String(x||'').toUpperCase().replace(/-/g,' '));
+  const txt=abilities.join(' | ');
+  return Number((txt.match(/RAPID FIRE\s*(\d+)/)||[])[1])||0;
+}
+function tacticalRapidFireState(w,distanceInches){
+  const rapid=tacticalRapidFireValue(w),range=tacticalWeaponRange(w),d=Number(distanceInches);
+  if(!rapid||!Number.isFinite(range)||!Number.isFinite(d))return {rapid,range,halfRange:null,active:null};
+  const half=range/2;
+  return {rapid,range,halfRange:half,active:d<=half};
+}
+function tacticalRapidFireThreats(targetEntry,distanceInches){
+  const unit=combatTargetUnit('opp',targetEntry)||get(targetEntry?.unitId);
+  if(!unit)return [];
+  const d=Number(distanceInches);
+  if(!Number.isFinite(d))return [];
+  return (unit.weapons||[]).map(w=>{
+    const rf=tacticalRapidFireState(w,d);
+    return {...rf,weapon:w};
+  }).filter(x=>x.rapid>0&&x.range!==null);
+}
 function tacticalTargetLegality(attackerEntry,targetEntry,phase){
   if(!attackerEntry||!targetEntry)return {status:'unknown',known:false,canTarget:null,reasons:['missing-unit']};
   const ctx=tacticalPairState(attackerEntry.uid,targetEntry.uid),p=String(phase||state.phase||'Command');
@@ -5275,6 +5297,8 @@ function tacticalPreRollCheck(attackerEntryUid,targetEntryUid,weaponName=null){
     indirectStationaryFriendlyVisible:false
   };
   m.indirectStationaryFriendlyVisible=m.indirectShooting&&stationary&&ctx.los==='yes';
+  const rf=tacticalRapidFireState(w,ctx.distanceInches);
+  m.halfRange=rf.active===true;
   const c=engineContext(a,w,t,m);
   const steps=[];
   const warnings=[];
@@ -5297,8 +5321,33 @@ function tacticalPreRollCheck(attackerEntryUid,targetEntryUid,weaponName=null){
   if(c.cover)warnings.push('Cover applies to the target save.');
   if(c.indirect)warnings.push('Indirect Fire: hit roll floor and hit re-roll restrictions apply.');
   if(c.blast&&targetEngaged)warnings.push('Blast cannot target an engaged unit.');
+  if(rf.rapid){
+    if(rf.active===true){
+      modifiers.push({label:'Rapid Fire '+rf.rapid,value:rf.rapid,reason:'Target is within half range ('+rf.halfRange+'")'});
+    }else if(rf.active===false){
+      warnings.push('Rapid Fire '+rf.rapid+' is not active: target is '+String(ctx.distanceInches)+'" away; half range is '+rf.halfRange+'".');
+    }else{
+      warnings.push('Rapid Fire '+rf.rapid+' status unresolved: measure target distance.');
+    }
+  }
+  if(phase==='Shooting'&&Number.isFinite(Number(ctx.distanceInches))){
+    const threats=tacticalRapidFireThreats(te,ctx.distanceInches);
+    const activeThreats=threats.filter(x=>x.active===true);
+    const thresholdThreats=threats.filter(x=>x.active===false&&Number(ctx.distanceInches)<=x.range);
+    if(activeThreats.length){
+      const names=[...new Set(activeThreats.map(x=>x.weapon.name))].slice(0,3).join(', ');
+      warnings.push('Enemy Rapid Fire threat active at current distance: '+names+'.');
+    }else if(thresholdThreats.length){
+      const nearest=thresholdThreats.sort((x,y)=>(Number(ctx.distanceInches)-x.halfRange)-(Number(ctx.distanceInches)-y.halfRange))[0];
+      warnings.push('Enemy Rapid Fire threshold: '+nearest.weapon.name+' gains Rapid Fire '+nearest.rapid+' at '+nearest.halfRange+'".');
+    }
+  }
   const baseHit=Math.max(2,Number(String(w.BS||w.WS||'4+').replace('+',''))||4);
   const wound=Number(c.woundNeed)||null, save=engineSaveDistribution(t,w,c,m).need;
+  if(rf.rapid&&Number.isFinite(rf.range)){
+    const attackCount=engineExpectedDice(w.A)+(rf.active===true?rf.rapid:0);
+    steps.unshift({label:'Attacks',value:String(attackCount),detail:'Base '+String(w.A)+' attacks'+(rf.active===true?' • Rapid Fire '+rf.rapid+' active within '+rf.halfRange+'"':' • Rapid Fire threshold at '+rf.halfRange+'"')});
+  }
   steps.push({label:'Hit',value:c.torrent?'Automatic':c.hitNeed+'+',detail:baseHit+'+ base'+(modifiers.length?' • '+modifiers.map(x=>(x.value>0?'+':'')+x.value+' '+x.label).join(' • '):'')});
   if(!c.torrent)steps.push({label:'Wound',value:wound?Math.min(6,Math.max(2,wound))+'+':'—',detail:'Strength '+String(w.S??'?')+' vs Toughness '+String(t.profile?.T??'?')});
   steps.push({label:'Save',value:save>6?'No save':save+'+',detail:'AP '+String(w.AP??0)+(c.invuln?' • Invulnerable save considered':'')});
@@ -6010,10 +6059,12 @@ function mathCheck(key,label){const on=!!(state.mathRules&&state.mathRules[key])
 function rerollExpected(p,mode){if(mode==='all')return 1-((1-p)**2);if(mode==='ones')return p+(1-p)*p;return p}
 function calculateMath(a,w,t,m){
   m=m||{};
-  const c=engineContext(a,w,t,m);
+  const rfState=tacticalRapidFireState(w,m.distanceInches);
+  const effectiveHalfRange=rfState.active===true||m.halfRange===true;
+  const c=engineContext(a,w,t,{...m,halfRange:effectiveHalfRange});
   const models=Math.max(1,Number(m.attackerModels)||a.models||1);
   const defModels=Math.max(1,Number(m.defenderModels)||t.models||1);
-  const attacksPer=engineExpectedDice(w.A)+(c.rapidFire&&m.halfRange?c.rapidFire:0)+(c.blast?c.blast*Math.floor(defModels/5):0)+(c.cleave?c.cleave*Math.floor(defModels/5):0);
+  const attacksPer=engineExpectedDice(w.A)+(c.rapidFire&&effectiveHalfRange?c.rapidFire:0)+(c.blast?c.blast*Math.floor(defModels/5):0)+(c.cleave?c.cleave*Math.floor(defModels/5):0);
   const attacks=Math.max(0,attacksPer*models);
   const hitDist=engineRollDistribution(c.hitNeed,c.hitReroll,c.torrent,c.critHitThreshold);
   const critHits=attacks*hitDist.crit;
