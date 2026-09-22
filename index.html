@@ -4593,17 +4593,20 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
       return !!m&&targetKeywords.some(k=>m[1].trim().split(/\s+/).includes(k)||m[1].trim()===k);
     }));
     const confidence=snap?.exactModelIdentity&&snap?.exactWeaponIdentity?'high':(snap?.exactWeaponIdentity?'medium':'limited');
+    const tacticalLegality=tacticalTargetLegality(atkEntry,targetEntry,state.phase);
+    const legalityBlocked=tacticalLegality.canTarget===false;
     return {
       entryUid:targetEntry.uid,unitId:target.id,name:target.name,faction:target.faction,points,
       models:defModels,targetWounds:totalWounds,expectedDamage:damage,modelsKilled:killed,wipeChance:wipe,
       damageFraction:damageFrac,killFraction,damagePerPoint:efficiency,weaponProfiles:weaponKeys,
       antiMatches:[...new Set(antiMatches)],confidence,
-      tacticalLegality:tacticalTargetLegality(atkEntry,targetEntry,state.phase),
+      tacticalLegality,
+      recommendationEligible:!legalityBlocked,
       attached:!!target.__combatTarget,
       bodyguardTarget:!!target.__bodyguardEntryUid,
       strategicHook:{objectiveControl:Number(target.profile?.OC)||0,keywords:[...(target.keywords||[])]},
       // Internal tactical index: combat-only baseline. Mission value and reciprocal threat are separate dimensions for later advisor weighting.
-      tacticalIndex:(0.50*wipe)+(0.30*killFrac)+(0.20*damageFrac)
+      tacticalIndex:legalityBlocked?-1:(0.50*wipe)+(0.30*killFrac)+(0.20*damageFrac)
     };
   }).filter(Boolean);
   const friendlyRoots=(state.my||[]).filter(e=>!e.attachedTo);
@@ -4623,8 +4626,9 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     x.threatPerPoint=threat/Math.max(1,x.points);
   });
   results.sort((a,b)=>b.tacticalIndex-a.tacticalIndex);
-  const naturalTargets=results.filter(x=>x.antiMatches.length||x.damageFraction>=0.75).slice(0,5);
-  const avoid=results.filter(x=>x.damageFraction<0.25&&x.wipeChance<0.15).sort((a,b)=>a.damageFraction-b.damageFraction).slice(0,5);
+  const eligibleResults=results.filter(x=>x.recommendationEligible!==false);
+  const naturalTargets=eligibleResults.filter(x=>x.antiMatches.length||x.damageFraction>=0.75).slice(0,5);
+  const avoid=eligibleResults.filter(x=>x.damageFraction<0.25&&x.wipeChance<0.15).sort((a,b)=>a.damageFraction-b.damageFraction).slice(0,5);
   return {
     version:'tactical-advisor-v1',status:'ok',attacker:{entryUid:atkEntry?.uid,unitId:attacker.id,name:attacker.name},
     evaluatedAt:{round:Math.max(1,Number(state.round)||1),phase:state.phase||'Command',turn:state.currentTurn||state.turn||'my'},
