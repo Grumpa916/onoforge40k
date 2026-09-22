@@ -2981,12 +2981,13 @@ function buildModelRoster(e,u){
 function ensureModelRoster(e,u){
   if(!e||!u)return [];
   const desired=buildModelRoster(e,u);
-  const prior=Array.isArray(e.modelRoster)?e.modelRoster:[];
+  const prior=Array.isArray(e.game?.modelRoster)?e.game.modelRoster:(Array.isArray(e.modelRoster)?e.modelRoster:[]);
   const byId=new Map(prior.map(m=>[m.id,m]));
   e.modelRoster=desired.map(m=>{
     const old=byId.get(m.id);
     return old?{...m,alive:old.alive!==false,woundsRemaining:old.woundsRemaining==null?m.woundsRemaining:Math.max(0,Number(old.woundsRemaining)||0)}:m;
   });
+  if(e.game&&typeof e.game==='object')e.game.modelRoster=e.modelRoster.map(m=>({...m,weapons:Array.isArray(m.weapons)?[...m.weapons]:[]}));
   return e.modelRoster;
 }
 function modelRosterSummary(e,u){
