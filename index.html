@@ -4465,13 +4465,13 @@ function clearTacticalPair(attackerUid,targetUid){
 function tacticalUnitAdvancedState(entryUid){
   if(!entryUid)return null;
   const t=ensureTacticalState(),raw=t.unitMovement[String(entryUid)];
-  return raw&&raw.round===Math.max(1,Number(state.round)||1)&&raw.playerTurn===state.turn?!!raw.advanced:null;
+  return raw&&raw.round===Math.max(1,Number(state.round)||1)&&raw.playerTurn===state.currentTurn?!!raw.advanced:null;
 }
 function setTacticalUnitAdvanced(entryUid,advanced){
   if(!entryUid)return;
   const before=snapshotForUndo(),t=ensureTacticalState(),key=String(entryUid);
   const old=tacticalUnitAdvancedState(entryUid);
-  t.unitMovement[key]={round:Math.max(1,Number(state.round)||1),playerTurn:state.turn,advanced:!!advanced};
+  t.unitMovement[key]={round:Math.max(1,Number(state.round)||1),playerTurn:state.currentTurn,advanced:!!advanced};
   event('TACTICAL_MOVEMENT_CHANGED',{entryUid,advanced:!!advanced,action:'Unit Advance state changed',before:old,after:t.unitMovement[key]},before);
   save();render();
 }
