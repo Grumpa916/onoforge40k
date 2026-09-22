@@ -4489,12 +4489,11 @@ function engineMonteCarloMixed(a,t,groups,m,samples){
     }
     const killed=woundsState.filter(x=>x<=0).length;
     totalDamage+=dmg; totalKilled+=killed;
-    const dn=dmg-totalDamage/samples,kn=killed-totalKilled/samples;
-    // Welford-style second moments are updated from the current running means.
-    // This keeps Monte Carlo uncertainty honest instead of reporting zero SE.
-    const n=s+1,meanD=totalDamage/n,meanK=totalKilled/n;
-    damageM2+=(dmg-meanD)*(dmg-(n>1?totalDamage/n:0));
-    killedM2+=(killed-meanK)*(killed-(n>1?totalKilled/n:0));
+    // Accumulate raw second moments; convert to unbiased sample variance below.
+    // This avoids the previous zero-variance bug while remaining numerically simple
+    // for the bounded damage values used by the simulator.
+    damageM2+=dmg*dmg;
+    killedM2+=killed*killed;
     if(killed>=defModels)wipes++;
   }
   const avgDamage=totalDamage/samples,avgKilled=totalKilled/samples;
