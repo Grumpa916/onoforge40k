@@ -1272,6 +1272,18 @@ const DETACHMENT_STRATAGEMS_11E={
 function ensureStratagemState(){
  if(!Array.isArray(state.stratagemsMy))state.stratagemsMy=[];
  if(!Array.isArray(state.stratagemsOpp))state.stratagemsOpp=[];
+ if(!Array.isArray(state.stratagemUsesMy))state.stratagemUsesMy=[];
+ if(!Array.isArray(state.stratagemUsesOpp))state.stratagemUsesOpp=[];
+}
+function stratagemUseHistory(side){
+ return side==='opp'?state.stratagemUsesOpp:state.stratagemUsesMy;
+}
+function stratagemUsedThisPhase(side,name){
+ const phase=String(state.phase||'Command'),round=Math.max(1,Number(state.round)||1),turn=side==='opp'?'opp':'my';
+ return stratagemUseHistory(side).some(x=>x&&String(x.name)===String(name)&&Number(x.round)===round&&String(x.phase)===phase&&String(x.playerTurn)===turn);
+}
+function stratagemUsedThisBattle(side,name){
+ return stratagemUseHistory(side).some(x=>x&&String(x.name)===String(name));
 }
 function armyStratagemDetachment(side){
  const faction=side==='my'?state.faction:state.oppFaction;
@@ -1291,7 +1303,7 @@ function loadStratagems(){
   state[key]=list.map(s=>({
     ...s,
     id:previous.find(x=>x&&x.name===s.name)?.id||uid(),
-    used:usedByName.has(String(s.name))
+    used:false
   }));
  });
 }
@@ -1300,30 +1312,29 @@ function useStratagem(side,index){
  const key=side==='my'?'stratagemsMy':'stratagemsOpp';
  const s=state[key][index];
  if(!s)return;
-
  const cpKey=side==='my'?'myCP':'oppCP';
  const beforeCP=Number(state[cpKey])||0;
  const before=snapshotForUndo();
-
- // Clicking an already-used stratagem toggles it back to its normal state
- // and returns the CP that was spent on it.
- if(s.used){
+ const history=stratagemUseHistory(side);
+ const phase=String(state.phase||'Command'),round=Math.max(1,Number(state.round)||1),turn=side==='opp'?'opp':'my';
+ const existingIndex=history.findIndex(x=>x&&String(x.name)===String(s.name)&&Number(x.round)===round&&String(x.phase)===phase&&String(x.playerTurn)===turn);
+ if(existingIndex>=0){
+   history.splice(existingIndex,1);
    const afterCP=beforeCP+s.cp;
    if(side==='my')state.myCP=afterCP;else state.oppCP=afterCP;
-   s.used=false;
    event('CP_CHANGED',{side,unit:side==='my'?'My CP':'Opponent CP',action:'CP +'+s.cp,before:beforeCP,after:afterCP,delta:s.cp},before);
-   event('STRATAGEM_UNSELECTED',{name:s.name,side,cp:s.cp,phase:s.phase,source:s.source,detachment:s.detachment||'',action:'Unselected — '+s.name},before);
-   state.stratagemsOpen=true;
+   event('STRATAGEM_UNSELECTED',{name:s.name,side,cp:s.cp,phase,round,playerTurn:turn,source:s.source,detachment:s.detachment||'',action:'Unselected — '+s.name},before);
    save();render();
    return;
  }
-
+ if(s.name==='Insane Bravery'&&stratagemUsedThisBattle(side,s.name)){alert('Insane Bravery can only be used once per battle.');return;}
+ if(stratagemUsedThisPhase(side,s.name)){alert('That stratagem has already been used this phase.');return;}
  if(beforeCP<s.cp){alert('Not enough CP.');return;}
  const afterCP=beforeCP-s.cp;
  if(side==='my')state.myCP=afterCP;else state.oppCP=afterCP;
- s.used=true;
+ history.push({name:s.name,round,phase,playerTurn:turn,cp:s.cp});
  event('CP_CHANGED',{side,unit:side==='my'?'My CP':'Opponent CP',action:'CP -'+s.cp,before:beforeCP,after:afterCP,delta:-s.cp},before);
- event('STRATAGEM_USED',{name:s.name,side,cp:s.cp,phase:s.phase,source:s.source,detachment:s.detachment||'',action:s.name},before);
+ event('STRATAGEM_USED',{name:s.name,side,cp:s.cp,phase,round,playerTurn:turn,source:s.source,detachment:s.detachment||'',action:s.name},before);
  state.stratagemsOpen=true;
  save();render();
 }
@@ -1364,7 +1375,7 @@ function stratagemsUI(){
             <summary style="list-style:none;cursor:pointer;padding:3px 8px;user-select:none;margin:0">
               <div class="row" style="justify-content:space-between;align-items:center">
                 <b>${esc(s.name)}</b>
-                <button class="pill stratagem-cp-btn ${s.used?'stratagem-cp-used':''}" type="button" aria-pressed="${s.used?'true':'false'}" data-stratagem-use="1" data-stratagem-side="${side}" data-stratagem-index="${i}" title="${s.used?'Stratagem already used':'Use stratagem — '+s.cp+' CP'}" style="background:${s.used?'#22c55e':'#263449'}!important;border-color:${s.used?'#22c55e':'#4b5d75'}!important;color:${s.used?'#fff':'#dbe7f5'}!important;">${s.used?'✓ ':''}${s.cp} CP</button>
+                <button class="pill stratagem-cp-btn ${stratagemUsedThisPhase(side,s.name)?'stratagem-cp-used':''}" type="button" aria-pressed="${stratagemUsedThisPhase(side,s.name)?'true':'false'}" data-stratagem-use="1" data-stratagem-side="${side}" data-stratagem-index="${i}" title="${stratagemUsedThisPhase(side,s.name)?'Stratagem already used this phase':'Use stratagem — '+s.cp+' CP'}" style="background:${s.used?'#22c55e':'#263449'}!important;border-color:${s.used?'#22c55e':'#4b5d75'}!important;color:${s.used?'#fff':'#dbe7f5'}!important;">${stratagemUsedThisPhase(side,s.name)?'✓ ':''}${s.cp} CP</button>
               </div>
             </summary>
             <div style="padding:0 8px 8px">
