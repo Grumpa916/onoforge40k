@@ -4671,8 +4671,19 @@ function tacticalPhaseActionAvailable(entryUid,phase){
   return true;
 }
 function tacticalWeaponUseKey(entryUid,weaponName){return String(entryUid||'')+'|'+String(weaponName||'')}
-function tacticalWeaponUseState(entryUid,weaponName){
-  const t=ensureTacticalState(),raw=t.unitUse[tacticalWeaponUseKey(entryUid,weaponName)]||{};
+function tacticalWeaponCanonicalEntryUid(entryUid,side='my'){
+  if(!entryUid)return null;
+  const e=entry(side,entryUid);
+  const root=e?combatRootEntry(side,e):null;
+  return root?.uid||entryUid;
+}
+function tacticalWeaponUseState(entryUid,weaponName,side='my'){
+  const t=ensureTacticalState();
+  const direct=t.unitUse[tacticalWeaponUseKey(entryUid,weaponName)];
+  if(direct)return {used:!!direct.used,usedCount:Math.max(0,Number(direct.usedCount)||0)};
+  const canonical=tacticalWeaponCanonicalEntryUid(entryUid,side);
+  const rootRaw=canonical&&canonical!==entryUid?t.unitUse[tacticalWeaponUseKey(canonical,weaponName)]:null;
+  const raw=rootRaw||{};
   return {used:!!raw.used,usedCount:Math.max(0,Number(raw.usedCount)||0)};
 }
 function tacticalWeaponHasRule(w,rule){
