@@ -4714,13 +4714,15 @@ function clearTacticalPair(attackerUid,targetUid){
   save();render();
 }
 function tacticalAdvisorActionState(entryUid){
-  if(!entryUid)return {movement:'unknown',shootingDone:false,chargeDone:false,chargeMade:false,fightDone:false,round:Math.max(1,Number(state.round)||1),playerTurn:state.currentTurn};
+  if(!entryUid)return {movement:'unknown',movementDistanceInches:null,setUpThisTurn:null,shootingDone:false,chargeDone:false,chargeMade:false,fightDone:false,round:Math.max(1,Number(state.round)||1),playerTurn:state.currentTurn};
   const t=ensureTacticalState(),raw=t.unitActions[String(entryUid)];
   if(!raw||raw.round!==Math.max(1,Number(state.round)||1)||raw.playerTurn!==state.currentTurn){
-    return {movement:'unknown',shootingDone:false,chargeDone:false,chargeMade:false,fightDone:false,round:Math.max(1,Number(state.round)||1),playerTurn:state.currentTurn};
+    return {movement:'unknown',movementDistanceInches:null,setUpThisTurn:null,shootingDone:false,chargeDone:false,chargeMade:false,fightDone:false,round:Math.max(1,Number(state.round)||1),playerTurn:state.currentTurn};
   }
   return {
     movement:['unknown','remained','normal','advance','fallback'].includes(raw.movement)?raw.movement:'unknown',
+    movementDistanceInches:Number.isFinite(Number(raw.movementDistanceInches))&&Number(raw.movementDistanceInches)>=0?Math.round(Number(raw.movementDistanceInches)*10)/10:null,
+    setUpThisTurn:raw.setUpThisTurn===true?true:(raw.setUpThisTurn===false?false:null),
     shootingDone:!!raw.shootingDone,
     chargeDone:!!raw.chargeDone,
     chargeMade:!!raw.chargeMade,
@@ -4751,6 +4753,11 @@ function setTacticalUnitAction(entryUid,field,value){
   if(field==='movement'){
     next.movement=['unknown','remained','normal','advance','fallback'].includes(value)?value:'unknown';
     t.unitMovement[key]={round:next.round,playerTurn:next.playerTurn,advanced:next.movement==='advance'};
+  }else if(field==='movementDistanceInches'){
+    const n=Number(value);
+    next.movementDistanceInches=Number.isFinite(n)&&n>=0?Math.min(60,Math.round(n*10)/10):null;
+  }else if(field==='setUpThisTurn'){
+    next.setUpThisTurn=value===true||value==='true'?true:(value===false||value==='false'?false:null);
   }else if(field==='shootingDone'||field==='chargeDone'||field==='chargeMade'||field==='fightDone'){
     next[field]=!!value;
   }else return;
@@ -5036,10 +5043,10 @@ function tacticalContextHtml(){
     '<div class="field"><label>Context</label><div class="status">Distance: <b>'+esc(tacticalDistanceLabel(ctx))+'</b> • LOS: <b>'+esc(ctx.los)+'</b> • Engagement: <b>'+esc(ctx.engagement)+'</b></div></div>'+
     '</div>'+
     '<div class="grid2" style="margin-top:10px">'+
-    '<div class="field"><label>Movement</label><select onchange="setTacticalUnitAction(\''+ae.uid+'\',\'movement\',this.value)"><option value="unknown" '+(movementType==='unknown'?'selected':'')+'>Unknown</option><option value="remained" '+(movementType==='remained'?'selected':'')+'>Remained</option><option value="normal" '+(movementType==='normal'?'selected':'')+'>Normal Move</option><option value="advance" '+(movementType==='advance'?'selected':'')+'>Advanced</option><option value="fallback" '+(movementType==='fallback'?'selected':'')+'>Fell Back</option></select></div>'+
+    '<div class="field"><label>Movement</label><select onchange="setTacticalUnitAction(\''+ae.uid+'\',\'movement\',this.value)"><option value="unknown" '+(movementType==='unknown'?'selected':'')+'>Unknown</option><option value="remained" '+(movementType==='remained'?'selected':'')+'>Remained</option><option value="normal" '+(movementType==='normal'?'selected':'')+'>Normal Move</option><option value="advance" '+(movementType==='advance'?'selected':'')+'>Advanced</option><option value="fallback" '+(movementType==='fallback'?'selected':'')+'>Fell Back</option></select></div><div class="field" style="margin-top:8px"><label>Maximum model movement this turn (inches)</label><input type="number" min="0" max="60" step="0.1" value="${actions.movementDistanceInches==null?'':esc(String(actions.movementDistanceInches))}" placeholder="Unknown" onchange="setTacticalUnitAction('${ae.uid}','movementDistanceInches',this.value)"></div><div class="field" style="margin-top:8px"><label>Set up on battlefield this turn</label><select onchange="setTacticalUnitAction('${ae.uid}','setUpThisTurn',this.value)"><option value="" ${actions.setUpThisTurn===null?'selected':''}>Unknown</option><option value="false" ${actions.setUpThisTurn===false?'selected':''}>No</option><option value="true" ${actions.setUpThisTurn===true?'selected':''}>Yes</option></select></div>'+
     '<div class="field"><label>Phase actions</label><div class="status"><select onchange="setTacticalUnitAction(\''+ae.uid+'\',\'shootingDone\',this.value===\'true\')" style="margin-right:6px"><option value="false" '+(!actions.shootingDone?'selected':'')+'>Shooting: Available</option><option value="true" '+(actions.shootingDone?'selected':'')+'>Shooting: Completed</option></select><select onchange="setTacticalUnitAction(\''+ae.uid+'\',\'chargeDone\',this.value===\'true\')" style="margin-right:6px"><option value="false" '+(!actions.chargeDone?'selected':'')+'>Charge: Available</option><option value="true" '+(actions.chargeDone?'selected':'')+'>Charge: Completed</option></select><select onchange="setTacticalUnitAction(\''+ae.uid+'\',\'chargeMade\',this.value===\'true\')" style="margin-right:6px"><option value="false" '+(!actions.chargeMade?'selected':'')+'>Charge move: Not made</option><option value="true" '+(actions.chargeMade?'selected':'')+'>Charge move: Made</option></select><select onchange="setTacticalUnitAction(\''+ae.uid+'\',\'fightDone\',this.value===\'true\')"><option value="false" '+(!actions.fightDone?'selected':'')+'>Fight: Available</option><option value="true" '+(actions.fightDone?'selected':'')+'>Fight: Completed</option></select></div></div>'+
     '</div>'+
-    '<div class="muted small" style="margin-top:6px">Action state is scoped to the current round and player turn. Advanced units are restricted to Assault weapons; Fell Back units cannot shoot.</div>'+
+    '<div class="muted small" style="margin-top:6px">Action state is scoped to the current round and player turn. Advanced units are restricted to Assault weapons; Fell Back units cannot shoot. Heavy requires the unit to be unengaged, not set up this turn, and no model to have moved more than 3 inches; unknown movement/setup data conservatively withholds the bonus.</div>'+
     (leg.reasons.length?'<div class="warn" style="margin-top:10px">Advisor status: '+esc(leg.reasons.join(' • '))+'.</div>':'<div class="ok" style="margin-top:10px">Advisor has the minimum battlefield context needed for the current phase.</div>')+
     '<div class="row" style="margin-top:10px"><button class="btn" type="button" onclick="clearTacticalPair(\''+ae.uid+'\',\''+selectedUid+'\')">Clear Context</button></div>'+
     '</div>';
@@ -6017,7 +6024,17 @@ function resolveAttack(){
   m.attackerEngagedAny=!!ae&&tacticalUnitIsEngagedAny(ae.uid);
   m.attackerMonsterVehicle=!!ae&&tacticalUnitIsMonsterVehicle(ae);
   m.stationary=!!movementEntry&&tacticalUnitMovementType(movementEntry.uid)==='remained';
-  m.heavyEligible=m.stationary;
+  const movementDistance=movementActions?.movementDistanceInches;
+  const effectiveMovementDistance=m.stationary?0:movementDistance;
+  const setUpThisTurn=movementActions?.setUpThisTurn;
+  m.movementDistanceInches=effectiveMovementDistance;
+  m.setUpThisTurn=setUpThisTurn;
+  m.heavyEligible=!!movementEntry&&
+    !tacticalUnitIsEngagedAny(movementEntry.uid)&&
+    setUpThisTurn!==true&&
+    effectiveMovementDistance!==null&&
+    Number.isFinite(Number(effectiveMovementDistance))&&
+    Number(effectiveMovementDistance)<=3;
   m.chargeMade=!!movementActions?.chargeMade;
   m.indirectShooting=state.phase==='Shooting'&&tacticalWeaponIsIndirect(w)&&advanced!==true&&tacticalUnitIsEngagedAny(ae?.uid)===false;
   m.indirectStationaryFriendlyVisible=m.indirectShooting&&advanced===false&&pairCtx?.los==='yes';
