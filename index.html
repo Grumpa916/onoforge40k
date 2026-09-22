@@ -5164,6 +5164,12 @@ function resolveAttack(){
         const remaining=Math.max(0,Math.min(slot.maxWounds,Number(woundsState[idx])||0));
         slot.model.woundsRemaining=remaining;
         if(remaining<=0){slot.model.woundsRemaining=0;slot.model.alive=false;}
+        const ce=entry('opp',slot.model.sourceEntryUid),cu=ce?get(ce.unitId):null;
+        if(ce&&cu){
+          const actual=ensureModelRoster(ce,cu);
+          const live=actual.find(x=>x.id===slot.model.id);
+          if(live){live.woundsRemaining=remaining;live.alive=remaining>0;}
+        }
         idx++;
       }
       targetSnap.components.forEach(comp=>{
