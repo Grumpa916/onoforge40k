@@ -1514,7 +1514,6 @@ function gameAssistantHtml(){
     '<div><h4>Current Game State</h4><div class="game-assistant-quick"><b>Turn</b><span>Round '+esc(state.round||1)+' • '+esc(state.currentTurn==='opp'?'Opponent':'Your')+' turn</span></div><div class="game-assistant-quick"><b>Primary</b><span>'+esc(primaryMission('my')||'Mission not selected')+'</span></div><div class="game-assistant-quick"><b>Objectives</b><span>Track ownership in the battlefield state for scoring and Tactical Advisor decisions.</span></div></div>'+
     '<div><h4>Mission Scoring</h4>'+primaryScoringHtml(primaryMission('my'))+'</div>'+
    '</div>'+
-   '<div class="field" style="margin-top:12px"><label>Personal Army Notes</label><textarea rows="5" placeholder="Add your own reminders, matchup observations, deployment ideas, or game notes..." onchange="updatePersonalArmyNotes(this.value)">'+esc(notes)+'</textarea><div class="muted small" style="margin-top:5px">Saved with the selected army list. These notes are not part of the rules engine.</div></div>'+
    '<div class="field" style="margin-top:12px"><label>Live Game Notes</label><textarea rows="4" placeholder="Add a temporary opponent action, target, CP plan, or anything you want to remember..." onchange="state.gameAssistantNotes=this.value;save()">'+esc(state.gameAssistantNotes||'')+'</textarea></div>'+
   '</div></details>';
 }
