@@ -4421,11 +4421,12 @@ function engineMonteCarloMixed(a,t,groups,m,samples){
   }
   return {samples,avgDamage:totalDamage/samples,avgKilled:totalKilled/samples,wipeChance:wipes/samples};
 }
-const TACTICAL_STATE_VERSION='1.1';
+const TACTICAL_STATE_VERSION='1.2';
 function ensureTacticalState(){
-  if(!state.tactical||typeof state.tactical!=='object')state.tactical={version:TACTICAL_STATE_VERSION,pairs:{},unitUse:{}};
+  if(!state.tactical||typeof state.tactical!=='object')state.tactical={version:TACTICAL_STATE_VERSION,pairs:{},unitUse:{},unitMovement:{}};
   if(!state.tactical.pairs||typeof state.tactical.pairs!=='object')state.tactical.pairs={};
   if(!state.tactical.unitUse||typeof state.tactical.unitUse!=='object')state.tactical.unitUse={};
+  if(!state.tactical.unitMovement||typeof state.tactical.unitMovement!=='object')state.tactical.unitMovement={};
   state.tactical.version=TACTICAL_STATE_VERSION;
   return state.tactical;
 }
@@ -4459,6 +4460,19 @@ function clearTacticalPair(attackerUid,targetUid){
   const old=t.pairs[key]||null;
   delete t.pairs[key];
   event('TACTICAL_CONTEXT_CHANGED',{attackerUid,targetUid,action:'Tactical context cleared',before:old,after:null},before);
+  save();render();
+}
+function tacticalUnitAdvancedState(entryUid){
+  if(!entryUid)return null;
+  const t=ensureTacticalState(),raw=t.unitMovement[String(entryUid)];
+  return raw&&raw.round===Math.max(1,Number(state.round)||1)&&raw.playerTurn===state.turn?!!raw.advanced:null;
+}
+function setTacticalUnitAdvanced(entryUid,advanced){
+  if(!entryUid)return;
+  const before=snapshotForUndo(),t=ensureTacticalState(),key=String(entryUid);
+  const old=tacticalUnitAdvancedState(entryUid);
+  t.unitMovement[key]={round:Math.max(1,Number(state.round)||1),playerTurn:state.turn,advanced:!!advanced};
+  event('TACTICAL_MOVEMENT_CHANGED',{entryUid,advanced:!!advanced,action:'Unit Advance state changed',before:old,after:t.unitMovement[key]},before);
   save();render();
 }
 function tacticalWeaponUseKey(entryUid,weaponName){return String(entryUid||'')+'|'+String(weaponName||'')}
@@ -4559,8 +4573,16 @@ function tacticalTargetLegality(attackerEntry,targetEntry,phase){
   const reasons=[];
   if(p==='Shooting'){
     if(ctx.los==='no')return {status:'known',known:true,canTarget:false,reasons:['line of sight confirmed unavailable'],context:ctx};
-    if(tacticalUnitIsEngaged(attackerEntry.uid)&&ctx.engagement!=='engaged'){
+    const engaged=tacticalUnitIsEngaged(attackerEntry.uid);
+    const advanced=tacticalUnitAdvancedState(attackerEntry.uid);
+    if(engaged&&ctx.engagement!=='engaged'){
       return {status:'known',known:true,canTarget:false,reasons:['engaged unit can only target enemy units it is engaged with during Close-quarters Shooting'],context:ctx};
+    }
+    if(engaged&&advanced===true){
+      return {status:'known',known:true,canTarget:false,reasons:['Close-quarters Shooting is unavailable because the unit Advanced this turn'],context:ctx};
+    }
+    if(engaged&&advanced===null){
+      return {status:'unknown',known:false,canTarget:null,reasons:['Advance status unknown for Close-quarters Shooting'],context:ctx};
     }
     const groups=attachedCombatWeaponGroups('my',attackerEntry).filter(g=>tacticalWeaponPhaseEligible(g.weapon,'Shooting',attackerEntry,targetEntry));
     const ranges=groups.map(g=>tacticalWeaponRange(g.weapon)).filter(Number.isFinite);
@@ -4596,7 +4618,7 @@ function tacticalContextHtml(){
   if(!ae||!targets.length)return '<div class="card tactical-context-card"><h3 style="margin-top:0">Tactical Context</h3><div class="muted">Build both armies and select an attacker/target to record range and battlefield context.</div></div>';
   const selectedUid=(state.tactical?.selectedTargetUid&&targets.some(e=>e.uid===state.tactical.selectedTargetUid))?state.tactical.selectedTargetUid:targets[0].uid;
   ensureTacticalState().selectedTargetUid=selectedUid;
-  const te=entry('opp',selectedUid),ctx=tacticalPairState(ae.uid,selectedUid),leg=tacticalTargetLegality(ae,te,state.phase);
+  const te=entry('opp',selectedUid),ctx=tacticalPairState(ae.uid,selectedUid),leg=tacticalTargetLegality(ae,te,state.phase),advanced=tacticalUnitAdvancedState(ae.uid);
   const options=targets.map(e=>'<option value="'+esc(e.uid)+'" '+(e.uid===selectedUid?'selected':'')+'>'+esc(unitDisplayName('opp',e))+'</option>').join('');
   const status=leg.canTarget===true?'Known / eligible':leg.canTarget===false?'Known / not eligible':'Needs battlefield info';
   return '<div class="card tactical-context-card"><div class="split"><div><h3 style="margin:0">Tactical Context</h3><div class="muted">Optional phone-friendly battlefield state for the Tactical Advisor. Unknown values are never guessed.</div></div><span class="pill">'+esc(state.phase||'Command')+' • '+esc(status)+'</span></div>'+
@@ -4612,6 +4634,10 @@ function tacticalContextHtml(){
     '<div class="grid2" style="margin-top:10px">'+
     '<div class="field"><label>Objective / battlefield note</label><input type="text" value="'+esc(ctx.objective)+'" placeholder="e.g. Objective 2" onchange="setTacticalPairField(\''+ae.uid+'\',\''+selectedUid+'\',\'objective\',this.value)"></div>'+
     '<div class="field"><label>Context</label><div class="status">Distance: <b>'+esc(tacticalDistanceLabel(ctx))+'</b> • LOS: <b>'+esc(ctx.los)+'</b> • Engagement: <b>'+esc(ctx.engagement)+'</b></div></div>'+
+    '</div>'+
+    '<div class="grid2" style="margin-top:10px">'+
+    '<div class="field"><label>Movement</label><select onchange="setTacticalUnitAdvanced(\''+ae.uid+'\',this.value===\'true\')"><option value="unknown" '+(advanced===null?'selected':'')+'>Advance: Unknown</option><option value="false" '+(advanced===false?'selected':'')+'>Did not Advance</option><option value="true" '+(advanced===true?'selected':'')+'>Advanced</option></select></div>'+
+    '<div class="field"><label>Advisor rule state</label><div class="status">Close-quarters shooting requires <b>Did not Advance</b>.</div></div>'+
     '</div>'+
     (leg.reasons.length?'<div class="warn" style="margin-top:10px">Advisor status: '+esc(leg.reasons.join(' • '))+'.</div>':'<div class="ok" style="margin-top:10px">Advisor has the minimum battlefield context needed for the current phase.</div>')+
     '<div class="row" style="margin-top:10px"><button class="btn" type="button" onclick="clearTacticalPair(\''+ae.uid+'\',\''+selectedUid+'\')">Clear Context</button></div>'+
