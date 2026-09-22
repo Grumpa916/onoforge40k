@@ -4720,9 +4720,11 @@ function tacticalWeaponModelUseEvents(entryUid,round=state.round,phase=state.pha
   );
 }
 function tacticalWeaponModelAlreadyUsed(entryUid,modelId,weaponName,round=state.round,phase=state.phase,side='my'){
-  return tacticalWeaponModelUseEvents(entryUid,round,phase,side).some(e=>
-    e.payload?.modelIds?.includes(modelId)&&String(e.payload?.weapon||'')===String(weaponName)
-  );
+  const wanted=String(modelId);
+  return tacticalWeaponModelUseEvents(entryUid,round,phase,side).some(e=>{
+    const ids=Array.isArray(e.payload?.modelIds)?e.payload.modelIds.map(id=>String(id)):[];
+    return ids.includes(wanted)&&String(e.payload?.weapon||'')===String(weaponName);
+  });
 }
 function tacticalWeaponModelModeConflict(entryUid,modelId,w,attackerEntry,round=state.round,phase=state.phase,side='my'){
   const unit=get(attackerEntry?.unitId);
@@ -4730,7 +4732,8 @@ function tacticalWeaponModelModeConflict(entryUid,modelId,w,attackerEntry,round=
   if(mv)return false;
   const mode=tacticalWeaponShootingMode(w);
   return tacticalWeaponModelUseEvents(entryUid,round,phase,side).some(e=>{
-    if(!e.payload?.modelIds?.includes(modelId))return false;
+    const ids=Array.isArray(e.payload?.modelIds)?e.payload.modelIds.map(id=>String(id)):[];
+    if(!ids.includes(String(modelId)))return false;
     const prior=String(e.payload?.shootingMode||'');
     return prior&&prior!==mode;
   });
