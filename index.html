@@ -5123,9 +5123,27 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
       0.25*(Number(x.damageFraction)||0)
     ));
     const dataConfidence=x.confidence==='high'?1:x.confidence==='medium'?0.85:0.65;
-    const decisionModeBase=scoreNow>=0.65?'SCORE_NOW':denyOpponentScore>=0.65?'DENY_SCORE':preserveFriendlyUnit>=0.80?'PRESERVE_UNIT':tradeValue>=0.65?'TRADE_UP':futureScoringValue>=0.65?'SET_UP_FUTURE_SCORE':'TACTICAL';
     const simulationConfidence=Math.max(0,Math.min(1,Number(x.simulationConfidence??0)));
-    const decisionConfidence=0.70*dataConfidence+0.30*simulationConfidence;
+    // Decision confidence must account for the *board-state facts* used by the recommendation,
+    // not just the quality of the unit data and Monte Carlo sample. Unknown range/LOS/engagement
+    // is never silently treated as favorable; it lowers confidence and is surfaced to the player.
+    const pairDecisionCtx=tacticalPairState(atkEntry.uid,x.entryUid);
+    const contextSignals=[];
+    if(state.phase==='Shooting'){
+      contextSignals.push({name:'range',known:Number.isFinite(Number(pairDecisionCtx?.distanceInches)),value:Number(pairDecisionCtx?.distanceInches)});
+      contextSignals.push({name:'line_of_sight',known:pairDecisionCtx?.los==='yes'||pairDecisionCtx?.los==='no',value:pairDecisionCtx?.los||'unknown'});
+    }
+    contextSignals.push({name:'engagement',known:pairDecisionCtx?.engagement==='engaged'||pairDecisionCtx?.engagement==='not_engaged',value:pairDecisionCtx?.engagement||'unknown'});
+    const knownContextSignals=contextSignals.filter(s=>s.known).length;
+    const contextConfidence=contextSignals.length
+      ? 0.45+0.55*(knownContextSignals/contextSignals.length)
+      : 0.75;
+    const decisionConfidence=Math.max(0,Math.min(1,
+      0.60*dataConfidence+
+      0.25*simulationConfidence+
+      0.15*contextConfidence
+    ));
+    const decisionModeBase=scoreNow>=0.65?'SCORE_NOW':denyOpponentScore>=0.65?'DENY_SCORE':preserveFriendlyUnit>=0.80?'PRESERVE_UNIT':tradeValue>=0.65?'TRADE_UP':futureScoringValue>=0.65?'SET_UP_FUTURE_SCORE':'TACTICAL';
     const decisionMode=decisionConfidence<0.55?'LOW_CONFIDENCE':decisionModeBase;
     x.exchangeComponents=x.exchangeComponents||{};
     x.exchangeComponents.exposureBand=exposure>=0.75?'high':exposure>=0.40?'moderate':'low';
@@ -5142,6 +5160,9 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     x.exchangeComponents.dataConfidence=dataConfidence;
     x.exchangeComponents.simulationConfidence=simulationConfidence;
     x.exchangeComponents.decisionConfidence=decisionConfidence;
+    x.exchangeComponents.contextConfidence=contextConfidence;
+    x.exchangeComponents.contextSignals=contextSignals;
+    x.exchangeComponents.knownContextSignals=knownContextSignals;
     x.decisionScore=(x.tacticalLegality?.canTarget===false)?-1:Math.max(0,Math.min(1,
       0.36*lethality+
       0.18*threatSuppression+
@@ -5157,7 +5178,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
       0.02*simulationConfidence
     ));
     x.decisionComponents={
-      lethality,threatSuppression,efficiency,objectiveValue,objectiveContext,scoringUrgency,scoreNow,denyOpponentScore,preserveFriendlyUnit,tradeValue,futureScoringValue,decisionMode,dataConfidence,simulationConfidence,decisionConfidence,
+      lethality,threatSuppression,efficiency,objectiveValue,objectiveContext,scoringUrgency,scoreNow,denyOpponentScore,preserveFriendlyUnit,tradeValue,futureScoringValue,decisionMode,dataConfidence,simulationConfidence,contextConfidence,knownContextSignals,decisionConfidence,
       weights:{lethality:0.36,threatSuppression:0.18,efficiency:0.08,objectiveValue:0.08,scoringUrgency:0.06,scoreNow:0.06,denyOpponentScore:0.05,preserveFriendlyUnit:0.04,tradeValue:0.03,futureScoringValue:0.01,dataConfidence:0.03,simulationConfidence:0.02},
       interpretation:decisionMode==='LOW_CONFIDENCE'?'Confidence is limited; treat this as a candidate action and verify the underlying rules, range, and board state.':
         decisionMode==='SCORE_NOW'?'Immediate scoring opportunity should dominate this target choice.':
