@@ -5050,11 +5050,46 @@ function engineWoundDistribution(c,events){const d=engineDistForNeed(c.woundNeed
 function engineSaveDistribution(t,w,c,m){let base=parseInt(t.profile.Sv)||4;let ap=Number(w.AP)||0;let armour=base+ap;if(m.minusSave)armour--;armour=Math.max(2,Math.min(7,armour));const inv=m.invuln4?4:m.invuln5?5:m.invuln6?6:(t.profile.Invuln||t.profile.invuln||null);const invN=inv?parseInt(inv):null;const need=invN?Math.min(armour,invN):armour;let fail=need>6?1:(need-1)/6;if(m.rerollSave1)fail=Math.max(0,fail-(1/6)*(1-fail));return {need,fail,inv:invN,armour}}
 function engineApplyFnp(d,m){const f=engineFnp(m);if(!f)return d;let out=0;for(let i=0;i<Math.max(0,Math.floor(d));i++)if(1+Math.floor(Math.random()*6)<f)out++;return out+(d-Math.floor(d))}
 function engineRollDistributionExact(need,reroll,crit){return engineDistForNeed(need,crit,reroll)}
+function engineBuildAllocationGroups(s,woundsState){
+  if(!s)return [{key:'default',indices:woundsState.map((_,i)=>i),character:false}];
+  const groups=[];
+  s.characterSlots.forEach((slot,i)=>groups.push({key:'char:'+String(slot.model?.id||i),indices:[s.bodyguardCount+i],character:true,profile:slot.profile||{}}));
+  const byProfile=new Map();
+  s.bodyguardSlots.forEach((slot,i)=>{
+    const idx=i, p=slot.profile||{}, key='body:'+String(p.W??'')+'|'+String(p.Sv??'')+'|'+String(p.Invuln??p.invuln??'');
+    if(!byProfile.has(key))byProfile.set(key,{key,indices:[],character:false,profile:p});
+    byProfile.get(key).indices.push(idx);
+  });
+  groups.push(...byProfile.values());
+  return groups;
+}
+function engineAllocationOrder(s,woundsState){
+  const groups=engineBuildAllocationGroups(s,woundsState);
+  return groups.slice().sort((a,b)=>{
+    const aw=a.indices.some(i=>Number(woundsState[i])>0&&Number(woundsState[i])<(s?.bodyguardSlots[i]?.maxWounds||s?.characterSlots[i-s.bodyguardCount]?.maxWounds||1));
+    const bw=b.indices.some(i=>Number(woundsState[i])>0&&Number(woundsState[i])<(s?.bodyguardSlots[i]?.maxWounds||s?.characterSlots[i-s.bodyguardCount]?.maxWounds||1));
+    if(aw!==bw)return aw?-1:1;
+    if(a.character!==b.character)return a.character?1:-1;
+    return 0;
+  });
+}
+function engineSelectAllocationIndex(s,woundsState,preferredIndex=null){
+  const groups=engineAllocationOrder(s,woundsState);
+  if(Number.isInteger(preferredIndex)){
+    const g=groups.find(x=>x.indices.includes(preferredIndex));
+    if(g&&g.indices.some(i=>Number(woundsState[i])>0))return preferredIndex;
+  }
+  const g=groups.find(x=>x.indices.some(i=>Number(woundsState[i])>0));
+  if(!g)return -1;
+  const wounded=g.indices.find(i=>Number(woundsState[i])>0&&Number(woundsState[i])<(s?.bodyguardSlots[i]?.maxWounds||s?.characterSlots[i-s.bodyguardCount]?.maxWounds||1));
+  return wounded??g.indices.find(i=>Number(woundsState[i])>0);
+}
 function engineApplyDamageToWoundsState(d,woundsState,t,targetIndex=null){
   let remainingDamage=Math.max(0,Number(d)||0),applied=0;
+  const s=t?.__allocationState||null;
   while(remainingDamage>0){
     const idx=Number.isInteger(targetIndex)&&targetIndex>=0&&targetIndex<woundsState.length&&Number(woundsState[targetIndex])>0
-      ?targetIndex:woundsState.findIndex(x=>Number(x)>0);
+      ?targetIndex:(s?engineSelectAllocationIndex(s,woundsState):woundsState.findIndex(x=>Number(x)>0));
     if(idx<0)break;
     const remaining=Math.max(0,Number(woundsState[idx])||Number(t?.profile?.W)||1);
     const dealt=Math.min(remaining,remainingDamage);
@@ -5073,26 +5108,23 @@ function engineTargetForAttack(t,m,woundsState){
   const live=slots.findIndex((_,i)=>Number(woundsState[offset+i])>0);
   if(live<0)return t;
   const slot=slots[live];
-  return {...t,profile:{...(slot.profile||t.profile)},wounds:slot.maxWounds||t.wounds,models:slots.filter((_,i)=>Number(woundsState[offset+i])>0).length};
+  return {...t,profile:{...(slot.profile||t.profile)},wounds:slot.maxWounds||t.wounds,models:slots.filter((_,i)=>Number(woundsState[offset+i])>0).length,__allocationState:s};
 }
 function enginePrecisionAllocationIndex(w,t,m,woundsState){
   const s=m?.attachedTargetState;
   const c=engineContext(null,w,t,m);
   if(!s||!c.precision||!m?.precisionTargetModelId)return null;
-  const idx=s.characterSlots.findIndex((slot,i)=>{
-    const absolute=s.bodyguardCount+i;
-    return String(slot.model?.id||'')===String(m.precisionTargetModelId)&&Number(woundsState[absolute])>0;
-  });
+  const idx=s.characterSlots.findIndex((slot,i)=>String(slot.model?.id||'')===String(m.precisionTargetModelId)&&Number(woundsState[s.bodyguardCount+i])>0);
   return idx<0?null:s.bodyguardCount+idx;
 }
 function engineAllocationTargetForAttack(w,t,m,woundsState){
   const precisionIndex=enginePrecisionAllocationIndex(w,t,m,woundsState);
-  if(Number.isInteger(precisionIndex)){
-    const s=m.attachedTargetState;
+  const s=m?.attachedTargetState;
+  const idx=s?engineSelectAllocationIndex(s,woundsState,precisionIndex):woundsState.findIndex(x=>Number(x)>0);
+  if(Number.isInteger(precisionIndex)&&precisionIndex===idx){
     const slot=s.characterSlots[precisionIndex-s.bodyguardCount];
-    return {index:precisionIndex,unit:{...t,profile:{...(slot.profile||t.profile)},wounds:slot.maxWounds||t.wounds,models:1},precision:true};
+    return {index:precisionIndex,unit:{...t,profile:{...(slot.profile||t.profile)},wounds:slot.maxWounds||t.wounds,models:1,__allocationState:s},precision:true};
   }
-  const idx=woundsState.findIndex(x=>Number(x)>0);
   return {index:idx,unit:t,precision:false};
 }
 function engineOneAttack(a,w,t,m,modelsRemaining,woundsState){
