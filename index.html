@@ -4511,6 +4511,14 @@ function tacticalWeaponAvailableForPhase(entryUid,w,maxCount,round=state.round,p
   const remaining=Math.max(0,limit-phaseUsed);
   return {available:remaining>0,count:remaining,reason:remaining?'':'Weapon capacity already resolved this phase',use,phaseUsed};
 }
+function tacticalWeaponPhaseEligible(w,phase){
+  if(!w)return false;
+  const p=String(phase||state.phase||'Command');
+  const raw=String(w.rng??w.range??'').trim().toUpperCase();
+  if(p==='Shooting')return raw!=='MELEE';
+  if(p==='Fight')return raw==='MELEE';
+  return true;
+}
 function tacticalWeaponRange(w){
   if(!w)return null;
   const raw=String(w.rng??w.range??'').trim().toUpperCase();
@@ -4626,8 +4634,8 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
   if(!attacker)return {version:'tactical-advisor-v1',status:'no-attacker',recommendations:[],avoid:[],naturalTargets:[]};
   const attackerLegality=tacticalLegalityForUnit('my',atkEntry);
   if(!attackerLegality.legal)return {version:'tactical-advisor-v1',status:'attacker-not-legal',attacker:attacker.name,recommendations:[],avoid:[],naturalTargets:[],attackerLegality};
-  const groups=attachedCombatWeaponGroups(side,atkEntry);
-  if(!groups.length)return {version:'tactical-advisor-v1',status:'no-weapons',attacker:attacker.name,recommendations:[],avoid:[],naturalTargets:[]};
+  const groups=attachedCombatWeaponGroups(side,atkEntry).filter(g=>tacticalWeaponPhaseEligible(g.weapon,state.phase));
+  if(!groups.length)return {version:'tactical-advisor-v1',status:'no-phase-eligible-weapons',attacker:attacker.name,recommendations:[],avoid:[],naturalTargets:[],phase:state.phase};
   const roots=(state.opp||[]).filter(e=>!e.attachedTo);
   const results=roots.map(targetEntry=>{
     const snap=combatSnapshot('opp',targetEntry);
