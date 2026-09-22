@@ -4504,12 +4504,13 @@ function engineMonteCarloMixed(a,t,groups,m,samples){
     damageStdError:damageStdDev/Math.sqrt(samples),killedStdError:killedStdDev/Math.sqrt(samples),
     wipeStdError:Math.sqrt(Math.max(0,wipeChance*(1-wipeChance)/samples))};
 }
-const TACTICAL_STATE_VERSION='1.3';
+const TACTICAL_STATE_VERSION='1.4';
 function ensureTacticalState(){
-  if(!state.tactical||typeof state.tactical!=='object')state.tactical={version:TACTICAL_STATE_VERSION,pairs:{},unitUse:{},unitMovement:{}};
+  if(!state.tactical||typeof state.tactical!=='object')state.tactical={version:TACTICAL_STATE_VERSION,pairs:{},unitUse:{},unitMovement:{},unitActions:{}};
   if(!state.tactical.pairs||typeof state.tactical.pairs!=='object')state.tactical.pairs={};
   if(!state.tactical.unitUse||typeof state.tactical.unitUse!=='object')state.tactical.unitUse={};
   if(!state.tactical.unitMovement||typeof state.tactical.unitMovement!=='object')state.tactical.unitMovement={};
+  if(!state.tactical.unitActions||typeof state.tactical.unitActions!=='object')state.tactical.unitActions={};
   state.tactical.version=TACTICAL_STATE_VERSION;
   return state.tactical;
 }
@@ -4545,18 +4546,59 @@ function clearTacticalPair(attackerUid,targetUid){
   event('TACTICAL_CONTEXT_CHANGED',{attackerUid,targetUid,action:'Tactical context cleared',before:old,after:null},before);
   save();render();
 }
-function tacticalUnitAdvancedState(entryUid){
+function tacticalUnitActionState(entryUid){
+  if(!entryUid)return {movement:'unknown',shootingDone:false,chargeDone:false,fightDone:false,round:Math.max(1,Number(state.round)||1),playerTurn:state.currentTurn};
+  const t=ensureTacticalState(),raw=t.unitActions[String(entryUid)];
+  if(!raw||raw.round!==Math.max(1,Number(state.round)||1)||raw.playerTurn!==state.currentTurn){
+    return {movement:'unknown',shootingDone:false,chargeDone:false,fightDone:false,round:Math.max(1,Number(state.round)||1),playerTurn:state.currentTurn};
+  }
+  return {
+    movement:['unknown','remained','normal','advance','fallback'].includes(raw.movement)?raw.movement:'unknown',
+    shootingDone:!!raw.shootingDone,
+    chargeDone:!!raw.chargeDone,
+    fightDone:!!raw.fightDone,
+    round:raw.round,playerTurn:raw.playerTurn
+  };
+}
+function tacticalUnitMovementTypeLegacy(entryUid){
   if(!entryUid)return null;
   const t=ensureTacticalState(),raw=t.unitMovement[String(entryUid)];
-  return raw&&raw.round===Math.max(1,Number(state.round)||1)&&raw.playerTurn===state.currentTurn?!!raw.advanced:null;
+  return raw&&raw.round===Math.max(1,Number(state.round)||1)&&raw.playerTurn===state.currentTurn?(!!raw.advanced?'advance':'remained'):null;
 }
-function setTacticalUnitAdvanced(entryUid,advanced){
+function tacticalUnitMovementType(entryUid){
+  const a=tacticalUnitActionState(entryUid);
+  if(a.movement!=='unknown')return a.movement;
+  const legacy=tacticalUnitMovementTypeLegacy(entryUid);
+  return legacy===null?'unknown':legacy;
+}
+function tacticalUnitAdvancedState(entryUid){
+  const movement=tacticalUnitMovementTypeLegacy(entryUid);
+  return movement===null?null:movement==='advance';
+}
+function setTacticalUnitAction(entryUid,field,value){
   if(!entryUid)return;
   const before=snapshotForUndo(),t=ensureTacticalState(),key=String(entryUid);
-  const old=tacticalUnitAdvancedState(entryUid);
-  t.unitMovement[key]={round:Math.max(1,Number(state.round)||1),playerTurn:state.currentTurn,advanced:!!advanced};
-  event('TACTICAL_MOVEMENT_CHANGED',{entryUid,advanced:!!advanced,action:'Unit Advance state changed',before:old,after:t.unitMovement[key]},before);
+  const old=tacticalUnitActionState(entryUid);
+  const next={...old,round:Math.max(1,Number(state.round)||1),playerTurn:state.currentTurn};
+  if(field==='movement'){
+    next.movement=['unknown','remained','normal','advance','fallback'].includes(value)?value:'unknown';
+    t.unitMovement[key]={round:next.round,playerTurn:next.playerTurn,advanced:next.movement==='advance'};
+  }else if(field==='shootingDone'||field==='chargeDone'||field==='fightDone'){
+    next[field]=!!value;
+  }else return;
+  t.unitActions[key]=next;
+  event('TACTICAL_ACTION_STATE_CHANGED',{entryUid,field,value:next[field]??next.movement,action:'Unit '+field+' changed',before:old,after:next},before);
   save();render();
+}
+function setTacticalUnitAdvanced(entryUid,advanced){
+  setTacticalUnitAction(entryUid,'movement',advanced?'advance':'remained');
+}
+function tacticalPhaseActionAvailable(entryUid,phase){
+  const a=tacticalUnitActionState(entryUid);
+  if(phase==='Shooting')return !a.shootingDone;
+  if(phase==='Charge')return !a.chargeDone;
+  if(phase==='Fight')return !a.fightDone;
+  return true;
 }
 function tacticalWeaponUseKey(entryUid,weaponName){return String(entryUid||'')+'|'+String(weaponName||'')}
 function tacticalWeaponUseState(entryUid,weaponName){
@@ -4682,9 +4724,12 @@ function tacticalWeaponPhaseEligible(w,phase,attackerEntry,targetEntry){
     ctx?.engagement==='engaged'||tacticalUnitIsEngagedAny(targetEntry.uid)
   );
   const movementEntry=attackerEntry?combatRootEntry('my',attackerEntry):null;
-  const advanced=tacticalUnitAdvancedState(movementEntry?.uid||attackerEntry?.uid);
+  const movementType=tacticalUnitMovementType(movementEntry?.uid||attackerEntry?.uid);
+  const advanced=movementType==='advance';
   if(p==='Shooting'){
+    if(!tacticalPhaseActionAvailable(attackerEntry?.uid,'Shooting'))return false;
     if(raw==='MELEE')return false;
+    if(movementType==='fallback')return false;
     // Assault Shooting is the only core-rule shooting mode available to a unit
     // that Advanced this turn. Close-quarters shooting additionally requires
     // that the unit did not Advance.
@@ -4716,6 +4761,8 @@ function tacticalTargetLegality(attackerEntry,targetEntry,phase){
   if(p==='Shooting'){
     const engaged=tacticalUnitIsEngagedAny(attackerEntry.uid);
     const advanced=tacticalUnitAdvancedState(attackerEntry.uid);
+    const movementType=tacticalUnitMovementType(attackerEntry.uid);
+    if(!tacticalPhaseActionAvailable(attackerEntry.uid,'Shooting'))return {status:'known',known:true,canTarget:false,reasons:['attacker has already completed its Shooting action'],context:ctx};
     const targetEngaged=ctx.engagement==='engaged'||tacticalUnitIsEngagedAny(targetEntry.uid);
     const targetIsMonsterVehicle=tacticalUnitIsMonsterVehicle(targetEntry);
     if(advanced===null)reasons.push('movement state unknown');
@@ -4741,6 +4788,7 @@ function tacticalTargetLegality(attackerEntry,targetEntry,phase){
     return {status:blocked?'known':(reasons.length?'unknown':'known'),known:!reasons.length||blocked,canTarget:blocked?false:(reasons.length?null:true),reasons,context:ctx};
   }
   if(p==='Charge'){
+    if(!tacticalPhaseActionAvailable(attackerEntry.uid,'Charge'))return {status:'known',known:true,canTarget:false,reasons:['attacker has already completed its Charge action'],context:ctx};
     if(tacticalUnitIsEngaged(attackerEntry.uid))reasons.push('attacker is already engaged');
     if(ctx.distanceInches===null)reasons.push('distance unknown');
     if(ctx.distanceInches!==null&&ctx.distanceInches>12)reasons.push('target is beyond the 12-inch charge declaration range');
@@ -4750,6 +4798,7 @@ function tacticalTargetLegality(attackerEntry,targetEntry,phase){
     return {status:blocked?'known':(reasons.length?'unknown':'known'),known:!reasons.length||blocked,canTarget:blocked?false:(reasons.length?null:true),reasons,context:ctx};
   }
   if(p==='Fight'){
+    if(!tacticalPhaseActionAvailable(attackerEntry.uid,'Fight'))return {status:'known',known:true,canTarget:false,reasons:['attacker has already completed its Fight action'],context:ctx};
     if(ctx.engagement==='unknown')reasons.push('engagement status unknown');
     return {status:reasons.length?'unknown':'known',known:!reasons.length,canTarget:reasons.length?null:ctx.engagement==='engaged',reasons,context:ctx};
   }
@@ -4764,7 +4813,7 @@ function tacticalContextHtml(){
   if(!ae||!targets.length)return '<div class="card tactical-context-card"><h3 style="margin-top:0">Tactical Context</h3><div class="muted">Build both armies and select an attacker/target to record range and battlefield context.</div></div>';
   const selectedUid=(state.tactical?.selectedTargetUid&&targets.some(e=>e.uid===state.tactical.selectedTargetUid))?state.tactical.selectedTargetUid:targets[0].uid;
   ensureTacticalState().selectedTargetUid=selectedUid;
-  const te=entry('opp',selectedUid),ctx=tacticalPairState(ae.uid,selectedUid),leg=tacticalTargetLegality(ae,te,state.phase),advanced=tacticalUnitAdvancedState(ae.uid);
+  const te=entry('opp',selectedUid),ctx=tacticalPairState(ae.uid,selectedUid),leg=tacticalTargetLegality(ae,te,state.phase),actions=tacticalUnitActionState(ae.uid),movementType=tacticalUnitMovementType(ae.uid);
   const options=targets.map(e=>'<option value="'+esc(e.uid)+'" '+(e.uid===selectedUid?'selected':'')+'>'+esc(unitDisplayName('opp',e))+'</option>').join('');
   const status=leg.canTarget===true?'Known / eligible':leg.canTarget===false?'Known / not eligible':'Needs battlefield info';
   return '<div class="card tactical-context-card"><div class="split"><div><h3 style="margin:0">Tactical Context</h3><div class="muted">Optional phone-friendly battlefield state for the Tactical Advisor. Unknown values are never guessed.</div></div><span class="pill">'+esc(state.phase||'Command')+' • '+esc(status)+'</span></div>'+
@@ -4782,9 +4831,10 @@ function tacticalContextHtml(){
     '<div class="field"><label>Context</label><div class="status">Distance: <b>'+esc(tacticalDistanceLabel(ctx))+'</b> • LOS: <b>'+esc(ctx.los)+'</b> • Engagement: <b>'+esc(ctx.engagement)+'</b></div></div>'+
     '</div>'+
     '<div class="grid2" style="margin-top:10px">'+
-    '<div class="field"><label>Movement</label><select onchange="setTacticalUnitAdvanced(\''+ae.uid+'\',this.value===\'true\')"><option value="unknown" '+(advanced===null?'selected':'')+'>Advance: Unknown</option><option value="false" '+(advanced===false?'selected':'')+'>Did not Advance</option><option value="true" '+(advanced===true?'selected':'')+'>Advanced</option></select></div>'+
-    '<div class="field"><label>Advisor rule state</label><div class="status">Advance restricts shooting to <b>Assault</b> weapons; Close-quarters shooting also requires <b>Did not Advance</b>.</div></div>'+
+    '<div class="field"><label>Movement</label><select onchange="setTacticalUnitAction(\''+ae.uid+'\',\'movement\',this.value)"><option value="unknown" '+(movementType==='unknown'?'selected':'')+'>Unknown</option><option value="remained" '+(movementType==='remained'?'selected':'')+'>Remained</option><option value="normal" '+(movementType==='normal'?'selected':'')+'>Normal Move</option><option value="advance" '+(movementType==='advance'?'selected':'')+'>Advanced</option><option value="fallback" '+(movementType==='fallback'?'selected':'')+'>Fell Back</option></select></div>'+
+    '<div class="field"><label>Phase actions</label><div class="status"><select onchange="setTacticalUnitAction(\''+ae.uid+'\',\'shootingDone\',this.value===\'true\')" style="margin-right:6px"><option value="false" '+(!actions.shootingDone?'selected':'')+'>Shooting: Available</option><option value="true" '+(actions.shootingDone?'selected':'')+'>Shooting: Completed</option></select><select onchange="setTacticalUnitAction(\''+ae.uid+'\',\'chargeDone\',this.value===\'true\')" style="margin-right:6px"><option value="false" '+(!actions.chargeDone?'selected':'')+'>Charge: Available</option><option value="true" '+(actions.chargeDone?'selected':'')+'>Charge: Completed</option></select><select onchange="setTacticalUnitAction(\''+ae.uid+'\',\'fightDone\',this.value===\'true\')"><option value="false" '+(!actions.fightDone?'selected':'')+'>Fight: Available</option><option value="true" '+(actions.fightDone?'selected':'')+'>Fight: Completed</option></select></div></div>'+
     '</div>'+
+    '<div class="muted small" style="margin-top:6px">Action state is scoped to the current round and player turn. Advanced units are restricted to Assault weapons; Fell Back units cannot shoot.</div>'+
     (leg.reasons.length?'<div class="warn" style="margin-top:10px">Advisor status: '+esc(leg.reasons.join(' • '))+'.</div>':'<div class="ok" style="margin-top:10px">Advisor has the minimum battlefield context needed for the current phase.</div>')+
     '<div class="row" style="margin-top:10px"><button class="btn" type="button" onclick="clearTacticalPair(\''+ae.uid+'\',\''+selectedUid+'\')">Clear Context</button></div>'+
     '</div>';
