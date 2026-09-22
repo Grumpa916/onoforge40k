@@ -4834,7 +4834,8 @@ function tacticalTargetLegality(attackerEntry,targetEntry,phase){
     const movementType=tacticalUnitMovementType(attackerEntry.uid);
     if(!tacticalPhaseActionAvailable(attackerEntry.uid,'Shooting'))return {status:'known',known:true,canTarget:false,reasons:['attacker has already completed its Shooting action'],context:ctx};
     const targetEngaged=ctx.engagement==='engaged'||tacticalUnitIsEngagedAny(targetEntry.uid);
-    const targetIsMonsterVehicle=tacticalUnitIsMonsterVehicle(targetEntry);
+    const targetCombatUnit=combatTargetUnit('opp',targetEntry)||get(targetEntry.unitId);
+    const targetIsMonsterVehicle=!!targetCombatUnit&&((targetCombatUnit.keywords||[]).map(k=>String(k||'').toUpperCase().trim()).some(k=>k==='MONSTER'||k==='VEHICLE'));
     if(advanced===null)reasons.push('movement state unknown');
     if(engaged&&ctx.engagement!=='engaged'){
       return {status:'known',known:true,canTarget:false,reasons:['engaged unit can only target an enemy unit it is engaged with during Close-quarters Shooting'],context:ctx};
