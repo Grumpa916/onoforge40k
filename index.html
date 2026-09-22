@@ -5058,7 +5058,10 @@ function tacticalUnitFightState(entry){
   };
 }
 function tacticalWeaponIsCloseQuarters(w){
-  return (w?.abilities||[]).some(a=>String(a||'').toUpperCase().replace(/-/g,' ').includes('CLOSE QUARTERS'));
+  return (w?.abilities||[]).some(a=>{
+    const text=String(a||'').toUpperCase().replace(/[-_]/g,' ');
+    return text.includes('CLOSE QUARTERS')||text.trim()==='PISTOL'||text.includes(' PISTOL');
+  });
 }
 function tacticalWeaponIsBlast(w){
   return (w?.abilities||[]).some(a=>String(a||'').toUpperCase().replace(/-/g,' ').includes('BLAST'));
@@ -5361,6 +5364,9 @@ function tacticalPreRollCheck(attackerEntryUid,targetEntryUid,weaponName=null){
   const c=engineContext(a,w,t,m);
   const steps=[];
   const warnings=[];
+  if(c.precision){
+    warnings.push('Precision: if the target is an Attached unit and a CHARACTER model is visible to at least one attacking model, you may select that CHARACTER allocation group when resolving these attacks.');
+  }
   const modifiers=[];
   if(phase==='Charge'){
     const d=Number(ctx.distanceInches);
@@ -6172,7 +6178,7 @@ function calculateMath(a,w,t,m){
   const saveTarget=m.precisionTargetProfile?{...t,profile:{...t.profile,...m.precisionTargetProfile}}:t;
   const save=engineSaveDistribution(saveTarget,w,c,m);
   const failedSaves=saveableWounds*save.fail;
-  const dmgAvg=engineExpectedDice(w.D)+(c.melta&&m.halfRange?c.melta:0);
+  const dmgAvg=engineExpectedDice(w.D)+(c.melta&&engineHalfRangeActive(w,m)?c.melta:0);
   let damage=(failedSaves*dmgAvg)+(devCount*dmgAvg);
   const fnp=engineFnp(m);
   if(fnp) damage*=((fnp-1)/6);
@@ -6184,7 +6190,7 @@ function calculateMath(a,w,t,m){
   const saveText=save.need>6?'No save':save.need+'+';
   const hitText=c.torrent?'Auto-hit':c.hitNeed+'+';
   const summary=`${a.name} uses ${w.name} into ${t.name}: ${hits.toFixed(2)} hits, ${totalWounds.toFixed(2)} wounds, ${failedSaves.toFixed(2)} failed saves and ${damage.toFixed(2)} expected damage. Full-unit wipe chance is ${ (killChance*100).toFixed(1)}% based on ${sim.samples.toLocaleString()} simulated sequences.`;
-  return {attacks,hits,wounds:totalWounds,failedSaves,damage,killChance,modelsKilled,targetWounds,saveText,woundNeed:c.woundNeed,hitText,summary,sim,applied:{'Lethal Hits':c.lethal,'Devastating Wounds':c.devastating,'Sustained Hits':sustained||false,'Torrent':c.torrent,'Anti-X':c.anti||false,'+1 Hit':!!m.plusHit,'+1 Wound':!!m.plusWound,'Re-roll Hits':!!m.rerollHits||!!m.rerollHit1,'Re-roll Wounds':!!m.rerollWounds||!!m.rerollWound1,'Cover':!!m.cover,'Invulnerable':save.inv?save.inv+'+':false,'Feel No Pain':fnp?fnp+'+':false,'Twin-linked':c.twin,'Melta':c.melta&&m.halfRange?c.melta:false,'Heavy':c.heavy&&(m.heavyEligible===true||m.stationary===true),'Blast':c.blast||false}}}
+  return {attacks,hits,wounds:totalWounds,failedSaves,damage,killChance,modelsKilled,targetWounds,saveText,woundNeed:c.woundNeed,hitText,summary,sim,applied:{'Lethal Hits':c.lethal,'Devastating Wounds':c.devastating,'Sustained Hits':sustained||false,'Torrent':c.torrent,'Anti-X':c.anti||false,'+1 Hit':!!m.plusHit,'+1 Wound':!!m.plusWound,'Re-roll Hits':!!m.rerollHits||!!m.rerollHit1,'Re-roll Wounds':!!m.rerollWounds||!!m.rerollWound1,'Cover':!!m.cover,'Invulnerable':save.inv?save.inv+'+':false,'Feel No Pain':fnp?fnp+'+':false,'Twin-linked':c.twin,'Melta':c.melta&&engineHalfRangeActive(w,m)?c.melta:false,'Heavy':c.heavy&&(m.heavyEligible===true||m.stationary===true),'Blast':c.blast||false}}}
 
 function approxKillChance(expectedDamage,targetWounds){if(expectedDamage<=0||targetWounds<=0)return 0;return Math.max(0,Math.min(1,1-Math.exp(-Math.pow(expectedDamage/targetWounds,1.55)*1.25)))}
 function engineExpectedDice(v){const s=String(v??'1').trim().toUpperCase().replace(/\s+/g,'');let total=0,found=false;const re=/([+-]?)(\d*)D([36])/g;let m;while((m=re.exec(s))){found=true;const n=Number(m[2]||1),sign=m[1]==='-'?-1:1,faces=Number(m[3]);total+=sign*n*(faces===3?2:3.5)}const rest=s.replace(/([+-]?\d*)D[36]/g,'');if(rest&&/^[-+]?\d+(?:\.\d+)?$/.test(rest))total+=Number(rest);return found?total:(Number(s)||1)}
@@ -6400,7 +6406,7 @@ function engineOneAttack(a,w,t,m,modelsRemaining,woundsState,attackingModels=1){
       const critW=wr>=c.critWoundThreshold,wound=wr>=c.woundNeed||critW;
       if(!wound)continue;
       wounds++;if(critW)critWounds++;
-      woundEvents.push({hit:h,wound:wr,criticalWound:critW,devastating:!!(critW&&c.devastating),precision:c.precision,context:c,damage:()=>engineRoll(w.D)+(c.melta&&m.halfRange?c.melta:0)});
+      woundEvents.push({hit:h,wound:wr,criticalWound:critW,devastating:!!(critW&&c.devastating),precision:c.precision,context:c,damage:()=>engineRoll(w.D)+(c.melta&&attackHalfRange?c.melta:0)});
     }
   }
 
