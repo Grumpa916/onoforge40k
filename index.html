@@ -4877,6 +4877,14 @@ function tacticalUnitIsMonsterVehicle(entry){
   const keywords=(unit?.keywords||[]).map(k=>String(k||'').toUpperCase().trim());
   return keywords.includes('MONSTER')||keywords.includes('VEHICLE');
 }
+function tacticalUnitHasKeyword(entry,keyword){
+  const unit=entry?get(entry.unitId):null;
+  const wanted=String(keyword||'').toUpperCase().trim();
+  return !!wanted&&(unit?.keywords||[]).some(k=>String(k||'').toUpperCase().trim()===wanted);
+}
+function tacticalUnitCanFly(entry){
+  return tacticalUnitHasKeyword(entry,'FLY')||tacticalUnitHasKeyword(entry,'FLYING');
+}
 function tacticalWeaponIsCloseQuarters(w){
   return (w?.abilities||[]).some(a=>String(a||'').toUpperCase().replace(/-/g,' ').includes('CLOSE QUARTERS'));
 }
@@ -4978,6 +4986,8 @@ function tacticalTargetLegality(attackerEntry,targetEntry,phase){
   if(p==='Charge'){
     if(!tacticalPhaseActionAvailable(attackerEntry.uid,'Charge'))return {status:'known',known:true,canTarget:false,reasons:['attacker has already completed its Charge action'],context:ctx};
     const movementType=tacticalUnitMovementType(combatRootEntry('my',attackerEntry)?.uid||attackerEntry.uid);
+    if(tacticalUnitHasKeyword(attackerEntry,'AIRCRAFT'))reasons.push('AIRCRAFT units cannot declare charges');
+    if(tacticalUnitHasKeyword(targetEntry,'AIRCRAFT')&&!tacticalUnitCanFly(attackerEntry))reasons.push('only FLYING units can select AIRCRAFT units as charge targets');
     if(movementType==='advance')reasons.push('attacker advanced and cannot declare a charge');
     if(movementType==='fallback')reasons.push('attacker fell back and cannot declare a charge');
     if(tacticalUnitIsEngagedAny(attackerEntry.uid))reasons.push('attacker is already engaged');
@@ -4985,13 +4995,16 @@ function tacticalTargetLegality(attackerEntry,targetEntry,phase){
     if(ctx.distanceInches!==null&&ctx.distanceInches>12)reasons.push('target is beyond the 12-inch charge declaration range');
     if(ctx.engagement==='unknown')reasons.push('engagement status unknown');
     if(ctx.engagement==='engaged')reasons.push('target is already within engagement range');
-    const blocked=reasons.some(x=>x==='attacker advanced and cannot declare a charge'||x==='attacker fell back and cannot declare a charge'||x==='attacker is already engaged'||x==='target is beyond the 12-inch charge declaration range'||x==='target is already within engagement range');
+    const blocked=reasons.some(x=>x==='AIRCRAFT units cannot declare charges'||x==='only FLYING units can select AIRCRAFT units as charge targets'||x==='attacker advanced and cannot declare a charge'||x==='attacker fell back and cannot declare a charge'||x==='attacker is already engaged'||x==='target is beyond the 12-inch charge declaration range'||x==='target is already within engagement range');
     return {status:blocked?'known':(reasons.length?'unknown':'known'),known:!reasons.length||blocked,canTarget:blocked?false:(reasons.length?null:true),reasons,context:ctx};
   }
   if(p==='Fight'){
     if(!tacticalPhaseActionAvailable(attackerEntry.uid,'Fight'))return {status:'known',known:true,canTarget:false,reasons:['attacker has already completed its Fight action'],context:ctx};
     if(ctx.engagement==='unknown')reasons.push('engagement status unknown');
-    return {status:reasons.length?'unknown':'known',known:!reasons.length,canTarget:reasons.length?null:ctx.engagement==='engaged',reasons,context:ctx};
+    if(tacticalUnitHasKeyword(attackerEntry,'AIRCRAFT'))reasons.push('AIRCRAFT units can only make melee attacks against FLYING units');
+    if(tacticalUnitHasKeyword(targetEntry,'AIRCRAFT')&&!tacticalUnitCanFly(attackerEntry))reasons.push('only FLYING models can make melee attacks against AIRCRAFT units');
+    const blockedAircraft=reasons.some(x=>x==='AIRCRAFT units can only make melee attacks against FLYING units'||x==='only FLYING models can make melee attacks against AIRCRAFT units');
+    return {status:(reasons.length?'unknown':'known'),known:!reasons.length,canTarget:blockedAircraft?false:(reasons.length?null:ctx.engagement==='engaged'),reasons,context:ctx};
   }
   return {status:'notRequired',known:true,canTarget:true,reasons,context:ctx};
 }
