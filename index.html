@@ -4424,7 +4424,7 @@ function mathAbilityNames(side){
   const entries=e?attachedCombatEntries(side,e):[];
   const fallback=mathUnit(side);
   const units=entries.length?entries.map(x=>get(x.unitId)).filter(Boolean):(fallback?[fallback]:[]);
-  return [...new Set(units.flatMap(u=>Array.isArray(u.abilities)?u.abilities:[]))];
+  return [...new Set(units.flatMap(u=>Array.isArray(u.abilities)?u.abilities:[]).map(x=>String(x).split(' (')[0].trim()).filter(Boolean))];
 }
 function mathAbilityChecks(){
   const aNames=mathAbilityNames('my'), dNames=mathAbilityNames('opp');
