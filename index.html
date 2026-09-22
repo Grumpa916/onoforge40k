@@ -4276,23 +4276,28 @@ function math(){
     if(!entry||!unit||!modelRosterRule(unit))return null;
     return survivingModelRoster(entry,unit).length;
   };
-  const atkRosterModels=survivingCount(ae,a),defRosterModels=survivingCount(de,t);
-  const atkModels=atkRosterModels!=null?atkRosterModels:(ae?Math.max(1,Number(ae.models)||a.models||1):Math.max(1,Number(rules.attackerModels)||a.models||1));
+  const combatEntries=attachedCombatEntries('my',ae);
+  const groups=attachedCombatWeaponGroups('my',ae);
+  const atkModels=combatEntries.reduce((sum,e)=>{
+    const u=get(e.unitId);
+    return sum+(modelRosterRule(u)?survivingModelRoster(e,u).length:Math.max(1,Number(e.models)||Number(u?.models)||1));
+  },0)||1;
+  const defRosterModels=survivingCount(de,t);
   const defModels=defRosterModels!=null?defRosterModels:(de?Math.max(1,Number(de.models)||t.models||1):Math.max(1,Number(rules.defenderModels)||t.models||1));
-  const alloc=mathWeaponAlloc(ae,a); const groups=(a.weapons||[]).map(w=>({weapon:w,count:Number(alloc[w.name])||0})).filter(g=>g.count>0);
-  if(!groups.length&&a.weapons?.[0])groups.push({weapon:a.weapons[0],count:atkModels});
+  if(!groups.length&&a.weapons?.[0])groups.push({entry:ae,attacker:a,weapon:a.weapons[0],count:atkModels});
   const r=calculateMathMixed(a,t,groups,{...rules,defenderModels:defModels,quickSamples:rules.quickSamples||5000});
   const myOptions=(state.my||[]).map(e=>`<option value="${e.uid}" ${ae?.uid===e.uid?'selected':''}>${esc(get(e.unitId).name)} • ${e.models} models${e.qty>1?' × '+e.qty:''}</option>`).join('');
   const opOptions=(state.opp||[]).map(e=>`<option value="${e.uid}" ${de?.uid===e.uid?'selected':''}>${esc(get(e.unitId).name)} • ${e.models} models${e.qty>1?' × '+e.qty:''}</option>`).join('');
   const rosterEmpty=!state.my.length||!state.opp.length;
   const pct=v=>Math.max(0,Math.min(100,v*100));
   const rosterWeaponMode=!!(ae&&modelRosterRule(a));
+  const attachedMode=combatEntries.length>1;
   const activeNames=Array.from(new Set(groups.map(g=>g.weapon.name)));
   const rows=(a.weapons||[]).map(w=>{
     const n=groups.filter(g=>g.weapon.name===w.name).reduce((sum,g)=>sum+g.count,0);
     if(!activeNames.includes(w.name))return '';
-    const control=rosterWeaponMode
-      ? '<span>'+n+' surviving models</span>'
+    const control=(rosterWeaponMode||attachedMode)
+      ? '<span>'+n+' active models</span>'
       : '<input type="number" min="0" max="'+atkModels+'" value="'+n+'" onchange="setMathWeaponCount(\''+(ae?.uid||'catalogue')+'\',\''+esc(w.name).replace(/'/g,"\\'")+'\',this.value)"><span>models</span>';
     return '<div class="weapon-allocation"><div><b>'+esc(w.name)+'</b><div class="muted">A '+esc(w.A)+' • '+esc(w.BS||w.WS||'—')+' • S'+w.S+' • AP'+w.AP+' • D'+esc(w.D)+'</div></div><div class="allocation-control">'+control+'</div></div>';
   }).join('');
