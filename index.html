@@ -48,7 +48,10 @@
   const attackerUnit=get(attackerRoot?.unitId)||attacker;
   const attackerPoints=Math.max(1,Number(attackerRoot?.points)||Number(attackerUnit?.points)||1);
   const attackerSnap=combatSnapshot('my',attackerRoot);
-  const attackerWounds=Math.max(1,Number(attackerSnap?.remainingWounds)||Number(attackerSnap?.totalWounds)||1);
+  const attackerRoster=modelRosterRule(attackerUnit)?survivingModelRoster(attackerRoot,attackerUnit):null;
+  const rosterWounds=attackerRoster?attackerRoster.reduce((sum,m)=>sum+Math.max(0,Number(m.woundsRemaining)||0),0):0;
+  const fallbackWounds=Math.max(1,(Number(attackerUnit?.models)||Number(attackerRoot?.models)||1)*(Number(attackerUnit?.profile?.W)||1));
+  const attackerWounds=Math.max(1,rosterWounds,Number(attackerSnap?.remainingWounds)||Number(attackerSnap?.woundsRemaining)||Number(attackerSnap?.totalWounds)||fallbackWounds);
   results.forEach(x=>{
     const targetEntry=entry('opp',x.entryUid);if(!targetEntry)return;
     const enemyGroupsRaw=attachedCombatWeaponGroups('opp',targetEntry);
