@@ -4376,7 +4376,7 @@ function engineMonteCarlo(a,w,t,m,samples){samples=Math.max(100,Math.min(20000,N
 function simulateOne(a,w,t,m){const r=engineMonteCarlo(a,w,t,m,1);return {damage:r.avgDamage,killed:r.avgKilled,dead:r.wipeChance>=1}}
 function runMathSimulation(){
   const a=mathUnit('my'),t=mathUnit('opp'); if(!a||!t)return;
-  const ae=mathRosterEntry('my'),de=mathRosterEntry('opp'); const groups=combatWeaponGroups('my',ae);
+  const ae=mathRosterEntry('my'),de=mathRosterEntry('opp'),groups=attachedCombatWeaponGroups('my',ae);
   const atkModels=Math.max(1,combatParticipants('my',ae).reduce((n,e)=>{const u=get(e.unitId);return n+(modelRosterRule(u)?survivingModelRoster(e,u).length:Number(e.models)||u?.models||0)},0));
   const defModels=de&&modelRosterRule(t)?Math.max(1,survivingModelRoster(de,t).length):Math.max(1,Number(de?.models)||Number(t?.models)||1);
   const m={...(state.mathRules||{}),attackerModels:atkModels,defenderModels:defModels};
