@@ -5997,8 +5997,8 @@ function tacticalPreRollResolutionBack(){
   const t=ensureTacticalState(),map=tacticalPreRollResolutionState(),s=map[current.key];
   if(!s)return;
   const order=current.plan?.mixedSaveGroups?['hits','hitSpecial','wounds','woundSpecial','precisionSave','precisionDamage','precisionApplyFixed','precisionDevastating','saveOrder','saveRolls','mixedVariableSave','mixedDamage','review']:['hits','hitSpecial','wounds','woundSpecial','saves','damage','review'];
-  if(s.plan?.mixedSaveGroups&&['mixedVariableSave','mixedDamage'].includes(s.stage)&&tacticalPreRollMixedVariableBack(s)){save();render();return;}
-  if(s.plan?.precision&&(['precisionSave','precisionDamage','precisionDevastating','saveOrder'].includes(s.stage))&&tacticalPreRollPrecisionBack(s)){save();render();return;}
+  if(s.plan?.mixedSaveGroups&&['mixedVariableSave','mixedDamage','review'].includes(s.stage)&&tacticalPreRollMixedVariableBack(s)){save();render();return;}
+  if(s.plan?.precision&&(['precisionSave','precisionDamage','precisionDevastating','saveOrder','review'].includes(s.stage))&&tacticalPreRollPrecisionBack(s)){save();render();return;}
   const i=order.indexOf(s.stage);
   if(i<=0){s.stage=s.plan.torrent?'wounds':'hits';delete s.counts.hits;delete s.specials.criticalHits;save();render();return;}
   s.stage=order[i-1];save();render();
