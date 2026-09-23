@@ -5748,7 +5748,7 @@ function tacticalPreRollResolutionSet(field,value){
     const max=Number(s.counts.wounds)||0;
     if(n>max){alert('Critical wounds cannot exceed total successful wounds.');return;}
     s.specials.criticalWounds=n;
-    s.stage=plan.mixedSaveGroups?(plan.precision&&plan.variableDamage?'precisionSave':'saveOrder'):'saves';
+    s.stage=plan.mixedSaveGroups?(plan.precision?'precisionSave':'saveOrder'):'saves';
   }else if(field==='precisionSave'){
     const total=Math.max(0,(Number(s.counts.wounds)||0)-(plan.devastating?Math.min(Number(s.specials.criticalWounds)||0,Number(s.counts.wounds)||0):0));
     if((Number(s.counts.precisionResolved)||0)>=total){s.stage=plan.devastating&&Number(s.specials.criticalWounds||0)>0?'precisionDevastating':'review';return;}
@@ -5799,7 +5799,7 @@ function tacticalPreRollResolutionBack(){
   const current=tacticalPreRollResolutionCurrent();if(!current)return;
   const t=ensureTacticalState(),map=tacticalPreRollResolutionState(),s=map[current.key];
   if(!s)return;
-  const order=current.plan?.mixedSaveGroups?['hits','hitSpecial','wounds','woundSpecial','saveOrder','saveRolls','mixedDamage','review']:['hits','hitSpecial','wounds','woundSpecial','saves','damage','review'];
+  const order=current.plan?.mixedSaveGroups?['hits','hitSpecial','wounds','woundSpecial','precisionSave','precisionDamage','precisionApplyFixed','precisionDevastating','saveOrder','saveRolls','mixedDamage','review']:['hits','hitSpecial','wounds','woundSpecial','saves','damage','review'];
   const i=order.indexOf(s.stage);
   if(i<=0){s.stage=s.plan.torrent?'wounds':'hits';delete s.counts.hits;delete s.specials.criticalHits;save();render();return;}
   s.stage=order[i-1];save();render();
