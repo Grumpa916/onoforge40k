@@ -5526,7 +5526,30 @@ function tacticalPreRollApplyMixedSaveRolls(current,rolls){
   const weapon=current.weapon||{AP:0,D:1},ap=Number(weapon.AP)||0,normalDamage=Math.max(0,Number(plan.damageValue)||1);
   const criticalWounds=Math.min(Number(s.specials?.criticalWounds)||0,Number(s.counts?.wounds)||0);
   const mortalDamage=Math.max(0,Number(plan.devastating)?criticalWounds*normalDamage:0);
-  const applyMortal=amount=>{let remaining=Math.max(0,Math.floor(amount));while(remaining>0){while(currentGroupIndex<orderIds.length){const g=groups.find(x=>x.id===orderIds[currentGroupIndex]),m=pickModel(g);if(m)break;currentGroupIndex++;}if(currentGroupIndex>=orderIds.length)break;const g=groups.find(x=>x.id===orderIds[currentGroupIndex]),m=pickModel(g);if(!m)break;m.woundsRemaining=Math.max(0,Number(m.woundsRemaining||0)-1);if(m.woundsRemaining<=0)m.alive=false;remaining--;damage++;while(currentGroupIndex<orderIds.length){const gg=groups.find(x=>x.id===orderIds[currentGroupIndex]);if((liveByGroup.get(gg.id)||[]).some(x=>x.alive!==false))break;currentGroupIndex++;}}};
+  const applyMortalPerCriticalWound=criticalCount=>{
+    for(let cw=0;cw<Math.max(0,Math.floor(criticalCount));cw++){
+      while(currentGroupIndex<orderIds.length){
+        const g=groups.find(x=>x.id===orderIds[currentGroupIndex]),m=pickModel(g);
+        if(m)break;
+        currentGroupIndex++;
+      }
+      if(currentGroupIndex>=orderIds.length)break;
+      const g=groups.find(x=>x.id===orderIds[currentGroupIndex]),m=pickModel(g);
+      if(!m)break;
+      // 11th edition Devastating Wounds: each Critical Wound's mortal wounds
+      // can damage only one model; excess damage from that critical wound is lost.
+      const before=Math.max(0,Number(m.woundsRemaining)||0);
+      const applied=Math.min(before,normalDamage);
+      m.woundsRemaining=Math.max(0,before-applied);
+      if(m.woundsRemaining<=0)m.alive=false;
+      damage+=applied;
+      while(currentGroupIndex<orderIds.length){
+        const gg=groups.find(x=>x.id===orderIds[currentGroupIndex]);
+        if((liveByGroup.get(gg.id)||[]).some(x=>x.alive!==false))break;
+        currentGroupIndex++;
+      }
+    }
+  };
   for(const roll of sorted){
     while(currentGroupIndex<orderIds.length){const g=groups.find(x=>x.id===orderIds[currentGroupIndex]),m=pickModel(g);if(m)break;currentGroupIndex++;}
     if(currentGroupIndex>=orderIds.length)break;
@@ -5535,7 +5558,7 @@ function tacticalPreRollApplyMixedSaveRolls(current,rolls){
     resolution.push({roll,groupId:g.id,groupLabel:g.label,modelId:m?.id||null,saveSucceeds,damage:applied,saveNeed});
     while(currentGroupIndex<orderIds.length){const gg=groups.find(x=>x.id===orderIds[currentGroupIndex]);if((liveByGroup.get(gg.id)||[]).some(x=>x.alive!==false))break;currentGroupIndex++;}
   }
-  if(plan.devastating&&mortalDamage>0)applyMortal(mortalDamage);
+  if(plan.devastating&&criticalWounds>0)applyMortalPerCriticalWound(criticalWounds);
   const modelStates=groups.flatMap(g=>liveByGroup.get(g.id)||[]).map(m=>({id:m.id,sourceEntryUid:m.sourceEntryUid,sourceUnitId:m.sourceUnitId,alive:m.alive!==false,woundsRemaining:Math.max(0,Number(m.woundsRemaining)||0)}));
   return {failedSaves:failed,damage,normalDamage:Math.max(0,damage-(plan.devastating?mortalDamage:0)),mortalDamage:plan.devastating?mortalDamage:0,resolution,modelStates};
 }
