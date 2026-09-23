@@ -1343,7 +1343,6 @@ function useStratagem(side,index){
  }
  if(s.name==='Insane Bravery'&&stratagemUsedThisBattle(side,s.name)){alert('Insane Bravery can only be used once per battle.');return;}
  if(stratagemUsedThisPhase(side,s.name)){alert('That stratagem has already been used this phase.');return;}
- if(beforeCP<s.cp){alert('Not enough CP.');return;}
  const cpCost=stratagemCP(s); if(beforeCP<cpCost){alert('Not enough CP.');return;} const afterCP=beforeCP-cpCost;
  if(side==='my')state.myCP=afterCP;else state.oppCP=afterCP;
  history.push({name:s.name,round,phase,playerTurn:turn,cp:cpCost});
