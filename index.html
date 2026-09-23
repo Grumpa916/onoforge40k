@@ -5601,7 +5601,8 @@ function tacticalPreRollResolutionPlan(ae,te,w,r,poolId=null){
   const attached=!!(targetSnap&&targetSnap.components?.length>1&&targetSnap.components.some(x=>x.role==='bodyguard')&&targetSnap.components.some(x=>x.role==='leader'||x.role==='support'));
   const targetSaveGroups=tacticalPreRollSaveGroups(te);
   const profiles=new Set((targetSnap?.models||[]).filter(m=>m.alive!==false).map(m=>JSON.stringify({T:m.profile?.T,Sv:m.profile?.Sv,InSv:m.profile?.InSv,W:m.profile?.W,character:!!m.character})));
-  const mixedSaveGroups=targetSaveGroups.length>1;
+  const precisionTargetModelId=r?.precisionTargetModelId||null,precision=!!r?.precision,precisionTargetVisible=r?.precisionTargetVisible===true;
+  const mixedSaveGroups=targetSaveGroups.length>1||precision;
   return {
     modelIds,models,attacks:modelIds.length*(basePer+rapid)+blast+cleave,hitNeed:c.torrent?'Auto':c.hitNeed,
     hitCritThreshold:c.critHitThreshold||6,woundCritThreshold:c.critWoundThreshold||6,
@@ -5616,7 +5617,7 @@ function tacticalPreRollResolutionPlan(ae,te,w,r,poolId=null){
     variableDamage:/D[36]/i.test(String(w.D||''))||String(w.D||'').includes('+'),
     damageValue:engineExpectedDice(w.D)+(c.melta&&half.active===true?c.melta:0),
     meltaActive:c.melta&&half.active===true?c.melta:0,
-    precision:!!c.precision
+    precision:!!c.precision,precisionTargetModelId,precisionTargetVisible
   };
 }
 function tacticalPreRollOpenResolution(){
