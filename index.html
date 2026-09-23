@@ -5755,6 +5755,22 @@ function tacticalPreRollInitMixedVariable(s,rolls){
   s.counts.damageResolved=0;
   s.stage='mixedVariableSave';
 }
+function tacticalPreRollMixedVariablePushHistory(s){
+  const vs=s.mixedVariableState,mr=s.mixedResolution;
+  if(!vs||!mr)return;
+  vs.history=Array.isArray(vs.history)?vs.history:[];
+  const snapshot={stage:s.stage,counts:{...s.counts},mixedVariableState:{...vs,history:undefined},mixedResolution:{...mr,modelStates:(mr.modelStates||[]).map(m=>({...m})),resolution:(mr.resolution||[]).map(r=>({...r})),damageRolls:[...(mr.damageRolls||[])],damageInstances:[...(mr.damageInstances||[])],devastatingInstances:[...(mr.devastatingInstances||[])]}};
+  delete snapshot.mixedVariableState.history;
+  vs.history.push(snapshot);
+}
+function tacticalPreRollMixedVariableBack(s){
+  const vs=s.mixedVariableState;
+  if(!vs||!Array.isArray(vs.history)||!vs.history.length)return false;
+  const snap=vs.history.pop();
+  s.stage=snap.stage;s.counts={...snap.counts};s.mixedVariableState={...snap.mixedVariableState,history:vs.history};
+  s.mixedResolution={...snap.mixedResolution,modelStates:(snap.mixedResolution.modelStates||[]).map(m=>({...m})),resolution:(snap.mixedResolution.resolution||[]).map(r=>({...r})),damageRolls:[...(snap.mixedResolution.damageRolls||[])],damageInstances:[...(snap.mixedResolution.damageInstances||[])],devastatingInstances:[...(snap.mixedResolution.devastatingInstances||[])]};
+  return true;
+}
 function tacticalPreRollPickMixedVariableTarget(s){
   const mr=s.mixedResolution,vs=s.mixedVariableState;
   if(!mr||!vs)throw new Error('Mixed variable resolution state is missing.');
@@ -5773,6 +5789,7 @@ function tacticalPreRollPickMixedVariableTarget(s){
 }
 function tacticalPreRollAdvanceMixedVariableSave(s,roll){
   const maxDamage=tacticalPreRollDamageMax(s.plan.weaponDamage||'1'),vs=s.mixedVariableState,mr=s.mixedResolution;
+  tacticalPreRollMixedVariablePushHistory(s);
   if(!vs||vs.phase!=='save')throw new Error('No variable-Damage save is awaiting resolution.');
   const picked=tacticalPreRollPickMixedVariableTarget(s);
   if(!picked)throw new Error('No legal target remains for the next saving throw.');
@@ -5800,6 +5817,7 @@ function tacticalPreRollAdvanceMixedVariableSave(s,roll){
 }
 function tacticalPreRollResolveMixedVariableDamage(s,roll){
   const vs=s.mixedVariableState,mr=s.mixedResolution;
+  tacticalPreRollMixedVariablePushHistory(s);
   if(!vs||vs.phase!=='damage')throw new Error('No failed save is awaiting Damage resolution.');
   const m=(mr.modelStates||[]).find(x=>String(x.id)===String(vs.currentModelId));
   if(!m||m.alive===false)throw new Error('The current allocation target is no longer alive.');
@@ -5818,6 +5836,7 @@ function tacticalPreRollResolveMixedVariableDamage(s,roll){
 }
 function tacticalPreRollResolveMixedVariableDevastating(s,roll){
   const vs=s.mixedVariableState,mr=s.mixedResolution;
+  tacticalPreRollMixedVariablePushHistory(s);
   if(!vs||vs.phase!=='devastating')throw new Error('No Devastating Wounds result is awaiting resolution.');
   const total=Math.min(Number(s.specials.criticalWounds)||0,Number(s.counts.wounds)||0);
   if(vs.devastatingIndex>=total){s.stage='review';return;}
@@ -5927,6 +5946,7 @@ function tacticalPreRollResolutionBack(){
   const t=ensureTacticalState(),map=tacticalPreRollResolutionState(),s=map[current.key];
   if(!s)return;
   const order=current.plan?.mixedSaveGroups?['hits','hitSpecial','wounds','woundSpecial','precisionSave','precisionDamage','precisionApplyFixed','precisionDevastating','saveOrder','saveRolls','mixedVariableSave','mixedDamage','review']:['hits','hitSpecial','wounds','woundSpecial','saves','damage','review'];
+  if(s.plan?.mixedSaveGroups&&['mixedVariableSave','mixedDamage'].includes(s.stage)&&tacticalPreRollMixedVariableBack(s)){save();render();return;}
   const i=order.indexOf(s.stage);
   if(i<=0){s.stage=s.plan.torrent?'wounds':'hits';delete s.counts.hits;delete s.specials.criticalHits;save();render();return;}
   s.stage=order[i-1];save();render();
