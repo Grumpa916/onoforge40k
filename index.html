@@ -5692,7 +5692,7 @@ function tacticalPreRollDiceRequirement(field,s){
   if(field==='criticalHits')return {mode:'subclassify',max:Number(s.counts?.hits)||0,reason:'Critical-hit classification is required.'};
   if(field==='wounds')return {mode:'count',max:Math.max(0,(Number(s.counts?.hits)||0)-(p.lethal?Math.min(Number(s.specials?.criticalHits)||0,Number(s.counts?.hits)||0):0)+(p.sustained*(Number(s.specials?.criticalHits)||0))),reason:'Only successful wound count is needed.'};
   if(field==='criticalWounds')return {mode:'subclassify',max:Number(s.counts?.wounds)||0,reason:'Critical-wound classification is required.'};
-  if(field==='precisionSave'||field==='precisionDamage'||field==='mixedVariableSave'||field==='mixedDamage')return {mode:field==='mixedVariableSave'?'individual':field==='precisionSave'?'individual':field==='mixedDamage'?'damage':'damage',max:6,reason:'The individual physical result changes the next allocation/resolution state.'};
+  if(field==='precisionSave'||field==='precisionDamage'||field==='precisionDevastating'||field==='mixedVariableSave'||field==='mixedSaveReroll'||field==='mixedDamage')return {mode:(field==='mixedVariableSave'||field==='mixedSaveReroll'||field==='precisionSave')?'individual':'damage',max:6,reason:'The individual physical result changes the next allocation/resolution state.'};
   if(field==='mixedFnp')return {mode:'count',max:Math.max(0,Number(s.mixedVariableState?.pendingDamage)||0),reason:'Feel No Pain applies to each wound that would be lost; only the number ignored is needed.'};
   return null;
 }
@@ -5765,9 +5765,9 @@ function tacticalPreRollInitMixedVariable(s,rolls){
     damage:Number(s.counts.damage)||0,
     normalDamage:Number(s.counts.damage)||0,
     mortalDamage:0,resolution:[],modelStates:states,
-    variableDamage:true,damageInstances:[],devastatingInstances:[],damageRolls:[]
+    variableDamage:!!s.plan.variableDamage,damageInstances:[],devastatingInstances:[],damageRolls:[]
   };
-  s.mixedVariableState={rolls:sorted,index:0,groupIndex:0,phase:'save',devastatingIndex:0};
+  s.mixedVariableState={rolls:sorted,index:0,groupIndex:0,phase:'save',devastatingIndex:0,fixedDamage:!s.plan.variableDamage};
   s.counts.damageResolved=0;
   s.stage='mixedVariableSave';
 }
@@ -5813,6 +5813,10 @@ function tacticalPreRollAdvanceMixedVariableSave(s,roll){
   const sv=Math.max(2,Math.min(7,Number(p.Sv)||7)),inv=Number(p.InSv)||99,armourNeed=Math.max(2,Math.min(7,sv-ap)),saveNeed=Math.min(armourNeed,inv);
   const n=Math.floor(Number(roll));
   if(!Number.isInteger(n)||n<1||n>6)throw new Error('Enter one D6 save result.');
+  if(n===1&&m.rerollSave1){
+    mr.resolution.push({roll:1,groupId:g.id,groupLabel:g.label,modelId:m.id,saveSucceeds:false,damage:0,saveNeed,precision:false,rerollPending:true});
+    vs.currentModelId=String(m.id);vs.currentGroupId=g.id;vs.currentSaveNeed=saveNeed;vs.currentSaveSucceeds=false;vs.phase='saveReroll';s.stage='mixedSaveReroll';return;
+  }
   const saveSucceeds=n!==1&&n>=saveNeed;
   mr.resolution.push({roll:n,groupId:g.id,groupLabel:g.label,modelId:m.id,saveSucceeds,damage:0,saveNeed,precision:false});
   vs.currentModelId=String(m.id);vs.currentGroupId=g.id;vs.currentSaveNeed=saveNeed;vs.currentSaveSucceeds=saveSucceeds;
@@ -5827,9 +5831,35 @@ function tacticalPreRollAdvanceMixedVariableSave(s,roll){
   }else{
     s.counts.failedSaves=(Number(s.counts.failedSaves)||0)+1;
     s.counts.damage=Number(s.counts.damage)||0;
-    s.stage='mixedDamage';
-    vs.phase='damage';
-    vs.damageMax=maxDamage;
+    const fixedDamage=Math.max(0,Number(s.plan.damageValue)||1);
+    if(vs.fixedDamage||!s.plan.variableDamage){
+      const pending=Math.min(Math.max(0,Number(m.woundsRemaining)||0),fixedDamage);
+      if(engineFnp(m)){vs.phase='fnp';vs.pendingDamage=pending;vs.pendingFnp=engineFnp(m);vs.kind='normal';s.stage='mixedFnp';}
+      else{
+        const before=Math.max(0,Number(m.woundsRemaining)||0),applied=Math.min(before,fixedDamage);m.woundsRemaining=Math.max(0,before-applied);m.alive=m.woundsRemaining>0;
+        mr.damage=(Number(mr.damage)||0)+applied;mr.normalDamage=(Number(mr.normalDamage)||0)+applied;mr.damageRolls.push(fixedDamage);
+        vs.currentModelId=null;vs.currentGroupId=null;vs.currentSaveNeed=null;vs.currentSaveSucceeds=null;vs.index++;
+        if(vs.index<vs.rolls.length){vs.phase='save';s.stage='mixedVariableSave';}
+        else if(s.plan.devastating&&Math.min(Number(s.specials.criticalWounds)||0,Number(s.counts.wounds)||0)>0){vs.phase='devastating';vs.devastatingIndex=0;s.stage='mixedDamage';}
+        else s.stage='review';
+      }
+    }else{s.stage='mixedDamage';vs.phase='damage';vs.damageMax=maxDamage;}
+  }
+}
+function tacticalPreRollResolveMixedSaveReroll(s,roll){
+  const vs=s.mixedVariableState,mr=s.mixedResolution;tacticalPreRollMixedVariablePushHistory(s);
+  if(!vs||vs.phase!=='saveReroll')throw new Error('No save re-roll is awaiting resolution.');
+  const m=(mr.modelStates||[]).find(x=>String(x.id)===String(vs.currentModelId)),n=Math.floor(Number(roll));
+  if(!m||!Number.isInteger(n)||n<1||n>6)throw new Error('Enter the actual physical D6 re-roll result.');
+  const groups=tacticalPreRollSaveGroups(entry('opp',s.targetEntryUid),mr.modelStates),g=groups.find(x=>x.id===vs.currentGroupId),p=m.profile||{},weapon=s.mixedVariableWeapon||{AP:0,D:'1'},ap=Number(weapon.AP)||0;
+  const sv=Math.max(2,Math.min(7,Number(p.Sv)||7)),inv=Number(p.InSv)||99,saveNeed=Math.min(Math.max(2,Math.min(7,sv-ap)),inv),ok=n!==1&&n>=saveNeed,last=mr.resolution[mr.resolution.length-1];
+  if(!g)throw new Error('The save allocation group is no longer available.');
+  if(last){last.rerolled=true;last.reroll=n;last.roll=n;last.saveSucceeds=ok;last.rerollPending=false;}
+  vs.currentSaveSucceeds=ok;vs.phase='save';
+  if(ok){vs.currentModelId=null;vs.currentGroupId=null;vs.currentSaveNeed=null;vs.currentSaveSucceeds=null;vs.index++;if(vs.index<vs.rolls.length)s.stage='mixedVariableSave';else if(s.plan.devastating&&Math.min(Number(s.specials.criticalWounds)||0,Number(s.counts.wounds)||0)>0){vs.phase='devastating';vs.devastatingIndex=0;s.stage='mixedDamage';}else s.stage='review';}
+  else{
+    s.counts.failedSaves=(Number(s.counts.failedSaves)||0)+1;const fixedDamage=Math.max(0,Number(s.plan.damageValue)||1);
+    if(vs.fixedDamage||!s.plan.variableDamage){const pending=Math.min(Math.max(0,Number(m.woundsRemaining)||0),fixedDamage);if(engineFnp(m)){vs.phase='fnp';vs.pendingDamage=pending;vs.pendingFnp=engineFnp(m);vs.kind='normal';s.stage='mixedFnp';}else{const before=Math.max(0,Number(m.woundsRemaining)||0),applied=Math.min(before,fixedDamage);m.woundsRemaining=Math.max(0,before-applied);m.alive=m.woundsRemaining>0;mr.damage=(Number(mr.damage)||0)+applied;mr.normalDamage=(Number(mr.normalDamage)||0)+applied;mr.damageRolls.push(fixedDamage);vs.currentModelId=null;vs.currentGroupId=null;vs.currentSaveNeed=null;vs.currentSaveSucceeds=null;vs.index++;if(vs.index<vs.rolls.length){vs.phase='save';s.stage='mixedVariableSave';}else if(s.plan.devastating&&Math.min(Number(s.specials.criticalWounds)||0,Number(s.counts.wounds)||0)>0){vs.phase='devastating';vs.devastatingIndex=0;s.stage='mixedDamage';}else s.stage='review';}}else{s.stage='mixedDamage';vs.phase='damage';vs.damageMax=tacticalPreRollDamageMax(s.plan.weaponDamage||'1');}
   }
 }
 function tacticalPreRollResolveMixedFnp(s,ignored){
@@ -5951,11 +5981,20 @@ function tacticalPreRollResolutionSet(field,value){
     const total=Math.max(0,(Number(s.counts.wounds)||0)-(plan.devastating?Math.min(Number(s.specials.criticalWounds)||0,Number(s.counts.wounds)||0):0));
     if((Number(s.counts.precisionResolved)||0)>=total){s.stage=plan.devastating&&Number(s.specials.criticalWounds||0)>0?'precisionDevastating':'review';return;}
     const roll=tacticalPreRollDiceAuthority('individual',value,6,'Save result');
-    try{const weapon=attachedCombatWeaponGroups('my',entry('my',current.attackerEntryUid),entry('opp',current.targetEntryUid)).map(g=>g.weapon).find(x=>String(x.name)===String(current.weaponName));s.precisionWeapon=weapon||{AP:0,D:'1'};if(!tacticalPreRollPrecisionStep(s,roll))s.stage='saveOrder';else if(s.precisionCurrent.saveSucceeds){const total=Math.max(0,(Number(s.counts.wounds)||0)-(plan.devastating?Math.min(Number(s.specials.criticalWounds)||0,Number(s.counts.wounds)||0):0));s.counts.precisionResolved=(Number(s.counts.precisionResolved)||0)+1;s.stage=(Number(s.counts.precisionResolved)||0)<total?'precisionSave':(plan.devastating&&Number(s.specials.criticalWounds||0)>0?'precisionDevastating':'review');}else if(s.stage==='precisionApplyFixed'){const st=s.precisionTargetState,before=Math.max(0,Number(st.woundsRemaining)||0),applied=Math.min(before,Math.max(0,Number(plan.damageValue)||0));st.woundsRemaining=Math.max(0,before-applied);st.alive=st.woundsRemaining>0;s.counts.failedSaves=(Number(s.counts.failedSaves)||0)+1;s.counts.damage=(Number(s.counts.damage)||0)+applied;s.counts.precisionResolved=(Number(s.counts.precisionResolved)||0)+1;const total=Math.max(0,(Number(s.counts.wounds)||0)-(plan.devastating?Math.min(Number(s.specials.criticalWounds)||0,Number(s.counts.wounds)||0):0));s.stage=(Number(s.counts.precisionResolved)||0)<total?(st.alive?'precisionSave':'saveOrder'):(plan.devastating&&Number(s.specials.criticalWounds||0)>0?'precisionDevastating':'review');}}catch(e){alert(e.message||String(e));return;}
+    try{const weapon=attachedCombatWeaponGroups('my',entry('my',current.attackerEntryUid),entry('opp',current.targetEntryUid)).map(g=>g.weapon).find(x=>String(x.name)===String(current.weaponName));s.precisionWeapon=weapon||{AP:0,D:'1'};if(!tacticalPreRollPrecisionStep(s,roll))s.stage='saveOrder';else if(s.precisionCurrent.saveSucceeds){const total=Math.max(0,(Number(s.counts.wounds)||0)-(plan.devastating?Math.min(Number(s.specials.criticalWounds)||0,Number(s.counts.wounds)||0):0));s.counts.precisionResolved=(Number(s.counts.precisionResolved)||0)+1;s.stage=(Number(s.counts.precisionResolved)||0)<total?'precisionSave':(plan.devastating&&Number(s.specials.criticalWounds||0)>0?'precisionDevastating':'review');}else if(s.stage==='precisionApplyFixed'){const st=s.precisionTargetState,before=Math.max(0,Number(st.woundsRemaining)||0),pending=Math.min(before,Math.max(0,Number(plan.damageValue)||0));if(engineFnp(st)){s.precisionPendingDamage=pending;s.precisionPendingFnp=engineFnp(st);s.stage='precisionFnp';return;}const applied=pending;st.woundsRemaining=Math.max(0,before-applied);st.alive=st.woundsRemaining>0;s.counts.failedSaves=(Number(s.counts.failedSaves)||0)+1;s.counts.damage=(Number(s.counts.damage)||0)+applied;s.counts.precisionResolved=(Number(s.counts.precisionResolved)||0)+1;const total=Math.max(0,(Number(s.counts.wounds)||0)-(plan.devastating?Math.min(Number(s.specials.criticalWounds)||0,Number(s.counts.wounds)||0):0));s.stage=(Number(s.counts.precisionResolved)||0)<total?(st.alive?'precisionSave':'saveOrder'):(plan.devastating&&Number(s.specials.criticalWounds||0)>0?'precisionDevastating':'review');}}catch(e){alert(e.message||String(e));return;}
   }else if(field==='precisionDamage'){
     tacticalPreRollPrecisionPushHistory(s);
     const max=tacticalPreRollDamageMax(s.precisionWeapon?.D||'1');const roll=tacticalPreRollDiceAuthority('damage',value,max,'Damage result');
-    const st=s.precisionTargetState;if(!st||!st.alive){s.stage='saveOrder';return;}const before=Math.max(0,Number(st.woundsRemaining)||0);st.woundsRemaining=Math.max(0,before-roll);st.alive=st.woundsRemaining>0;s.counts.failedSaves=(Number(s.counts.failedSaves)||0)+1;s.counts.damage=(Number(s.counts.damage)||0)+Math.min(before,roll);s.counts.precisionResolved=(Number(s.counts.precisionResolved)||0)+1;const total=Math.max(0,(Number(s.counts.wounds)||0)-(plan.devastating?Math.min(Number(s.specials.criticalWounds)||0,Number(s.counts.wounds)||0):0));s.stage=(Number(s.counts.precisionResolved)||0)<total?'precisionSave':(plan.devastating&&Number(s.specials.criticalWounds||0)>0?'precisionDevastating':'review');
+    const st=s.precisionTargetState;if(!st||!st.alive){s.stage='saveOrder';return;}const before=Math.max(0,Number(st.woundsRemaining)||0),pending=Math.min(before,roll);
+    if(engineFnp(st)){s.precisionPendingDamage=pending;s.precisionPendingFnp=engineFnp(st);s.stage='precisionFnp';return;}
+    st.woundsRemaining=Math.max(0,before-pending);st.alive=st.woundsRemaining>0;s.counts.failedSaves=(Number(s.counts.failedSaves)||0)+1;s.counts.damage=(Number(s.counts.damage)||0)+pending;s.counts.precisionResolved=(Number(s.counts.precisionResolved)||0)+1;const total=Math.max(0,(Number(s.counts.wounds)||0)-(plan.devastating?Math.min(Number(specials.criticalWounds)||0,Number(s.counts.wounds)||0):0));s.stage=(Number(s.counts.precisionResolved)||0)<total?'precisionSave':(plan.devastating&&Number(s.specials.criticalWounds||0)>0?'precisionDevastating':'review');
+  }else if(field==='precisionFnp'){
+    tacticalPreRollPrecisionPushHistory(s);
+    const st=s.precisionTargetState,pending=Math.max(0,Number(s.precisionPendingDamage)||0),n=tacticalPreRollDiceAuthority('count',value,pending,'Feel No Pain ignored wounds');
+    if(!st||!st.alive)throw new Error('The Precision target is no longer alive.');
+    const before=Math.max(0,Number(st.woundsRemaining)||0),applied=Math.min(before,Math.max(0,pending-n));st.woundsRemaining=Math.max(0,before-applied);st.alive=st.woundsRemaining>0;
+    s.counts.failedSaves=(Number(s.counts.failedSaves)||0)+1;s.counts.damage=(Number(s.counts.damage)||0)+applied;s.counts.precisionResolved=(Number(s.counts.precisionResolved)||0)+1;delete s.precisionPendingDamage;delete s.precisionPendingFnp;
+    const total=Math.max(0,(Number(s.counts.wounds)||0)-(plan.devastating?Math.min(Number(specials.criticalWounds)||0,Number(s.counts.wounds)||0):0));s.stage=(Number(s.counts.precisionResolved)||0)<total?'precisionSave':(plan.devastating&&Number(specials.criticalWounds||0)>0?'precisionDevastating':'review');
   }else if(field==='precisionDevastating'){
     tacticalPreRollPrecisionPushHistory(s);
     const done=Number(s.counts.precisionDevastating||0),total=Math.max(0,Number(s.specials.criticalWounds)||0);if(done>=total){s.stage='review';return;}
@@ -6003,6 +6042,8 @@ function tacticalPreRollResolutionSet(field,value){
     }catch(e){alert(e.message||String(e));return;}
   }else if(field==='mixedVariableSave'){
     try{tacticalPreRollDiceAuthority('individual',value,6,'Save result');tacticalPreRollAdvanceMixedVariableSave(s,Math.floor(Number(value)));}catch(e){alert(e.message||String(e));return;}
+  }else if(field==='mixedSaveReroll'){
+    try{tacticalPreRollDiceAuthority('individual',value,6,'Save re-roll result');tacticalPreRollResolveMixedSaveReroll(s,Math.floor(Number(value)));}catch(e){alert(e.message||String(e));return;}
   }else if(field==='mixedFnp'){try{tacticalPreRollDiceAuthority('count',n,diceReq?.max||0,'Feel No Pain ignored wounds');if(n>(diceReq?.max||0))throw new Error('Ignored wounds cannot exceed pending damage.');tacticalPreRollResolveMixedFnp(s,n);}catch(e){alert(e.message||String(e));return;}}else if(field==='mixedDamage'){
     try{
       if(s.mixedVariableState?.phase==='damage'){tacticalPreRollDiceAuthority('damage',value,6,'Damage result');tacticalPreRollResolveMixedVariableDamage(s,Math.floor(Number(value)));}
@@ -6029,8 +6070,8 @@ function tacticalPreRollResolutionBack(){
   const current=tacticalPreRollResolutionCurrent();if(!current)return;
   const t=ensureTacticalState(),map=tacticalPreRollResolutionState(),s=map[current.key];
   if(!s)return;
-  const order=current.plan?.mixedSaveGroups?['hits','hitSpecial','wounds','woundSpecial','precisionSave','precisionDamage','precisionApplyFixed','precisionDevastating','saveOrder','saveRolls','mixedVariableSave','mixedDamage','mixedFnp','review']:['hits','hitSpecial','wounds','woundSpecial','saves','damage','review'];
-  if(s.plan?.mixedSaveGroups&&['mixedVariableSave','mixedDamage','review'].includes(s.stage)&&tacticalPreRollMixedVariableBack(s)){save();render();return;}
+  const order=current.plan?.mixedSaveGroups?['hits','hitSpecial','wounds','woundSpecial','precisionSave','precisionDamage','precisionApplyFixed','precisionFnp','precisionDevastating','saveOrder','saveRolls','mixedVariableSave','mixedSaveReroll','mixedDamage','mixedFnp','review']:['hits','hitSpecial','wounds','woundSpecial','saves','damage','review'];
+  if(s.plan?.mixedSaveGroups&&['mixedVariableSave','mixedSaveReroll','mixedDamage','mixedFnp','review'].includes(s.stage)&&tacticalPreRollMixedVariableBack(s)){save();render();return;}
   if(s.plan?.precision&&(['precisionSave','precisionDamage','precisionDevastating','saveOrder','review'].includes(s.stage))&&tacticalPreRollPrecisionBack(s)){save();render();return;}
   const i=order.indexOf(s.stage);
   if(i<=0){s.stage=s.plan.torrent?'wounds':'hits';delete s.counts.hits;delete s.specials.criticalHits;save();render();return;}
@@ -6113,6 +6154,7 @@ function tacticalPreRollResolutionModal(){
   else if(stage==='woundSpecial'){title='WOUNDS • SUBCLASSIFY';promptText='How many of those '+counts.wounds+' wounds were Critical Wounds based on the unmodified physical results ('+plan.woundCritThreshold+'+)?';max=counts.wounds;value=specials.criticalWounds??'';note='Classify the physical dice after any re-rolls but before modifiers. Critical Wounds are required here because Devastating Wounds changes the save sequence.';}
   else if(stage==='precisionSave'){const total=Math.max(0,(Number(counts.wounds)||0)-(plan.devastating?Math.min(Number(specials.criticalWounds)||0,Number(counts.wounds)||0):0));title='PRECISION • SAVE '+(Number(counts.precisionResolved||0)+1)+'/'+total;promptText='Roll one save for the current Precision target and enter that D6 result.';max=6;value='';note='Resolve each save immediately so Character destruction can correctly release Precision allocation.';}
   else if(stage==='precisionDamage'){title='PRECISION • DAMAGE';promptText='The Precision target failed its save. Roll weapon Damage now.';max=tacticalPreRollDamageMax(s.precisionWeapon?.D||'1');value='';note='Damage is resolved immediately before the next save.';}
+  else if(stage==='precisionFnp'){title='PRECISION • FEEL NO PAIN';promptText='How many of the '+(Number(s.precisionPendingDamage)||0)+' wounds will be ignored by Feel No Pain '+(String(s.precisionPendingFnp||'')+'+')+'?';max=Number(s.precisionPendingDamage)||0;value='';note='Enter the number of wounds actually ignored by the physical Feel No Pain rolls.';}
   else if(stage==='precisionDevastating'){const total=Math.max(0,Number(specials.criticalWounds)||0);title='PRECISION • DEVASTATING WOUNDS';promptText=plan.variableDamage?'Roll Damage for Critical Wound '+(Number(counts.precisionDevastating||0)+1)+'/'+total+'.':'Applying fixed Damage for Critical Wound '+(Number(counts.precisionDevastating||0)+1)+'/'+total+'.';max=tacticalPreRollDamageMax(s.precisionWeapon?.D||'1');value='';note=plan.variableDamage?'Each Devastating Wounds critical is resolved against one model; excess damage is lost.':'No additional physical die is required for fixed Damage.';}
   else if(stage==='saveOrder'){
     const groups=tacticalPreRollSaveGroups(entry('opp',current.targetEntryUid),s.precisionTargetState?[s.precisionTargetState]:null);
@@ -6131,8 +6173,8 @@ function tacticalPreRollResolutionModal(){
   else if(stage==='damage'){title='DAMAGE • RESOLVE';promptText='Enter the total damage actually applied by the failed saves.';max=Math.max(0,(Number(counts.failedSaves)||0)*Math.max(1,Number(plan.damageValue)||1)*6);value=counts.damage??'';note='Use the physical dice result. Enter the final damage after any damage-reduction rules already shown by the Pre-Roll Check.';}
   else {title='RESOLUTION • REVIEW';promptText='Confirm the recorded physical result before applying it to the battlefield state.';note='The app will update the target using the recorded dice result and existing model-level state.';}
   const invalid=stage!=='review'&&stage!=='saveRolls'&&value!==''&&((Number(value)||0)<0||(Number(value)||0)>max)?' invalid':'';
-  const input=(stage==='review'||stage==='saveOrder')?'':((stage==='saveRolls'||stage==='precisionSave'||stage==='precisionDamage'||stage==='precisionDevastating'||stage==='mixedVariableSave'||stage==='mixedDamage')?'<input id="pr-dice-input" class="pr-dice-input" type="text" inputmode="numeric" placeholder="1, 2, 3, 5, 6" value="'+esc(String(value))+'">':'<input id="pr-dice-input" class="pr-dice-input'+invalid+'" type="number" inputmode="numeric" min="0" max="'+max+'" step="1" value="'+esc(String(value))+'" autofocus>');
-  const action=stage==='review'?'<button type="button" class="btn primary pr-big-btn" onclick="tacticalPreRollApplyResolution()">Apply Result</button>':'<button type="button" class="btn primary pr-big-btn" onclick="tacticalPreRollResolutionSet(\''+(stage==='saveRolls'?'saveRolls':stage==='mixedVariableSave'?'mixedVariableSave':stage==='mixedDamage'?'mixedDamage':stage==='mixedFnp'?'mixedFnp':stage==='hitSpecial'?'criticalHits':stage==='hits'?'hits':stage==='woundSpecial'?'criticalWounds':stage==='wounds'?'wounds':stage==='saves'?'failedSaves':'damage')+'\',document.getElementById(\'pr-dice-input\').value)">Continue</button>';
+  const input=(stage==='review'||stage==='saveOrder')?'':((stage==='saveRolls'||stage==='precisionSave'||stage==='precisionDamage'||stage==='precisionFnp'||stage==='precisionDevastating'||stage==='mixedVariableSave'||stage==='mixedSaveReroll'||stage==='mixedDamage'||stage==='mixedFnp')?'<input id="pr-dice-input" class="pr-dice-input" type="text" inputmode="numeric" placeholder="1, 2, 3, 5, 6" value="'+esc(String(value))+'">':'<input id="pr-dice-input" class="pr-dice-input'+invalid+'" type="number" inputmode="numeric" min="0" max="'+max+'" step="1" value="'+esc(String(value))+'" autofocus>');
+  const action=stage==='review'?'<button type="button" class="btn primary pr-big-btn" onclick="tacticalPreRollApplyResolution()">Apply Result</button>':'<button type="button" class="btn primary pr-big-btn" onclick="tacticalPreRollResolutionSet(\''+(stage==='saveRolls'?'saveRolls':stage==='mixedVariableSave'?'mixedVariableSave':stage==='mixedSaveReroll'?'mixedSaveReroll':stage==='mixedDamage'?'mixedDamage':stage==='mixedFnp'?'mixedFnp':stage==='precisionFnp'?'precisionFnp':stage==='hitSpecial'?'criticalHits':stage==='hits'?'hits':stage==='woundSpecial'?'criticalWounds':stage==='wounds'?'wounds':stage==='saves'?'failedSaves':'damage')+'\',document.getElementById(\'pr-dice-input\').value)">Continue</button>';
   const back='<button type="button" class="btn pr-secondary-btn" onclick="tacticalPreRollResolutionBack()">Back</button>';
   return '<div class="modal pr-dice-modal"><div class="card pr-dice-card"><div class="split"><div><div class="tiny">PHYSICAL DICE ENTRY • '+esc(state.phase||'Phase')+'</div><h2 style="margin:4px 0">'+esc(title)+'</h2><div class="muted">'+esc(get(s.targetEntryUid?entry('opp',s.targetEntryUid)?.unitId:'')?.name||'Target')+' • '+esc(s.weaponName)+'</div></div><button type="button" class="btn" onclick="tacticalPreRollCloseResolution()">Close</button></div><div class="pr-dice-target"><span>Target</span><strong>'+esc(s.result.type==='Charge'?'2D6':(stage==='hits'||stage==='hitSpecial'?String(plan.hitNeed)+'+':stage==='wounds'||stage==='woundSpecial'?String(plan.woundNeed)+'+':stage==='saves'?(plan.saveNeed===null?'No Save':String(plan.saveNeed)+'+'):stage==='mixedVariableSave'?(String(s.mixedVariableState?.currentSaveNeed||'?')+'+'):stage==='mixedDamage'?'Damage':'Damage'))+'</strong><span>'+esc(s.result.attacker)+' → '+esc(s.result.target)+'</span></div><div class="pr-dice-prompt">'+esc(promptText)+'</div>'+(stage==='review'?'<div class="grid3" style="margin-top:14px"><div class="status"><div class="tiny">Hits</div><b>'+counts.hits+(specials.criticalHits!=null?' • '+specials.criticalHits+' crit':'')+'</b></div><div class="status"><div class="tiny">Wounds</div><b>'+counts.wounds+(specials.criticalWounds!=null?' • '+specials.criticalWounds+' crit':'')+'</b></div><div class="status"><div class="tiny">Failed Saves</div><b>'+counts.failedSaves+'</b></div><div class="status"><div class="tiny">Damage</div><b>'+counts.damage+'</b></div></div>':'')+input+(note?'<div class="pr-dice-note">'+esc(note)+'</div>':'')+'<div class="pr-dice-actions">'+back+action+'</div><div class="tiny" style="margin-top:10px">If the battlefield state changes, this session is invalidated and the Pre-Roll Check must be re-run. Nothing here rolls dice for you.</div></div></div>';
 }
