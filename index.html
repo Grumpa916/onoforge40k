@@ -1571,6 +1571,97 @@ function secondaryCompletedRoundLabel(mission){
   return Number.isFinite(r)&&r>0 ? `Completed R${r}` : '';
 }
 
+
+function secondaryPlanFor(name){
+  ensureSecondaryPersonalPlans();
+  const key=String(name||'');
+  const plan=state.secondaryPersonalPlans?.[key];
+  return plan && typeof plan==='object' ? plan : null;
+}
+function openSecondaryPlanEditor(name){
+  const key=String(name||'');
+  if(!key)return;
+  ensureSecondaryPersonalPlans();
+  state.secondaryPlanEdit=key;
+  save();
+  render();
+}
+function closeSecondaryPlanEditor(){
+  state.secondaryPlanEdit='';
+  save();
+  render();
+}
+function clearSecondaryPlanEditor(){
+  const key=String(state.secondaryPlanEdit||'');
+  if(key)delete ensureSecondaryPersonalPlans()[key];
+  state.secondaryPlanEdit='';
+  save();
+  render();
+}
+function saveSecondaryPlanEditor(){
+  const key=String(state.secondaryPlanEdit||'');
+  if(!key)return;
+  const val=id=>String(document.getElementById(id)?.value||'').trim();
+  const plan={
+    when:val('secondary-plan-when'),
+    vp:val('secondary-plan-vp'),
+    task:val('secondary-plan-task'),
+    oppVP:val('secondary-plan-opp-vp'),
+    oppWhen:val('secondary-plan-opp-when'),
+    action:val('secondary-plan-action'),
+    unit:val('secondary-plan-unit')
+  };
+  const hasContent=Object.values(plan).some(v=>String(v||'').trim()!=='');
+  if(hasContent)ensureSecondaryPersonalPlans()[key]=plan;
+  else delete ensureSecondaryPersonalPlans()[key];
+  state.secondaryPlanEdit='';
+  save();
+  render();
+}
+function secondaryPlanEditorHtml(){
+  ensureSecondaryPersonalPlans();
+  const entries=Object.entries(state.secondaryPersonalPlans||{}).filter(([name,p])=>p&&typeof p==='object');
+  const cards=entries.map(([name,p])=>{
+    const summary=[p.when,p.vp,p.task].filter(Boolean).join(' • ');
+    return '<div class="secondary-plan-editor-card">'+
+      '<div class="split"><div><strong>'+esc(name)+'</strong><div class="secondary-plan-editor-note">'+esc(summary||'No plan details saved.')+'</div></div>'+
+      '<button type="button" class="btn" onclick="openSecondaryPlanEditor(\''+esc(name).replace(/'/g,"\\'")+'\')">Edit</button></div>'+
+      '</div>';
+  }).join('');
+  return '<div class="card secondary-plan-editor" style="margin-top:12px">'+
+    '<div class="split"><div><h3 style="margin:0">Secondary Mission Plans</h3><div class="muted" style="margin-top:4px">Optional personal planning notes saved with your army list.</div></div></div>'+
+    (cards||'<div class="empty" style="margin-top:10px">No personal secondary plans saved yet. Open a tracked secondary mission during a battle and choose Edit Plan.</div>')+
+    '</div>';
+}
+function secondaryPlanEditorModal(){
+  const key=String(state.secondaryPlanEdit||'');
+  if(!key)return '';
+  const p=secondaryPlanFor(key)||{};
+  const field=(id,label,value,placeholder)=>{
+    return '<div class="field"><label>'+esc(label)+'</label><input id="'+id+'" type="text" value="'+esc(value||'')+'" placeholder="'+esc(placeholder||'')+'"></div>';
+  };
+  return '<div class="modal secondary-plan-modal" role="dialog" aria-modal="true">'+
+    '<div class="card">'+
+      '<div class="split"><div><h3 style="margin:0">Edit Secondary Plan</h3><div class="muted" style="margin-top:4px">'+esc(key)+'</div></div><button type="button" class="btn" onclick="closeSecondaryPlanEditor()">Close</button></div>'+
+      '<div class="secondary-plan-editor-note" style="margin-top:10px">These are your personal planning notes. They do not change the mission rules or scoring logic.</div>'+
+      '<div class="secondary-plan-editor-fields">'+
+        field('secondary-plan-when','When',''+(p.when||''),'e.g. Turn 2 / after enemy moves')+
+        field('secondary-plan-vp','Your VP',''+(p.vp||''),'e.g. 3 VP')+
+        field('secondary-plan-task','Do',''+(p.task||''),'What you need to accomplish')+
+        field('secondary-plan-opp-vp','Opponent VP',''+(p.oppVP||''),'Optional')+
+        field('secondary-plan-opp-when','Opponent timing',''+(p.oppWhen||''),'Optional')+
+        field('secondary-plan-action','Plan',''+(p.action||''),'Unit movement, action, target, etc.')+
+      '</div>'+
+      '<div class="field" style="margin-top:8px"><label>Unit / Note</label><textarea id="secondary-plan-unit" rows="3" placeholder="Optional unit, deployment, or matchup note">'+esc(p.unit||'')+'</textarea></div>'+
+      '<div class="secondary-plan-editor-actions">'+
+        '<button type="button" class="btn primary" onclick="saveSecondaryPlanEditor()">Save Plan</button>'+
+        '<button type="button" class="btn" onclick="closeSecondaryPlanEditor()">Cancel</button>'+
+        '<button type="button" class="btn danger" onclick="clearSecondaryPlanEditor()">Clear Plan</button>'+
+      '</div>'+
+    '</div>'+
+  '</div>';
+}
+
 function secondaryPersonalPlanHtml(name){
  const d=secondaryPlanFor(name);if(!d)return '';
  const when=d.when||'',task=d.task||'',vp=d.vp||'',opp=d.oppVP?(' • Opp '+d.oppVP+(d.oppWhen?' ('+d.oppWhen+')':'')):'',action=d.action||'',unit=d.unit||'',q=esc(name).replace(/'/g,"\'");
