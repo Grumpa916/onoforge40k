@@ -5825,7 +5825,7 @@ function tacticalPreRollAdvanceMixedVariableSave(s,roll){
   const picked=tacticalPreRollPickMixedVariableTarget(s);
   if(!picked)throw new Error('No legal target remains for the next saving throw.');
   const {g,m}=picked,p=m.profile||{},weapon=s.mixedVariableWeapon||{AP:0,D:'1'},ap=Number(weapon.AP)||0;
-  const sv=Math.max(2,Math.min(7,Number(p.Sv)||7)),inv=Number(p.InSv)||99,armourNeed=Math.max(2,Math.min(7,sv-ap)),saveNeed=Math.min(armourNeed,inv);
+  const sv=Math.max(2,Math.min(7,Number(p.Sv)||7)),saveModifier=Number(m.minusSave||0),inv=(m.invuln4?4:m.invuln5?5:m.invuln6?6:(Number(p.InSv)||99)),armourNeed=Math.max(2,Math.min(7,sv-ap+saveModifier)),saveNeed=Math.min(armourNeed,inv);
   const n=Math.floor(Number(roll));
   if(!Number.isInteger(n)||n<1||n>6)throw new Error('Enter one D6 save result.');
   if(n===1&&m.rerollSave1){
@@ -5867,7 +5867,7 @@ function tacticalPreRollResolveMixedSaveReroll(s,roll){
   const m=(mr.modelStates||[]).find(x=>String(x.id)===String(vs.currentModelId)),n=Math.floor(Number(roll));
   if(!m||!Number.isInteger(n)||n<1||n>6)throw new Error('Enter the actual physical D6 re-roll result.');
   const groups=tacticalPreRollSaveGroups(entry('opp',s.targetEntryUid),mr.modelStates),g=groups.find(x=>x.id===vs.currentGroupId),p=m.profile||{},weapon=s.mixedVariableWeapon||{AP:0,D:'1'},ap=Number(weapon.AP)||0;
-  const sv=Math.max(2,Math.min(7,Number(p.Sv)||7)),inv=Number(p.InSv)||99,saveNeed=Math.min(Math.max(2,Math.min(7,sv-ap)),inv),ok=n!==1&&n>=saveNeed,last=mr.resolution[mr.resolution.length-1];
+  const sv=Math.max(2,Math.min(7,Number(p.Sv)||7)),saveModifier=Number(m.minusSave||0),inv=(m.invuln4?4:m.invuln5?5:m.invuln6?6:(Number(p.InSv)||99)),saveNeed=Math.min(Math.max(2,Math.min(7,sv-ap+saveModifier)),inv),ok=n!==1&&n>=saveNeed,last=mr.resolution[mr.resolution.length-1];
   if(!g)throw new Error('The save allocation group is no longer available.');
   if(last){last.rerolled=true;last.reroll=n;last.roll=n;last.saveSucceeds=ok;last.rerollPending=false;}
   vs.currentSaveSucceeds=ok;vs.phase='save';
