@@ -5659,8 +5659,51 @@ function tacticalPreRollCloseResolution(){
 function tacticalPreRollDamageMax(v){const raw=String(v??'1').trim().toUpperCase().replace(/\s+/g,'');let max=0,found=false,m;const re=/([+-]?)(\d*)D([36])/g;while((m=re.exec(raw))){found=true;const n=Number(m[2]||1),faces=Number(m[3]),sign=m[1]==='-'?-1:1;max+=sign*n*faces;}const rest=raw.replace(/([+-]?(?:\d*)D[36])/g,'');if(rest&&/^[-+]?\d+$/.test(rest))max+=Number(rest);return found?Math.max(1,max):Math.max(1,Number(raw)||1)}
 function tacticalPreRollPrecisionSequential(current){const s=current.state||current.session,plan=s.plan;if(!plan.precision||!plan.variableDamage)return false;const groups=tacticalPreRollSaveGroups(entry('opp',current.targetEntryUid));const targetGroup=groups.find(g=>(g.modelIds||[]).some(id=>String(id)===String(plan.precisionTargetModelId)));if(!targetGroup)throw new Error('Precision target allocation group is no longer available.');const model=targetGroup.models.find(m=>String(m.id)===String(plan.precisionTargetModelId)&&m.alive!==false);if(!model){s.precisionAllocationReleased=true;return false;}return true}
 function tacticalPreRollPrecisionStep(s,saveRoll){const plan=s.plan||{};const gs=tacticalPreRollSaveGroups(entry('opp',s.targetEntryUid)),g=gs.find(x=>(x.modelIds||[]).some(id=>String(id)===String(plan.precisionTargetModelId)));if(!g)throw new Error('Precision target allocation group is no longer available.');const m=g.models.find(x=>String(x.id)===String(plan.precisionTargetModelId)&&x.alive!==false);if(!m)return false;const w=s.precisionWeapon||{AP:0,D:'1'},p=m.profile||{},need=Math.min(Math.max(2,Math.min(7,Number(p.Sv)||7)+(Number(w.AP)||0)),Number(p.InSv)||99),ok=saveRoll!==1&&saveRoll>=need;s.precisionCurrent={modelId:m.id,groupId:g.id,saveNeed:need,saveSucceeds:ok};s.counts.precisionResolved=(Number(s.counts.precisionResolved)||0)+1;s.stage=ok?'precisionSave':'precisionDamage';return true}
-function tacticalPreRollApplyMixedVariableDamage(s,rolls){const mr=s.mixedResolution;if(!mr||!mr.variableDamage)throw new Error('Mixed-profile damage resolution is not ready.');const instances=[...(mr.damageInstances||[]),...(mr.devastatingInstances||[])];if(rolls.length!==instances.length)throw new Error('Enter exactly '+instances.length+' damage results.');
-  const orderedInstances=instances.map((x,i)=>({...x,index:i}));const max=tacticalPreRollDamageMax(s.plan.weaponDamage||'1');if(rolls.some(v=>!Number.isInteger(v)||v<1||v>max))throw new Error('Damage results must be within the weapon Damage characteristic range.');const states=new Map((mr.modelStates||[]).map(m=>[m.id,{...m}]));let total=0;orderedInstances.forEach((inst,i)=>{const m=states.get(inst.modelId);if(!m)return;const before=Math.max(0,Number(m.woundsRemaining)||0),applied=Math.min(before,rolls[i]);m.woundsRemaining=Math.max(0,before-applied);m.alive=m.woundsRemaining>0;total+=applied;});mr.modelStates=Array.from(states.values());mr.damageRolls=rolls.slice();mr.damage=total;return mr}
+function tacticalPreRollApplyMixedVariableDamage(s,rolls){
+  const mr=s.mixedResolution;if(!mr||!mr.variableDamage)throw new Error('Mixed-profile damage resolution is not ready.');
+  const instances=[...(mr.devastatingInstances||[]),...(mr.damageInstances||[])];
+  if(rolls.length!==instances.length)throw new Error('Enter exactly '+instances.length+' damage results.');
+  const max=tacticalPreRollDamageMax(s.plan.weaponDamage||'1');
+  if(rolls.some(v=>!Number.isInteger(v)||v<1||v>max))throw new Error('Damage results must be within the weapon Damage characteristic range.');
+  const targetEntry=entry('opp',tacticalPreRollResolutionCurrent()?.targetEntryUid);
+  const groups=tacticalPreRollSaveGroups(targetEntry);
+  const orderIds=(s.saveOrder||groups.map(g=>g.id)).slice();
+  const states=new Map((mr.modelStates||[]).map(m=>[m.id,{...m,woundsRemaining:Math.max(0,Number(m.woundsRemaining)||0),alive:m.alive!==false}]));
+  const groupModels=g=>(groups.find(x=>x.id===g.id)?.modelIds||[]).map(String).map(id=>states.get(id)).filter(Boolean);
+  const pickModel=g=>groupModels(g).find(m=>m.alive!==false&&Number(m.woundsRemaining||0)<Number(m.maxWounds||m.profile?.W||1))||groupModels(g).find(m=>m.alive!==false)||null;
+  const precisionTargetId=String(s.plan.precisionTargetModelId||'');
+  const precisionGroup=s.plan.precision&&precisionTargetId?groups.find(g=>(g.modelIds||[]).some(id=>String(id)===precisionTargetId)):null;
+  let precisionActive=!!precisionGroup;
+  let currentGroupIndex=0,total=0;
+  const pickPrecisionModel=()=>precisionGroup?groupModels(precisionGroup).find(m=>String(m.id)===precisionTargetId&&m.alive!==false)||null:null;
+  const advanceStandard=()=>{while(currentGroupIndex<orderIds.length){const g=groups.find(x=>x.id===orderIds[currentGroupIndex]);if(g&&pickModel(g))break;currentGroupIndex++;}};
+  const pickStandard=()=>{advanceStandard();if(currentGroupIndex>=orderIds.length)return null;const g=groups.find(x=>x.id===orderIds[currentGroupIndex]);return g?{g,m:pickModel(g)}:null;};
+  instances.forEach((inst,i)=>{
+    let g=null,m=null;
+    if(precisionActive){m=pickPrecisionModel();if(m)g=precisionGroup;else precisionActive=false;}
+    if(!m){
+      const picked=pickStandard();if(!picked)return;
+      g=picked.g;m=picked.m;
+    }
+    if(!m)return;
+    const amount=Number(rolls[i])||0;
+    const before=Math.max(0,Number(m.woundsRemaining)||0);
+    const applied=Math.min(before,amount);
+    m.woundsRemaining=Math.max(0,before-applied);m.alive=m.woundsRemaining>0;total+=applied;
+    if(precisionActive&&!pickPrecisionModel())precisionActive=false;
+    if(inst.kind==='devastating'){
+      // Each Devastating Wounds result is resolved against one model; excess is lost.
+    }
+    if(!precisionActive&&!m.alive){
+      while(currentGroupIndex<orderIds.length){
+        const gg=groups.find(x=>x.id===orderIds[currentGroupIndex]);
+        if(gg&&pickModel(gg))break;currentGroupIndex++;
+      }
+    }
+  });
+  mr.modelStates=Array.from(states.values());mr.damageRolls=rolls.slice();mr.damage=total;
+  return mr;
+}
 function tacticalPreRollResolutionSet(field,value){
   const current=tacticalPreRollResolutionCurrent();
   if(!current)return;
