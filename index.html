@@ -5543,6 +5543,7 @@ function tacticalPreRollApplyMixedSaveRolls(current,rolls){
   const mortalDamage=Math.max(0,Number(plan.devastating)?criticalWounds*normalDamage:0);
   const devastatingInstances=[];const applyMortalPerCriticalWound=criticalCount=>{
     for(let cw=0;cw<Math.max(0,Math.floor(criticalCount));cw++){
+      if(precisionActive){const pm=pickPrecisionModel();if(pm){const pg=precisionGroup,before=Math.max(0,Number(pm.woundsRemaining)||0),applied=variableDamage?0:Math.min(before,normalDamage);if(variableDamage)devastatingInstances.push({kind:'devastating',modelId:pm.id,groupId:pg.id,precision:true});else{pm.woundsRemaining=Math.max(0,before-applied);if(pm.woundsRemaining<=0)pm.alive=false;damage+=applied;}if(!pickPrecisionModel())precisionActive=false;continue;}precisionActive=false;}
       while(currentGroupIndex<orderIds.length){
         const g=groups.find(x=>x.id===orderIds[currentGroupIndex]),m=pickModel(g);
         if(m)break;
