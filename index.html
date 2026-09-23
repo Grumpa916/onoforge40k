@@ -5892,7 +5892,25 @@ function tacticalPreRollResolutionSet(field,value){
     const roll=Math.floor(Number(value)),max=tacticalPreRollDamageMax(s.precisionWeapon?.D||'1');if(!Number.isInteger(roll)||roll<1||roll>max){alert('Enter the actual physical damage result.');return;}
     const st=s.precisionTargetState;if(!st||!st.alive){s.stage='saveOrder';return;}const before=Math.max(0,Number(st.woundsRemaining)||0);st.woundsRemaining=Math.max(0,before-roll);st.alive=st.woundsRemaining>0;s.counts.failedSaves=(Number(s.counts.failedSaves)||0)+1;s.counts.damage=(Number(s.counts.damage)||0)+Math.min(before,roll);s.counts.precisionResolved=(Number(s.counts.precisionResolved)||0)+1;const total=Math.max(0,(Number(s.counts.wounds)||0)-(plan.devastating?Math.min(Number(s.specials.criticalWounds)||0,Number(s.counts.wounds)||0):0));s.stage=(Number(s.counts.precisionResolved)||0)<total?'precisionSave':(plan.devastating&&Number(s.specials.criticalWounds||0)>0?'precisionDevastating':'review');
   }else if(field==='precisionDevastating'){
-    const done=Number(s.counts.precisionDevastating||0),total=Math.max(0,Number(s.specials.criticalWounds)||0);if(done>=total){s.stage='review';return;}const st=s.precisionTargetState;if(!st||!st.alive){s.stage='review';return;}let roll;if(plan.variableDamage){roll=Math.floor(Number(value));const max=tacticalPreRollDamageMax(s.precisionWeapon?.D||'1');if(!Number.isInteger(roll)||roll<1||roll>max){alert('Enter the actual physical damage result.');return;}}else roll=Math.max(0,Number(plan.damageValue)||0);const before=Math.max(0,Number(st.woundsRemaining)||0);st.woundsRemaining=Math.max(0,before-roll);st.alive=st.woundsRemaining>0;s.counts.damage=(Number(s.counts.damage)||0)+Math.min(before,roll);s.counts.precisionDevastating=done+1;s.stage=s.counts.precisionDevastating<total?(st.alive?'precisionDevastating':'review'):'review';
+    const done=Number(s.counts.precisionDevastating||0),total=Math.max(0,Number(s.specials.criticalWounds)||0);if(done>=total){s.stage='review';return;}
+    let roll;if(plan.variableDamage){roll=Math.floor(Number(value));const max=tacticalPreRollDamageMax(s.precisionWeapon?.D||'1');if(!Number.isInteger(roll)||roll<1||roll>max){alert('Enter the actual physical damage result.');return;}}else roll=Math.max(0,Number(plan.damageValue)||0);
+    const te=entry('opp',current.targetEntryUid),groups=tacticalPreRollSaveGroups(te,s.precisionTargetState?[s.precisionTargetState]:null),orderIds=s.saveOrder||groups.map(g=>g.id);
+    const states=new Map();
+    const snap=combatSnapshot('opp',te);
+    (snap?.models||[]).filter(m=>m.alive!==false).forEach(m=>states.set(String(m.id),{...m,woundsRemaining:Math.max(0,Number(m.woundsRemaining)||0),alive:m.alive!==false}));
+    if(s.precisionTargetState){const ps=s.precisionTargetState,pm=states.get(String(ps.modelId));if(pm){pm.woundsRemaining=Math.max(0,Number(ps.woundsRemaining)||0);pm.alive=ps.alive!==false;}}
+    const pickGroupModel=g=>{const models=(g?.modelIds||[]).map(id=>states.get(String(id))).filter(Boolean).filter(m=>m.alive!==false);return models.find(m=>Number(m.woundsRemaining||0)<Number(m.maxWounds||m.profile?.W||1))||models[0]||null;};
+    let target=null;
+    const precisionId=String(s.precisionTargetState?.modelId||'');
+    const precisionGroup=groups.find(g=>(g.modelIds||[]).some(id=>String(id)===precisionId));
+    if(precisionGroup)target=pickGroupModel(precisionGroup);
+    if(!target){
+      for(const gid of orderIds){const g=groups.find(x=>x.id===gid);if(!g)continue;target=pickGroupModel(g);if(target)break;}
+    }
+    if(!target){s.counts.precisionDevastating=done+1;s.stage=s.counts.precisionDevastating<total?'precisionDevastating':'review';return;}
+    const before=Math.max(0,Number(target.woundsRemaining)||0),applied=Math.min(before,roll);target.woundsRemaining=Math.max(0,before-roll);target.alive=target.woundsRemaining>0;
+    if(String(target.id)===precisionId&&s.precisionTargetState){s.precisionTargetState.woundsRemaining=target.woundsRemaining;s.precisionTargetState.alive=target.alive;}
+    s.counts.damage=(Number(s.counts.damage)||0)+applied;s.counts.precisionDevastating=done+1;s.stage=s.counts.precisionDevastating<total?'precisionDevastating':'review';
   }else if(field==='saveOrder'){
     const groups=tacticalPreRollSaveGroups(entry('opp',current.targetEntryUid),s.precisionTargetState?[s.precisionTargetState]:null);
     const ids=groups.map(g=>g.id);
