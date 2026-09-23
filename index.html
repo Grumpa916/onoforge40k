@@ -5481,7 +5481,6 @@ function tacticalPreRollResolutionCurrent(){
   return {...raw,key,signature,poolId:raw.poolId||poolId||null,result:r,attackerEntryUid:ae.uid,targetEntryUid:te.uid,weaponName:stored};
 }
 function tacticalPreRollSaveGroups(te){
-  const snap=combatSnapshot('opp',te);
   const models=(snap?.models||[]).filter(m=>m.alive!==false);
   const groups=[];
   const map=new Map();
@@ -5745,17 +5744,16 @@ function tacticalPreRollApplyResolution(){
       ce.game.models=alive;ce.game.wounds=Math.max(0,Math.min(maxTotal,total));ce.game.status=alive<=0?'Destroyed':ce.game.wounds<maxTotal?'Damaged':'Alive';
     });
   }else{
-    let beforeGame=JSON.parse(JSON.stringify(te.game||{})),afterGame=null;
     if(modelRosterRule(targetUnit)){
       const roster=ensureModelRoster(te,targetUnit),alive=roster.filter(m=>m.alive!==false);let remainingDamage=damage;
       for(const model of alive){if(remainingDamage<=0)break;const before=Math.max(0,Number(model.woundsRemaining)||0),applied=Math.min(before,remainingDamage);model.woundsRemaining=Math.max(0,before-applied);if(model.woundsRemaining<=0)model.alive=false;remainingDamage-=applied;}
-      syncModelRosterBattleState(te,targetUnit);afterGame=JSON.parse(JSON.stringify(te.game));
+      syncModelRosterBattleState(te,targetUnit);
     }else{
       const maxWounds=Math.max(0,Number(te.models)||1)*Math.max(1,Number(targetUnit.wounds)||1);
       te.game=te.game||{entryId:te.uid,models:te.models,wounds:maxWounds,status:'Alive'};
       te.game.wounds=Math.max(0,Math.min(maxWounds,Number(te.game.wounds||maxWounds)-damage));
       te.game.models=Math.max(0,Math.ceil(te.game.wounds/Math.max(1,Number(targetUnit.wounds)||1)));
-      te.game.status=te.game.wounds<=0?'Destroyed':te.game.wounds<maxWounds?'Damaged':'Alive';afterGame=JSON.parse(JSON.stringify(te.game));
+      te.game.status=te.game.wounds<=0?'Destroyed':te.game.wounds<maxWounds?'Damaged':'Alive';
     }
   }
   const hitCount=Number(s.counts.hits)||0,critHits=Number(s.specials.criticalHits)||0,woundCount=Number(s.counts.wounds)||0,failedSaves=Number(s.counts.failedSaves)||0,critWounds=Number(s.specials.criticalWounds)||0;
