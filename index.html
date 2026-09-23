@@ -1867,6 +1867,30 @@ function secondaryDetailHtml(side){
    '<div class="secondary-detail-hint">'+(active?'Record the specific scoring condition you achieved. The app enforces the round and game caps.':'Click the mission title above to track it before scoring it.')+'</div></div>';
 }
 
+function toggleSecondaryTracking(side,name){
+ const mode=side==='my'?state.secondaryMy:state.secondaryOpp;
+ const active=secState(side);
+ if(!name)return;
+ if(secScored(side).includes(name)){
+   selectSecondaryDetail(side,name);
+   return;
+ }
+ if(active.includes(name)){
+   undoSecondarySelection(side,name);
+   return;
+ }
+ const card=secondaryByName(name);
+ if(mode==='fixed'){
+   toggleFixedSecondary(side,name);
+   selectSecondaryDetail(side,name);
+   return;
+ }
+ if(mode==='tactical'){
+   chooseSecondary(side,name);
+   selectSecondaryDetail(side,name);
+   return;
+ }
+}
 function secondaryCatalogHtml(side){
  const isMy=side==='my',active=secState(side),scored=secScored(side);
  const isActivePlayer=secondaryActiveSide()===side,name=esc(isMy?state.myName:state.oppName);
