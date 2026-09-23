@@ -1347,15 +1347,10 @@ function stratagemCP(s){
 }
 function useStratagemByName(displaySide,name){
   ensureStratagemState();
-  // The button's panel identifies which side owns the stratagem. Keep that
-  // identity explicit so the two armies can independently use the same
-  // named stratagem in the same phase.
+  // The button's panel identifies which army owns the stratagem. Do not
+  // substitute the active turn here: stratagem state and CP are tracked
+  // independently for My Army and Opponent Army.
   const side=displaySide==='opp'?'opp':'my';
-  const activeSide=state.currentTurn==='opp'?'opp':'my';
-  if(side!==activeSide){
-    alert('Only the current player can use a stratagem.');
-    return;
-  }
   const key=side==='my'?'stratagemsMy':'stratagemsOpp';
   const index=state[key].findIndex(s=>s&&String(s.name)===String(name));
   if(index<0){alert('That stratagem is not available to this army.');return;}
