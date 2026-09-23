@@ -2270,6 +2270,21 @@ function save(){
     if(e&&e.name==='QuotaExceededError'){
       try{
         const compact=JSON.parse(JSON.stringify(state));
+        const compactTimer=ensureGameTimer();
+        if(compactTimer&&typeof compactTimer==='object'){
+          const elapsed=gameTimerElapsed();
+          const currentSide=state.currentTurn==='opp'?'opp':'my';
+          const turnKey=currentSide==='opp'?'turnOppMs':'turnMyMs';
+          const savedTurn=Math.max(0,Number(compactTimer[turnKey])||0);
+          const turnStarted=Math.max(0,Number(compactTimer.turnStartedGameMs)||0);
+          const liveTurn=!compactTimer.turnPaused&&compactTimer.running&&!compactTimer.finishedAt
+            ?savedTurn+Math.max(0,elapsed-turnStarted)
+            :savedTurn;
+          compact.gameTimer={...compact.gameTimer,elapsedMs:elapsed};
+          compact.gameTimer[turnKey]=liveTurn;
+          compact.gameTimer.startedAt=compactTimer.running&&!compactTimer.finishedAt?Date.now():Number(compactTimer.startedAt)||0;
+          compact.gameTimer.turnStartedGameMs=compactTimer.running&&!compactTimer.finishedAt?elapsed:Math.max(0,Number(compactTimer.turnStartedGameMs)||0);
+        }
         compact.events=(Array.isArray(compact.events)?compact.events:[]).slice(0,25).map(ev=>{const x={...ev};delete x.before;return x});
         localStorage.setItem(STORAGE_KEY,JSON.stringify({state:compact,DEMO}));
         return true;
