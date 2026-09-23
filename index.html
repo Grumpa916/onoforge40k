@@ -2330,7 +2330,13 @@ function load(){
   state.localSavedAt=String(state.localSavedAt||'');
   state.activeRosterId=typeof state.activeRosterId==='string'?state.activeRosterId:'';
   state.phase=state.phase||'Command';
-  state.currentTurn=(state.currentTurn==='opp'||state.currentTurn==='my')?state.currentTurn:(state.firstTurn==='opp'?'opp':'my');
+  // Persist the locked opening turn explicitly so navigation remains correct
+  // even after loading a saved battle created before battleFirstTurn existed.
+  state.battleFirstTurn=(state.battleFirstTurn==='opp'||state.battleFirstTurn==='my')
+    ?state.battleFirstTurn
+    :(state.firstTurn==='opp'?'opp':'my');
+  state.currentTurn=(state.currentTurn==='opp'||state.currentTurn==='my')?state.currentTurn:(state.battleFirstTurn==='opp'?'opp':'my');
+  ensurePhaseCPState();
   state.secondaryDetailSide=(state.secondaryDetailSide==='opp'||state.secondaryDetailSide==='my')?state.secondaryDetailSide:'';
   state.secondaryDetailName=typeof state.secondaryDetailName==='string'?state.secondaryDetailName:'';
   state.round=Math.min(MAX_ROUND,Math.max(1,Number(state.round)||1));
