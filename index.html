@@ -5356,6 +5356,33 @@ function tacticalAdvisorConfidenceLabel(value){
   const v=Math.max(0,Math.min(1,Number(value)||0));
   return v>=0.80?'High':v>=0.55?'Medium':'Limited';
 }
+function tacticalPreRollPoolManifest(ae){
+  const phase=String(state.phase||'Shooting');
+  const targets=(state.opp||[]).filter(e=>!e.attachedTo&&!tacticalUnitState('opp',e)?.destroyed);
+  const groups=attachedCombatWeaponGroups('my',ae,null).filter(g=>tacticalWeaponPhaseEligible(g.weapon,phase,g.entry,null));
+  const map=new Map();
+  groups.forEach(g=>{
+    const name=String(g.weapon?.name||'');if(!name)return;
+    const existing=map.get(name);
+    if(existing){existing.count+=Math.max(0,Number(g.count)||0);existing.modelIds.push(...(g.modelIds||[]));}
+    else map.set(name,{weapon:g.weapon,count:Math.max(0,Number(g.count)||0),modelIds:[...(g.modelIds||[])]});
+  });
+  const t=ensureTacticalState();
+  const saved=t.preRollPools&&typeof t.preRollPools==='object'?t.preRollPools:{};
+  return [...map.values()].map(p=>{
+    const key=String(ae.uid)+'|'+p.weapon.name,raw=saved[key]||{};
+    return {...p,key,targetUid:raw.targetUid&&targets.some(x=>x.uid===raw.targetUid)?raw.targetUid:null};
+  });
+}
+function setTacticalPreRollPoolTarget(weaponName,targetUid){
+  const ae=tacticalAdvisorAttackerEntry();if(!ae||!weaponName||!targetUid)return;
+  const t=ensureTacticalState();if(!t.preRollPools||typeof t.preRollPools!=='object')t.preRollPools={};
+  t.preRollPools[String(ae.uid)+'|'+String(weaponName)]={targetUid:String(targetUid)};
+  t.selectedTargetUid=String(targetUid);
+  const key=String(ae.uid)+'>'+String(targetUid);
+  t.preRoll=t.preRoll||{};t.preRoll[key]={weaponName:String(weaponName)};
+  save();render();
+}
 function tacticalPreRollWeaponState(attackerEntryUid,targetEntryUid){const t=ensureTacticalState(),key=String(attackerEntryUid||'')+'>'+String(targetEntryUid||'');const raw=t.preRoll?.[key];return raw&&typeof raw==='object'?{key,weaponName:raw.weaponName?String(raw.weaponName):null}:{key,weaponName:null};}
 function setTacticalPreRollWeapon(weaponName){const ae=tacticalAdvisorAttackerEntry(),teUid=state.tactical?.selectedTargetUid;if(!ae||!teUid)return;const t=ensureTacticalState(),key=String(ae.uid)+'>'+String(teUid);t.preRoll[key]={weaponName:weaponName?String(weaponName):null};save();render();}
 function tacticalPreRollCheck(attackerEntryUid,targetEntryUid,weaponName=null){
@@ -5759,13 +5786,14 @@ function tacticalPreRollHtml(){
   const teUid=state.tactical?.selectedTargetUid;
   const te=teUid?entry('opp',teUid):null;
   if(!ae||!te)return '';
-  const stored=tacticalPreRollWeaponState(ae.uid,te.uid),phase=String(state.phase||'Command'),eligibleGroups=attachedCombatWeaponGroups('my',ae,te).filter(g=>tacticalWeaponPhaseEligible(g.weapon,phase,g.entry,te)),eligibleWeapons=Array.from(new Map(eligibleGroups.map(g=>[String(g.weapon?.name||''),g.weapon])).values()).filter(Boolean),weaponOptions=eligibleWeapons.map(w=>'<option value="'+esc(w.name)+'" '+(String(stored.weaponName||'')===String(w.name)?'selected':'')+'>'+esc(w.name)+'</option>').join(''),selector=(phase==='Shooting'||phase==='Fight')?'<div class="field" style="margin-top:10px"><label>Weapon profile</label><select onchange="setTacticalPreRollWeapon(this.value)"><option value="">Choose a weapon…</option>'+weaponOptions+'</select></div>':'';
+  const stored=tacticalPreRollWeaponState(ae.uid,te.uid),phase=String(state.phase||'Command'),splitPools=tacticalPreRollPoolManifest(ae),eligibleGroups=attachedCombatWeaponGroups('my',ae,te).filter(g=>tacticalWeaponPhaseEligible(g.weapon,phase,g.entry,te)),eligibleWeapons=Array.from(new Map(eligibleGroups.map(g=>[String(g.weapon?.name||''),g.weapon])).values()).filter(Boolean),weaponOptions=eligibleWeapons.map(w=>'<option value="'+esc(w.name)+'" '+(String(stored.weaponName||'')===String(w.name)?'selected':'')+'>'+esc(w.name)+'</option>').join(''),selector=(phase==='Shooting'||phase==='Fight')?'<div class="field" style="margin-top:10px"><label>Weapon profile</label><select onchange="setTacticalPreRollWeapon(this.value)"><option value="">Choose a weapon…</option>'+weaponOptions+'</select></div>':'';
   const r=tacticalPreRollCheck(ae.uid,te.uid,stored.weaponName||null);
   const cls=(r.status==='ready'||r.status==='ready-with-warnings')?'ok':'warn';
   const warningHtml=(r.warnings||[]).map(x=>'<li>'+esc(x)+'</li>').join('');
   const steps=(r.steps||[]).map(x=>'<div class="status" style="margin:0"><div class="muted small">'+esc(x.label)+'</div><div style="font-size:1.55em;font-weight:900">'+esc(x.value)+'</div><div class="tiny">'+esc(x.detail||'')+'</div></div>').join('');
   const canEnter=['ready','ready-with-warnings'].includes(r.status)&&stored.weaponName;
-  return '<div class="card tactical-preroll-card" style="border-color:#4f6f8f;margin-top:12px"><div class="split"><div><h3 style="margin:0">Pre-Roll Check</h3><div class="muted">Verify the final target number before rolling physical dice.</div></div><span class="pill">PHYSICAL DICE</span></div>'+selector+'<div class="'+cls+'" style="margin-top:10px"><b>'+esc(r.status==='ready'||r.status==='ready-with-warnings'?'ROLL WHEN READY':'CHECK REQUIRED')+'</b>'+(r.weapon?' • '+esc(r.weapon):'')+'</div><div class="grid3" style="margin-top:10px">'+steps+'</div>'+(warningHtml?'<div class="warn" style="margin-top:10px"><b>Rules / context reminders</b><ul style="margin:5px 0 0 18px">'+warningHtml+'</ul></div>':'')+(canEnter?'<button type="button" class="btn primary" style="width:100%;margin-top:12px;font-size:16px;font-weight:800" onclick="tacticalPreRollOpenResolution()">Enter Physical Dice Results</button>':'')+'<div class="tiny" style="margin-top:8px">Final values are calculated from the current battlefield state and the same combat engine used by Tactical Advisor. The app does not roll the physical dice.</div></div>';
+  const splitHtml=splitPools.length>1?'<div class="status" style="margin-top:10px"><b>Split-fire / multiple weapon pools</b><div class="tiny" style="margin-top:4px">Assign a target to each weapon pool. Resolve each pool separately; physical dice results never carry between pools.</div><div style="display:grid;gap:7px;margin-top:8px">'+splitPools.map(p=>{const opts=(state.opp||[]).filter(e=>!e.attachedTo&&!tacticalUnitState('opp',e)?.destroyed).map(e=>'<option value="'+esc(e.uid)+'" '+(e.uid===p.targetUid?'selected':'')+'>'+esc(unitDisplayName('opp',e))+'</option>').join('');return '<div class="status" style="margin:0"><div class="split"><div><b>'+esc(p.weapon.name)+'</b><div class="tiny">'+p.count+' model'+(p.count===1?'':'s')+'</div></div><select style="min-width:180px" onchange="setTacticalPreRollPoolTarget(\''+esc(p.weapon.name).replace(/'/g,"&#39;")+'\',this.value)"><option value="">Choose target…</option>'+opts+'</select></div></div>'}).join('')+'</div></div>':'';
+  return '<div class="card tactical-preroll-card" style="border-color:#4f6f8f;margin-top:12px"><div class="split"><div><h3 style="margin:0">Pre-Roll Check</h3><div class="muted">Verify the final target number before rolling physical dice.</div></div><span class="pill">PHYSICAL DICE</span></div>'+splitHtml+selector+'<div class="'+cls+'" style="margin-top:10px"><b>'+esc(r.status==='ready'||r.status==='ready-with-warnings'?'ROLL WHEN READY':'CHECK REQUIRED')+'</b>'+(r.weapon?' • '+esc(r.weapon):'')+'</div><div class="grid3" style="margin-top:10px">'+steps+'</div>'+(warningHtml?'<div class="warn" style="margin-top:10px"><b>Rules / context reminders</b><ul style="margin:5px 0 0 18px">'+warningHtml+'</ul></div>':'')+(canEnter?'<button type="button" class="btn primary" style="width:100%;margin-top:12px;font-size:16px;font-weight:800" onclick="tacticalPreRollOpenResolution()">Enter Physical Dice Results</button>':'')+'<div class="tiny" style="margin-top:8px">Final values are calculated from the current battlefield state and the same combat engine used by Tactical Advisor. The app does not roll the physical dice.</div></div>';
 }
 
 function tacticalAdvisorHtml(){
