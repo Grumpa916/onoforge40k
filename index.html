@@ -1369,14 +1369,18 @@ function useStratagem(side,index){
  if(!phaseLegal){alert('That stratagem cannot be used during the current phase.');return;}
  const existingIndex=history.findIndex(x=>x&&String(x.name)===String(s.name)&&Number(x.round)===round&&String(x.phase)===phase&&String(x.playerTurn)===turn);
  if(existingIndex>=0){
-   // A second click on the same stratagem immediately after its use reverses
-   // that exact recorded use. Never undo an unrelated action.
+   // A repeat click is an explicit request to reverse this stratagem when
+   // its recorded use is the newest reversible action. Match the complete
+   // use identity so an unrelated later action is never undone.
    const latest=state.events?.[0];
    const latestPayload=latest?.payload||{};
    const canReverseLatest=latest?.kind==='STRATAGEM_USED'
      && String(latestPayload.name||'')===String(s.name||'')
      && String(latestPayload.side||'')===String(side)
-     && latest?.before;
+     && Number(latestPayload.round||0)===round
+     && String(latestPayload.phase||'')===phase
+     && String(latestPayload.playerTurn||'')===turn
+     && !!latest?.before;
    if(canReverseLatest){
      undoLastAction();
      return;
@@ -4118,7 +4122,23 @@ function undoLastAction(){
   const e=state.events[0];
   if(!e){alert('No action to undo.');return}
   if(!e.before){alert('This action has no reversible snapshot.');return}
-  const keepEvents=state.events.slice(1);
+
+  // Stratagem use is a compound action: CP_CHANGED + STRATAGEM_USED share
+  // the same pre-action snapshot. Undo both together so the log and state
+  // return to exactly the point before the stratagem was clicked.
+  let removeCount=1;
+  if(e.kind==='STRATAGEM_USED'){
+    const p=e.payload||{};
+    const next=state.events[1];
+    const np=next?.payload||{};
+    const pairedCP=next?.kind==='CP_CHANGED'
+      && String(np.side||'')===String(p.side||'')
+      && Number(np.delta||0)===-Math.max(0,Number(p.cp)||0)
+      && next?.before;
+    if(pairedCP) removeCount=2;
+  }
+
+  const keepEvents=state.events.slice(removeCount);
   const restored=JSON.parse(JSON.stringify(e.before));
   restored.events=keepEvents;
   restored._undoSnapshot=null;
@@ -4128,6 +4148,7 @@ function undoLastAction(){
   save();
   render();
 }
+
 function battle(){const recent=state.events.slice(0,12);return `${gameTimerHtml()}<div class="battle-layout"><div>
 <div class="card">
   <div class="split"><div><h2 style="margin-bottom:4px">Battle Mode</h2><div class="muted">Live game control center</div></div><div class="battle-army-vs">${esc(state.myName)} vs ${esc(state.oppName)}</div></div>
