@@ -4314,7 +4314,7 @@ function objectiveStateSummary(){
 }
 
 function objectivePrompt(){const n=String(prompt('Objective name')||'').trim();if(!n)return;const rawOwner=String(prompt('Controlled by: my / opp / contested','my')||'').trim().toLowerCase();const owner=['my','opp','contested','none'].includes(rawOwner)?rawOwner:'';if(!owner){alert('Use my, opp, contested, or none.');return}const fullBefore=snapshotForUndo();const previous=state.objectives[n]||'none';state.objectives[n]=owner;event('OBJECTIVE_CHANGED',{name:n,unit:'Objective '+n,action:'Control → '+owner,owner,previous,after:owner},fullBefore);save();render()}
-function changeCP(side,d){d=Number(d)||0;const fullBefore=snapshotForUndo();const before=side==='my'?Number(state.myCP)||0:Number(state.oppCP)||0;const after=Math.max(0,before+d);if(side==='my')state.myCP=after;else state.oppCP=after;event('CP_CHANGED',{side,unit:side==='my'?'My CP':'Opponent CP',action:'CP '+(d>0?'+':'')+d,before,after,delta:d},fullBefore);save();render()}
+function changeCP(side,d){d=Number(d)||0;const fullBefore=snapshotForUndo();const before=side==='my'?Number(state.myCP)||0:Number(state.oppCP)||0;const after=Math.max(0,before+d);const delta=after-before;if(side==='my')state.myCP=after;else state.oppCP=after;event('CP_CHANGED',{side,unit:side==='my'?'My CP':'Opponent CP',action:'CP '+(delta>0?'+':'')+delta,before,after,delta},fullBefore);save();render()}
 function advancePhase(){
   const before=snapshotForUndo();
   const phases=['Command','Movement','Shooting','Charge','Fight'];
