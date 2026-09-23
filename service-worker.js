@@ -1,4 +1,4 @@
-const CACHE_NAME = 'onoforge40k-v341';
+const CACHE_NAME = 'onoforge40k-v342';
 const APP_SHELL = [
   './',
   './index.html',
