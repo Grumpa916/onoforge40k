@@ -4782,6 +4782,7 @@ function nextRound(){
  const nextTurn=state.battleFirstTurn==='opp'?'opp':'my';
  rememberPhaseCP();
  if(state.currentTurn!==nextTurn)switchTurnClock(nextTurn);
+ else if(!ensureGameTimer().turnPaused){finalizeCurrentTurnTime();ensureGameTimer().turnStartedGameMs=gameTimerElapsed();}
  state.round=nextRoundNumber;
  state.currentTurn=nextTurn;
  state.phase='Command';
@@ -4806,6 +4807,7 @@ function previousRound(){
  const nextTurn=state.battleFirstTurn==='opp'?'opp':'my';
  rememberPhaseCP();
  if(state.currentTurn!==nextTurn)switchTurnClock(nextTurn);
+ else if(!ensureGameTimer().turnPaused){finalizeCurrentTurnTime();ensureGameTimer().turnStartedGameMs=gameTimerElapsed();}
  state.round=nextRoundNumber;
  state.currentTurn=nextTurn;
  state.phase='Command';
