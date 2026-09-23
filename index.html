@@ -1345,6 +1345,13 @@ function stratagemCP(s){
  const n=Number(raw);
  return Number.isFinite(n)&&n>=0?n:0;
 }
+function useStratagemByName(side,name){
+  ensureStratagemState();
+  const key=side==='my'?'stratagemsMy':'stratagemsOpp';
+  const index=state[key].findIndex(s=>s&&String(s.name)===String(name));
+  if(index<0)return;
+  useStratagem(side,index);
+}
 function useStratagem(side,index){
  ensureStratagemState();
  const key=side==='my'?'stratagemsMy':'stratagemsOpp';
@@ -1451,7 +1458,7 @@ function stratagemsUI(){
   const renderType=(items,label,kind)=>{
    const groups=stratagemPhaseGroups(items,side);
    if(!items.length) return '<div class="stratagem-type-section"><div class="stratagem-type-heading '+kind+'">'+esc(label)+'</div><div class="muted small" style="padding:8px">No army-specific stratagems loaded for this detachment.</div></div>';
-   return '<div class="stratagem-type-section"><div style="margin-top:5px">'+groups.map(g=>'<div class="stratagem-phase-group"><div class="stratagem-phase-heading">'+esc(g.phase==='Any Phase'?'Any Phase':g.phase+' Phase')+'</div>'+g.items.map(({s,i})=>'<details class="card stratagem-item" style="padding:0;margin-top:2px"><summary style="list-style:none;cursor:pointer;padding:3px 8px;user-select:none;margin:0"><div class="row" style="justify-content:space-between;align-items:center"><b>'+esc(s.name)+'</b><button class="pill stratagem-cp-btn '+(stratagemUsedThisPhase(side,s.name)?'stratagem-cp-used':'')+'" type="button" aria-pressed="'+(stratagemUsedThisPhase(side,s.name)?'true':'false')+'" data-stratagem-use="1" data-stratagem-side="'+side+'" data-stratagem-index="'+i+'" title="'+(stratagemUsedThisPhase(side,s.name)?'Stratagem already used this phase':'Use stratagem — '+stratagemCP(s)+' CP')+'">'+(stratagemUsedThisPhase(side,s.name)?'✓ ':'')+stratagemCP(s)+' CP</button></div></summary><div style="padding:0 8px 8px"><div class="muted small">'+esc(s.source)+(s.detachment?' · '+esc(s.detachment):'')+' · '+esc(s.phase)+'</div><div class="small" style="margin-top:4px">'+esc(s.summary||'')+'</div></div></details>').join('')+'</div>').join('')+'</div></div>';
+   return '<div class="stratagem-type-section"><div style="margin-top:5px">'+groups.map(g=>'<div class="stratagem-phase-group"><div class="stratagem-phase-heading">'+esc(g.phase==='Any Phase'?'Any Phase':g.phase+' Phase')+'</div>'+g.items.map(({s,i})=>'<details class="card stratagem-item" style="padding:0;margin-top:2px"><summary style="list-style:none;cursor:pointer;padding:3px 8px;user-select:none;margin:0"><div class="row" style="justify-content:space-between;align-items:center"><b>'+esc(s.name)+'</b><button class="pill stratagem-cp-btn '+(stratagemUsedThisPhase(side,s.name)?'stratagem-cp-used':'')+'" type="button" aria-pressed="'+(stratagemUsedThisPhase(side,s.name)?'true':'false')+'" data-stratagem-use="1" data-stratagem-side="'+side+'" data-stratagem-name="'+esc(s.name)+'" title="'+(stratagemUsedThisPhase(side,s.name)?'Stratagem already used this phase':'Use stratagem — '+stratagemCP(s)+' CP')+'">'+(stratagemUsedThisPhase(side,s.name)?'✓ ':'')+stratagemCP(s)+' CP</button></div></summary><div style="padding:0 8px 8px"><div class="muted small">'+esc(s.source)+(s.detachment?' · '+esc(s.detachment):'')+' · '+esc(s.phase)+'</div><div class="small" style="margin-top:4px">'+esc(s.summary||'')+'</div></div></details>').join('')+'</div>').join('')+'</div></div>';
   };
   return '<div class="card" style="padding:12px"><div class="muted small">'+esc(title)+'</div><div style="margin-top:4px"><b>Detachment: '+esc(cat.det||'None selected')+'</b></div>'+renderType(cat.army,'Army Stratagems','army')+renderType(cat.core,'Core Stratagems','core')+'</div>';
  };
@@ -8221,8 +8228,8 @@ document.addEventListener('click',function(ev){
     ev.preventDefault();
     ev.stopPropagation();
     const side=sb.dataset.stratagemSide;
-    const index=Number(sb.dataset.stratagemIndex);
-    if(side && Number.isInteger(index)) useStratagem(side,index);
+    const name=sb.dataset.stratagemName||'';
+    if(side && name) useStratagemByName(side,name);
     return;
   }
 });
@@ -8305,7 +8312,7 @@ refreshCurrentUnitDatabase(false);
 render();
 load40kAppSourceManifest();
 loadEventCompanionData();
-if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./service-worker.js?v=330',{updateViaCache:'none'}).catch(()=>{});});}
+if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./service-worker.js?v=331',{updateViaCache:'none'}).catch(()=>{});});}
 setTimeout(()=>initCloudOnLoad(),0);
 </script>
 </body></html>
