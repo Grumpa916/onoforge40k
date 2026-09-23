@@ -4705,9 +4705,12 @@ function advancePhase(){
   }
 
   const next=phases[i+1];
+  // CP is a persistent battle resource. Moving forward must carry the
+  // current CP totals into the new phase rather than restoring a stale
+  // phase snapshot. Keep a snapshot for backward navigation.
   rememberPhaseCP();
   state.phase=next;
-  restorePhaseCP(state.round,state.currentTurn,next);
+  rememberPhaseCP();
   resetStratagemPhaseUses();
   state.my=sortBattleState(state.my);
   state.opp=sortBattleState(state.opp);
