@@ -1425,6 +1425,7 @@ function useStratagem(side,index){
  if(stratagemUsedThisPhase(side,s.name)){alert('That stratagem has already been used this phase.');return;}
  const cpCost=stratagemCP(s); if(beforeCP<cpCost){alert('Not enough CP.');return;} const afterCP=beforeCP-cpCost;
  if(side==='my')state.myCP=afterCP;else state.oppCP=afterCP;
+ rememberPhaseCP();
  history.push({name:s.name,round,phase,playerTurn:turn,cp:cpCost});
  const phaseUseKey=side==='opp'?'stratagemPhaseUsesOpp':'stratagemPhaseUsesMy';
  if(!Array.isArray(state[phaseUseKey]))state[phaseUseKey]=[];
