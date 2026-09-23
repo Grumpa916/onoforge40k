@@ -4679,15 +4679,78 @@ function previousPhase(){
   const current=String(state.phase||'Command');
   let i=phases.indexOf(current);
   if(i<0)i=0;
-  const prev=phases[(i-1+phases.length)%phases.length];
+
+  // Moving backward within a turn simply moves to the previous phase.
+  if(i>0){
+    const prev=phases[i-1];
+    rememberPhaseCP();
+    state.phase=prev;
+    restorePhaseCP(state.round,state.currentTurn,prev);
+    resetStratagemPhaseUses();
+    state.battleRoundComplete=false;
+    state.my=sortBattleState(state.my);
+    state.opp=sortBattleState(state.opp);
+    event('PHASE_CHANGED',{from:phases[i],phase:prev,action:'Previous Phase'},before);
+    save();render();
+    return;
+  }
+
+  // Command is the beginning of a player's turn. Going backward from
+  // Command must therefore cross the turn boundary and land on the
+  // previous player's Fight phase, following the locked turn order.
+  const firstTurn=state.battleFirstTurn==='opp'?'opp':'my';
+  const otherTurn=state.currentTurn==='my'?'opp':'my';
+  const currentRound=Math.max(1,Number(state.round)||1);
+
+  // There is no chronological state before the first player's Command
+  // in Round 1, so keep the state clamped at the beginning of the battle.
+  if(state.currentTurn===firstTurn && currentRound<=1){
+    return;
+  }
+
+  const previousTurn=state.currentTurn===firstTurn?otherTurn:firstTurn;
+  const previousRound=state.currentTurn===firstTurn
+    ? Math.max(1,currentRound-1)
+    : currentRound;
+
   rememberPhaseCP();
-  state.phase=prev;
-  restorePhaseCP(state.round,state.currentTurn,prev);
+  if(state.currentTurn!==previousTurn){
+    switchTurnClock(previousTurn);
+  }
+  state.round=previousRound;
+  state.currentTurn=previousTurn;
+  state.phase='Fight';
+  restorePhaseCP(previousRound,previousTurn,'Fight');
   resetStratagemPhaseUses();
   state.battleRoundComplete=false;
+  state.objectiveTurnStartOwners={...(state.objectiveTurnStartOwners||{})};
+  state.objectiveTurnStartOwners[String(previousRound)+'|'+previousTurn]=Object.fromEntries(
+    Object.entries(state.objectives||{}).map(([name,owner])=>[
+      name,['my','opp','contested','none'].includes(owner)?owner:'none'
+    ])
+  );
+  ensureTacticalTurnDraw(previousTurn);
+  syncPrimaryScoringRound();
   state.my=sortBattleState(state.my);
   state.opp=sortBattleState(state.opp);
-  event('PHASE_CHANGED',{from:phases[i],phase:prev,action:'Previous Phase'},before);
+
+  if(previousRound!==currentRound){
+    event('ROUND_CHANGED',{
+      fromRound:currentRound,
+      round:previousRound,
+      phase:'Fight',
+      currentTurn:previousTurn,
+      action:'Previous Phase — previous player turn'
+    },before);
+  }else{
+    event('TURN_CHANGED',{
+      from:state.currentTurn===previousTurn?null:state.currentTurn,
+      to:previousTurn,
+      round:previousRound,
+      phase:'Fight',
+      action:'Previous Phase — previous player turn'
+    },before);
+  }
   save();render();
 }
 function nextRound(){
