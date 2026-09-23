@@ -5469,7 +5469,9 @@ function tacticalPreRollContextSignature(attackerEntryUid,targetEntryUid,weaponN
     save:result?.save||null,modifiers:result?.modifiers||[],
     attackerModels:atkSnap?.survivingModels,targetModels:defSnap?.survivingModels,
     targetWounds:defSnap?.targetWoundsState||[],
+    targetProfiles:(defSnap?.models||[]).filter(m=>m.alive!==false).map(m=>({id:m.id,T:m.profile?.T,Sv:m.profile?.Sv,InSv:m.profile?.InSv,W:m.profile?.W,character:!!m.character})),
     targetExact:defSnap?.exactModelIdentity,targetAttached:defSnap?.components?.length>1,
+    mathRules:state.mathRules||{},
     poolId:result?.poolId||null,targetModelIds:result?.targetModelIds||[],
     precisionTargetModelId:result?.precisionTargetModelId||null,precisionTargetVisible:result?.precisionTargetVisible===true,
     attackerModelIds:result?.attackerModelIds||result?.poolModelIds||[]
