@@ -4422,9 +4422,7 @@ function setCurrentTurn(side){
   }
   switchTurnClock(next);
   state.currentTurn=next;
-  state.objectiveTurnStartOwners={...(state.objectiveTurnStartOwners||{})};
-  const turnKey=Math.max(1,Number(state.round)||1)+'|'+next;
-  state.objectiveTurnStartOwners[turnKey]=Object.fromEntries(Object.entries(state.objectives||{}).map(([name,owner])=>[name,['my','opp','contested','none'].includes(owner)?owner:'none']));
+  ensureObjectiveTurnSnapshot();
   ensureTacticalTurnDraw(next);
   event('TURN_CHANGED',{
     side:next,
@@ -4638,10 +4636,7 @@ function advancePhase(){
       restorePhaseCP(state.round,firstTurn,'Command');
       resetStratagemPhaseUses();
       state.battleRoundComplete=false;
-      state.objectiveTurnStartOwners={...(state.objectiveTurnStartOwners||{})};
-      state.objectiveTurnStartOwners[String(state.round)+'|'+firstTurn]=Object.fromEntries(
-        Object.entries(state.objectives||{}).map(([name,owner])=>[name,['my','opp','contested','none'].includes(owner)?owner:'none'])
-      );
+      ensureObjectiveTurnSnapshot();
       switchTurnClock(firstTurn);
       state.currentTurn=firstTurn;
       ensureTacticalTurnDraw(firstTurn);
@@ -4658,10 +4653,7 @@ function advancePhase(){
     restorePhaseCP(state.round,otherTurn,'Command');
     resetStratagemPhaseUses();
     state.battleRoundComplete=false;
-    state.objectiveTurnStartOwners={...(state.objectiveTurnStartOwners||{})};
-    state.objectiveTurnStartOwners[String(state.round)+'|'+otherTurn]=Object.fromEntries(
-      Object.entries(state.objectives||{}).map(([name,owner])=>[name,['my','opp','contested','none'].includes(owner)?owner:'none'])
-    );
+    ensureObjectiveTurnSnapshot();
     switchTurnClock(otherTurn);
     state.currentTurn=otherTurn;
     ensureTacticalTurnDraw(otherTurn);
@@ -4733,12 +4725,7 @@ function previousPhase(){
   restorePhaseCP(previousRound,previousTurn,'Fight');
   resetStratagemPhaseUses();
   state.battleRoundComplete=false;
-  state.objectiveTurnStartOwners={...(state.objectiveTurnStartOwners||{})};
-  state.objectiveTurnStartOwners[String(previousRound)+'|'+previousTurn]=Object.fromEntries(
-    Object.entries(state.objectives||{}).map(([name,owner])=>[
-      name,['my','opp','contested','none'].includes(owner)?owner:'none'
-    ])
-  );
+  ensureObjectiveTurnSnapshot();
   ensureTacticalTurnDraw(previousTurn);
   syncPrimaryScoringRound();
   state.my=sortBattleState(state.my);
@@ -4775,8 +4762,7 @@ function nextRound(){
  state.currentTurn=nextTurn;
  state.phase='Command';
  restorePhaseCP(state.round,nextTurn,'Command');
- state.objectiveTurnStartOwners={...(state.objectiveTurnStartOwners||{})};
- state.objectiveTurnStartOwners[String(state.round)+'|'+nextTurn]=Object.fromEntries(Object.entries(state.objectives||{}).map(([name,owner])=>[name,['my','opp','contested','none'].includes(owner)?owner:'none']));
+ ensureObjectiveTurnSnapshot();
  ensureTacticalTurnDraw(nextTurn);
  syncPrimaryScoringRound();
  state.phase='Command';
@@ -4798,12 +4784,7 @@ function previousRound(){
  state.currentTurn=nextTurn;
  state.phase='Command';
  restorePhaseCP(state.round,nextTurn,'Command');
- state.objectiveTurnStartOwners={...(state.objectiveTurnStartOwners||{})};
- state.objectiveTurnStartOwners[String(state.round)+'|'+nextTurn]=Object.fromEntries(
-   Object.entries(state.objectives||{}).map(([name,owner])=>[
-     name,['my','opp','contested','none'].includes(owner)?owner:'none'
-   ])
- );
+ ensureObjectiveTurnSnapshot();
  ensureTacticalTurnDraw(nextTurn);
  syncPrimaryScoringRound();
  state.phase='Command';
