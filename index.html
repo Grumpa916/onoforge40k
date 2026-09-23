@@ -5812,6 +5812,7 @@ function tacticalPreRollAdvanceMixedVariableSave(s,roll){
   mr.resolution.push({roll:n,groupId:g.id,groupLabel:g.label,modelId:m.id,saveSucceeds,damage:0,saveNeed,precision:false});
   vs.currentModelId=String(m.id);vs.currentGroupId=g.id;vs.currentSaveNeed=saveNeed;vs.currentSaveSucceeds=saveSucceeds;
   if(saveSucceeds){
+    vs.currentModelId=null;vs.currentGroupId=null;vs.currentSaveNeed=null;vs.currentSaveSucceeds=null;
     vs.index++;
     if(vs.index>=vs.rolls.length){
       if(s.plan.devastating&&Math.min(Number(s.specials.criticalWounds)||0,Number(s.counts.wounds)||0)>0){
@@ -5838,6 +5839,7 @@ function tacticalPreRollResolveMixedVariableDamage(s,roll){
   m.woundsRemaining=Math.max(0,before-n);m.alive=m.woundsRemaining>0;
   mr.damage=(Number(mr.damage)||0)+applied;mr.normalDamage=(Number(mr.normalDamage)||0)+applied;
   mr.damageRolls.push(n);s.counts.damage=mr.damage;s.counts.damageResolved=(Number(s.counts.damageResolved)||0)+1;
+  vs.currentModelId=null;vs.currentGroupId=null;vs.currentSaveNeed=null;vs.currentSaveSucceeds=null;
   vs.index++;
   if(vs.index<vs.rolls.length){
     vs.phase='save';s.stage='mixedVariableSave';
@@ -5879,6 +5881,7 @@ function tacticalPreRollResolveMixedVariableDevastating(s,roll){
   const before=Math.max(0,Number(m.woundsRemaining)||0),applied=Math.min(before,n);
   m.woundsRemaining=Math.max(0,before-n);m.alive=m.woundsRemaining>0;
   mr.damage=(Number(mr.damage)||0)+applied;mr.mortalDamage=(Number(mr.mortalDamage)||0)+applied;mr.damageRolls.push(n);
+  vs.currentModelId=null;vs.currentGroupId=null;vs.currentSaveNeed=null;vs.currentSaveSucceeds=null;
   vs.devastatingIndex++;
   s.counts.damage=mr.damage;s.counts.damageResolved=(Number(s.counts.damageResolved)||0)+1;
   s.stage=vs.devastatingIndex<total?'mixedDamage':'review';
