@@ -5554,7 +5554,7 @@ function tacticalPreRollApplyMixedSaveRolls(current,rolls){
       if(rm){rm.woundsRemaining=Math.max(0,Number(m.woundsRemaining)||0);rm.alive=m.alive!==false;}
     });
   });
-  (snap?.components||[]).forEach(c=>{const ce=entry('opp',c.entryUid),u=get(c.unitId);if(ce&&u&&modelRosterRule(u))syncModelRosterBattleState(ce,u);});
+  (snap?.components||[]).forEach(c=>{const ce=entry('opp',c.entryUid),u=get(c.unitId);if(ce&&u&&modelRosterRule(u))syncModelRosterBattleState(ce,u);});\n  (snap?.components||[]).forEach(c=>{const ce=entry('opp',c.entryUid),u=get(c.unitId);if(!ce||!u||modelRosterRule(u))return;const live=(snap.models||[]).filter(m=>m.sourceEntryUid===ce.uid&&m.alive!==false);const maxW=Math.max(1,Number(u.wounds)||1),maxModels=Math.max(0,Number(ce.models)||Number(u.models)||0),maxTotal=maxModels*maxW,total=(groups.flatMap(g=>liveByGroup.get(g.id)||[])).filter(m=>m.sourceEntryUid===ce.uid).reduce((n,m)=>n+Math.max(0,Number(m.woundsRemaining)||0),0);ce.game=ce.game||{entryId:ce.uid,models:maxModels,wounds:maxTotal,status:'Alive'};ce.game.models=live.length;ce.game.wounds=Math.max(0,Math.min(maxTotal,total));ce.game.status=live.length<=0?'Destroyed':ce.game.wounds<maxTotal?'Damaged':'Alive';});
   return {failedSaves:failed,damage:damage+mortal,normalDamage:damage,mortalDamage:mortal,resolution};
 }
 function tacticalPreRollResolutionPlan(ae,te,w,r){
@@ -5580,7 +5580,7 @@ function tacticalPreRollResolutionPlan(ae,te,w,r){
   const cleave=c.cleave?c.cleave*Math.floor(targetModels/5):0;
   const attacks=Math.max(0,models*(basePer+rapid)+blast+cleave);
   const attached=!!(targetSnap&&targetSnap.components?.length>1&&targetSnap.components.some(x=>x.role==='bodyguard')&&targetSnap.components.some(x=>x.role==='leader'||x.role==='support'));
-  const targetSaveGroups=attached?tacticalPreRollSaveGroups(te):[];
+  const targetSaveGroups=tacticalPreRollSaveGroups(te);
   const profiles=new Set((targetSnap?.models||[]).filter(m=>m.alive!==false).map(m=>JSON.stringify({T:m.profile?.T,Sv:m.profile?.Sv,InSv:m.profile?.InSv,W:m.profile?.W,character:!!m.character})));
   const mixedSaveGroups=targetSaveGroups.length>1;
   return {
