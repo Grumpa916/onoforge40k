@@ -4670,15 +4670,17 @@ function advancePhase(){
         save();render();
         return;
       }
+      // Carry the live CP totals into the next round's opening turn.
+      // The previous round remains snapshotted for backward navigation.
       rememberPhaseCP();
       state.round=currentRound+1;
       state.phase='Command';
-      restorePhaseCP(state.round,firstTurn,'Command');
+      state.currentTurn=firstTurn;
+      rememberPhaseCP();
       resetStratagemPhaseUses();
       state.battleRoundComplete=false;
       ensureObjectiveTurnSnapshot();
       switchTurnClock(firstTurn);
-      state.currentTurn=firstTurn;
       ensureTacticalTurnDraw(firstTurn);
       syncPrimaryScoringRound();
       state.my=sortBattleState(state.my);
@@ -4688,14 +4690,16 @@ function advancePhase(){
       return;
     }
 
+    // Carry the live CP totals across the player-turn boundary.
+    // Do not restore a stale Command snapshot for the incoming player.
     rememberPhaseCP();
     state.phase='Command';
-    restorePhaseCP(state.round,otherTurn,'Command');
+    state.currentTurn=otherTurn;
+    rememberPhaseCP();
     resetStratagemPhaseUses();
     state.battleRoundComplete=false;
     ensureObjectiveTurnSnapshot();
     switchTurnClock(otherTurn);
-    state.currentTurn=otherTurn;
     ensureTacticalTurnDraw(otherTurn);
     state.my=sortBattleState(state.my);
     state.opp=sortBattleState(state.opp);
