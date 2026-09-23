@@ -4784,7 +4784,9 @@ function previousRound(){
  state.round=nextRoundNumber;
  state.currentTurn=nextTurn;
  state.phase='Command';
+ state.battleRoundComplete=false;
  restorePhaseCP(state.round,nextTurn,'Command');
+ resetStratagemPhaseUses();
  ensureObjectiveTurnSnapshot();
  ensureTacticalTurnDraw(nextTurn);
  syncPrimaryScoringRound();
