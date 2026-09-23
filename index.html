@@ -5525,7 +5525,7 @@ function tacticalContextHtml(){
 function tacticalContextHtmlBody(){
   const ae=tacticalAdvisorAttackerEntry();
   const targets=(state.opp||[]).filter(e=>!e.attachedTo&&!tacticalUnitState('opp',e)?.destroyed);
-  if(!ae||!targets.length)return '<div class="card tactical-context-card"><h3 style="margin-top:0">Tactical Context</h3><div class="muted">Build both armies and select an attacker/target to record range and battlefield context.</div></div>';
+  if(!ae||!targets.length)return '<div class="muted">Build both armies and select an attacker/target to record range and battlefield context.</div>';
   const selectedUid=(state.tactical?.selectedTargetUid&&targets.some(e=>e.uid===state.tactical.selectedTargetUid))?state.tactical.selectedTargetUid:targets[0].uid;
   ensureTacticalState().selectedTargetUid=selectedUid;
   const te=entry('opp',selectedUid),ctx=tacticalPairState(ae.uid,selectedUid),leg=tacticalTargetLegality(ae,te,state.phase),actions=tacticalAdvisorActionState(ae.uid),movementType=tacticalUnitMovementType(ae.uid);
@@ -5533,7 +5533,7 @@ function tacticalContextHtmlBody(){
   const status=leg.canTarget===true?'Known / eligible':leg.canTarget===false?'Known / not eligible':'Needs battlefield info';
   const fightState=tacticalFightOrderState(ae);
   const fightPriority=fightState.fightsFirst?'Fights First':fightState.eligible?'Remaining Combats':'Not eligible';
-  return '<div class="card tactical-context-card"><div class="split"><div><h3 style="margin:0">Tactical Context</h3><div class="muted">Optional phone-friendly battlefield state for the Tactical Advisor. Unknown values are never guessed.</div></div><span class="pill">'+esc(state.phase||'Command')+' • '+esc(status)+'</span></div>'+
+  return '<div class="tactical-context-body"><div class="muted small" style="margin-bottom:10px">'+esc(state.phase||'Command')+' • '+esc(status)+'</div>'+
     '<div class="grid2" style="margin-top:12px">'+
     '<div class="field"><label>Attacker</label><div class="status">'+esc(unitDisplayName('my',ae))+'</div></div>'+
     '<div class="field"><label>Enemy target</label><select onchange="ensureTacticalState().selectedTargetUid=this.value;save();render()">'+options+'</select></div>'+
@@ -5557,8 +5557,7 @@ function tacticalContextHtmlBody(){
     '</div>'+
     '<div class="muted small" style="margin-top:6px">Action state is scoped to the current round and player turn. Advanced units are restricted to Assault weapons; Fell Back units cannot shoot. Heavy requires the unit to be unengaged, not set up this turn, and no model to have moved more than 3 inches; unknown movement/setup data conservatively withholds the bonus.</div>'+
     (leg.reasons.length?'<div class="warn" style="margin-top:10px">Advisor status: '+esc(leg.reasons.join(' • '))+'.</div>':'<div class="ok" style="margin-top:10px">Advisor has the minimum battlefield context needed for the current phase.</div>')+
-    '<div class="row" style="margin-top:10px"><button class="btn" type="button" onclick="clearTacticalPair(\''+ae.uid+'\',\''+selectedUid+'\')">Clear Context</button></div>'+
-    '</div>';
+    '<div class="row" style="margin-top:10px"><button class="btn" type="button" onclick="clearTacticalPair(\''+ae.uid+'\',\''+selectedUid+'\')">Clear Context</button></div>';
 }
 
 function tacticalAdvisorAttackerEntry(){
@@ -8306,7 +8305,7 @@ refreshCurrentUnitDatabase(false);
 render();
 load40kAppSourceManifest();
 loadEventCompanionData();
-if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./service-worker.js?v=327',{updateViaCache:'none'}).catch(()=>{});});}
+if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./service-worker.js?v=328',{updateViaCache:'none'}).catch(()=>{});});}
 setTimeout(()=>initCloudOnLoad(),0);
 </script>
 </body></html>
