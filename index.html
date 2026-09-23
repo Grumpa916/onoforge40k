@@ -4718,7 +4718,7 @@ function previousRound(){
  if(!Number.isFinite(current)||current<=1){return}
  const before=snapshotForUndo();
  const nextRoundNumber=Math.max(1,current-1);
- const nextTurn=state.firstTurn==='opp'?'opp':'my';
+ const nextTurn=state.battleFirstTurn==='opp'?'opp':'my';
  rememberPhaseCP();
  if(state.currentTurn!==nextTurn)switchTurnClock(nextTurn);
  state.round=nextRoundNumber;
