@@ -4259,7 +4259,7 @@ function changeModelWounds(side,id,modelId,delta){
   m.woundsRemaining=Math.max(0,Math.min(max,beforeModel.woundsRemaining+d));
   if(m.woundsRemaining<=0){m.woundsRemaining=0;m.alive=false;}
   syncModelRosterBattleState(e,u);
-  event('MODEL_STATE_CHANGED',{side,unitId:e.unitId,entryId:id,unit:u.name,modelId:m.id,modelRole:m.role,action:'Model wounds '+(d>0?'+':'')+d,modelBefore:beforeModel,modelAfter:{alive:m.alive,woundsRemaining:m.woundsRemaining},before,after:e.game},fullBefore);
+  event('MODEL_STATE_CHANGED',{side,unitId:e.unitId,entryId:id,unit:u.name,modelId:m.id,modelRole:m.role,action:'Model wounds '+(d>0?'+':'')+d,modelBefore:beforeModel,modelAfter:{alive:m.alive,woundsRemaining:m.woundsRemaining},before:beforeModel,after:{alive:m.alive,woundsRemaining:m.woundsRemaining}},fullBefore);
   save();render();
 }
 function setUnitDestroyed(side,id){
@@ -8258,7 +8258,7 @@ refreshCurrentUnitDatabase(false);
 render();
 load40kAppSourceManifest();
 loadEventCompanionData();
-if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./service-worker.js?v=321',{updateViaCache:'none'}).catch(()=>{});});}
+if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./service-worker.js?v=322',{updateViaCache:'none'}).catch(()=>{});});}
 setTimeout(()=>initCloudOnLoad(),0);
 </script>
 </body></html>
