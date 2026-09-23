@@ -500,6 +500,16 @@
 @media(max-width:700px){.secondary-catalog{grid-template-columns:1fr}.secondary-detail-columns{grid-template-columns:1fr}}
 </style>
 <style>
+/* Battle layout regression guard: keep the live control center in the primary column. */
+.battle-layout > div:first-child{grid-column:1!important;grid-row:1!important;min-width:0}
+.battle-layout > .battle-state-column{grid-column:2!important;grid-row:1!important;min-width:0}
+.battle-layout > .battle-log{grid-column:1 / -1!important;grid-row:2!important}
+@media(max-width:1000px){
+  .battle-layout > div:first-child,
+  .battle-layout > .battle-state-column,
+  .battle-layout > .battle-log{grid-column:1!important;grid-row:auto!important}
+}
+
 /* v290: full Army State side panel */
 .battle-layout{grid-template-columns:minmax(0,1fr) minmax(460px,480px)!important}
 .battle-state-column{position:sticky;top:10px;height:calc(100vh - 20px);overflow:auto;scrollbar-width:thin}
@@ -8258,7 +8268,7 @@ refreshCurrentUnitDatabase(false);
 render();
 load40kAppSourceManifest();
 loadEventCompanionData();
-if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./service-worker.js?v=322',{updateViaCache:'none'}).catch(()=>{});});}
+if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./service-worker.js?v=323',{updateViaCache:'none'}).catch(()=>{});});}
 setTimeout(()=>initCloudOnLoad(),0);
 </script>
 </body></html>
