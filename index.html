@@ -5618,7 +5618,7 @@ function tacticalPreRollResolutionPlan(ae,te,w,r,poolId=null){
   const targetSaveGroups=tacticalPreRollSaveGroups(te);
   const profiles=new Set((targetSnap?.models||[]).filter(m=>m.alive!==false).map(m=>JSON.stringify({T:m.profile?.T,Sv:m.profile?.Sv,InSv:m.profile?.InSv,W:m.profile?.W,character:!!m.character})));
   const precisionTargetModelId=r?.precisionTargetModelId||null,precision=!!r?.precision,precisionTargetVisible=r?.precisionTargetVisible===true;
-  const mixedSaveGroups=targetSaveGroups.length>1||precision;
+  const mixedSaveGroups=targetSaveGroups.length>1||precision||(targetSnap?.models||[]).some(m=>engineFnp(m));
   return {
     modelIds,models,attacks:modelIds.length*(basePer+rapid)+blast+cleave,hitNeed:c.torrent?'Auto':c.hitNeed,
     hitCritThreshold:c.critHitThreshold||6,woundCritThreshold:c.critWoundThreshold||6,
@@ -5705,6 +5705,8 @@ function tacticalPreRollPrecisionPushHistory(s){
     precisionTargetState:s.precisionTargetState?{...s.precisionTargetState}:null,
     precisionCurrent:s.precisionCurrent?{...s.precisionCurrent}:null,
     precisionWeapon:s.precisionWeapon?{...s.precisionWeapon}:null,
+    precisionPendingDamage:s.precisionPendingDamage??null,
+    precisionPendingFnp:s.precisionPendingFnp??null,
     saveOrder:Array.isArray(s.saveOrder)?s.saveOrder.slice():null,
     mixedResolution:s.mixedResolution?{...s.mixedResolution,
       modelStates:(s.mixedResolution.modelStates||[]).map(m=>({...m})),
@@ -5723,6 +5725,8 @@ function tacticalPreRollPrecisionBack(s){
   if(snap.precisionTargetState)s.precisionTargetState={...snap.precisionTargetState};else delete s.precisionTargetState;
   if(snap.precisionCurrent)s.precisionCurrent={...snap.precisionCurrent};else delete s.precisionCurrent;
   if(snap.precisionWeapon)s.precisionWeapon={...snap.precisionWeapon};else delete s.precisionWeapon;
+  if(snap.precisionPendingDamage!=null)s.precisionPendingDamage=snap.precisionPendingDamage;else delete s.precisionPendingDamage;
+  if(snap.precisionPendingFnp!=null)s.precisionPendingFnp=snap.precisionPendingFnp;else delete s.precisionPendingFnp;
   if(Array.isArray(snap.saveOrder))s.saveOrder=snap.saveOrder.slice();else delete s.saveOrder;
   if(snap.mixedResolution){
     s.mixedResolution={...snap.mixedResolution,
@@ -6034,7 +6038,7 @@ function tacticalPreRollResolutionSet(field,value){
       const saveWeapon=attachedCombatWeaponGroups('my',entry('my',current.attackerEntryUid),entry('opp',current.targetEntryUid)).map(g=>g.weapon).find(x=>String(x.name)===String(current.weaponName));
       if(!saveWeapon)throw new Error('Weapon profile is no longer available.');
       s.mixedVariableWeapon=saveWeapon;
-      if(plan.variableDamage){if(rolls.length!==saveable)throw new Error('Enter exactly '+saveable+' save results.');tacticalPreRollInitMixedVariable(s,rolls);}
+      if(plan.variableDamage||rolls.some(v=>Number(v)===1&&((combatSnapshot('opp',entry('opp',current.targetEntryUid))?.models||[]).some(m=>m.rerollSave1)))||((combatSnapshot('opp',entry('opp',current.targetEntryUid))?.models||[]).some(m=>engineFnp(m)))){if(rolls.length!==saveable)throw new Error('Enter exactly '+saveable+' save results.');tacticalPreRollInitMixedVariable(s,rolls);}
       else{
         const resolved=tacticalPreRollApplyMixedSaveRolls({state:s,session:s,plan,saveable,targetEntryUid:current.targetEntryUid,weapon:saveWeapon},rolls);
         s.counts.failedSaves=resolved.failedSaves;s.counts.damage=resolved.damage;s.mixedResolution=resolved;s.stage='review';
@@ -6072,7 +6076,7 @@ function tacticalPreRollResolutionBack(){
   if(!s)return;
   const order=current.plan?.mixedSaveGroups?['hits','hitSpecial','wounds','woundSpecial','precisionSave','precisionDamage','precisionApplyFixed','precisionFnp','precisionDevastating','saveOrder','saveRolls','mixedVariableSave','mixedSaveReroll','mixedDamage','mixedFnp','review']:['hits','hitSpecial','wounds','woundSpecial','saves','damage','review'];
   if(s.plan?.mixedSaveGroups&&['mixedVariableSave','mixedSaveReroll','mixedDamage','mixedFnp','review'].includes(s.stage)&&tacticalPreRollMixedVariableBack(s)){save();render();return;}
-  if(s.plan?.precision&&(['precisionSave','precisionDamage','precisionDevastating','saveOrder','review'].includes(s.stage))&&tacticalPreRollPrecisionBack(s)){save();render();return;}
+  if(s.plan?.precision&&(['precisionSave','precisionDamage','precisionFnp','precisionDevastating','saveOrder','review'].includes(s.stage))&&tacticalPreRollPrecisionBack(s)){save();render();return;}
   const i=order.indexOf(s.stage);
   if(i<=0){s.stage=s.plan.torrent?'wounds':'hits';delete s.counts.hits;delete s.specials.criticalHits;save();render();return;}
   s.stage=order[i-1];save();render();
