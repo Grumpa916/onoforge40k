@@ -5739,7 +5739,7 @@ function tacticalPreRollApplyResolution(){
   const hitCount=Number(s.counts.hits)||0,critHits=Number(s.specials.criticalHits)||0,woundCount=Number(s.counts.wounds)||0,failedSaves=Number(s.counts.failedSaves)||0,critWounds=Number(s.specials.criticalWounds)||0;
   const modelIds=Array.isArray(s.mixedResolution?.resolution)?s.mixedResolution.resolution.map(x=>x.modelId).filter(Boolean):[];
   const beforeGame=JSON.parse(JSON.stringify(te.game||{})),afterGame=JSON.parse(JSON.stringify(te.game||{}));
-  event('DICE_RESOLUTION_APPLIED',{
+  event('ATTACK_RESOLUTION',{
     side:'my',attackerEntryUid:ae.uid,targetEntryUid:te.uid,unit:targetUnit.name,weapon:w.name,
     attacks:s.plan.attacks,modelsResolved:s.plan.models,hits:hitCount,wounds:woundCount,saved:Math.max(0,woundCount-failedSaves),
     damage,critHits,critW:critWounds,modelIds,shootingMode:state.phase==='Shooting'?tacticalWeaponShootingMode(w):null,
