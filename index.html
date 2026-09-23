@@ -5528,7 +5528,7 @@ function tacticalPreRollApplyMixedSaveRolls(current,rolls){
   const s=current.state||current.session,plan=current.plan||s.plan;
   const groups=tacticalPreRollSaveGroups(entry('opp',current.targetEntryUid)),orderIds=s.saveOrder||groups.map(g=>g.id);
   if(!tacticalPreRollLegalSaveOrder(groups,orderIds))throw new Error('The allocation order is not legal under the 11th Edition save-roll rules.');
-  const sorted=rolls.slice().map(Number).filter(Number.isFinite).map(v=>Math.floor(v)),saveable=Math.max(0,Number(current.saveable)||0);
+  const sorted=rolls.slice().map(Number).filter(Number.isFinite).map(v=>Math.floor(v)).sort((a,b)=>a-b),saveable=Math.max(0,Number(current.saveable)||0);
   if(sorted.length!==saveable)throw new Error('Enter exactly '+saveable+' save results.');
   if(sorted.some(v=>v<1||v>6))throw new Error('Save results must be D6 values from 1 to 6.');
   const targetEntry=entry('opp',current.targetEntryUid),targetUnit=combatTargetUnit('opp',targetEntry)||get(targetEntry?.unitId);if(!targetEntry||!targetUnit)throw new Error('Target state is no longer available.');
@@ -5566,7 +5566,6 @@ function tacticalPreRollApplyMixedSaveRolls(current,rolls){
       }
     }
   };
-  if(plan.devastating&&criticalWounds>0)applyMortalPerCriticalWound(criticalWounds);
   for(const roll of sorted){
     let g,m;
     if(precisionActive){m=pickPrecisionModel();if(m)g=precisionGroup;else precisionActive=false;}
@@ -5575,6 +5574,24 @@ function tacticalPreRollApplyMixedSaveRolls(current,rolls){
     let applied=0;if(!saveSucceeds){failed++;applied=normalDamage;if(m&&!variableDamage){m.woundsRemaining=Math.max(0,Number(m.woundsRemaining||0)-normalDamage);if(m.woundsRemaining<=0)m.alive=false;damage+=normalDamage;}}
     resolution.push({roll,groupId:g.id,groupLabel:g.label,modelId:m?.id||null,saveSucceeds,damage:applied,saveNeed,precision:!!(precisionActive&&precisionGroup&&g.id===precisionGroup.id)});
     while(currentGroupIndex<orderIds.length){const gg=groups.find(x=>x.id===orderIds[currentGroupIndex]);if((liveByGroup.get(gg.id)||[]).some(x=>x.alive!==false))break;currentGroupIndex++;}
+  }
+  if(plan.devastating&&criticalWounds>0){
+    // Devastating Wounds are mortal wounds and are resolved after all normal damage.
+    // Precision Devastating Wounds remain on the selected Character group if it still exists.
+    for(let cw=0;cw<criticalWounds;cw++){
+      let m=null;
+      if(precisionGroup){m=pickPrecisionModel();}
+      if(!m){
+        const all=groups.flatMap(g=>liveByGroup.get(g.id)||[]).filter(x=>x.alive!==false);
+        m=all.find(x=>!x.character&&Number(x.woundsRemaining||0)<Number(x.maxWounds||x.profile?.W||1))
+          ||all.find(x=>!x.character)
+          ||all.find(x=>x.character&&Number(x.woundsRemaining||0)<Number(x.maxWounds||x.profile?.W||1))
+          ||all.find(x=>x.character);
+      }
+      if(!m)break;
+      const before=Math.max(0,Number(m.woundsRemaining)||0),applied=Math.min(before,normalDamage);
+      m.woundsRemaining=Math.max(0,before-applied);m.alive=m.woundsRemaining>0;damage+=applied;
+    }
   }
   const modelStates=groups.flatMap(g=>liveByGroup.get(g.id)||[]).map(m=>({id:m.id,sourceEntryUid:m.sourceEntryUid,sourceUnitId:m.sourceUnitId,alive:m.alive!==false,woundsRemaining:Math.max(0,Number(m.woundsRemaining)||0)}));
   return {failedSaves:failed,damage,normalDamage:Math.max(0,damage-(plan.devastating?mortalDamage:0)),mortalDamage:plan.devastating?mortalDamage:0,resolution,modelStates,variableDamage,damageInstances:variableDamage?resolution.filter(x=>!x.saveSucceeds).map(x=>({kind:'failedSave',modelId:x.modelId,groupId:x.groupId})):[],devastatingInstances:variableDamage&&plan.devastating?devastatingInstances:[]};
@@ -5661,7 +5678,7 @@ function tacticalPreRollPrecisionSequential(current){const s=current.state||curr
 function tacticalPreRollPrecisionStep(s,saveRoll){const plan=s.plan||{};const gs=tacticalPreRollSaveGroups(entry('opp',s.targetEntryUid)),g=gs.find(x=>(x.modelIds||[]).some(id=>String(id)===String(plan.precisionTargetModelId)));if(!g)throw new Error('Precision target allocation group is no longer available.');const m=g.models.find(x=>String(x.id)===String(plan.precisionTargetModelId)&&x.alive!==false);if(!m)return false;const w=s.precisionWeapon||{AP:0,D:'1'},p=m.profile||{},need=Math.min(Math.max(2,Math.min(7,Number(p.Sv)||7)+(Number(w.AP)||0)),Number(p.InSv)||99),ok=saveRoll!==1&&saveRoll>=need;s.precisionCurrent={modelId:m.id,groupId:g.id,saveNeed:need,saveSucceeds:ok};s.counts.precisionResolved=(Number(s.counts.precisionResolved)||0)+1;s.stage=ok?'precisionSave':'precisionDamage';return true}
 function tacticalPreRollApplyMixedVariableDamage(s,rolls){
   const mr=s.mixedResolution;if(!mr||!mr.variableDamage)throw new Error('Mixed-profile damage resolution is not ready.');
-  const instances=[...(mr.devastatingInstances||[]),...(mr.damageInstances||[])];
+  const instances=[...(mr.damageInstances||[]),...(mr.devastatingInstances||[])];
   if(rolls.length!==instances.length)throw new Error('Enter exactly '+instances.length+' damage results.');
   const max=tacticalPreRollDamageMax(s.plan.weaponDamage||'1');
   if(rolls.some(v=>!Number.isInteger(v)||v<1||v>max))throw new Error('Damage results must be within the weapon Damage characteristic range.');
@@ -5691,9 +5708,7 @@ function tacticalPreRollApplyMixedVariableDamage(s,rolls){
     const applied=Math.min(before,amount);
     m.woundsRemaining=Math.max(0,before-applied);m.alive=m.woundsRemaining>0;total+=applied;
     if(precisionActive&&!pickPrecisionModel())precisionActive=false;
-    if(inst.kind==='devastating'){
-      // Each Devastating Wounds result is resolved against one model; excess is lost.
-    }
+    if(inst.kind==='devastating'){ /* excess from this critical wound is lost */ }
     if(!precisionActive&&!m.alive){
       while(currentGroupIndex<orderIds.length){
         const gg=groups.find(x=>x.id===orderIds[currentGroupIndex]);
