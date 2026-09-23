@@ -5725,6 +5725,114 @@ function tacticalPreRollApplyMixedVariableDamage(s,rolls){
   mr.modelStates=Array.from(states.values());mr.damageRolls=rolls.slice();mr.damage=total;
   return mr;
 }
+function tacticalPreRollInitMixedVariable(s,rolls){
+  const te=entry('opp',s.targetEntryUid),groups=tacticalPreRollSaveGroups(te);
+  const orderIds=(s.saveOrder||groups.map(g=>g.id)).slice();
+  if(!tacticalPreRollLegalSaveOrder(groups,orderIds))throw new Error('The allocation order is not legal under the 11th Edition save-roll rules.');
+  const sorted=rolls.slice().map(Number).filter(Number.isFinite).map(v=>Math.floor(v)).sort((a,b)=>a-b);
+  if(sorted.some(v=>v<1||v>6))throw new Error('Save results must be D6 values from 1 to 6.');
+  const expected=Math.max(0,(Number(s.counts.wounds)||0)-(s.plan.devastating?Math.min(Number(s.specials.criticalWounds)||0,Number(s.counts.wounds)||0):0)-(Number(s.counts.precisionResolved)||0));
+  if(sorted.length!==expected)throw new Error('Enter exactly '+expected+' save results.');
+  const states=groups.flatMap(g=>g.models).map(m=>({
+    id:m.id,sourceEntryUid:m.sourceEntryUid,sourceUnitId:m.sourceUnitId,
+    groupId:g.id,groupCharacter:!!g.character,character:!!m.character,
+    profile:m.profile||{},maxWounds:Number(m.maxWounds||m.profile?.W||1)||1,
+    alive:m.alive!==false,woundsRemaining:Math.max(0,Number(m.woundsRemaining)||0)
+  }));
+  if(s.precisionTargetState){
+    const ps=s.precisionTargetState,pm=states.find(x=>String(x.id)===String(ps.modelId));
+    if(pm){pm.alive=ps.alive!==false;pm.woundsRemaining=Math.max(0,Number(ps.woundsRemaining)||0);}
+  }
+  s.mixedResolution={
+    failedSaves:Number(s.counts.failedSaves)||0,
+    damage:Number(s.counts.damage)||0,
+    normalDamage:Number(s.counts.damage)||0,
+    mortalDamage:0,resolution:[],modelStates:states,
+    variableDamage:true,damageInstances:[],devastatingInstances:[],damageRolls:[]
+  };
+  s.mixedVariableState={rolls:sorted,index:0,groupIndex:0,phase:'save',devastatingIndex:0};
+  s.counts.damageResolved=0;
+  s.stage='mixedVariableSave';
+}
+function tacticalPreRollPickMixedVariableTarget(s){
+  const mr=s.mixedResolution,vs=s.mixedVariableState;
+  if(!mr||!vs)throw new Error('Mixed variable resolution state is missing.');
+  const groups=tacticalPreRollSaveGroups(entry('opp',s.targetEntryUid));
+  const states=new Map((mr.modelStates||[]).map(m=>[String(m.id),m]));
+  const pickInGroup=g=>{
+    const models=(g.modelIds||[]).map(id=>states.get(String(id))).filter(Boolean).filter(m=>m.alive!==false);
+    return models.find(m=>Number(m.woundsRemaining||0)<Number(m.maxWounds||m.profile?.W||1))||models[0]||null;
+  };
+  while(vs.groupIndex<(s.saveOrder||groups.map(g=>g.id)).length){
+    const gid=(s.saveOrder||groups.map(g=>g.id))[vs.groupIndex],g=groups.find(x=>x.id===gid);
+    if(g&&pickInGroup(g))return {g,m:pickInGroup(g),states,groups};
+    vs.groupIndex++;
+  }
+  return null;
+}
+function tacticalPreRollAdvanceMixedVariableSave(s,roll){
+  const maxDamage=tacticalPreRollDamageMax(s.plan.weaponDamage||'1'),vs=s.mixedVariableState,mr=s.mixedResolution;
+  if(!vs||vs.phase!=='save')throw new Error('No variable-Damage save is awaiting resolution.');
+  const picked=tacticalPreRollPickMixedVariableTarget(s);
+  if(!picked)throw new Error('No legal target remains for the next saving throw.');
+  const {g,m}=picked,p=m.profile||{},weapon=s.mixedVariableWeapon||{AP:0,D:'1'},ap=Number(weapon.AP)||0;
+  const sv=Math.max(2,Math.min(7,Number(p.Sv)||7)),inv=Number(p.InSv)||99,armourNeed=Math.max(2,Math.min(7,sv+ap)),saveNeed=Math.min(armourNeed,inv);
+  const n=Math.floor(Number(roll));
+  if(!Number.isInteger(n)||n<1||n>6)throw new Error('Enter one D6 save result.');
+  const saveSucceeds=n!==1&&n>=saveNeed;
+  mr.resolution.push({roll:n,groupId:g.id,groupLabel:g.label,modelId:m.id,saveSucceeds,damage:0,saveNeed,precision:false});
+  vs.currentModelId=String(m.id);vs.currentGroupId=g.id;vs.currentSaveNeed=saveNeed;vs.currentSaveSucceeds=saveSucceeds;
+  if(saveSucceeds){
+    vs.index++;
+    if(vs.index>=vs.rolls.length){
+      if(s.plan.devastating&&Math.min(Number(s.specials.criticalWounds)||0,Number(s.counts.wounds)||0)>0){
+        vs.phase='devastating';vs.devastatingIndex=0;s.stage='mixedDamage';
+      }else s.stage='review';
+    }else s.stage='mixedVariableSave';
+  }else{
+    s.counts.failedSaves=(Number(s.counts.failedSaves)||0)+1;
+    s.counts.damage=Number(s.counts.damage)||0;
+    s.stage='mixedDamage';
+    vs.phase='damage';
+    vs.damageMax=maxDamage;
+  }
+}
+function tacticalPreRollResolveMixedVariableDamage(s,roll){
+  const vs=s.mixedVariableState,mr=s.mixedResolution;
+  if(!vs||vs.phase!=='damage')throw new Error('No failed save is awaiting Damage resolution.');
+  const m=(mr.modelStates||[]).find(x=>String(x.id)===String(vs.currentModelId));
+  if(!m||m.alive===false)throw new Error('The current allocation target is no longer alive.');
+  const n=Math.floor(Number(roll)),max=tacticalPreRollDamageMax(s.plan.weaponDamage||'1');
+  if(!Number.isInteger(n)||n<1||n>max)throw new Error('Enter the actual physical Damage result.');
+  const before=Math.max(0,Number(m.woundsRemaining)||0),applied=Math.min(before,n);
+  m.woundsRemaining=Math.max(0,before-n);m.alive=m.woundsRemaining>0;
+  mr.damage=(Number(mr.damage)||0)+applied;mr.normalDamage=(Number(mr.normalDamage)||0)+applied;
+  mr.damageRolls.push(n);s.counts.damage=mr.damage;s.counts.damageResolved=(Number(s.counts.damageResolved)||0)+1;
+  vs.index++;
+  if(vs.index<vs.rolls.length){
+    vs.phase='save';s.stage='mixedVariableSave';
+  }else if(s.plan.devastating&&Math.min(Number(s.specials.criticalWounds)||0,Number(s.counts.wounds)||0)>0){
+    vs.phase='devastating';vs.devastatingIndex=0;s.stage='mixedDamage';
+  }else s.stage='review';
+}
+function tacticalPreRollResolveMixedVariableDevastating(s,roll){
+  const vs=s.mixedVariableState,mr=s.mixedResolution;
+  if(!vs||vs.phase!=='devastating')throw new Error('No Devastating Wounds result is awaiting resolution.');
+  const total=Math.min(Number(s.specials.criticalWounds)||0,Number(s.counts.wounds)||0);
+  if(vs.devastatingIndex>=total){s.stage='review';return;}
+  const groups=tacticalPreRollSaveGroups(entry('opp',s.targetEntryUid)),states=new Map((mr.modelStates||[]).map(m=>[String(m.id),m]));
+  const all=groups.flatMap(g=>g.modelIds||[]).map(id=>states.get(String(id))).filter(Boolean).filter(m=>m.alive!==false);
+  const m=all.find(x=>!x.character&&Number(x.woundsRemaining||0)<Number(x.maxWounds||x.profile?.W||1))||all.find(x=>!x.character)||all.find(x=>x.character&&Number(x.woundsRemaining||0)<Number(x.maxWounds||x.profile?.W||1))||all.find(x=>x.character);
+  if(!m)throw new Error('No legal target remains for Devastating Wounds.');
+  const n=Math.floor(Number(roll)),max=tacticalPreRollDamageMax(s.plan.weaponDamage||'1');
+  if(!Number.isInteger(n)||n<1||n>max)throw new Error('Enter the actual physical Damage result.');
+  const before=Math.max(0,Number(m.woundsRemaining)||0),applied=Math.min(before,n);
+  m.woundsRemaining=Math.max(0,before-n);m.alive=m.woundsRemaining>0;
+  mr.damage=(Number(mr.damage)||0)+applied;mr.mortalDamage=(Number(mr.mortalDamage)||0)+applied;mr.damageRolls.push(n);
+  vs.devastatingIndex++;
+  s.counts.damage=mr.damage;s.counts.damageResolved=(Number(s.counts.damageResolved)||0)+1;
+  s.stage=vs.devastatingIndex<total?'mixedDamage':'review';
+}
 function tacticalPreRollResolutionSet(field,value){
   const current=tacticalPreRollResolutionCurrent();
   if(!current)return;
@@ -5780,11 +5888,23 @@ function tacticalPreRollResolutionSet(field,value){
     try{rolls=JSON.parse('['+String(value||'').split(',').map(x=>x.trim()).filter(Boolean).join(',')+']');}catch(e){alert('Enter save results as comma-separated D6 values, for example: 1,2,3,5,6');return;}
     const saveable=Math.max(0,(Number(s.counts.wounds)||0)-(plan.devastating?Math.min(Number(s.specials.criticalWounds)||0,Number(s.counts.wounds)||0):0)-(Number(s.counts.precisionResolved)||0));
     try{
-      const saveWeapon=attachedCombatWeaponGroups('my',entry('my',current.attackerEntryUid),entry('opp',current.targetEntryUid)).map(g=>g.weapon).find(x=>String(x.name)===String(current.weaponName)); const resolved=tacticalPreRollApplyMixedSaveRolls({state:s,session:s,plan,saveable,targetEntryUid:current.targetEntryUid,weapon:saveWeapon||{AP:0}},rolls);
-      s.counts.failedSaves=resolved.failedSaves;s.counts.damage=resolved.damage;s.mixedResolution=resolved;
-      if(resolved.variableDamage){s.stage='mixedDamage';s.mixedDamageSequential=true;}else{s.stage='review';}
+      const saveWeapon=attachedCombatWeaponGroups('my',entry('my',current.attackerEntryUid),entry('opp',current.targetEntryUid)).map(g=>g.weapon).find(x=>String(x.name)===String(current.weaponName));
+      if(!saveWeapon)throw new Error('Weapon profile is no longer available.');
+      s.mixedVariableWeapon=saveWeapon;
+      if(plan.variableDamage){if(rolls.length!==saveable)throw new Error('Enter exactly '+saveable+' save results.');tacticalPreRollInitMixedVariable(s,rolls);}
+      else{
+        const resolved=tacticalPreRollApplyMixedSaveRolls({state:s,session:s,plan,saveable,targetEntryUid:current.targetEntryUid,weapon:saveWeapon},rolls);
+        s.counts.failedSaves=resolved.failedSaves;s.counts.damage=resolved.damage;s.mixedResolution=resolved;s.stage='review';
+      }
     }catch(e){alert(e.message||String(e));return;}
-  }else if(field==='mixedDamage'){const roll=Math.floor(Number(value));try{const weapon=attachedCombatWeaponGroups('my',entry('my',current.attackerEntryUid),entry('opp',current.targetEntryUid)).map(g=>g.weapon).find(x=>String(x.name)===String(current.weaponName));s.plan.weaponDamage=weapon?.D||'1';const mr=s.mixedResolution,instances=[...(mr?.damageInstances||[]),...(mr?.devastatingInstances||[])],i=Number(s.counts.damageResolved||0);if(!mr||i>=instances.length)throw new Error('No unresolved Damage instance remains.');const max=tacticalPreRollDamageMax(s.plan.weaponDamage);if(!Number.isInteger(roll)||roll<1||roll>max)throw new Error('Enter the actual physical Damage result.');const inst=instances[i],target=(mr.modelStates||[]).find(m=>String(m.id)===String(inst.modelId));if(!target||target.alive===false)throw new Error('The recorded Damage allocation target is no longer alive. Recalculate the save allocation before continuing.');const before=Math.max(0,Number(target.woundsRemaining)||0),applied=Math.min(before,roll);target.woundsRemaining=Math.max(0,before-roll);target.alive=target.woundsRemaining>0;mr.damage=(Number(mr.damage)||0)+applied;mr.damageRolls=[...(mr.damageRolls||[]),roll];s.counts.damage=mr.damage;s.counts.damageResolved=i+1;s.stage=s.counts.damageResolved<instances.length?'mixedDamage':'review';}catch(e){alert(e.message||String(e));return;}
+  }else if(field==='mixedVariableSave'){
+    try{tacticalPreRollAdvanceMixedVariableSave(s,Math.floor(Number(value)));}catch(e){alert(e.message||String(e));return;}
+  }else if(field==='mixedDamage'){
+    try{
+      if(s.mixedVariableState?.phase==='damage')tacticalPreRollResolveMixedVariableDamage(s,Math.floor(Number(value)));
+      else if(s.mixedVariableState?.phase==='devastating')tacticalPreRollResolveMixedVariableDevastating(s,Math.floor(Number(value)));
+      else throw new Error('No unresolved Damage result remains.');
+    }catch(e){alert(e.message||String(e));return;}
   }else if(field==='failedSaves'){
     const critW=Number(s.specials.criticalWounds)||0,wounds=Number(s.counts.wounds)||0,critDev=plan.devastating?Math.min(critW,wounds):0;
     const totalWounds=wounds+(plan.lethal?Math.min(Number(s.specials.criticalHits)||0,Number(s.counts.hits)||0):0);
@@ -5805,7 +5925,7 @@ function tacticalPreRollResolutionBack(){
   const current=tacticalPreRollResolutionCurrent();if(!current)return;
   const t=ensureTacticalState(),map=tacticalPreRollResolutionState(),s=map[current.key];
   if(!s)return;
-  const order=current.plan?.mixedSaveGroups?['hits','hitSpecial','wounds','woundSpecial','precisionSave','precisionDamage','precisionApplyFixed','precisionDevastating','saveOrder','saveRolls','mixedDamage','review']:['hits','hitSpecial','wounds','woundSpecial','saves','damage','review'];
+  const order=current.plan?.mixedSaveGroups?['hits','hitSpecial','wounds','woundSpecial','precisionSave','precisionDamage','precisionApplyFixed','precisionDevastating','saveOrder','saveRolls','mixedVariableSave','mixedDamage','review']:['hits','hitSpecial','wounds','woundSpecial','saves','damage','review'];
   const i=order.indexOf(s.stage);
   if(i<=0){s.stage=s.plan.torrent?'wounds':'hits';delete s.counts.hits;delete s.specials.criticalHits;save();render();return;}
   s.stage=order[i-1];save();render();
@@ -5894,13 +6014,13 @@ function tacticalPreRollResolutionModal(){
     const saveable=Math.max(0,(Number(counts.wounds)||0)-(plan.devastating?Math.min(Number(specials.criticalWounds)||0,Number(counts.wounds)||0):0)-(Number(counts.precisionResolved)||0));
     title='SAVES • RESOLVE';promptText='Roll all '+saveable+' saves, sort the physical dice from lowest to highest, then enter the results.';max=saveable;value='';note='Enter comma-separated D6 results, lowest to highest. The app will apply the 11th Edition allocation order and move to the next group only when the current group is destroyed.';
   }
-  else if(stage==='mixedDamage'){const instances=(s.mixedResolution?.damageInstances||[]).length+(s.mixedResolution?.devastatingInstances||[]).length;const resolved=Number(s.counts.damageResolved||0);title='DAMAGE • RESOLVE '+(resolved+1)+'/'+instances;promptText='Roll and enter the physical Damage result for the current failed save / Devastating Wounds result.';max=tacticalPreRollDamageMax(s.plan.weaponDamage||'1');value='';note='Variable Damage is resolved sequentially so destruction of a model changes the legal allocation for the next result.';}
+  else if(stage==='mixedVariableSave'){const vs=s.mixedVariableState||{};const total=(vs.rolls||[]).length;const idx=Math.min(Number(vs.index)||0,total);title='SAVE • RESOLVE '+(idx+1)+'/'+total;promptText='Enter the next physical saving throw result. The app will allocate this save using the live wound state before allowing the next result.';max=6;value='';note='Variable Damage is interleaved: each save is allocated first, and a failed save must be resolved with physical Damage before the next save can be allocated.';}else if(stage==='mixedDamage'){const vs=s.mixedVariableState||{};const dev=vs.phase==='devastating';const total=dev?Math.min(Number(s.specials?.criticalWounds)||0,Number(s.counts?.wounds)||0):(vs.rolls||[]).length;const idx=dev?(Number(vs.devastatingIndex)||0):(Number(vs.index)||0);title=(dev?'DEVASTATING WOUNDS • ':'DAMAGE • ')+(idx+1)+'/'+total;promptText=dev?'Enter the physical Damage result for this Devastating Wounds result.':'Enter the physical Damage result for the failed save just allocated.';max=tacticalPreRollDamageMax(s.plan.weaponDamage||'1');value='';note=dev?'Devastating Wounds is resolved against the live target state.':'The failed save is resolved immediately; model wounds and destruction are updated before the next save is allocated.';}
   else if(stage==='saves'){const critDev=plan.devastating?Math.min(Number(specials.criticalWounds)||0,Number(counts.wounds)||0):0;const total=(Number(counts.wounds)||0)+(plan.lethal?Math.min(Number(specials.criticalHits)||0,Number(counts.hits)||0):0);const saveable=Math.max(0,total-critDev);title='SAVES • COUNT';promptText=plan.saveNeed===null?'No saving throw required — all '+saveable+' wounds fail automatically.':'How many of the '+saveable+' saving throws failed?';max=saveable;value=counts.failedSaves??'';note=plan.saveNeed===null?'No save is available against these wounds.':'Roll '+saveable+' saves at '+plan.saveNeed+'+ before entering the failed-save count.';}
   else if(stage==='damage'){title='DAMAGE • RESOLVE';promptText='Enter the total damage actually applied by the failed saves.';max=Math.max(0,(Number(counts.failedSaves)||0)*Math.max(1,Number(plan.damageValue)||1)*6);value=counts.damage??'';note='Use the physical dice result. Enter the final damage after any damage-reduction rules already shown by the Pre-Roll Check.';}
   else {title='RESOLUTION • REVIEW';promptText='Confirm the recorded physical result before applying it to the battlefield state.';note='The app will update the target using the recorded dice result and existing model-level state.';}
   const invalid=stage!=='review'&&stage!=='saveRolls'&&value!==''&&((Number(value)||0)<0||(Number(value)||0)>max)?' invalid':'';
-  const input=(stage==='review'||stage==='saveOrder')?'':((stage==='saveRolls'||stage==='precisionSave'||stage==='precisionDamage'||stage==='precisionDevastating'||stage==='mixedDamage')?'<input id="pr-dice-input" class="pr-dice-input" type="text" inputmode="numeric" placeholder="1, 2, 3, 5, 6" value="'+esc(String(value))+'">':'<input id="pr-dice-input" class="pr-dice-input'+invalid+'" type="number" inputmode="numeric" min="0" max="'+max+'" step="1" value="'+esc(String(value))+'" autofocus>');
-  const action=stage==='review'?'<button type="button" class="btn primary pr-big-btn" onclick="tacticalPreRollApplyResolution()">Apply Result</button>':'<button type="button" class="btn primary pr-big-btn" onclick="tacticalPreRollResolutionSet(\''+(stage==='saveRolls'?'saveRolls':stage==='mixedDamage'?'mixedDamage':stage==='hitSpecial'?'criticalHits':stage==='hits'?'hits':stage==='woundSpecial'?'criticalWounds':stage==='wounds'?'wounds':stage==='saves'?'failedSaves':'damage')+'\',document.getElementById(\'pr-dice-input\').value)">Continue</button>';
+  const input=(stage==='review'||stage==='saveOrder')?'':((stage==='saveRolls'||stage==='precisionSave'||stage==='precisionDamage'||stage==='precisionDevastating'||stage==='mixedVariableSave'||stage==='mixedDamage')?'<input id="pr-dice-input" class="pr-dice-input" type="text" inputmode="numeric" placeholder="1, 2, 3, 5, 6" value="'+esc(String(value))+'">':'<input id="pr-dice-input" class="pr-dice-input'+invalid+'" type="number" inputmode="numeric" min="0" max="'+max+'" step="1" value="'+esc(String(value))+'" autofocus>');
+  const action=stage==='review'?'<button type="button" class="btn primary pr-big-btn" onclick="tacticalPreRollApplyResolution()">Apply Result</button>':'<button type="button" class="btn primary pr-big-btn" onclick="tacticalPreRollResolutionSet(\''+(stage==='saveRolls'?'saveRolls':stage==='mixedVariableSave'?'mixedVariableSave':stage==='mixedDamage'?'mixedDamage':stage==='hitSpecial'?'criticalHits':stage==='hits'?'hits':stage==='woundSpecial'?'criticalWounds':stage==='wounds'?'wounds':stage==='saves'?'failedSaves':'damage')+'\',document.getElementById(\'pr-dice-input\').value)">Continue</button>';
   const back='<button type="button" class="btn pr-secondary-btn" onclick="tacticalPreRollResolutionBack()">Back</button>';
   return '<div class="modal pr-dice-modal"><div class="card pr-dice-card"><div class="split"><div><div class="tiny">PHYSICAL DICE ENTRY • '+esc(state.phase||'Phase')+'</div><h2 style="margin:4px 0">'+esc(title)+'</h2><div class="muted">'+esc(get(s.targetEntryUid?entry('opp',s.targetEntryUid)?.unitId:'')?.name||'Target')+' • '+esc(s.weaponName)+'</div></div><button type="button" class="btn" onclick="tacticalPreRollCloseResolution()">Close</button></div><div class="pr-dice-target"><span>Target</span><strong>'+esc(s.result.type==='Charge'?'2D6':(stage==='hits'||stage==='hitSpecial'?String(plan.hitNeed)+'+':stage==='wounds'||stage==='woundSpecial'?String(plan.woundNeed)+'+':stage==='saves'?(plan.saveNeed===null?'No Save':String(plan.saveNeed)+'+'):'Damage'))+'</strong><span>'+esc(s.result.attacker)+' → '+esc(s.result.target)+'</span></div><div class="pr-dice-prompt">'+esc(promptText)+'</div>'+(stage==='review'?'<div class="grid3" style="margin-top:14px"><div class="status"><div class="tiny">Hits</div><b>'+counts.hits+(specials.criticalHits!=null?' • '+specials.criticalHits+' crit':'')+'</b></div><div class="status"><div class="tiny">Wounds</div><b>'+counts.wounds+(specials.criticalWounds!=null?' • '+specials.criticalWounds+' crit':'')+'</b></div><div class="status"><div class="tiny">Failed Saves</div><b>'+counts.failedSaves+'</b></div><div class="status"><div class="tiny">Damage</div><b>'+counts.damage+'</b></div></div>':'')+input+(note?'<div class="pr-dice-note">'+esc(note)+'</div>':'')+'<div class="pr-dice-actions">'+back+action+'</div><div class="tiny" style="margin-top:10px">If the battlefield state changes, this session is invalidated and the Pre-Roll Check must be re-run. Nothing here rolls dice for you.</div></div></div>';
 }
