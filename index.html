@@ -6689,7 +6689,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
       recommendationEligible:tacticalLegality.canTarget===true&&phaseActionAvailable&&availableGroups.length>0,
       scoreComponents:{
         wipeChance:wipe,
-        killFraction,
+        killFraction:killFrac,
         damageFraction,
         weights:{wipeChance:0.50,killFraction:0.30,damageFraction:0.20}
       },
