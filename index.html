@@ -5579,8 +5579,10 @@ function tacticalPreRollContextSignature(attackerEntryUid,targetEntryUid,weaponN
   return JSON.stringify({
     phase,round,turn,attackerEntryUid,targetEntryUid,weaponName,
     pair,action,weaponUse,
+    weaponProfile:(ae&&te?attachedCombatWeaponGroups('my',ae,te).map(g=>g.weapon).find(x=>String(x.name)===String(weaponName)):null)?(()=>{const p=attachedCombatWeaponGroups('my',ae,te).map(g=>g.weapon).find(x=>String(x.name)===String(weaponName))||{};return {name:String(p.name||''),A:String(p.A??''),BS:String(p.BS??''),WS:String(p.WS??''),S:String(p.S??''),AP:String(p.AP??''),D:String(p.D??''),rng:String(p.rng??p.range??''),abilities:Array.isArray(p.abilities)?p.abilities.map(String).sort():[]};})():null,
     hitBase:result?.hitBase,hitFinal:result?.hitFinal,woundFinal:result?.woundFinal,
     save:result?.save||null,modifiers:result?.modifiers||[],
+    attackCount:result?.modelCount||0,hitCritThreshold:result?.hitCritThreshold||6,woundCritThreshold:result?.woundCritThreshold||6,
     attackerModels:atkSnap?.survivingModels,targetModels:defSnap?.survivingModels,
     targetWounds:defSnap?.targetWoundsState||[],
     targetProfiles:(defSnap?.models||[]).filter(m=>m.alive!==false).map(m=>({id:m.id,T:m.profile?.T,Sv:m.profile?.Sv,InSv:m.profile?.InSv,W:m.profile?.W,character:!!m.character})),
