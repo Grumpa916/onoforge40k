@@ -5692,6 +5692,8 @@ function tacticalPreRollApplyMixedVariableDamage(s,rolls){
   const states=new Map((mr.modelStates||[]).map(m=>[m.id,{...m,woundsRemaining:Math.max(0,Number(m.woundsRemaining)||0),alive:m.alive!==false}]));
   const groupModels=g=>(groups.find(x=>x.id===g.id)?.modelIds||[]).map(String).map(id=>states.get(id)).filter(Boolean);
   const pickModel=g=>groupModels(g).find(m=>m.alive!==false&&Number(m.woundsRemaining||0)<Number(m.maxWounds||m.profile?.W||1))||groupModels(g).find(m=>m.alive!==false)||null;
+  const instanceOrder=[...(mr.damageInstances||[]),...(mr.devastatingInstances||[])];
+  if(rolls.length!==instanceOrder.length)throw new Error('Damage results do not match the recorded failed-save and Devastating Wounds instances.');
   const precisionTargetId=String(s.plan.precisionTargetModelId||'');
   const precisionGroup=s.plan.precision&&precisionTargetId?groups.find(g=>(g.modelIds||[]).some(id=>String(id)===precisionTargetId)):null;
   let precisionActive=!!precisionGroup;
