@@ -6274,7 +6274,7 @@ function tacticalPreRollApplyResolution(){
     });
   }else{
     if(modelRosterRule(targetUnit)){
-      const roster=ensureModelRoster(te,targetUnit),alive=roster.filter(m=>m.alive!==false);let remainingDamage=damage;
+      const roster=ensureModelRoster(te,targetUnit),alive=roster.filter(m=>m.alive!==false).sort((a,b)=>{const aw=Math.max(0,Number(a.woundsRemaining)||0),bw=Math.max(0,Number(b.woundsRemaining)||0),am=Math.max(1,Number(a.maxWounds||a.profile?.W||targetUnit.wounds||1)),bm=Math.max(1,Number(b.maxWounds||b.profile?.W||targetUnit.wounds||1));return Number(aw<am)-Number(bw<bm)||aw-bw;});let remainingDamage=damage;
       for(const model of alive){if(remainingDamage<=0)break;const before=Math.max(0,Number(model.woundsRemaining)||0),applied=Math.min(before,remainingDamage);model.woundsRemaining=Math.max(0,before-applied);if(model.woundsRemaining<=0)model.alive=false;remainingDamage-=applied;}
       syncModelRosterBattleState(te,targetUnit);
     }else{
