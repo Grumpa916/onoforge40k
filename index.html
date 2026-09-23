@@ -5837,11 +5837,19 @@ function tacticalPreRollResolveMixedVariableDevastating(s,roll){
     return models.find(m=>Number(m.woundsRemaining||0)<Number(m.maxWounds||m.profile?.W||1))||models[0]||null;
   };
   let g=null,m=null;
-  while(vs.groupIndex<orderIds.length){
-    g=groups.find(x=>x.id===orderIds[vs.groupIndex]);
-    m=pickInGroup(g);
-    if(m)break;
-    vs.groupIndex++;
+  const precisionId=String(s.precisionTargetState?.modelId||'');
+  const precisionGroup=groups.find(x=>(x.modelIds||[]).some(id=>String(id)===precisionId));
+  if(precisionGroup){
+    m=pickInGroup(precisionGroup);
+    if(m)g=precisionGroup;
+  }
+  if(!m){
+    while(vs.groupIndex<orderIds.length){
+      g=groups.find(x=>x.id===orderIds[vs.groupIndex]);
+      m=pickInGroup(g);
+      if(m)break;
+      vs.groupIndex++;
+    }
   }
   if(!m)throw new Error('No legal target remains for Devastating Wounds.');
   const n=Math.floor(Number(roll)),max=tacticalPreRollDamageMax(s.plan.weaponDamage||'1');
