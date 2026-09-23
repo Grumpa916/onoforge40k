@@ -4717,10 +4717,14 @@ function previousRound(){
  const current=Number(state.round);
  if(!Number.isFinite(current)||current<=1){return}
  const before=snapshotForUndo();
- state.round=Math.max(1,current-1);
+ const nextRoundNumber=Math.max(1,current-1);
  const nextTurn=state.firstTurn==='opp'?'opp':'my';
+ rememberPhaseCP();
  if(state.currentTurn!==nextTurn)switchTurnClock(nextTurn);
+ state.round=nextRoundNumber;
  state.currentTurn=nextTurn;
+ state.phase='Command';
+ restorePhaseCP(state.round,nextTurn,'Command');
  state.objectiveTurnStartOwners={...(state.objectiveTurnStartOwners||{})};
  state.objectiveTurnStartOwners[String(state.round)+'|'+nextTurn]=Object.fromEntries(
    Object.entries(state.objectives||{}).map(([name,owner])=>[
