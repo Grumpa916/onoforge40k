@@ -5458,7 +5458,9 @@ function tacticalPreRollContextSignature(attackerEntryUid,targetEntryUid,weaponN
     save:result?.save||null,modifiers:result?.modifiers||[],
     attackerModels:atkSnap?.survivingModels,targetModels:defSnap?.survivingModels,
     targetWounds:defSnap?.targetWoundsState||[],
-    targetExact:defSnap?.exactModelIdentity,targetAttached:defSnap?.components?.length>1
+    targetExact:defSnap?.exactModelIdentity,targetAttached:defSnap?.components?.length>1,
+    poolId:result?.poolId||null,targetModelIds:result?.targetModelIds||[],
+    attackerModelIds:result?.attackerModelIds||result?.poolModelIds||[]
   });
 }
 function tacticalPreRollResolutionState(){
@@ -5469,17 +5471,14 @@ function tacticalPreRollResolutionState(){
 function tacticalPreRollResolutionCurrent(){
   const ae=tacticalAdvisorAttackerEntry(),teUid=state.tactical?.selectedTargetUid,te=teUid?entry('opp',teUid):null;
   if(!ae||!te)return null;
-  const stored=tacticalPreRollWeaponState(ae.uid,te.uid).weaponName;
+  const storedState=tacticalPreRollWeaponState(ae.uid,te.uid),stored=storedState.weaponName;
   if(!stored)return null;
   const r=tacticalPreRollCheck(ae.uid,te.uid,stored);
   if(!r||!['ready','ready-with-warnings'].includes(r.status))return null;
-  const poolId=raw?.poolId?String(raw.poolId):tacticalPreRollWeaponState(ae.uid,te.uid).poolId;
-  const key=tacticalPreRollSessionKey(ae.uid,te.uid,stored,poolId);
-  const signature=tacticalPreRollContextSignature(ae.uid,te.uid,stored,r);
-  const map=tacticalPreRollResolutionState();
-  const raw=map[key];
+  const poolId=String(r.poolId||storedState.poolId||''),key=tacticalPreRollSessionKey(ae.uid,te.uid,stored,poolId),signature=tacticalPreRollContextSignature(ae.uid,te.uid,stored,r);
+  const map=tacticalPreRollResolutionState(),raw=map[key];
   if(!raw||raw.signature!==signature)return null;
-  return {...raw,key,signature,poolId:raw.poolId||null,result:r,attackerEntryUid:ae.uid,targetEntryUid:te.uid,weaponName:stored};
+  return {...raw,key,signature,poolId:raw.poolId||poolId||null,result:r,attackerEntryUid:ae.uid,targetEntryUid:te.uid,weaponName:stored};
 }
 function tacticalPreRollSaveGroups(te){
   const snap=combatSnapshot('opp',te);
@@ -5550,7 +5549,8 @@ function tacticalPreRollResolutionPlan(ae,te,w,r,poolId=null){
     if(!ids.length)return true;
     return ids.some(id=>tacticalWeaponModelAvailable(g.entry?.uid,id,w,state.round,state.phase,'my')&&!tacticalWeaponModelModeConflict(g.entry?.uid,id,w,g.entry,state.round,state.phase,'my'));
   });
-  const models=eligibleGroups.reduce((n,g)=>n+Math.max(0,Number(g.count)||0),0);
+  const modelIds=Array.from(new Set(eligibleGroups.flatMap(g=>Array.isArray(g.modelIds)?g.modelIds.map(String):[])));
+  const models=modelIds.length;
   const targetSnap=combatSnapshot('opp',te);
   const targetModels=Math.max(1,Number(targetSnap?.targetModels)||Number(targetSnap?.survivingModels)||Number(combatTargetUnit('opp',te)?.models)||1);
   const c=engineContext(combatTargetUnit('my',ae)||get(ae.unitId),w,combatTargetUnit('opp',te)||get(te.unitId),{
@@ -5569,7 +5569,7 @@ function tacticalPreRollResolutionPlan(ae,te,w,r,poolId=null){
   const profiles=new Set((targetSnap?.models||[]).filter(m=>m.alive!==false).map(m=>JSON.stringify({T:m.profile?.T,Sv:m.profile?.Sv,InSv:m.profile?.InSv,W:m.profile?.W,character:!!m.character})));
   const mixedSaveGroups=targetSaveGroups.length>1;
   return {
-    models,attacks,hitNeed:c.torrent?'Auto':c.hitNeed,
+    modelIds,models,attacks:modelIds.length*(basePer+rapid)+blast+cleave,hitNeed:c.torrent?'Auto':c.hitNeed,
     hitCritThreshold:c.critHitThreshold||6,woundCritThreshold:c.critWoundThreshold||6,
     woundNeed:Math.min(6,Math.max(2,Number(c.woundNeed)||2)),
     saveNeed:r.save?.need>6?null:r.save?.need||null,
@@ -5699,6 +5699,8 @@ function tacticalPreRollApplyResolution(){
   const damage=Math.max(0,Number(s.counts.damage)||0);
   const snap=combatSnapshot('opp',te);
   const mixed=!!s.plan.mixedSaveGroups;
+  const attackerModelIds=Array.isArray(s.plan?.modelIds)?[...new Set(s.plan.modelIds.map(String))]:[];
+  if(!attackerModelIds.length){alert('No valid attacker models remain in this pre-roll session. Re-open the pre-roll check.');return;}
   if(mixed){
     if(!s.mixedResolution){alert('Mixed-profile resolution is incomplete. Resolve the save dice before applying the result.');return;}
     const affected=new Set();
@@ -5734,12 +5736,10 @@ function tacticalPreRollApplyResolution(){
     }
   }
   const hitCount=Number(s.counts.hits)||0,critHits=Number(s.specials.criticalHits)||0,woundCount=Number(s.counts.wounds)||0,failedSaves=Number(s.counts.failedSaves)||0,critWounds=Number(s.specials.criticalWounds)||0;
-  const modelIds=Array.isArray(s.mixedResolution?.resolution)?s.mixedResolution.resolution.map(x=>x.modelId).filter(Boolean):[];
-  const beforeGame=JSON.parse(JSON.stringify(te.game||{})),afterGame=JSON.parse(JSON.stringify(te.game||{}));
+  const beforeGame=JSON.parse(JSON.stringify(fullBefore?.opp?.find?.(x=>x.uid===te.uid)?.game||{})),afterGame=JSON.parse(JSON.stringify(te.game||{}));
   event('ATTACK_RESOLUTION',{
-    side:'my',attackerEntryUid:ae.uid,targetEntryUid:te.uid,unit:targetUnit.name,weapon:w.name,
-    attacks:s.plan.attacks,modelsResolved:s.plan.models,hits:hitCount,wounds:woundCount,saved:Math.max(0,woundCount-failedSaves),
-    damage,critHits,critW:critWounds,modelIds,shootingMode:state.phase==='Shooting'?tacticalWeaponShootingMode(w):null,
+    side:'my',attacker:ae.name||get(ae.unitId)?.name||ae.uid,attackerEntryUid:ae.uid,target:targetUnit.name,targetEntryUid:te.uid,unit:ae.name||get(ae.unitId)?.name||ae.uid,weapon:w.name,
+    attacks:s.plan.attacks,modelsResolved:attackerModelIds.length,hits:hitCount,wounds:woundCount,saved:Math.max(0,woundCount-failedSaves),damage,critHits,critW:critWounds,modelIds:attackerModelIds,shootingMode:state.phase==='Shooting'?tacticalWeaponShootingMode(w):null,
     diceEntry:true,poolId:current.poolId||null,preRollSignature:current.signature,before:beforeGame,after:afterGame,
     mixedAllocation:!!s.plan.mixedSaveGroups,saveOrder:s.saveOrder||null,saveRolls:s.mixedResolution?.resolution?.map(x=>x.roll)||null
   },fullBefore);
