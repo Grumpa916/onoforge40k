@@ -5510,7 +5510,9 @@ function tacticalPreRollSaveGroups(te,provisionalStates=null){
   const bodyguardPresent=(snap?.components||[]).some(c=>c.role==='bodyguard'&&c.models?.some(m=>{
     const o=overrides.get(String(m.id)); return o?o.alive!==false:m.alive!==false;
   }));
-  const allocatable=models.filter(m=>!m.character||!bodyguardPresent);
+  const explicitPrecisionId=(Array.isArray(provisionalStates)&&provisionalStates.length===1&&provisionalStates[0]?.character)
+    ?String(provisionalStates[0].id):null;
+  const allocatable=models.filter(m=>!m.character||!bodyguardPresent||String(m.id)===explicitPrecisionId);
   const groups=[];
   const map=new Map();
   allocatable.forEach(m=>{
