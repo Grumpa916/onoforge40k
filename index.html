@@ -6123,7 +6123,8 @@ function tacticalPreRollResolutionSet(field,value){
     if(plan.mixedSaveGroups){
       if(plan.precision)s.stage='precisionSave';
       else if(saveableAfterCritical>0)s.stage='saveOrder';
-      else{tacticalPreRollInitMixedVariable(s,[]);s.mixedVariableState.phase='devastating';s.stage='mixedDamage';}
+      else if(plan.devastating&&Number(s.specials.criticalWounds||0)>0){tacticalPreRollInitMixedVariable(s,[]);s.mixedVariableState.phase='devastating';s.stage='mixedDamage';}
+      else s.stage='review';
     }else s.stage=saveableAfterCritical>0?'saves':'review';
   }else if(field==='precisionSave'){
     tacticalPreRollPrecisionPushHistory(s);
