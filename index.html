@@ -5422,13 +5422,13 @@ function tacticalPreRollCheck(attackerUid,targetUid,weaponName){
   const assignedCount=targetAlloc.reduce((n,x)=>n+x.modelIds.length,0);
   const allAssigned=pool.allocations.reduce((n,x)=>n+x.modelIds.length,0)===pool.modelIds.length&&unassigned===0;
   const ctx=tacticalPairState(ae.uid,te.uid),leg=tacticalTargetLegality(ae,te,state.phase),warnings=[];
+  const w=pool.weapon,targetUnit=combatTargetUnit('opp',te)||get(te.unitId),movement=tacticalAdvisorActionState(combatRootEntry('my',ae)?.uid||ae.uid);
   const halfRangeState=tacticalHalfRangeState(w,ctx.distanceInches);
   const breakpointWeapon=tacticalRapidFireValue(w)>0||tacticalMeltaValue(w)>0;
   if(breakpointWeapon&&halfRangeState.active===null)warnings.push('Measure the distance to the target before rolling: Rapid Fire/Melta depends on half range.');
   if(!allAssigned)warnings.push('Assign every available model in this weapon pool to exactly one target before rolling.');
   if(assignedCount<=0)warnings.push('This weapon pool has no models assigned to the selected target.');
   if(leg.canTarget===false||leg.canTarget===null)warnings.push(...(leg.reasons||[]));
-  const w=pool.weapon,targetUnit=combatTargetUnit('opp',te)||get(te.unitId),movement=tacticalAdvisorActionState(combatRootEntry('my',ae)?.uid||ae.uid);
   const c=engineContext(get(ae.unitId),w,targetUnit,{...(state.mathRules||{}),halfRange:halfRangeState.active===true,chargeMade:!!movement?.chargeMade,attackerEngagedWithTarget:ctx.engagement==='engaged',attackerEngagedAny:tacticalUnitIsEngagedAny(ae.uid),attackerMonsterVehicle:tacticalUnitIsMonsterVehicle(ae),engagedTargetMonsterVehicle:ctx.engagement==='engaged'&&tacticalUnitIsMonsterVehicle(te),movementDistanceInches:movement?.movementDistanceInches,heavyEligible:movement?.movement==='remained'&&movement?.setUpThisTurn!==true&&Number(movement?.movementDistanceInches||0)<=3});
   const save=engineSaveDistribution(targetUnit,w,c,{...(state.mathRules||{})}),modifiers=[];
   if(c.closeQuartersHitPenalty)modifiers.push('-1 to Hit: close-quarters shooting condition');
