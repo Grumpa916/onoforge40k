@@ -5772,7 +5772,7 @@ function tacticalPreRollResolutionSet(field,value){
   }else if(field==='saveRolls'){
     let rolls=[];
     try{rolls=JSON.parse('['+String(value||'').split(',').map(x=>x.trim()).filter(Boolean).join(',')+']');}catch(e){alert('Enter save results as comma-separated D6 values, for example: 1,2,3,5,6');return;}
-    const saveable=Math.max(0,(Number(s.counts.wounds)||0)-(plan.devastating?Math.min(Number(s.specials.criticalWounds)||0,Number(s.counts.wounds)||0):0));
+    const saveable=Math.max(0,(Number(s.counts.wounds)||0)-(plan.devastating?Math.min(Number(s.specials.criticalWounds)||0,Number(s.counts.wounds)||0):0)-(Number(s.counts.precisionResolved)||0));
     try{
       const saveWeapon=attachedCombatWeaponGroups('my',entry('my',current.attackerEntryUid),entry('opp',current.targetEntryUid)).map(g=>g.weapon).find(x=>String(x.name)===String(current.weaponName)); const resolved=tacticalPreRollApplyMixedSaveRolls({state:s,session:s,plan,saveable,targetEntryUid:current.targetEntryUid,weapon:saveWeapon||{AP:0}},rolls);
       s.counts.failedSaves=resolved.failedSaves;s.counts.damage=resolved.damage;s.mixedResolution=resolved;
@@ -5885,7 +5885,7 @@ function tacticalPreRollResolutionModal(){
     return '<div class="modal pr-dice-modal"><div class="card pr-dice-card"><div class="split"><div><div class="tiny">PHYSICAL DICE ENTRY • '+esc(state.phase||'Phase')+'</div><h2 style="margin:4px 0">'+title+'</h2><div class="muted">'+esc(get(entry('opp',current.targetEntryUid)?.unitId||'')?.name||'Target')+' • '+esc(current.weaponName)+'</div></div><button type="button" class="btn" onclick="tacticalPreRollCloseResolution()">Close</button></div><div class="pr-dice-target"><span>Wounds to save</span><strong>'+Math.max(0,(Number(counts.wounds)||0)-(plan.devastating?Math.min(Number(specials.criticalWounds)||0,Number(counts.wounds)||0):0))+'</strong><span>Declare order</span></div><div class="pr-dice-prompt">'+promptText+'</div><div style="display:grid;gap:7px;margin-top:14px">'+html+'</div><div class="pr-dice-note">'+esc(note)+'</div><div class="pr-dice-actions"><button type="button" class="btn" onclick="tacticalPreRollResolutionBack()">Back</button><button type="button" class="btn primary pr-big-btn" onclick="tacticalPreRollResolutionSet(\'saveOrder\',\'\')">Continue</button></div></div></div>';
   }
   else if(stage==='saveRolls'){
-    const saveable=Math.max(0,(Number(counts.wounds)||0)-(plan.devastating?Math.min(Number(specials.criticalWounds)||0,Number(counts.wounds)||0):0));
+    const saveable=Math.max(0,(Number(counts.wounds)||0)-(plan.devastating?Math.min(Number(specials.criticalWounds)||0,Number(counts.wounds)||0):0)-(Number(counts.precisionResolved)||0));
     title='SAVES • RESOLVE';promptText='Roll all '+saveable+' saves, sort the physical dice from lowest to highest, then enter the results.';max=saveable;value='';note='Enter comma-separated D6 results, lowest to highest. The app will apply the 11th Edition allocation order and move to the next group only when the current group is destroyed.';
   }
   else if(stage==='mixedDamage'){const instances=(s.mixedResolution?.damageInstances||[]).length+(s.mixedResolution?.devastatingInstances||[]).length;title='DAMAGE • RESOLVE';promptText='Enter '+instances+' physical damage results, in allocation order.';max=instances*tacticalPreRollDamageMax(s.plan.weaponDamage||'1');value='';note='Variable Damage requires the actual physical damage result for each failed save and each Devastating Wounds critical. Excess damage from each individual Devastating Wounds result is lost.';}
