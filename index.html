@@ -1407,6 +1407,9 @@ function useStratagem(side,index){
        const historyItem=history[existingIndex];
        const refund=Math.max(0,Number(historyItem?.cp)||cpCost);
        state[cpKey]=Math.max(0,(Number(state[cpKey])||0)+refund);
+       // Keep the phase CP snapshot synchronized with the refunded state so
+       // leaving and re-entering this phase restores the refunded CP.
+       rememberPhaseCP();
        history.splice(existingIndex,1);
        const phaseUseKey=side==='opp'?'stratagemPhaseUsesOpp':'stratagemPhaseUsesMy';
        const phaseUses=Array.isArray(state[phaseUseKey])?state[phaseUseKey]:[];
