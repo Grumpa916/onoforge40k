@@ -6128,7 +6128,7 @@ function tacticalPreRollResolutionSet(field,value){
   }else if(field==='precisionSaveReroll'){
     tacticalPreRollPrecisionPushHistory(s);
     const roll=tacticalPreRollDiceAuthority('individual',value,6,'Save re-roll result');
-    const weapon=s.precisionWeapon||{AP:0,D:'1'},st=s.precisionTargetState,p=st?.profile||tacticalPreRollPrecisionTarget(s)?.model?.profile||{},need=Number(s.precisionCurrent?.saveNeed)||Math.min(Math.max(2,Math.min(7,Number(p.Sv)||7-(Number(weapon.AP)||0)+Number(st?.minusSave||0)),Number(p.InSv)||99),ok=roll!==1&&roll>=need;
+    const weapon=s.precisionWeapon||{AP:0,D:'1'},st=s.precisionTargetState,p=st?.profile||tacticalPreRollPrecisionTarget(s)?.model?.profile||{},sv=Math.max(2,Math.min(7,Number(p.Sv)||7)),armourNeed=Math.max(2,Math.min(7,sv-(Number(weapon.AP)||0)+Number(st?.minusSave||0))),need=Number(s.precisionCurrent?.saveNeed)||Math.min(armourNeed,Number(p.InSv)||99),ok=roll!==1&&roll>=need;
     s.precisionCurrent={...(s.precisionCurrent||{}),saveSucceeds:ok,rerollPending:false,rerolled:true,reroll:roll};
     if(ok){const total=tacticalPreRollSaveableWounds(s,false);s.counts.precisionResolved=(Number(s.counts.precisionResolved)||0)+1;s.stage=(Number(s.counts.precisionResolved)||0)<total?'precisionSave':(plan.devastating&&Number(s.specials.criticalWounds||0)>0?'precisionDevastating':'review');}
     else if(plan.variableDamage)s.stage='precisionDamage';
