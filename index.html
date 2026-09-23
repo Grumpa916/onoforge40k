@@ -5618,7 +5618,7 @@ function tacticalPreRollResolutionPlan(ae,te,w,r,poolId=null){
   const targetSaveGroups=tacticalPreRollSaveGroups(te);
   const profiles=new Set((targetSnap?.models||[]).filter(m=>m.alive!==false).map(m=>JSON.stringify({T:m.profile?.T,Sv:m.profile?.Sv,InSv:m.profile?.InSv,W:m.profile?.W,character:!!m.character})));
   const precisionTargetModelId=r?.precisionTargetModelId||null,precision=!!r?.precision,precisionTargetVisible=r?.precisionTargetVisible===true;
-  const mixedSaveGroups=targetSaveGroups.length>1||precision||(targetSnap?.models||[]).some(m=>engineFnp(m));
+  const mixedSaveGroups=targetSaveGroups.length>1||precision||!!engineFnp(c)||(targetSnap?.models||[]).some(m=>engineFnp(m));
   return {
     modelIds,models,attacks:modelIds.length*(basePer+rapid)+blast+cleave,hitNeed:c.torrent?'Auto':c.hitNeed,
     hitCritThreshold:c.critHitThreshold||6,woundCritThreshold:c.critWoundThreshold||6,
@@ -5633,7 +5633,7 @@ function tacticalPreRollResolutionPlan(ae,te,w,r,poolId=null){
     variableDamage:/D[36]/i.test(String(w.D||''))||String(w.D||'').includes('+'),
     damageValue:engineExpectedDice(w.D)+(c.melta&&half.active===true?c.melta:0),
     meltaActive:c.melta&&half.active===true?c.melta:0,
-    precision:!!c.precision,precisionTargetModelId,precisionTargetVisible
+    precision:!!c.precision,precisionTargetModelId,precisionTargetVisible,fnpNeed:engineFnp(c)||null
   };
 }
 function tacticalPreRollOpenResolution(){
@@ -5893,7 +5893,7 @@ function tacticalPreRollResolveMixedVariableDamage(s,roll){
   const n=Math.floor(Number(roll)),max=tacticalPreRollDamageMax(s.plan.weaponDamage||'1');
   if(!Number.isInteger(n)||n<1||n>max)throw new Error('Enter the actual physical Damage result.');
   const before=Math.max(0,Number(m.woundsRemaining)||0),applied=Math.min(before,n);
-  if(engineFnp(m)){vs.phase='fnp';vs.pendingDamage=applied;vs.pendingFnp=engineFnp(m);vs.kind='normal';s.stage='mixedFnp';return;}
+  if(tacticalPreRollFnp(m,s)){vs.phase='fnp';vs.pendingDamage=applied;vs.pendingFnp=tacticalPreRollFnp(m,s);vs.kind='normal';s.stage='mixedFnp';return;}
 m.woundsRemaining=Math.max(0,before-n);m.alive=m.woundsRemaining>0;
   mr.damage=(Number(mr.damage)||0)+applied;mr.normalDamage=(Number(mr.normalDamage)||0)+applied;
   mr.damageRolls.push(n);s.counts.damage=mr.damage;s.counts.damageResolved=(Number(s.counts.damageResolved)||0)+1;
@@ -5937,7 +5937,7 @@ function tacticalPreRollResolveMixedVariableDevastating(s,roll){
   const n=Math.floor(Number(roll)),max=tacticalPreRollDamageMax(s.plan.weaponDamage||'1');
   if(!Number.isInteger(n)||n<1||n>max)throw new Error('Enter the actual physical Damage result.');
   const before=Math.max(0,Number(m.woundsRemaining)||0),applied=Math.min(before,n);
-  if(engineFnp(m)){vs.phase='fnp';vs.pendingDamage=applied;vs.pendingFnp=engineFnp(m);vs.kind='devastating';s.stage='mixedFnp';return;}
+  if(tacticalPreRollFnp(m,s)){vs.phase='fnp';vs.pendingDamage=applied;vs.pendingFnp=tacticalPreRollFnp(m,s);vs.kind='devastating';s.stage='mixedFnp';return;}
 m.woundsRemaining=Math.max(0,before-n);m.alive=m.woundsRemaining>0;
   mr.damage=(Number(mr.damage)||0)+applied;mr.mortalDamage=(Number(mr.mortalDamage)||0)+applied;mr.damageRolls.push(n);
   vs.currentModelId=null;vs.currentGroupId=null;vs.currentSaveNeed=null;vs.currentSaveSucceeds=null;
@@ -5985,12 +5985,12 @@ function tacticalPreRollResolutionSet(field,value){
     const total=Math.max(0,(Number(s.counts.wounds)||0)-(plan.devastating?Math.min(Number(s.specials.criticalWounds)||0,Number(s.counts.wounds)||0):0));
     if((Number(s.counts.precisionResolved)||0)>=total){s.stage=plan.devastating&&Number(s.specials.criticalWounds||0)>0?'precisionDevastating':'review';return;}
     const roll=tacticalPreRollDiceAuthority('individual',value,6,'Save result');
-    try{const weapon=attachedCombatWeaponGroups('my',entry('my',current.attackerEntryUid),entry('opp',current.targetEntryUid)).map(g=>g.weapon).find(x=>String(x.name)===String(current.weaponName));s.precisionWeapon=weapon||{AP:0,D:'1'};if(!tacticalPreRollPrecisionStep(s,roll))s.stage='saveOrder';else if(s.precisionCurrent.saveSucceeds){const total=Math.max(0,(Number(s.counts.wounds)||0)-(plan.devastating?Math.min(Number(s.specials.criticalWounds)||0,Number(s.counts.wounds)||0):0));s.counts.precisionResolved=(Number(s.counts.precisionResolved)||0)+1;s.stage=(Number(s.counts.precisionResolved)||0)<total?'precisionSave':(plan.devastating&&Number(s.specials.criticalWounds||0)>0?'precisionDevastating':'review');}else if(s.stage==='precisionApplyFixed'){const st=s.precisionTargetState,before=Math.max(0,Number(st.woundsRemaining)||0),pending=Math.min(before,Math.max(0,Number(plan.damageValue)||0));if(engineFnp(st)){s.precisionPendingDamage=pending;s.precisionPendingFnp=engineFnp(st);s.stage='precisionFnp';return;}const applied=pending;st.woundsRemaining=Math.max(0,before-applied);st.alive=st.woundsRemaining>0;s.counts.failedSaves=(Number(s.counts.failedSaves)||0)+1;s.counts.damage=(Number(s.counts.damage)||0)+applied;s.counts.precisionResolved=(Number(s.counts.precisionResolved)||0)+1;const total=Math.max(0,(Number(s.counts.wounds)||0)-(plan.devastating?Math.min(Number(s.specials.criticalWounds)||0,Number(s.counts.wounds)||0):0));s.stage=(Number(s.counts.precisionResolved)||0)<total?(st.alive?'precisionSave':'saveOrder'):(plan.devastating&&Number(s.specials.criticalWounds||0)>0?'precisionDevastating':'review');}}catch(e){alert(e.message||String(e));return;}
+    try{const weapon=attachedCombatWeaponGroups('my',entry('my',current.attackerEntryUid),entry('opp',current.targetEntryUid)).map(g=>g.weapon).find(x=>String(x.name)===String(current.weaponName));s.precisionWeapon=weapon||{AP:0,D:'1'};if(!tacticalPreRollPrecisionStep(s,roll))s.stage='saveOrder';else if(s.precisionCurrent.saveSucceeds){const total=Math.max(0,(Number(s.counts.wounds)||0)-(plan.devastating?Math.min(Number(s.specials.criticalWounds)||0,Number(s.counts.wounds)||0):0));s.counts.precisionResolved=(Number(s.counts.precisionResolved)||0)+1;s.stage=(Number(s.counts.precisionResolved)||0)<total?'precisionSave':(plan.devastating&&Number(s.specials.criticalWounds||0)>0?'precisionDevastating':'review');}else if(s.stage==='precisionApplyFixed'){const st=s.precisionTargetState,before=Math.max(0,Number(st.woundsRemaining)||0),pending=Math.min(before,Math.max(0,Number(plan.damageValue)||0));if(tacticalPreRollFnp(st,s)){s.precisionPendingDamage=pending;s.precisionPendingFnp=tacticalPreRollFnp(st,s);s.stage='precisionFnp';return;}const applied=pending;st.woundsRemaining=Math.max(0,before-applied);st.alive=st.woundsRemaining>0;s.counts.failedSaves=(Number(s.counts.failedSaves)||0)+1;s.counts.damage=(Number(s.counts.damage)||0)+applied;s.counts.precisionResolved=(Number(s.counts.precisionResolved)||0)+1;const total=Math.max(0,(Number(s.counts.wounds)||0)-(plan.devastating?Math.min(Number(s.specials.criticalWounds)||0,Number(s.counts.wounds)||0):0));s.stage=(Number(s.counts.precisionResolved)||0)<total?(st.alive?'precisionSave':'saveOrder'):(plan.devastating&&Number(s.specials.criticalWounds||0)>0?'precisionDevastating':'review');}}catch(e){alert(e.message||String(e));return;}
   }else if(field==='precisionDamage'){
     tacticalPreRollPrecisionPushHistory(s);
     const max=tacticalPreRollDamageMax(s.precisionWeapon?.D||'1');const roll=tacticalPreRollDiceAuthority('damage',value,max,'Damage result');
     const st=s.precisionTargetState;if(!st||!st.alive){s.stage='saveOrder';return;}const before=Math.max(0,Number(st.woundsRemaining)||0),pending=Math.min(before,roll);
-    if(engineFnp(st)){s.precisionPendingDamage=pending;s.precisionPendingFnp=engineFnp(st);s.stage='precisionFnp';return;}
+    if(tacticalPreRollFnp(st,s)){s.precisionPendingDamage=pending;s.precisionPendingFnp=tacticalPreRollFnp(st,s);s.stage='precisionFnp';return;}
     st.woundsRemaining=Math.max(0,before-pending);st.alive=st.woundsRemaining>0;s.counts.failedSaves=(Number(s.counts.failedSaves)||0)+1;s.counts.damage=(Number(s.counts.damage)||0)+pending;s.counts.precisionResolved=(Number(s.counts.precisionResolved)||0)+1;const total=Math.max(0,(Number(s.counts.wounds)||0)-(plan.devastating?Math.min(Number(specials.criticalWounds)||0,Number(s.counts.wounds)||0):0));s.stage=(Number(s.counts.precisionResolved)||0)<total?'precisionSave':(plan.devastating&&Number(s.specials.criticalWounds||0)>0?'precisionDevastating':'review');
   }else if(field==='precisionFnp'){
     tacticalPreRollPrecisionPushHistory(s);
@@ -6910,6 +6910,7 @@ function approxKillChance(expectedDamage,targetWounds){if(expectedDamage<=0||tar
 function engineExpectedDice(v){const s=String(v??'1').trim().toUpperCase().replace(/\s+/g,'');let total=0,found=false;const re=/([+-]?)(\d*)D([36])/g;let m;while((m=re.exec(s))){found=true;const n=Number(m[2]||1),sign=m[1]==='-'?-1:1,faces=Number(m[3]);total+=sign*n*(faces===3?2:3.5)}const rest=s.replace(/([+-]?\d*)D[36]/g,'');if(rest&&/^[-+]?\d+(?:\.\d+)?$/.test(rest))total+=Number(rest);return found?total:(Number(s)||1)}
 function engineRoll(v){const s=String(v??'1').trim().toUpperCase().replace(/\s+/g,'');let total=0,found=false,last=0;const re=/([+-]?)(\d*)D([36])/g;let m;while((m=re.exec(s))){found=true;const n=Number(m[2]||1),sign=m[1]==='-'?-1:1,faces=Number(m[3]);for(let i=0;i<n;i++)total+=sign*(1+Math.floor(Math.random()*faces));last=faces}const rest=s.replace(/([+-]?\d*)D[36]/g,'');if(rest&&/^[-+]?\d+$/.test(rest))total+=Number(rest);return found?total:(Number(s)||1)}
 function engineFnp(m){return m.fnp4?4:m.fnp5?5:m.fnp6?6:null}
+function tacticalPreRollFnp(m,s){return engineFnp(m)||Number(s?.plan?.fnpNeed)||null}
 function engineSustained(c,m){return m.sustained3?3:m.sustained2?2:m.sustained1?1:c.sustained}
 function engineAntiForTarget(w,t,m){const abilities=(w.abilities||[]).map(x=>String(x).toUpperCase().replace(/-/g,' '));let best=null;for(const a of abilities){const q=a.match(/ANTI[- ]([A-Z]+)\s*(2|3|4|5)\+/);if(q&&(t.keywords||[]).some(k=>String(k).toUpperCase()===q[1]))best=best?Math.min(best,Number(q[2])):Number(q[2])}const manual=m.anti3?3:m.anti4?4:m.anti5?5:null;return manual?Math.min(best||99,manual):best}
 function engineContext(a,w,t,m){const abilities=(w.abilities||[]).map(x=>String(x).toUpperCase().replace(/-/g,' '));const txt=abilities.join(' | ');const c={};c.indirect=abilities.some(x=>x.includes('INDIRECT FIRE'))&&!!m.indirectShooting;c.lethal=abilities.some(x=>x.includes('LETHAL HITS'))||!!m.lethal;c.sustained=Number((txt.match(/SUSTAINED HITS\s*(D\d+|\d+)/)||[])[1]?.replace('D',''))||0;c.devastating=abilities.some(x=>x.includes('DEVASTATING WOUNDS'))||!!m.devastating||!!m.abilityViciousInsight;c.torrent=abilities.some(x=>x.includes('TORRENT'))||!!m.torrent;const blastMatch=txt.match(/BLAST(?:\s*(\d+))?/);c.blast=blastMatch?(Number(blastMatch[1])||1):0;const cleaveMatch=txt.match(/CLEAVE(?:\s*(\d+))?/);c.cleave=cleaveMatch?(Number(cleaveMatch[1])||1):0;c.rapidFire=Number((txt.match(/RAPID FIRE\s*(\d+)/)||[])[1])||0;c.heavy=abilities.some(x=>x.trim()==='HEAVY');c.twin=abilities.some(x=>x.includes('TWIN-LINKED'));c.melta=Number((txt.match(/MELTA\s*(\d+)/)||[])[1])||0;c.precision=abilities.some(x=>x.includes('PRECISION'));c.ignoreCover=abilities.some(x=>x.includes('IGNORES COVER'));
