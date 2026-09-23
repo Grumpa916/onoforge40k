@@ -5672,7 +5672,14 @@ function tacticalPreRollPrecisionPushHistory(s){
     precisionTargetState:s.precisionTargetState?{...s.precisionTargetState}:null,
     precisionCurrent:s.precisionCurrent?{...s.precisionCurrent}:null,
     precisionWeapon:s.precisionWeapon?{...s.precisionWeapon}:null,
-    saveOrder:Array.isArray(s.saveOrder)?s.saveOrder.slice():null
+    saveOrder:Array.isArray(s.saveOrder)?s.saveOrder.slice():null,
+    mixedResolution:s.mixedResolution?{...s.mixedResolution,
+      modelStates:(s.mixedResolution.modelStates||[]).map(m=>({...m})),
+      resolution:(s.mixedResolution.resolution||[]).map(r=>({...r})),
+      damageRolls:[...(s.mixedResolution.damageRolls||[])],
+      damageInstances:[...(s.mixedResolution.damageInstances||[])],
+      devastatingInstances:[...(s.mixedResolution.devastatingInstances||[])]
+    }:null
   });
 }
 function tacticalPreRollPrecisionBack(s){
@@ -5684,6 +5691,15 @@ function tacticalPreRollPrecisionBack(s){
   if(snap.precisionCurrent)s.precisionCurrent={...snap.precisionCurrent};else delete s.precisionCurrent;
   if(snap.precisionWeapon)s.precisionWeapon={...snap.precisionWeapon};else delete s.precisionWeapon;
   if(Array.isArray(snap.saveOrder))s.saveOrder=snap.saveOrder.slice();else delete s.saveOrder;
+  if(snap.mixedResolution){
+    s.mixedResolution={...snap.mixedResolution,
+      modelStates:(snap.mixedResolution.modelStates||[]).map(m=>({...m})),
+      resolution:(snap.mixedResolution.resolution||[]).map(r=>({...r})),
+      damageRolls:[...(snap.mixedResolution.damageRolls||[])],
+      damageInstances:[...(snap.mixedResolution.damageInstances||[])],
+      devastatingInstances:[...(snap.mixedResolution.devastatingInstances||[])]
+    };
+  }else delete s.mixedResolution;
   return true;
 }
 function tacticalPreRollPrecisionTarget(s){const te=entry('opp',s.targetEntryUid),snap=combatSnapshot('opp',te),id=String(s.plan?.precisionTargetModelId||'');const model=(snap?.models||[]).find(m=>String(m.id)===id);if(!model||model.alive===false)return null;const groups=tacticalPreRollSaveGroups(te),group=groups.find(g=>(g.modelIds||[]).some(x=>String(x)===id));return {model,group};}
