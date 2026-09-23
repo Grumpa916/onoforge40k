@@ -1633,6 +1633,7 @@ function secondaryPlanEditorHtml(){
     (cards||'<div class="empty" style="margin-top:10px">No personal secondary plans saved yet. Open a tracked secondary mission during a battle and choose Edit Plan.</div>')+
     '</div>';
 }
+function secondaryPlanEditModal(){return secondaryPlanEditorModal();}
 function secondaryPlanEditorModal(){
   const key=String(state.secondaryPlanEdit||'');
   if(!key)return '';
