@@ -5980,7 +5980,7 @@ function tacticalPreRollResolutionSet(field,value){
       }
     }catch(e){alert(e.message||String(e));return;}
   }else if(field==='mixedVariableSave'){
-    try{tacticalPreRollDiceAuthority('individual',value,6,'Save result');tacticalPreRollAdvanceMixedVariableSave(s,Math.floor(Number(value)));catch(e){alert(e.message||String(e));return;}
+    try{tacticalPreRollDiceAuthority('individual',value,6,'Save result');tacticalPreRollAdvanceMixedVariableSave(s,Math.floor(Number(value)));}catch(e){alert(e.message||String(e));return;}
   }else if(field==='mixedDamage'){
     try{
       if(s.mixedVariableState?.phase==='damage'){tacticalPreRollDiceAuthority('damage',value,6,'Damage result');tacticalPreRollResolveMixedVariableDamage(s,Math.floor(Number(value)));}
