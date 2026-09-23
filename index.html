@@ -5815,8 +5815,18 @@ function tacticalPreRollResolveMixedVariableDevastating(s,roll){
   const total=Math.min(Number(s.specials.criticalWounds)||0,Number(s.counts.wounds)||0);
   if(vs.devastatingIndex>=total){s.stage='review';return;}
   const groups=tacticalPreRollSaveGroups(entry('opp',s.targetEntryUid)),states=new Map((mr.modelStates||[]).map(m=>[String(m.id),m]));
-  const all=groups.flatMap(g=>g.modelIds||[]).map(id=>states.get(String(id))).filter(Boolean).filter(m=>m.alive!==false);
-  const m=all.find(x=>!x.character&&Number(x.woundsRemaining||0)<Number(x.maxWounds||x.profile?.W||1))||all.find(x=>!x.character)||all.find(x=>x.character&&Number(x.woundsRemaining||0)<Number(x.maxWounds||x.profile?.W||1))||all.find(x=>x.character);
+  const orderIds=s.saveOrder||groups.map(g=>g.id);
+  const pickInGroup=g=>{
+    const models=(g?.modelIds||[]).map(id=>states.get(String(id))).filter(Boolean).filter(m=>m.alive!==false);
+    return models.find(m=>Number(m.woundsRemaining||0)<Number(m.maxWounds||m.profile?.W||1))||models[0]||null;
+  };
+  let g=null,m=null;
+  while(vs.groupIndex<orderIds.length){
+    g=groups.find(x=>x.id===orderIds[vs.groupIndex]);
+    m=pickInGroup(g);
+    if(m)break;
+    vs.groupIndex++;
+  }
   if(!m)throw new Error('No legal target remains for Devastating Wounds.');
   const n=Math.floor(Number(roll)),max=tacticalPreRollDamageMax(s.plan.weaponDamage||'1');
   if(!Number.isInteger(n)||n<1||n>max)throw new Error('Enter the actual physical Damage result.');
