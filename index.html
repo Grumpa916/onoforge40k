@@ -5636,7 +5636,8 @@ function tacticalPreRollSaveGroups(te,provisionalStates=null){
   const map=new Map();
   allocatable.forEach(m=>{
     const p=m.profile||{}, character=!!m.character;
-    const key=character?'CHAR:'+m.id:'MODEL:'+String(p.W??'')+'|'+String(p.Sv??'')+'|'+String(p.InSv??'');
+    const saveResolutionKey=JSON.stringify({W:p.W??'',Sv:p.Sv??'',InSv:p.InSv??'',inv4:!!m.invuln4,inv5:!!m.invuln5,inv6:!!m.invuln6,minusSave:Number(m.minusSave||0),rerollSave1:!!m.rerollSave1,fnp:engineFnp(m)||null});
+    const key=character?'CHAR:'+m.id:'MODEL:'+saveResolutionKey;
     if(character){
       groups.push({
         id:key,label:m.unitName||m.role||'Character',character:true,
