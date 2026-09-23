@@ -1376,6 +1376,7 @@ function stratagemPhaseGroups(arr){
  return groups;
 }
 function stratagemsUI(){
+ loadStratagems();
  ensureStratagemState();
  const army=(side,title)=>{
   const key=side==='my'?'stratagemsMy':'stratagemsOpp';
