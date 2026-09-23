@@ -5494,9 +5494,11 @@ function tacticalPreRollResolutionCurrent(){
 function tacticalPreRollSaveGroups(te){
   const snap=combatSnapshot('opp',te);
   const models=(snap?.models||[]).filter(m=>m.alive!==false);
+  const bodyguardPresent=(snap?.components||[]).some(c=>c.role==='bodyguard'&&c.models?.some(m=>m.alive!==false));
+  const allocatable=models.filter(m=>!m.character||!bodyguardPresent);
   const groups=[];
   const map=new Map();
-  models.forEach(m=>{
+  allocatable.forEach(m=>{
     const p=m.profile||{}, character=!!m.character;
     const key=character?'CHAR:'+m.id:'MODEL:'+String(p.W??'')+'|'+String(p.Sv??'')+'|'+String(p.InSv??'');
     if(character){
@@ -5733,12 +5735,14 @@ function tacticalPreRollInitMixedVariable(s,rolls){
   if(sorted.some(v=>v<1||v>6))throw new Error('Save results must be D6 values from 1 to 6.');
   const expected=Math.max(0,(Number(s.counts.wounds)||0)-(s.plan.devastating?Math.min(Number(s.specials.criticalWounds)||0,Number(s.counts.wounds)||0):0)-(Number(s.counts.precisionResolved)||0));
   if(sorted.length!==expected)throw new Error('Enter exactly '+expected+' save results.');
-  const states=groups.flatMap(g=>g.models.map(m=>({
+  const snap=combatSnapshot('opp',te);
+  const states=(snap?.models||[]).filter(m=>m.alive!==false).map(m=>({
     id:m.id,sourceEntryUid:m.sourceEntryUid,sourceUnitId:m.sourceUnitId,
-    groupId:g.id,groupCharacter:!!g.character,character:!!m.character,
+    groupId:(groups.find(g=>(g.modelIds||[]).some(id=>String(id)===String(m.id)))||{}).id||null,
+    groupCharacter:!!m.character,character:!!m.character,
     profile:m.profile||{},maxWounds:Number(m.maxWounds||m.profile?.W||1)||1,
     alive:m.alive!==false,woundsRemaining:Math.max(0,Number(m.woundsRemaining)||0)
-  })));
+  }));
 
   if(s.precisionTargetState){
     const ps=s.precisionTargetState,pm=states.find(x=>String(x.id)===String(ps.modelId));
