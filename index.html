@@ -4934,6 +4934,16 @@ function tacticalFightPhaseState(){
     units:raw.units&&typeof raw.units==='object'?raw.units:{}
   };
 }
+function setTacticalFightPhase(field,value){
+  const before=snapshotForUndo(),t=ensureTacticalState(),r=Math.max(1,Number(state.round)||1),turn=state.currentTurn,cur=tacticalFightPhaseState();
+  const next={...cur,round:r,playerTurn:turn};
+  if(field==='step')next.step=['fightsFirst','remaining','unknown'].includes(value)?value:'unknown';
+  else if(field==='nextSide')next.nextSide=value==='opp'?'opp':'my';
+  else return;
+  t.fightPhase=next;
+  event('TACTICAL_FIGHT_PHASE_CHANGED',{field,value:next[field],action:'Fight phase sequencing changed',before:cur,after:next},before);
+  save();render();
+}
 function tacticalFightUnitState(entryUid){
   const phase=tacticalFightPhaseState(),raw=phase.units?.[String(entryUid)]||{};
   return {
@@ -5532,6 +5542,43 @@ function tacticalPreRollPoolManifest(ae){
     const modelIds=tacticalPreRollPoolAvailableModelIds(g),pool={...g,modelIds,count:modelIds.length},key=tacticalPreRollPoolIdentity(pool),raw=saved[key]||{},allocations=tacticalPreRollNormalizePoolAllocations(pool,raw);
     return {...pool,key,allocations,targetUid:allocations.find(x=>x.targetUid)?.targetUid||null};
   }).filter(p=>p.modelIds.length);
+}
+function setTacticalPreRollPoolTarget(poolId,targetUid){
+  const ae=tacticalAdvisorAttackerEntry();if(!ae||!poolId)return;
+  const before=snapshotForUndo(),t=ensureTacticalState(),key=String(poolId),manifest=tacticalPreRollPoolManifest(ae),pool=manifest.find(p=>p.key===key);
+  if(!pool)return;
+  const uid=String(targetUid||'');
+  const valid=uid&&entry('opp',uid)&&pool.modelIds.length;
+  const allocations=valid?[{targetUid:uid,count:pool.modelIds.length,modelIds:[...pool.modelIds]}]:[{targetUid:'',count:pool.modelIds.length,modelIds:[...pool.modelIds]}];
+  t.preRollPools=t.preRollPools||{};t.preRollPools[key]={allocations};
+  if(valid){
+    t.preRoll=t.preRoll||{};
+    t.preRoll[tacticalPairKey(ae.uid,uid)]={weaponName:String(pool.weapon?.name||''),poolId:key};
+  }
+  event('TACTICAL_PREROLL_POOL_CHANGED',{poolId:key,field:'targetUid',targetUid:uid,action:'Pre-roll pool target changed',before:null,after:allocations},before);
+  save();render();
+}
+function setTacticalPreRollPoolAllocation(poolId,index,field,value){
+  const ae=tacticalAdvisorAttackerEntry();if(!ae||!poolId)return;
+  const before=snapshotForUndo(),t=ensureTacticalState(),key=String(poolId),manifest=tacticalPreRollPoolManifest(ae),pool=manifest.find(p=>p.key===key);
+  if(!pool)return;
+  const allocations=tacticalPreRollNormalizePoolAllocations(pool,t.preRollPools?.[key]||{});
+  const i=Math.max(0,Math.floor(Number(index)||0));
+  if(i>=allocations.length)return;
+  const row={...allocations[i]};
+  if(field==='targetUid'){
+    const uid=String(value||'');
+    if(uid&&!entry('opp',uid))return;
+    row.targetUid=uid;
+  }else if(field==='count'){
+    const n=Math.max(0,Math.min(pool.modelIds.length,Math.floor(Number(value)||0)));
+    row.count=n;
+  }else return;
+  const next=allocations.map((x,j)=>j===i?row:x).filter(x=>x.count>0||x.targetUid);
+  const normalized=tacticalPreRollNormalizePoolAllocations(pool,{allocations:next});
+  t.preRollPools=t.preRollPools||{};t.preRollPools[key]={allocations:normalized};
+  event('TACTICAL_PREROLL_POOL_CHANGED',{poolId:key,index:i,field,value:row[field],action:'Pre-roll pool allocation changed',before:allocations,after:normalized},before);
+  save();render();
 }
 function tacticalPreRollWeaponState(attackerUid,targetUid){
   const t=ensureTacticalState(),raw=t.preRoll?.[tacticalPairKey(attackerUid,targetUid)];
