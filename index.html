@@ -1318,6 +1318,11 @@ function loadStratagems(){
   }));
  });
 }
+function stratagemCP(s){
+ const raw=s?.cp??s?.CP??s?.cost??s?.costCP;
+ const n=Number(raw);
+ return Number.isFinite(n)&&n>=0?n:0;
+}
 function useStratagem(side,index){
  ensureStratagemState();
  const key=side==='my'?'stratagemsMy':'stratagemsOpp';
@@ -1339,11 +1344,11 @@ function useStratagem(side,index){
  if(s.name==='Insane Bravery'&&stratagemUsedThisBattle(side,s.name)){alert('Insane Bravery can only be used once per battle.');return;}
  if(stratagemUsedThisPhase(side,s.name)){alert('That stratagem has already been used this phase.');return;}
  if(beforeCP<s.cp){alert('Not enough CP.');return;}
- const afterCP=beforeCP-s.cp;
+ const cpCost=stratagemCP(s); if(beforeCP<cpCost){alert('Not enough CP.');return;} const afterCP=beforeCP-cpCost;
  if(side==='my')state.myCP=afterCP;else state.oppCP=afterCP;
- history.push({name:s.name,round,phase,playerTurn:turn,cp:s.cp});
- event('CP_CHANGED',{side,unit:side==='my'?'My CP':'Opponent CP',action:'CP -'+s.cp,before:beforeCP,after:afterCP,delta:-s.cp},before);
- event('STRATAGEM_USED',{name:s.name,side,cp:s.cp,phase,round,playerTurn:turn,source:s.source,detachment:s.detachment||'',action:s.name},before);
+ history.push({name:s.name,round,phase,playerTurn:turn,cp:cpCost});
+ event('CP_CHANGED',{side,unit:side==='my'?'My CP':'Opponent CP',action:'CP -'+cpCost,before:beforeCP,after:afterCP,delta:-cpCost},before);
+ event('STRATAGEM_USED',{name:s.name,side,cp:cpCost,phase,round,playerTurn:turn,source:s.source,detachment:s.detachment||'',action:s.name},before);
  state.stratagemsOpen=true;
  save();render();
 }
@@ -1384,7 +1389,7 @@ function stratagemsUI(){
             <summary style="list-style:none;cursor:pointer;padding:3px 8px;user-select:none;margin:0">
               <div class="row" style="justify-content:space-between;align-items:center">
                 <b>${esc(s.name)}</b>
-                <button class="pill stratagem-cp-btn ${stratagemUsedThisPhase(side,s.name)?'stratagem-cp-used':''}" type="button" aria-pressed="${stratagemUsedThisPhase(side,s.name)?'true':'false'}" data-stratagem-use="1" data-stratagem-side="${side}" data-stratagem-index="${i}" title="${stratagemUsedThisPhase(side,s.name)?'Stratagem already used this phase':'Use stratagem — '+s.cp+' CP'}" style="background:${s.used?'#22c55e':'#263449'}!important;border-color:${s.used?'#22c55e':'#4b5d75'}!important;color:${s.used?'#fff':'#dbe7f5'}!important;">${stratagemUsedThisPhase(side,s.name)?'✓ ':''}${s.cp} CP</button>
+                <button class="pill stratagem-cp-btn ${stratagemUsedThisPhase(side,s.name)?'stratagem-cp-used':''}" type="button" aria-pressed="${stratagemUsedThisPhase(side,s.name)?'true':'false'}" data-stratagem-use="1" data-stratagem-side="${side}" data-stratagem-index="${i}" title="${stratagemUsedThisPhase(side,s.name)?'Stratagem already used this phase':'Use stratagem — '+stratagemCP(s)+' CP'}" style="background:${s.used?'#22c55e':'#263449'}!important;border-color:${s.used?'#22c55e':'#4b5d75'}!important;color:${s.used?'#fff':'#dbe7f5'}!important;">${stratagemUsedThisPhase(side,s.name)?'✓ ':''}${stratagemCP(s)} CP</button>
               </div>
             </summary>
             <div style="padding:0 8px 8px">
@@ -4188,7 +4193,7 @@ function gameRow(side,e){
     ? (e.models>1?(g.models+'/'+e.models+' models'):'1 model')+' • '+g.status
     : (e.models>1?(g.models+'/'+e.models+' models • '):'')+g.wounds+'/'+maxWounds+' wounds • '+g.status;
   const woundControls=perModelWounds>1&&!rosterTracked?'<button class="btn" type="button" onclick="changeUnit(\''+side+'\',\''+e.uid+'\',0,-1);return false;">W−</button><button class="btn" type="button" onclick="changeUnit(\''+side+'\',\''+e.uid+'\',0,1);return false;">W+</button>':'';
-  return '<div class="game-unit-row '+(g.battleshocked?'is-battleshocked':'')+'" data-entry-id="'+esc(e.uid)+'"><div class="game-unit-name"><strong>'+esc(displayName)+'</strong>'+(g.battleshocked?'<span class="battleshock-badge">BATTLESHOCKED</span>':'')+'</div><div class="game-unit-controls"><div class="game-unit-stats">'+stats+'</div><div class="row game-unit-actions game-status-actions">'+shockControl+destroyedControl+'</div><div class="row game-unit-actions game-modifier-actions">'+modelControls+woundControls+'</div></div>'+gameUnitReferenceHtml(u,state.phase)+modelRosterHtml(side,e,u)+'</div></div>';
+  return '<div class="game-unit-row '+(g.battleshocked?'is-battleshocked':'')+'" data-entry-id="'+esc(e.uid)+'"><div class="game-unit-name"><strong>'+esc(displayName)+'</strong>'+(g.battleshocked?'<span class="battleshock-badge">BATTLESHOCKED</span>':'')+'</div><div class="game-unit-controls"><div class="game-unit-stats">'+stats+'</div><div class="row game-unit-actions game-status-actions">'+shockControl+destroyedControl+'</div><div class="row game-unit-actions game-modifier-actions">'+modelControls+woundControls+'</div></div>'+gameUnitReferenceHtml(u,state.phase)+modelRosterHtml(side,e,u)+'</div>';
 }
 function syncModelRosterBattleState(e,u){
   if(!e||!u)return;
