@@ -5685,7 +5685,7 @@ function tacticalPreRollApplyMixedSaveRolls(current,rolls){
     let g=null,m=null;
     while(currentGroupIndex<orderIds.length){g=groups.find(x=>x.id===orderIds[currentGroupIndex]);m=pickModel(g);if(m)break;currentGroupIndex++;}
     if(currentGroupIndex>=orderIds.length)break;
-    const p=m.profile||{},sv=Math.max(2,Math.min(7,Number(p.Sv)||7)),inv=Number(p.InSv)||99,armourNeed=Math.max(2,Math.min(7,sv-Number(weapon.AP)||0)),saveNeed=Math.min(armourNeed,inv),saveSucceeds=roll!==1&&roll>=saveNeed;
+    const p=m.profile||{},sv=Math.max(2,Math.min(7,Number(p.Sv)||7)),inv=Number(p.InSv)||99,saveModifier=Number(m.minusSave||0),armourNeed=Math.max(2,Math.min(7,sv-Number(weapon.AP)+saveModifier)),saveNeed=Math.min(armourNeed,inv),saveSucceeds=roll!==1&&roll>=saveNeed;
     let applied=0;
     if(!saveSucceeds){failed++;if(!variableDamage)applied=applyNormalDamage(m,normalDamage);}
     resolution.push({roll,groupId:g.id,groupLabel:g.label,modelId:m.id,saveSucceeds,damage:applied,saveNeed,precision:false});
@@ -6128,7 +6128,7 @@ function tacticalPreRollResolutionSet(field,value){
   }else if(field==='precisionSaveReroll'){
     tacticalPreRollPrecisionPushHistory(s);
     const roll=tacticalPreRollDiceAuthority('individual',value,6,'Save re-roll result');
-    const weapon=s.precisionWeapon||{AP:0,D:'1'},st=s.precisionTargetState,p=st?.profile||tacticalPreRollPrecisionTarget(s)?.model?.profile||{},need=Number(s.precisionCurrent?.saveNeed)||Math.min(Math.max(2,Math.min(7,Number(p.Sv)||7)-(Number(weapon.AP)||0)),Number(p.InSv)||99),ok=roll!==1&&roll>=need;
+    const weapon=s.precisionWeapon||{AP:0,D:'1'},st=s.precisionTargetState,p=st?.profile||tacticalPreRollPrecisionTarget(s)?.model?.profile||{},need=Number(s.precisionCurrent?.saveNeed)||Math.min(Math.max(2,Math.min(7,Number(p.Sv)||7-(Number(weapon.AP)||0)+Number(st?.minusSave||0)),Number(p.InSv)||99),ok=roll!==1&&roll>=need;
     s.precisionCurrent={...(s.precisionCurrent||{}),saveSucceeds:ok,rerollPending:false,rerolled:true,reroll:roll};
     if(ok){const total=tacticalPreRollSaveableWounds(s,false);s.counts.precisionResolved=(Number(s.counts.precisionResolved)||0)+1;s.stage=(Number(s.counts.precisionResolved)||0)<total?'precisionSave':(plan.devastating&&Number(s.specials.criticalWounds||0)>0?'precisionDevastating':'review');}
     else if(plan.variableDamage)s.stage='precisionDamage';
@@ -6144,8 +6144,11 @@ function tacticalPreRollResolutionSet(field,value){
     const st=s.precisionTargetState,pending=Math.max(0,Number(s.precisionPendingDamage)||0),n=tacticalPreRollDiceAuthority('count',value,pending,'Feel No Pain ignored wounds');
     if(!st||!st.alive)throw new Error('The Precision target is no longer alive.');
     const before=Math.max(0,Number(st.woundsRemaining)||0),applied=Math.min(before,Math.max(0,pending-n));st.woundsRemaining=Math.max(0,before-applied);st.alive=st.woundsRemaining>0;
-    s.counts.failedSaves=(Number(s.counts.failedSaves)||0)+1;s.counts.damage=(Number(s.counts.damage)||0)+applied;s.counts.precisionResolved=(Number(s.counts.precisionResolved)||0)+1;delete s.precisionPendingDamage;delete s.precisionPendingFnp;
-    const total=tacticalPreRollSaveableWounds(s,false);s.stage=(Number(s.counts.precisionResolved)||0)<total?'precisionSave':(plan.devastating&&Number(s.specials.criticalWounds||0)>0?'precisionDevastating':'review');
+    s.counts.failedSaves=(Number(s.counts.failedSaves)||0)+1;s.counts.damage=(Number(s.counts.damage)||0)+applied;
+    if(s.precisionPendingKind==='devastating'){s.counts.precisionDevastating=(Number(s.counts.precisionDevastating)||0)+1;if(s.mixedResolution?.modelStates){const pm=s.mixedResolution.modelStates.find(m=>String(m.id)===String(s.precisionPendingModelId));if(pm){pm.woundsRemaining=st.woundsRemaining;pm.alive=st.alive!==false;}}}
+    else{s.counts.precisionResolved=(Number(s.counts.precisionResolved)||0)+1;}
+    delete s.precisionPendingDamage;delete s.precisionPendingFnp;delete s.precisionPendingKind;delete s.precisionPendingModelId;delete s.precisionPendingDevastatingIndex;
+    const total=tacticalPreRollSaveableWounds(s,false);s.stage=s.precisionPendingKind==='devastating'?'precisionDevastating':(Number(s.counts.precisionResolved)||0)<total?'precisionSave':(plan.devastating&&Number(s.specials.criticalWounds||0)>0?'precisionDevastating':'review');
   }else if(field==='precisionDevastating'){
     tacticalPreRollPrecisionPushHistory(s);
     const done=Number(s.counts.precisionDevastating||0),total=Math.max(0,Number(s.specials.criticalWounds)||0);if(done>=total){s.stage='review';return;}
@@ -6163,7 +6166,7 @@ function tacticalPreRollResolutionSet(field,value){
       for(const gid of orderIds){const g=groups.find(x=>x.id===gid);if(!g)continue;target=pickGroupModel(g);if(target)break;}
     }
     if(!target){s.counts.precisionDevastating=done+1;s.stage=s.counts.precisionDevastating<total?'precisionDevastating':'review';return;}
-    const before=Math.max(0,Number(target.woundsRemaining)||0),applied=Math.min(before,roll);target.woundsRemaining=Math.max(0,before-roll);target.alive=target.woundsRemaining>0;
+    const before=Math.max(0,Number(target.woundsRemaining)||0),applied=Math.min(before,roll);if(tacticalPreRollFnp(target,s)){s.precisionPendingDamage=applied;s.precisionPendingFnp=tacticalPreRollFnp(target,s);s.precisionPendingKind='devastating';s.precisionPendingModelId=String(target.id);s.precisionPendingDevastatingIndex=done;s.mixedResolution.modelStates=Array.from(states.values());s.stage='precisionFnp';return;}target.woundsRemaining=Math.max(0,before-roll);target.alive=target.woundsRemaining>0;
     if(String(target.id)===precisionId&&s.precisionTargetState){s.precisionTargetState.woundsRemaining=target.woundsRemaining;s.precisionTargetState.alive=target.alive;}
     s.mixedResolution.modelStates=Array.from(states.values());
     s.counts.damage=(Number(s.counts.damage)||0)+applied;s.counts.precisionDevastating=done+1;s.stage=s.counts.precisionDevastating<total?'precisionDevastating':'review';
@@ -6304,7 +6307,7 @@ function tacticalPreRollResolutionModal(){
 else if(stage==='lethalChoice'){title='LETHAL HITS • CHOOSE';promptText='How many of the '+counts.criticalHits+' Critical Hits will use Lethal Hits to automatically wound?';max=counts.criticalHits;value=specials.lethalHits??'';note='This choice matters because a Critical Hit used for Lethal Hits does not make a Wound roll and therefore cannot become a Critical Wound.';}
   else if(stage==='wounds'){const lethalAuto=plan.lethal?Math.min(Number(specials.criticalHits)||0,Number(counts.hits)||0):0;const woundDice=Math.max(0,(Number(counts.hits)||0)-lethalAuto+plan.sustained*(Number(specials.criticalHits)||0));title='WOUNDS • COUNT';promptText='How many of the '+woundDice+' wound rolls met '+plan.woundNeed+'+?';max=woundDice;value=counts.wounds??'';note=(lethalAuto?' '+lethalAuto+' Critical Hits automatically wounded via Lethal Hits; they do not roll to wound.':'')+(plan.sustained?' Sustained Hits adds '+plan.sustained+' wound rolls per Critical Hit.':'');}
   else if(stage==='woundSpecial'){title='WOUNDS • SUBCLASSIFY';promptText='How many of those '+counts.wounds+' wounds were Critical Wounds based on the unmodified physical results ('+plan.woundCritThreshold+'+)?';max=counts.wounds;value=specials.criticalWounds??'';note='Classify the physical dice after any re-rolls but before modifiers. Critical Wounds are required here because Devastating Wounds changes the save sequence.';}
-  else if(stage==='precisionSave'){const total=Math.max(0,(Number(counts.wounds)||0)-(plan.devastating?Math.min(Number(specials.criticalWounds)||0,Number(counts.wounds)||0):0));title='PRECISION • SAVE '+(Number(counts.precisionResolved||0)+1)+'/'+total;promptText='Roll one save for the current Precision target and enter that D6 result.';max=6;value='';note='Resolve each save immediately so Character destruction can correctly release Precision allocation.';}
+  else if(stage==='precisionSave'){const total=tacticalPreRollSaveableWounds(s,false);title='PRECISION • SAVE '+(Number(counts.precisionResolved||0)+1)+'/'+total;promptText='Roll one save for the current Precision target and enter that D6 result.';max=6;value='';note='Resolve each save immediately so Character destruction can correctly release Precision allocation.';}
   else if(stage==='precisionSaveReroll'){title='PRECISION • SAVE RE-ROLL';promptText='The Precision save was an unmodified 1 and this model can re-roll Save rolls of 1. Roll the replacement D6 now.';max=6;value='';note='The original 1 is replaced by the actual physical re-roll result.';}
   else if(stage==='precisionDamage'){title='PRECISION • DAMAGE';promptText='The Precision target failed its save. Roll weapon Damage now.';max=tacticalPreRollDamageMax(s.precisionWeapon?.D||'1');value='';note='Damage is resolved immediately before the next save.';}
   else if(stage==='precisionFnp'){title='PRECISION • FEEL NO PAIN';promptText='How many of the '+(Number(s.precisionPendingDamage)||0)+' wounds will be ignored by Feel No Pain '+(String(s.precisionPendingFnp||'')+'+')+'?';max=Number(s.precisionPendingDamage)||0;value='';note='Enter the number of wounds actually ignored by the physical Feel No Pain rolls.';}
