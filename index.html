@@ -6968,7 +6968,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
       0.30*Math.min(1,Number(x.exchangeExposure)||0)+
       0.25*pointRiskFraction
     ));
-    x.tacticalIndexAdjusted=Math.max(-1,Number(x.tacticalIndex)||0)*(1-0.20*exposure);
+    x.tacticalIndexAdjusted=Math.max(-1,Number(x.tacticalIndex)||0)*(1-0.20*(Number(x.exchangeExposure)||0));
   });
   results.sort((a,b)=>{
     const scoreDiff=Number(b.decisionScore??b.tacticalIndexAdjusted??b.tacticalIndex)-Number(a.decisionScore??a.tacticalIndexAdjusted??a.tacticalIndex);
