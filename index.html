@@ -5481,6 +5481,7 @@ function tacticalPreRollResolutionCurrent(){
   return {...raw,key,signature,poolId:raw.poolId||poolId||null,result:r,attackerEntryUid:ae.uid,targetEntryUid:te.uid,weaponName:stored};
 }
 function tacticalPreRollSaveGroups(te){
+  const snap=combatSnapshot('opp',te);
   const models=(snap?.models||[]).filter(m=>m.alive!==false);
   const groups=[];
   const map=new Map();
