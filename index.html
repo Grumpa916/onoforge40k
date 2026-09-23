@@ -2234,8 +2234,9 @@ function returnSecondaryToList(side,name){
 }
 function discardTactical(side,name){
  const k=side==='my'?'secondaryMyCards':'secondaryOppCards';if(!secState(side).includes(name))return;
+ const fullBefore=snapshotForUndo();
  state[k]=secState(side).filter(x=>x!==name);if(!secDiscard(side).includes(name))secDiscard(side).push(name);
- event('SECONDARY_DISCARDED',{side,unit:name,action:'Secondary discarded',secondary:name,mode:'tactical'},snapshotForUndo());save();render();
+ event('SECONDARY_DISCARDED',{side,unit:name,action:'Secondary discarded',secondary:name,mode:'tactical'},fullBefore);save();render();
 }
 
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
