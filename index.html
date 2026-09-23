@@ -5953,7 +5953,7 @@ function tacticalPreRollResolutionBack(){
 }
 function tacticalPreRollBuildPrecisionMixedResolution(s){
   const te=entry('opp',s.targetEntryUid),groups=tacticalPreRollSaveGroups(te,s.precisionTargetState?[s.precisionTargetState]:null),snap=combatSnapshot('opp',te);
-  const states=(snap?.models||[]).filter(m=>m.alive!==false).map(m=>({id:m.id,sourceEntryUid:m.sourceEntryUid,sourceUnitId:m.sourceUnitId,character:!!m.character,profile:m.profile||{},maxWounds:Number(m.maxWounds||m.profile?.W||1)||1,alive:m.alive!==false,woundsRemaining:Math.max(0,Number(m.woundsRemaining)||0)}));
+  const states=(snap?.models||[]).filter(m=>m.alive!==false).map(m=>({id:m.id,sourceEntryUid:m.sourceEntryUid,sourceUnitId:m.sourceUnitId,groupId:(groups.find(g=>(g.modelIds||[]).some(id=>String(id)===String(m.id)))||{}).id||null,groupCharacter:!!m.character,character:!!m.character,profile:m.profile||{},maxWounds:Number(m.maxWounds||m.profile?.W||1)||1,alive:m.alive!==false,woundsRemaining:Math.max(0,Number(m.woundsRemaining)||0)}));
   if(s.precisionTargetState){const ps=s.precisionTargetState,pm=states.find(x=>String(x.id)===String(ps.modelId));if(pm){pm.alive=ps.alive!==false;pm.woundsRemaining=Math.max(0,Number(ps.woundsRemaining)||0);}}
   s.mixedResolution={failedSaves:Number(s.counts.failedSaves)||0,damage:Number(s.counts.damage)||0,normalDamage:Number(s.counts.damage)||0,mortalDamage:0,resolution:s.precisionResolution||[],modelStates:states,variableDamage:false,damageInstances:[],devastatingInstances:[]};
   return s.mixedResolution;
