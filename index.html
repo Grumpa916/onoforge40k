@@ -5471,6 +5471,7 @@ function tacticalPreRollContextSignature(attackerEntryUid,targetEntryUid,weaponN
     targetWounds:defSnap?.targetWoundsState||[],
     targetExact:defSnap?.exactModelIdentity,targetAttached:defSnap?.components?.length>1,
     poolId:result?.poolId||null,targetModelIds:result?.targetModelIds||[],
+    precisionTargetModelId:result?.precisionTargetModelId||null,precisionTargetVisible:result?.precisionTargetVisible===true,
     attackerModelIds:result?.attackerModelIds||result?.poolModelIds||[]
   });
 }
