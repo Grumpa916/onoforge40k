@@ -5677,7 +5677,24 @@ function tacticalPreRollApplyResolution(){
   const mixed=!!s.plan.mixedSaveGroups;
   if(mixed){
     if(!s.mixedResolution){alert('Mixed-profile resolution is incomplete. Resolve the save dice before applying the result.');return;}
-    // Mixed resolution already applied the exact model-level damage to the live roster.
+    const affected=new Set();
+    (s.mixedResolution.modelStates||[]).forEach(ms=>{
+      const ce=entry('opp',ms.sourceEntryUid),u=ce&&get(ce.unitId);if(!ce||!u)return;
+      affected.add(ce.uid);
+      if(modelRosterRule(u)){
+        const rm=ensureModelRoster(ce,u).find(m=>m.id===ms.id);
+        if(rm){rm.woundsRemaining=Math.max(0,Number(ms.woundsRemaining)||0);rm.alive=ms.alive!==false;}
+      }
+    });
+    affected.forEach(uid=>{
+      const ce=entry('opp',uid),u=ce&&get(ce.unitId);if(!ce||!u)return;
+      if(modelRosterRule(u)){syncModelRosterBattleState(ce,u);return;}
+      const states=(s.mixedResolution.modelStates||[]).filter(ms=>ms.sourceEntryUid===uid);
+      const maxW=Math.max(1,Number(u.wounds)||1),maxModels=Math.max(0,Number(ce.models)||Number(u.models)||0),maxTotal=maxModels*maxW;
+      const alive=states.filter(ms=>ms.alive!==false).length,total=states.reduce((n,ms)=>n+Math.max(0,Number(ms.woundsRemaining)||0),0);
+      ce.game=ce.game||{entryId:ce.uid,models:maxModels,wounds:maxTotal,status:'Alive'};
+      ce.game.models=alive;ce.game.wounds=Math.max(0,Math.min(maxTotal,total));ce.game.status=alive<=0?'Destroyed':ce.game.wounds<maxTotal?'Damaged':'Alive';
+    });
   }else{
     let beforeGame=JSON.parse(JSON.stringify(te.game||{})),afterGame=null;
     if(modelRosterRule(targetUnit)){
