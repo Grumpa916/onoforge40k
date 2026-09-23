@@ -6683,7 +6683,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     return {
       entryUid:targetEntry.uid,unitId:target.id,name:target.name,faction:target.faction,points,
       models:defModels,targetWounds:totalWounds,expectedDamage:damage,modelsKilled:killed,wipeChance:wipe,
-      damageFraction:damageFrac,killFraction,damagePerPoint:efficiency,weaponProfiles:weaponKeys,
+      damageFraction:damageFrac,killFraction:killFrac,damagePerPoint:efficiency,weaponProfiles:weaponKeys,
       antiMatches:[...new Set(antiMatches)],confidence,simulationConfidence,
       tacticalLegality,
       recommendationEligible:tacticalLegality.canTarget===true&&phaseActionAvailable&&availableGroups.length>0,
