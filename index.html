@@ -4787,6 +4787,7 @@ function nextRound(){
  state.phase='Command';
  state.battleRoundComplete=false;
  restorePhaseCP(state.round,nextTurn,'Command');
+ resetStratagemPhaseUses();
  ensureObjectiveTurnSnapshot();
  ensureTacticalTurnDraw(nextTurn);
  syncPrimaryScoringRound();
