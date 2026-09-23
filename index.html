@@ -6030,7 +6030,7 @@ function tacticalPreRollResolutionModal(){
   else if(stage==='precisionDamage'){title='PRECISION • DAMAGE';promptText='The Precision target failed its save. Roll weapon Damage now.';max=tacticalPreRollDamageMax(s.precisionWeapon?.D||'1');value='';note='Damage is resolved immediately before the next save.';}
   else if(stage==='precisionDevastating'){const total=Math.max(0,Number(specials.criticalWounds)||0);title='PRECISION • DEVASTATING WOUNDS';promptText=plan.variableDamage?'Roll Damage for Critical Wound '+(Number(counts.precisionDevastating||0)+1)+'/'+total+'.':'Applying fixed Damage for Critical Wound '+(Number(counts.precisionDevastating||0)+1)+'/'+total+'.';max=tacticalPreRollDamageMax(s.precisionWeapon?.D||'1');value='';note=plan.variableDamage?'Each Devastating Wounds critical is resolved against one model; excess damage is lost.':'No additional physical die is required for fixed Damage.';}
   else if(stage==='saveOrder'){
-    const groups=tacticalPreRollSaveGroups(entry('opp',current.targetEntryUid));
+    const groups=tacticalPreRollSaveGroups(entry('opp',current.targetEntryUid),s.precisionTargetState?[s.precisionTargetState]:null);
     title='SAVES • ALLOCATION ORDER';promptText='Declare the legal 11th Edition allocation order for the target groups.';
     note='Wounded non-CHARACTER groups must come first; CHARACTER groups come after all non-CHARACTER groups. The app will enforce the legal order.';
     const ranked=groups.slice().sort((a,b)=>(a.character?2+(a.wounded?0:1):(a.wounded?0:1))-(b.character?2+(b.wounded?0:1):(b.wounded?0:1)));
