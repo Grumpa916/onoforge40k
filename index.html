@@ -1382,9 +1382,23 @@ function stratagemPhaseRank(phase){
  const i=STRATAGEM_PHASE_ORDER_11E.indexOf(p);
  return i<0?STRATAGEM_PHASE_ORDER_11E.length:i;
 }
-function stratagemPhaseGroups(arr){
+function stratagemPhaseGroups(arr,side){
+ const current=String(state.phase||'Command').trim();
+ const isAvailable=s=>{
+  const phase=String(s?.phase||'Any Phase').trim();
+  return (phase===current||phase==='Any Phase')&&!stratagemUsedThisPhase(side,s?.name);
+ };
+ const availabilityRank=s=>{
+  if(isAvailable(s))return 0;
+  if(String(s?.phase||'Any Phase').trim()===current||String(s?.phase||'Any Phase').trim()==='Any Phase')return 1;
+  return 2;
+ };
  const sorted=(Array.isArray(arr)?arr:[]).map((s,i)=>({s,i}))
-   .sort((a,b)=>stratagemPhaseRank(a.s.phase)-stratagemPhaseRank(b.s.phase)||String(a.s.name||'').localeCompare(String(b.s.name||'')));
+   .sort((a,b)=>
+     availabilityRank(a.s)-availabilityRank(b.s)||
+     stratagemPhaseRank(a.s.phase)-stratagemPhaseRank(b.s.phase)||
+     String(a.s.name||'').localeCompare(String(b.s.name||''))
+   );
  const groups=[];
  sorted.forEach(item=>{
   const phase=String(item.s.phase||'Any Phase');
@@ -1435,7 +1449,7 @@ function stratagemsUI(){
   }));
   state[key]=all;
   const renderType=(items,label,kind)=>{
-   const groups=stratagemPhaseGroups(items);
+   const groups=stratagemPhaseGroups(items,side);
    if(!items.length) return '<div class="stratagem-type-section"><div class="stratagem-type-heading '+kind+'">'+esc(label)+'</div><div class="muted small" style="padding:8px">No army-specific stratagems loaded for this detachment.</div></div>';
    return '<div class="stratagem-type-section"><div class="stratagem-type-heading '+kind+'">'+esc(label)+'</div><div style="margin-top:5px">'+groups.map(g=>'<div class="stratagem-phase-group"><div class="stratagem-phase-heading">'+esc(g.phase==='Any Phase'?'Any Phase':g.phase+' Phase')+'</div>'+g.items.map(({s,i})=>'<details class="card stratagem-item" style="padding:0;margin-top:2px"><summary style="list-style:none;cursor:pointer;padding:3px 8px;user-select:none;margin:0"><div class="row" style="justify-content:space-between;align-items:center"><b>'+esc(s.name)+'</b><button class="pill stratagem-cp-btn '+(stratagemUsedThisPhase(side,s.name)?'stratagem-cp-used':'')+'" type="button" aria-pressed="'+(stratagemUsedThisPhase(side,s.name)?'true':'false')+'" data-stratagem-use="1" data-stratagem-side="'+side+'" data-stratagem-index="'+i+'" title="'+(stratagemUsedThisPhase(side,s.name)?'Stratagem already used this phase':'Use stratagem — '+stratagemCP(s)+' CP')+'">'+(stratagemUsedThisPhase(side,s.name)?'✓ ':'')+stratagemCP(s)+' CP</button></div></summary><div style="padding:0 8px 8px"><div class="muted small">'+esc(s.source)+(s.detachment?' · '+esc(s.detachment):'')+' · '+esc(s.phase)+'</div><div class="small" style="margin-top:4px">'+esc(s.summary||'')+'</div></div></details>').join('')+'</div>').join('')+'</div></div>';
   };
@@ -8281,7 +8295,7 @@ refreshCurrentUnitDatabase(false);
 render();
 load40kAppSourceManifest();
 loadEventCompanionData();
-if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./service-worker.js?v=325',{updateViaCache:'none'}).catch(()=>{});});}
+if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./service-worker.js?v=326',{updateViaCache:'none'}).catch(()=>{});});}
 setTimeout(()=>initCloudOnLoad(),0);
 </script>
 </body></html>
