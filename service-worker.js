@@ -1,4 +1,4 @@
-const CACHE_NAME = 'onoforge40k-v357';
+const CACHE_NAME = 'onoforge40k-v358';
 const APP_SHELL = [
   './',
   './index.html',
@@ -30,6 +30,13 @@ self.addEventListener('fetch', event => {
 
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
+
+  // Data manifests are explicitly requested with cache:'no-store'. Do not
+  // let the service worker turn those requests into indefinitely cached data.
+  if (url.pathname.includes('/data/')) {
+    event.respondWith(fetch(event.request, {cache:'no-store'}));
+    return;
+  }
 
   if (event.request.mode === 'navigate' || url.pathname.endsWith('/index.html')) {
     event.respondWith(
