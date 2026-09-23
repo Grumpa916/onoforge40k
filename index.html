@@ -5491,10 +5491,24 @@ function tacticalPreRollResolutionCurrent(){
   if(!raw||raw.signature!==signature)return null;
   return {...raw,key,signature,poolId:raw.poolId||poolId||null,result:r,attackerEntryUid:ae.uid,targetEntryUid:te.uid,weaponName:stored};
 }
-function tacticalPreRollSaveGroups(te){
+function tacticalPreRollSaveGroups(te,provisionalStates=null){
   const snap=combatSnapshot('opp',te);
-  const models=(snap?.models||[]).filter(m=>m.alive!==false);
-  const bodyguardPresent=(snap?.components||[]).some(c=>c.role==='bodyguard'&&c.models?.some(m=>m.alive!==false));
+  const rawModels=(snap?.models||[]).map(m=>({...m}));
+  const overrides=new Map();
+  if(provisionalStates instanceof Map){
+    provisionalStates.forEach((v,k)=>overrides.set(String(k),v));
+  }else if(Array.isArray(provisionalStates)){
+    provisionalStates.forEach(v=>{if(v&&v.id!=null)overrides.set(String(v.id),v);});
+  }else if(provisionalStates&&typeof provisionalStates==='object'){
+    Object.entries(provisionalStates).forEach(([k,v])=>overrides.set(String(k),v));
+  }
+  const models=rawModels.map(m=>{
+    const o=overrides.get(String(m.id));
+    return o?{...m,...o,id:m.id}:m;
+  }).filter(m=>m.alive!==false);
+  const bodyguardPresent=(snap?.components||[]).some(c=>c.role==='bodyguard'&&c.models?.some(m=>{
+    const o=overrides.get(String(m.id)); return o?o.alive!==false:m.alive!==false;
+  }));
   const allocatable=models.filter(m=>!m.character||!bodyguardPresent);
   const groups=[];
   const map=new Map();
@@ -5530,7 +5544,8 @@ function tacticalPreRollApplyMixedSaveRolls(current,rolls){
   const s=current.state||current.session,plan=current.plan||s.plan;
   const targetEntry=entry('opp',current.targetEntryUid),targetUnit=combatTargetUnit('opp',targetEntry)||get(targetEntry?.unitId);
   if(!targetEntry||!targetUnit)throw new Error('Target state is no longer available.');
-  const groups=tacticalPreRollSaveGroups(targetEntry),orderIds=s.saveOrder||groups.map(g=>g.id);
+  const provisional=s.mixedResolution?.modelStates||((s.precisionTargetState)?[s.precisionTargetState]:null);
+  const groups=tacticalPreRollSaveGroups(targetEntry,provisional),orderIds=s.saveOrder||groups.map(g=>g.id);
   if(!tacticalPreRollLegalSaveOrder(groups,orderIds))throw new Error('The allocation order is not legal under the 11th Edition save-roll rules.');
   const sorted=rolls.slice().map(Number).filter(Number.isFinite).map(v=>Math.floor(v)).sort((a,b)=>a-b),saveable=Math.max(0,Number(current.saveable)||0);
   if(sorted.length!==saveable)throw new Error('Enter exactly '+saveable+' save results.');
@@ -5698,7 +5713,7 @@ function tacticalPreRollApplyMixedVariableDamage(s,rolls){
   return mr;
 }
 function tacticalPreRollInitMixedVariable(s,rolls){
-  const te=entry('opp',s.targetEntryUid),groups=tacticalPreRollSaveGroups(te);
+  const te=entry('opp',s.targetEntryUid),groups=tacticalPreRollSaveGroups(te,s.precisionTargetState?[s.precisionTargetState]:null);
   const orderIds=(s.saveOrder||groups.map(g=>g.id)).slice();
   if(!tacticalPreRollLegalSaveOrder(groups,orderIds))throw new Error('The allocation order is not legal under the 11th Edition save-roll rules.');
   const sorted=rolls.slice().map(Number).filter(Number.isFinite).map(v=>Math.floor(v)).sort((a,b)=>a-b);
@@ -5748,8 +5763,8 @@ function tacticalPreRollMixedVariableBack(s){
 function tacticalPreRollPickMixedVariableTarget(s){
   const mr=s.mixedResolution,vs=s.mixedVariableState;
   if(!mr||!vs)throw new Error('Mixed variable resolution state is missing.');
-  const groups=tacticalPreRollSaveGroups(entry('opp',s.targetEntryUid));
   const states=new Map((mr.modelStates||[]).map(m=>[String(m.id),m]));
+  const groups=tacticalPreRollSaveGroups(entry('opp',s.targetEntryUid),states);
   const pickInGroup=g=>{
     const models=(g.modelIds||[]).map(id=>states.get(String(id))).filter(Boolean).filter(m=>m.alive!==false);
     return models.find(m=>Number(m.woundsRemaining||0)<Number(m.maxWounds||m.profile?.W||1))||models[0]||null;
@@ -5814,7 +5829,8 @@ function tacticalPreRollResolveMixedVariableDevastating(s,roll){
   if(!vs||vs.phase!=='devastating')throw new Error('No Devastating Wounds result is awaiting resolution.');
   const total=Math.min(Number(s.specials.criticalWounds)||0,Number(s.counts.wounds)||0);
   if(vs.devastatingIndex>=total){s.stage='review';return;}
-  const groups=tacticalPreRollSaveGroups(entry('opp',s.targetEntryUid)),states=new Map((mr.modelStates||[]).map(m=>[String(m.id),m]));
+  const states=new Map((mr.modelStates||[]).map(m=>[String(m.id),m]));
+  const groups=tacticalPreRollSaveGroups(entry('opp',s.targetEntryUid),states);
   const orderIds=s.saveOrder||groups.map(g=>g.id);
   const pickInGroup=g=>{
     const models=(g?.modelIds||[]).map(id=>states.get(String(id))).filter(Boolean).filter(m=>m.alive!==false);
@@ -5878,7 +5894,7 @@ function tacticalPreRollResolutionSet(field,value){
   }else if(field==='precisionDevastating'){
     const done=Number(s.counts.precisionDevastating||0),total=Math.max(0,Number(s.specials.criticalWounds)||0);if(done>=total){s.stage='review';return;}const st=s.precisionTargetState;if(!st||!st.alive){s.stage='review';return;}let roll;if(plan.variableDamage){roll=Math.floor(Number(value));const max=tacticalPreRollDamageMax(s.precisionWeapon?.D||'1');if(!Number.isInteger(roll)||roll<1||roll>max){alert('Enter the actual physical damage result.');return;}}else roll=Math.max(0,Number(plan.damageValue)||0);const before=Math.max(0,Number(st.woundsRemaining)||0);st.woundsRemaining=Math.max(0,before-roll);st.alive=st.woundsRemaining>0;s.counts.damage=(Number(s.counts.damage)||0)+Math.min(before,roll);s.counts.precisionDevastating=done+1;s.stage=s.counts.precisionDevastating<total?(st.alive?'precisionDevastating':'review'):'review';
   }else if(field==='saveOrder'){
-    const groups=tacticalPreRollSaveGroups(entry('opp',current.targetEntryUid));
+    const groups=tacticalPreRollSaveGroups(entry('opp',current.targetEntryUid),s.precisionTargetState?[s.precisionTargetState]:null);
     const ids=groups.map(g=>g.id);
     const orders={};
     groups.forEach(g=>{orders[g.id]=Math.max(1,Math.floor(Number(document.querySelector('[data-save-order="'+CSS.escape(g.id)+'"]')?.value)||0));});
