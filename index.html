@@ -5435,6 +5435,9 @@ function tacticalPreRollCheck(attackerUid,targetUid,weaponName){
   if(assignedCount<=0)warnings.push('This weapon pool has no models assigned to the selected target.');
   if(leg.canTarget===false||leg.canTarget===null)warnings.push(...(leg.reasons||[]));
   const c=engineContext(get(ae.unitId),w,targetUnit,{...(state.mathRules||{}),halfRange:halfRangeState.active===true,chargeMade:!!movement?.chargeMade,attackerEngagedWithTarget:ctx.engagement==='engaged',attackerEngagedAny:tacticalUnitIsEngagedAny(ae.uid),attackerMonsterVehicle:tacticalUnitIsMonsterVehicle(ae),engagedTargetMonsterVehicle:ctx.engagement==='engaged'&&tacticalUnitIsMonsterVehicle(te),movementDistanceInches:movement?.movementDistanceInches,heavyEligible:movement?.movement==='remained'&&movement?.setUpThisTurn!==true&&Number(movement?.movementDistanceInches||0)<=3});
+  const precisionWeapon=(w.abilities||[]).some(a=>String(a||'').toUpperCase().includes('PRECISION'));
+  const precisionSnap=combatSnapshot('opp',te),precisionCharacters=(precisionSnap?.characterModels||[]).filter(m=>m.alive!==false),precisionTargetId=String((state.mathRules||{}).precisionTargetModelId||''),precisionTarget=precisionCharacters.find(m=>String(m.id)===precisionTargetId),precisionVisible=(state.mathRules||{}).precisionTargetVisible===true;
+  if(precisionWeapon&&(!precisionTarget||!precisionVisible))warnings.push('Precision requires a selected visible CHARACTER allocation group before rolling.');
   const save=engineSaveDistribution(targetUnit,w,c,{...(state.mathRules||{})}),modifiers=[];
   if(c.closeQuartersHitPenalty)modifiers.push('-1 to Hit: close-quarters shooting condition');
   if(c.cover)modifiers.push('+1 to Hit needed: Cover / Indirect Fire');
@@ -5446,8 +5449,8 @@ function tacticalPreRollCheck(attackerUid,targetUid,weaponName){
   if(c.torrent)modifiers.push('Torrent: auto-hit');
   const hitBase=String(w.BS||w.WS||'4+'),hitFinal=c.torrent?'Auto':c.hitNeed+'+',woundFinal=c.woundNeed+'+';
   const steps=[{label:'Hit',value:hitFinal,detail:c.torrent?'Auto-hit':('Base '+hitBase+(c.hitNeed!==Number(String(hitBase).replace('+',''))?' • modifiers applied':''))},{label:'Wound',value:woundFinal,detail:'Strength '+String(w.S??'?')+' vs Toughness '+String(targetUnit?.profile?.T??'?')},{label:'Save',value:save.need>6?'No save':save.need+'+',detail:save.inv?'Invulnerable '+save.inv+'+ available':'Armour save'}];
-  const status=leg.canTarget===false?'blocked':(!allAssigned||assignedCount<=0||leg.canTarget===null||(breakpointWeapon&&halfRangeState.active===null)?'check-required':'ready');
-  return {status,weapon:name,poolId:pool.key,poolModelIds:pool.modelIds,targetModelIds:targetAlloc.flatMap(x=>x.modelIds),attackerModelIds:targetAlloc.flatMap(x=>x.modelIds),modelCount:assignedCount,hitBase,hitFinal,woundFinal,save,modifiers,warnings,steps,context:ctx,torrent:!!c.torrent,lethal:!!c.lethal,sustained:Number(c.sustained)||0,devastating:!!c.devastating,hitCritThreshold:c.critHitThreshold||6,woundCritThreshold:c.critWoundThreshold||6};
+  const precisionReady=!precisionWeapon||(!!precisionTarget&&precisionVisible); const status=leg.canTarget===false?'blocked':(!allAssigned||assignedCount<=0||leg.canTarget===null||(breakpointWeapon&&halfRangeState.active===null)||!precisionReady?'check-required':'ready');
+  return {status,weapon:name,poolId:pool.key,poolModelIds:pool.modelIds,targetModelIds:targetAlloc.flatMap(x=>x.modelIds),attackerModelIds:targetAlloc.flatMap(x=>x.modelIds),modelCount:assignedCount,hitBase,hitFinal,woundFinal,save,modifiers,warnings,steps,context:ctx,torrent:!!c.torrent,lethal:!!c.lethal,sustained:Number(c.sustained)||0,devastating:!!c.devastating,precision:precisionWeapon,precisionTargetModelId:precisionTarget?.id||null,precisionTargetVisible:precisionVisible&&!!precisionTarget,hitCritThreshold:c.critHitThreshold||6,woundCritThreshold:c.critWoundThreshold||6};
 }
 function tacticalPreRollSessionKey(attackerEntryUid,targetEntryUid,weaponName,poolId=null){
   return String(attackerEntryUid||'')+'>'+String(targetEntryUid||'')+'|'+String(weaponName||'')+'|'+String(poolId||'');
