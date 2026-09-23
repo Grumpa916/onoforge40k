@@ -1381,9 +1381,16 @@ function stratagemsUI(){
  const army=(side,title)=>{
   const key=side==='my'?'stratagemsMy':'stratagemsOpp';
   const det=armyStratagemDetachment(side);
-  const all=Array.isArray(state[key])?state[key]:[];
-  const armyStrats=all.map((s,i)=>({s,i})).filter(x=>x.s?.source!=='Core');
-  const coreStrats=all.map((s,i)=>({s,i})).filter(x=>x.s?.source==='Core');
+  const detList=Array.isArray(DETACHMENT_STRATAGEMS_11E[det])?DETACHMENT_STRATAGEMS_11E[det]:[];
+  const canonical=[...CORE_STRATAGEMS_11E.map(s=>({...s,source:'Core'})),...detList.map(s=>({...s,source:'Detachment',detachment:det}))];
+  const all=canonical.map((s,i)=>({
+    ...s,
+    id:state[key]?.[i]?.id||uid(),
+    used:!!state[key]?.[i]?.used
+  }));
+  state[key]=all;
+  const armyStrats=all.map((s,i)=>({s,i})).filter(x=>x.s.source!=='Core');
+  const coreStrats=all.map((s,i)=>({s,i})).filter(x=>x.s.source==='Core');
   const renderType=(items,label,kind)=>{
    const groups=stratagemPhaseGroups(items);
    return `<div class="stratagem-type-section">
@@ -8252,7 +8259,7 @@ refreshCurrentUnitDatabase(false);
 render();
 load40kAppSourceManifest();
 loadEventCompanionData();
-if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./service-worker.js?v=318',{updateViaCache:'none'}).catch(()=>{});});}
+if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./service-worker.js?v=320',{updateViaCache:'none'}).catch(()=>{});});}
 setTimeout(()=>initCloudOnLoad(),0);
 </script>
 </body></html>
