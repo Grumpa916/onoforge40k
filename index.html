@@ -5660,7 +5660,7 @@ function tacticalPreRollResolutionBack(){
   const current=tacticalPreRollResolutionCurrent();if(!current)return;
   const t=ensureTacticalState(),map=tacticalPreRollResolutionState(),s=map[current.key];
   if(!s)return;
-  const order=['hits','hitSpecial','wounds','woundSpecial','saveOrder','saveRolls','saves','damage','review'];
+  const order=current.plan?.mixedSaveGroups?['hits','hitSpecial','wounds','woundSpecial','saveOrder','saveRolls','review']:['hits','hitSpecial','wounds','woundSpecial','saves','damage','review'];
   const i=order.indexOf(s.stage);
   if(i<=0){s.stage=s.plan.torrent?'wounds':'hits';delete s.counts.hits;delete s.specials.criticalHits;save();render();return;}
   s.stage=order[i-1];save();render();
