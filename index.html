@@ -5356,35 +5356,31 @@ function tacticalAdvisorConfidenceLabel(value){
   const v=Math.max(0,Math.min(1,Number(value)||0));
   return v>=0.80?'High':v>=0.55?'Medium':'Limited';
 }
+function tacticalPreRollPoolIdentity(g){
+  const w=g?.weapon||{};
+  const ids=Array.isArray(g?.modelIds)?g.modelIds.map(String).sort():[];
+  const abilities=Array.isArray(w.abilities)?w.abilities.map(x=>String(x).trim()).filter(Boolean).sort():[];
+  return JSON.stringify({entryUid:String(g?.entry?.uid||''),name:String(w.name||''),BS:String(w.BS??''),WS:String(w.WS??''),S:String(w.S??''),AP:String(w.AP??''),D:String(w.D??''),A:String(w.A??''),abilities,modelIds:ids});
+}
 function tacticalPreRollPoolManifest(ae){
   const phase=String(state.phase||'Shooting');
   const targets=(state.opp||[]).filter(e=>!e.attachedTo&&!tacticalUnitState('opp',e)?.destroyed);
   const groups=attachedCombatWeaponGroups('my',ae,null).filter(g=>tacticalWeaponPhaseEligible(g.weapon,phase,g.entry,null));
-  const map=new Map();
-  groups.forEach(g=>{
-    const name=String(g.weapon?.name||'');if(!name)return;
-    const existing=map.get(name);
-    if(existing){existing.count+=Math.max(0,Number(g.count)||0);existing.modelIds.push(...(g.modelIds||[]));}
-    else map.set(name,{weapon:g.weapon,count:Math.max(0,Number(g.count)||0),modelIds:[...(g.modelIds||[])]});
-  });
-  const t=ensureTacticalState();
-  const saved=t.preRollPools&&typeof t.preRollPools==='object'?t.preRollPools:{};
-  return [...map.values()].map(p=>{
-    const key=String(ae.uid)+'|'+p.weapon.name,raw=saved[key]||{};
-    return {...p,key,targetUid:raw.targetUid&&targets.some(x=>x.uid===raw.targetUid)?raw.targetUid:null};
-  });
+  const t=ensureTacticalState(),saved=t.preRollPools&&typeof t.preRollPools==='object'?t.preRollPools:{};
+  return groups.filter(g=>g.weapon?.name).map(g=>{const key=tacticalPreRollPoolIdentity(g),raw=saved[key]||{};return {...g,key,targetUid:raw.targetUid&&targets.some(x=>x.uid===raw.targetUid)?String(raw.targetUid):null};});
 }
-function setTacticalPreRollPoolTarget(weaponName,targetUid){
-  const ae=tacticalAdvisorAttackerEntry();if(!ae||!weaponName||!targetUid)return;
+function setTacticalPreRollPoolTarget(poolId,targetUid){
+  const ae=tacticalAdvisorAttackerEntry();if(!ae||!poolId||!targetUid)return;
   const t=ensureTacticalState();if(!t.preRollPools||typeof t.preRollPools!=='object')t.preRollPools={};
-  t.preRollPools[String(ae.uid)+'|'+String(weaponName)]={targetUid:String(targetUid)};
+  const pool=tacticalPreRollPoolManifest(ae).find(p=>p.key===String(poolId));if(!pool)return;
+  t.preRollPools[String(poolId)]={targetUid:String(targetUid)};
   t.selectedTargetUid=String(targetUid);
   const key=String(ae.uid)+'>'+String(targetUid);
-  t.preRoll=t.preRoll||{};t.preRoll[key]={weaponName:String(weaponName)};
+  t.preRoll=t.preRoll||{};t.preRoll[key]={weaponName:String(pool.weapon.name),poolId:String(poolId)};
   save();render();
 }
-function tacticalPreRollWeaponState(attackerEntryUid,targetEntryUid){const t=ensureTacticalState(),key=String(attackerEntryUid||'')+'>'+String(targetEntryUid||'');const raw=t.preRoll?.[key];return raw&&typeof raw==='object'?{key,weaponName:raw.weaponName?String(raw.weaponName):null}:{key,weaponName:null};}
-function setTacticalPreRollWeapon(weaponName){const ae=tacticalAdvisorAttackerEntry(),teUid=state.tactical?.selectedTargetUid;if(!ae||!teUid)return;const t=ensureTacticalState(),key=String(ae.uid)+'>'+String(teUid);t.preRoll[key]={weaponName:weaponName?String(weaponName):null};save();render();}
+function tacticalPreRollWeaponState(attackerEntryUid,targetEntryUid){const t=ensureTacticalState(),key=String(attackerEntryUid||'')+'>'+String(targetEntryUid||'');const raw=t.preRoll?.[key];return raw&&typeof raw==='object'?{key,weaponName:raw.weaponName?String(raw.weaponName):null,poolId:raw.poolId?String(raw.poolId):null}:{key,weaponName:null,poolId:null};}
+function setTacticalPreRollWeapon(weaponName){const ae=tacticalAdvisorAttackerEntry(),teUid=state.tactical?.selectedTargetUid;if(!ae||!teUid)return;const t=ensureTacticalState(),key=String(ae.uid)+'>'+String(teUid);t.preRoll[key]={weaponName:weaponName?String(weaponName):null,poolId:null};save();render();}
 function tacticalPreRollCheck(attackerEntryUid,targetEntryUid,weaponName=null){
   const ae=entry('my',attackerEntryUid),te=entry('opp',targetEntryUid);if(!ae||!te)return {status:'missing-context',steps:[],warnings:['Select an attacker and target.']};
   const a=combatTargetUnit('my',ae)||get(ae.unitId),t=combatTargetUnit('opp',te)||get(te.unitId);if(!a||!t)return {status:'missing-units',steps:[],warnings:['Unit data is unavailable.']};
@@ -5421,8 +5417,8 @@ function tacticalPreRollCheck(attackerEntryUid,targetEntryUid,weaponName=null){
   steps.push({label:'Save',value:saveInfo.need>6?'No save':saveInfo.need+'+',detail:'Base '+String(t.profile?.Sv??'?')+'+ • AP '+String(w.AP??0)+' • Modified armour '+(saveInfo.armour>6?'no armour save':saveInfo.armour+'+')+(saveInfo.inv?' • Invulnerable '+saveInfo.inv+'+ considered':'')});
   const saveMods=[];if(Number(m.minusSave||0))saveMods.push({label:'Save penalty',value:-Math.abs(Number(m.minusSave)),reason:'Save modifier'});if(saveInfo.inv&&saveInfo.inv<saveInfo.armour)saveMods.push({label:'Invulnerable save',value:saveInfo.inv,reason:'Better save available'});if(saveMods.length)warnings.push('Save modifiers: '+saveMods.map(x=>x.label+(typeof x.value==='number'?' '+x.value:'')).join(' • '));steps[steps.length-1].detail+=(saveMods.length?' • '+saveMods.map(x=>typeof x.value==='number'?(x.value>0?'+':'')+x.value+' '+x.label:x.label).join(' • '):' • no save modifiers');if(melta.melta)steps.push({label:'Damage',value:melta.active===true?String(w.D??'—')+' + '+melta.melta:String(w.D??'—'),detail:melta.active===true?'Melta '+melta.melta+' active within '+melta.halfRange+'"':'Melta threshold at '+melta.halfRange+'"'});return {status:warnings.length?'ready-with-warnings':'ready',type:phase,attacker:a.name,target:t.name,weapon:w.name,steps,warnings,modifiers,context:ctx,hitBase:baseHit,hitFinal:c.hitNeed,woundFinal:c.woundNeed,save:saveInfo};}
 
-function tacticalPreRollSessionKey(attackerEntryUid,targetEntryUid,weaponName){
-  return String(attackerEntryUid||'')+'>'+String(targetEntryUid||'')+'|'+String(weaponName||'');
+function tacticalPreRollSessionKey(attackerEntryUid,targetEntryUid,weaponName,poolId=null){
+  return String(attackerEntryUid||'')+'>'+String(targetEntryUid||'')+'|'+String(weaponName||'')+'|'+String(poolId||'');
 }
 function tacticalPreRollContextSignature(attackerEntryUid,targetEntryUid,weaponName,result){
   const ae=entry('my',attackerEntryUid),te=entry('opp',targetEntryUid);
@@ -5453,12 +5449,13 @@ function tacticalPreRollResolutionCurrent(){
   if(!stored)return null;
   const r=tacticalPreRollCheck(ae.uid,te.uid,stored);
   if(!r||!['ready','ready-with-warnings'].includes(r.status))return null;
-  const key=tacticalPreRollSessionKey(ae.uid,te.uid,stored);
+  const poolId=raw?.poolId?String(raw.poolId):tacticalPreRollWeaponState(ae.uid,te.uid).poolId;
+  const key=tacticalPreRollSessionKey(ae.uid,te.uid,stored,poolId);
   const signature=tacticalPreRollContextSignature(ae.uid,te.uid,stored,r);
   const map=tacticalPreRollResolutionState();
   const raw=map[key];
   if(!raw||raw.signature!==signature)return null;
-  return {...raw,key,signature,result:r,attackerEntryUid:ae.uid,targetEntryUid:te.uid,weaponName:stored};
+  return {...raw,key,signature,poolId:raw.poolId||null,result:r,attackerEntryUid:ae.uid,targetEntryUid:te.uid,weaponName:stored};
 }
 function tacticalPreRollSaveGroups(te){
   const snap=combatSnapshot('opp',te);
@@ -5495,60 +5492,33 @@ function tacticalPreRollLegalSaveOrder(groups,orderIds){
 }
 function tacticalPreRollApplyMixedSaveRolls(current,rolls){
   const s=current.state||current.session,plan=current.plan||s.plan;
-  const groups=tacticalPreRollSaveGroups(entry('opp',current.targetEntryUid));
-  const orderIds=s.saveOrder||groups.map(g=>g.id);
+  const groups=tacticalPreRollSaveGroups(entry('opp',current.targetEntryUid)),orderIds=s.saveOrder||groups.map(g=>g.id);
   if(!tacticalPreRollLegalSaveOrder(groups,orderIds))throw new Error('The allocation order is not legal under the 11th Edition save-roll rules.');
-  const sorted=rolls.slice().map(Number).filter(Number.isFinite).map(v=>Math.floor(v)).sort((a,b)=>a-b);
-  const saveable=Math.max(0,Number(current.saveable)||0);
+  const sorted=rolls.slice().map(Number).filter(Number.isFinite).map(v=>Math.floor(v)).sort((a,b)=>a-b),saveable=Math.max(0,Number(current.saveable)||0);
   if(sorted.length!==saveable)throw new Error('Enter exactly '+saveable+' save results.');
   if(sorted.some(v=>v<1||v>6))throw new Error('Save results must be D6 values from 1 to 6.');
-  const targetEntry=entry('opp',current.targetEntryUid),targetUnit=combatTargetUnit('opp',targetEntry)||get(targetEntry?.unitId);
-  if(!targetEntry||!targetUnit)throw new Error('Target state is no longer available.');
-  const snap=combatSnapshot('opp',targetEntry);
-  const modelMap=new Map((snap?.models||[]).map(m=>[m.id,m]));
-  const liveByGroup=new Map(groups.map(g=>[g.id,g.models.filter(m=>m.alive!==false).map(m=>({...m}))]));
-  const groupIndex=new Map(orderIds.map((id,i)=>[id,i]));
-  let currentGroupIndex=0,damage=0,failed=0;
-  const resolution=[];
-  const pickModel=g=>{
-    const arr=liveByGroup.get(g.id)||[];
-    return arr.find(m=>Number(m.woundsRemaining||0)<Number(m.maxWounds||m.profile?.W||1))||arr.find(m=>m.alive!==false)||null;
-  };
+  const targetEntry=entry('opp',current.targetEntryUid),targetUnit=combatTargetUnit('opp',targetEntry)||get(targetEntry?.unitId);if(!targetEntry||!targetUnit)throw new Error('Target state is no longer available.');
+  const liveByGroup=new Map(groups.map(g=>[g.id,g.models.filter(m=>m.alive!==false).map(m=>({...m}))]));let currentGroupIndex=0,damage=0,failed=0;const resolution=[];
+  const pickModel=g=>{const arr=liveByGroup.get(g.id)||[];return arr.find(m=>Number(m.woundsRemaining||0)<Number(m.maxWounds||m.profile?.W||1))||arr.find(m=>m.alive!==false)||null;};
+  const weapon=current.weapon||{AP:0,D:1},ap=Number(weapon.AP)||0,normalDamage=Math.max(0,Number(plan.damageValue)||1);
+  const criticalWounds=Math.min(Number(s.specials?.criticalWounds)||0,Number(s.counts?.wounds)||0);
+  const mortalDamage=Math.max(0,Number(plan.devastating)?criticalWounds*normalDamage:0);
+  const applyMortal=amount=>{let remaining=Math.max(0,Math.floor(amount));while(remaining>0){while(currentGroupIndex<orderIds.length){const g=groups.find(x=>x.id===orderIds[currentGroupIndex]),m=pickModel(g);if(m)break;currentGroupIndex++;}if(currentGroupIndex>=orderIds.length)break;const g=groups.find(x=>x.id===orderIds[currentGroupIndex]),m=pickModel(g);if(!m)break;m.woundsRemaining=Math.max(0,Number(m.woundsRemaining||0)-1);if(m.woundsRemaining<=0)m.alive=false;remaining--;damage++;while(currentGroupIndex<orderIds.length){const gg=groups.find(x=>x.id===orderIds[currentGroupIndex]);if((liveByGroup.get(gg.id)||[]).some(x=>x.alive!==false))break;currentGroupIndex++;}}};
   for(const roll of sorted){
-    while(currentGroupIndex<orderIds.length){
-      const g=groups.find(x=>x.id===orderIds[currentGroupIndex]);
-      const m=pickModel(g);
-      if(m)break;
-      currentGroupIndex++;
-    }
+    while(currentGroupIndex<orderIds.length){const g=groups.find(x=>x.id===orderIds[currentGroupIndex]),m=pickModel(g);if(m)break;currentGroupIndex++;}
     if(currentGroupIndex>=orderIds.length)break;
-    const g=groups.find(x=>x.id===orderIds[currentGroupIndex]),m=pickModel(g);
-    const p=m?.profile||{}, inv=Number(p.InSv)||99, sv=Number(p.Sv)||99;
-    const saveSucceeds=roll>=inv || (roll+Number(current.weapon?.AP||0))>=sv;
-    let applied=0;
-    if(!saveSucceeds){
-      failed++;
-      const d=Number(current.plan.damageValue)||1;
-      applied=d;
-      if(m){
-        m.woundsRemaining=Math.max(0,Number(m.woundsRemaining||0)-d);
-        if(m.woundsRemaining<=0)m.alive=false;
-        damage+=d;
-      }
-    }
-    resolution.push({roll,groupId:g.id,groupLabel:g.label,modelId:m?.id||null,saveSucceeds,damage:applied});
-    while(currentGroupIndex<orderIds.length){
-      const gg=groups.find(x=>x.id===orderIds[currentGroupIndex]);
-      if((liveByGroup.get(gg.id)||[]).some(x=>x.alive!==false))break;
-      currentGroupIndex++;
-    }
+    const g=groups.find(x=>x.id===orderIds[currentGroupIndex]),m=pickModel(g),p=m?.profile||{},sv=Math.max(2,Math.min(7,Number(p.Sv)||7)),inv=Number(p.InSv)||99,armourNeed=Math.max(2,Math.min(7,sv+ap)),saveNeed=Math.min(armourNeed,inv),saveSucceeds=roll!==1&&roll>=saveNeed;
+    let applied=0;if(!saveSucceeds){failed++;applied=normalDamage;if(m){m.woundsRemaining=Math.max(0,Number(m.woundsRemaining||0)-normalDamage);if(m.woundsRemaining<=0)m.alive=false;damage+=normalDamage;}}
+    resolution.push({roll,groupId:g.id,groupLabel:g.label,modelId:m?.id||null,saveSucceeds,damage:applied,saveNeed});
+    while(currentGroupIndex<orderIds.length){const gg=groups.find(x=>x.id===orderIds[currentGroupIndex]);if((liveByGroup.get(gg.id)||[]).some(x=>x.alive!==false))break;currentGroupIndex++;}
   }
+  if(plan.devastating&&mortalDamage>0)applyMortal(mortalDamage);
   const modelStates=groups.flatMap(g=>liveByGroup.get(g.id)||[]).map(m=>({id:m.id,sourceEntryUid:m.sourceEntryUid,sourceUnitId:m.sourceUnitId,alive:m.alive!==false,woundsRemaining:Math.max(0,Number(m.woundsRemaining)||0)}));
-  return {failedSaves:failed,damage:damage+mortal,normalDamage:damage,mortalDamage:mortal,resolution,modelStates};
+  return {failedSaves:failed,damage,normalDamage:Math.max(0,damage-(plan.devastating?mortalDamage:0)),mortalDamage:plan.devastating?mortalDamage:0,resolution,modelStates};
 }
-function tacticalPreRollResolutionPlan(ae,te,w,r){
+function tacticalPreRollResolutionPlan(ae,te,w,r,poolId=null){
   const ctx=r?.context||{};
-  const groups=attachedCombatWeaponGroups('my',ae,te).filter(g=>String(g.weapon?.name||'')===String(w.name));
+  const groups=attachedCombatWeaponGroups('my',ae,te).filter(g=>{if(String(g.weapon?.name||'')!==String(w.name))return false;return !poolId||tacticalPreRollPoolIdentity(g)===String(poolId);});
   const eligibleGroups=groups.filter(g=>{
     const ids=Array.isArray(g.modelIds)?g.modelIds:[];
     if(!ids.length)return true;
@@ -5599,12 +5569,13 @@ function tacticalPreRollOpenResolution(){
   const w=(attachedCombatWeaponGroups('my',ae,te).map(g=>g.weapon).find(x=>String(x.name)===String(stored)));
   if(!w)return;
   const signature=tacticalPreRollContextSignature(ae.uid,te.uid,stored,r);
-  const key=tacticalPreRollSessionKey(ae.uid,te.uid,stored);
-  const plan=tacticalPreRollResolutionPlan(ae,te,w,r);
+  const poolId=tacticalPreRollWeaponState(ae.uid,te.uid).poolId;
+  const key=tacticalPreRollSessionKey(ae.uid,te.uid,stored,poolId);
+  const plan=tacticalPreRollResolutionPlan(ae,te,w,r,poolId);
   const map=tacticalPreRollResolutionState();
   const old=map[key];
   const session=(old&&old.signature===signature)?old:{
-    key,signature,stage:plan.torrent?'wounds':'hits',
+    key,signature,poolId:poolId||null,stage:plan.torrent?'wounds':'hits',
     counts:{},specials:{},plan,startedAt:new Date().toISOString()
   };
   if(plan.torrent && session.counts.hits==null) session.counts.hits=plan.attacks;
@@ -5743,7 +5714,7 @@ function tacticalPreRollApplyResolution(){
     side:'my',attackerEntryUid:ae.uid,targetEntryUid:te.uid,unit:targetUnit.name,weapon:w.name,
     attacks:s.plan.attacks,modelsResolved:s.plan.models,hits:hitCount,wounds:woundCount,saved:Math.max(0,woundCount-failedSaves),
     damage,critHits,critW:critWounds,modelIds,shootingMode:state.phase==='Shooting'?tacticalWeaponShootingMode(w):null,
-    diceEntry:true,preRollSignature:current.signature,before:beforeGame,after:afterGame,
+    diceEntry:true,poolId:current.poolId||null,preRollSignature:current.signature,before:beforeGame,after:afterGame,
     mixedAllocation:!!s.plan.mixedSaveGroups,saveOrder:s.saveOrder||null,saveRolls:s.mixedResolution?.resolution?.map(x=>x.roll)||null
   },fullBefore);
   const actionRoot=combatRootEntry('my',ae)||ae,actionState=tacticalAdvisorActionState(actionRoot.uid);
@@ -5785,14 +5756,21 @@ function tacticalPreRollHtml(){
   const ae=tacticalAdvisorAttackerEntry();
   const teUid=state.tactical?.selectedTargetUid;
   const te=teUid?entry('opp',teUid):null;
-  if(!ae||!te)return '';
-  const stored=tacticalPreRollWeaponState(ae.uid,te.uid),phase=String(state.phase||'Command'),splitPools=tacticalPreRollPoolManifest(ae),eligibleGroups=attachedCombatWeaponGroups('my',ae,te).filter(g=>tacticalWeaponPhaseEligible(g.weapon,phase,g.entry,te)),eligibleWeapons=Array.from(new Map(eligibleGroups.map(g=>[String(g.weapon?.name||''),g.weapon])).values()).filter(Boolean),weaponOptions=eligibleWeapons.map(w=>'<option value="'+esc(w.name)+'" '+(String(stored.weaponName||'')===String(w.name)?'selected':'')+'>'+esc(w.name)+'</option>').join(''),selector=(phase==='Shooting'||phase==='Fight')?'<div class="field" style="margin-top:10px"><label>Weapon profile</label><select onchange="setTacticalPreRollWeapon(this.value)"><option value="">Choose a weapon…</option>'+weaponOptions+'</select></div>':'';
+  if(!ae)return '';
+  const phase=String(state.phase||'Command'),splitPools=tacticalPreRollPoolManifest(ae);
+  if(!te){
+    if(splitPools.length<=1)return '';
+    const targetOptions=(state.opp||[]).filter(e=>!e.attachedTo&&!tacticalUnitState('opp',e)?.destroyed).map(e=>'<option value="'+esc(e.uid)+'">'+esc(unitDisplayName('opp',e))+'</option>').join('');
+    const splitHtml=splitPools.map(p=>'<div class="status" style="margin:0"><div class="split"><div><b>'+esc(p.weapon.name)+'</b><div class="tiny">'+p.count+' model'+(p.count===1?'':'s')+'</div></div><select style="min-width:180px" onchange="setTacticalPreRollPoolTarget(\''+esc(p.key).replace(/'/g,"&#39;")+'\',this.value)"><option value="">Choose target…</option>'+targetOptions+'</select></div></div>').join('');
+    return '<div class="card tactical-preroll-card" style="border-color:#4f6f8f;margin-top:12px"><div class="split"><div><h3 style="margin:0">Pre-Roll Check</h3><div class="muted">Assign each weapon pool to a target before rolling.</div></div><span class="pill">PHYSICAL DICE</span></div><div class="status" style="margin-top:10px"><b>Split-fire / multiple weapon pools</b><div class="tiny" style="margin-top:4px">Each pool is resolved independently. Dice results never carry between pools.</div></div><div style="display:grid;gap:7px;margin-top:8px">'+splitHtml+'</div></div>';
+  }
+  const stored=tacticalPreRollWeaponState(ae.uid,te.uid),,eligibleGroups=attachedCombatWeaponGroups('my',ae,te).filter(g=>tacticalWeaponPhaseEligible(g.weapon,phase,g.entry,te)),eligibleWeapons=Array.from(new Map(eligibleGroups.map(g=>[String(g.weapon?.name||''),g.weapon])).values()).filter(Boolean),weaponOptions=eligibleWeapons.map(w=>'<option value="'+esc(w.name)+'" '+(String(stored.weaponName||'')===String(w.name)?'selected':'')+'>'+esc(w.name)+'</option>').join(''),selector=(phase==='Shooting'||phase==='Fight')?'<div class="field" style="margin-top:10px"><label>Weapon profile</label><select onchange="setTacticalPreRollWeapon(this.value)"><option value="">Choose a weapon…</option>'+weaponOptions+'</select></div>':'';
   const r=tacticalPreRollCheck(ae.uid,te.uid,stored.weaponName||null);
   const cls=(r.status==='ready'||r.status==='ready-with-warnings')?'ok':'warn';
   const warningHtml=(r.warnings||[]).map(x=>'<li>'+esc(x)+'</li>').join('');
   const steps=(r.steps||[]).map(x=>'<div class="status" style="margin:0"><div class="muted small">'+esc(x.label)+'</div><div style="font-size:1.55em;font-weight:900">'+esc(x.value)+'</div><div class="tiny">'+esc(x.detail||'')+'</div></div>').join('');
   const canEnter=['ready','ready-with-warnings'].includes(r.status)&&stored.weaponName;
-  const splitHtml=splitPools.length>1?'<div class="status" style="margin-top:10px"><b>Split-fire / multiple weapon pools</b><div class="tiny" style="margin-top:4px">Assign a target to each weapon pool. Resolve each pool separately; physical dice results never carry between pools.</div><div style="display:grid;gap:7px;margin-top:8px">'+splitPools.map(p=>{const opts=(state.opp||[]).filter(e=>!e.attachedTo&&!tacticalUnitState('opp',e)?.destroyed).map(e=>'<option value="'+esc(e.uid)+'" '+(e.uid===p.targetUid?'selected':'')+'>'+esc(unitDisplayName('opp',e))+'</option>').join('');return '<div class="status" style="margin:0"><div class="split"><div><b>'+esc(p.weapon.name)+'</b><div class="tiny">'+p.count+' model'+(p.count===1?'':'s')+'</div></div><select style="min-width:180px" onchange="setTacticalPreRollPoolTarget(\''+esc(p.weapon.name).replace(/'/g,"&#39;")+'\',this.value)"><option value="">Choose target…</option>'+opts+'</select></div></div>'}).join('')+'</div></div>':'';
+  const splitHtml=splitPools.length>1?'<div class="status" style="margin-top:10px"><b>Split-fire / multiple weapon pools</b><div class="tiny" style="margin-top:4px">Assign a target to each weapon pool. Resolve each pool separately; physical dice results never carry between pools.</div><div style="display:grid;gap:7px;margin-top:8px">'+splitPools.map(p=>{const opts=(state.opp||[]).filter(e=>!e.attachedTo&&!tacticalUnitState('opp',e)?.destroyed).map(e=>'<option value="'+esc(e.uid)+'" '+(e.uid===p.targetUid?'selected':'')+'>'+esc(unitDisplayName('opp',e))+'</option>').join('');return '<div class="status" style="margin:0"><div class="split"><div><b>'+esc(p.weapon.name)+'</b><div class="tiny">'+p.count+' model'+(p.count===1?'':'s')+'</div></div><select style="min-width:180px" onchange="setTacticalPreRollPoolTarget(\''+esc(p.key).replace(/'/g,"&#39;")+'\',this.value)"><option value="">Choose target…</option>'+opts+'</select></div></div>'}).join('')+'</div></div>':'';
   return '<div class="card tactical-preroll-card" style="border-color:#4f6f8f;margin-top:12px"><div class="split"><div><h3 style="margin:0">Pre-Roll Check</h3><div class="muted">Verify the final target number before rolling physical dice.</div></div><span class="pill">PHYSICAL DICE</span></div>'+splitHtml+selector+'<div class="'+cls+'" style="margin-top:10px"><b>'+esc(r.status==='ready'||r.status==='ready-with-warnings'?'ROLL WHEN READY':'CHECK REQUIRED')+'</b>'+(r.weapon?' • '+esc(r.weapon):'')+'</div><div class="grid3" style="margin-top:10px">'+steps+'</div>'+(warningHtml?'<div class="warn" style="margin-top:10px"><b>Rules / context reminders</b><ul style="margin:5px 0 0 18px">'+warningHtml+'</ul></div>':'')+(canEnter?'<button type="button" class="btn primary" style="width:100%;margin-top:12px;font-size:16px;font-weight:800" onclick="tacticalPreRollOpenResolution()">Enter Physical Dice Results</button>':'')+'<div class="tiny" style="margin-top:8px">Final values are calculated from the current battlefield state and the same combat engine used by Tactical Advisor. The app does not roll the physical dice.</div></div>';
 }
 
