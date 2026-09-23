@@ -5512,6 +5512,17 @@ function tacticalDistanceLabel(ctx){
   return ctx.distanceInches===null?'Unknown':ctx.distanceInches+'"';
 }
 function tacticalContextHtml(){
+  const open=state.tacticalContextOpen!==false;
+  return '<details class="card tactical-context-card" '+(open?'open':'')+' ontoggle="state.tacticalContextOpen=this.open;save()">'+
+    '<summary style="list-style:none;cursor:pointer;user-select:none;padding:2px 0">'+
+      '<div class="split"><div><h3 style="margin:0">Tactical Context</h3><div class="muted">Optional battlefield state for the Tactical Advisor • Unknown values are never guessed.</div></div>'+
+      '<span class="pill">'+esc(state.phase||'Command')+'</span></div>'+
+    '</summary>'+
+    '<div style="margin-top:12px">'+tacticalContextHtmlBody()+'</div>'+
+  '</details>';
+}
+
+function tacticalContextHtmlBody(){
   const ae=tacticalAdvisorAttackerEntry();
   const targets=(state.opp||[]).filter(e=>!e.attachedTo&&!tacticalUnitState('opp',e)?.destroyed);
   if(!ae||!targets.length)return '<div class="card tactical-context-card"><h3 style="margin-top:0">Tactical Context</h3><div class="muted">Build both armies and select an attacker/target to record range and battlefield context.</div></div>';
@@ -8295,7 +8306,7 @@ refreshCurrentUnitDatabase(false);
 render();
 load40kAppSourceManifest();
 loadEventCompanionData();
-if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./service-worker.js?v=326',{updateViaCache:'none'}).catch(()=>{});});}
+if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./service-worker.js?v=327',{updateViaCache:'none'}).catch(()=>{});});}
 setTimeout(()=>initCloudOnLoad(),0);
 </script>
 </body></html>
