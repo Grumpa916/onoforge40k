@@ -1291,6 +1291,8 @@ const DETACHMENT_STRATAGEMS_11E={
 ]};
 
 function ensureStratagemState(){
+ if(!Array.isArray(state.stratagemPhaseUsesMy))state.stratagemPhaseUsesMy=[];
+ if(!Array.isArray(state.stratagemPhaseUsesOpp))state.stratagemPhaseUsesOpp=[];
  if(!Array.isArray(state.stratagemsMy))state.stratagemsMy=[];
  if(!Array.isArray(state.stratagemsOpp))state.stratagemsOpp=[];
  if(!Array.isArray(state.stratagemUsesMy))state.stratagemUsesMy=[];
@@ -1300,8 +1302,12 @@ function stratagemUseHistory(side){
  return side==='opp'?state.stratagemUsesOpp:state.stratagemUsesMy;
 }
 function stratagemUsedThisPhase(side,name){
- const phase=String(state.phase||'Command'),round=Math.max(1,Number(state.round)||1),turn=side==='opp'?'opp':'my';
- return stratagemUseHistory(side).some(x=>x&&String(x.name)===String(name)&&Number(x.round)===round&&String(x.phase)===phase&&String(x.playerTurn)===turn);
+ const key=side==='opp'?'stratagemPhaseUsesOpp':'stratagemPhaseUsesMy';
+ return (Array.isArray(state[key])?state[key]:[]).some(x=>String(x)===String(name));
+}
+function resetStratagemPhaseUses(){
+ state.stratagemPhaseUsesMy=[];
+ state.stratagemPhaseUsesOpp=[];
 }
 function stratagemUsedThisBattle(side,name){
  return stratagemUseHistory(side).some(x=>x&&String(x.name)===String(name));
@@ -1362,6 +1368,9 @@ function useStratagem(side,index){
  const cpCost=stratagemCP(s); if(beforeCP<cpCost){alert('Not enough CP.');return;} const afterCP=beforeCP-cpCost;
  if(side==='my')state.myCP=afterCP;else state.oppCP=afterCP;
  history.push({name:s.name,round,phase,playerTurn:turn,cp:cpCost});
+ const phaseUseKey=side==='opp'?'stratagemPhaseUsesOpp':'stratagemPhaseUsesMy';
+ if(!Array.isArray(state[phaseUseKey]))state[phaseUseKey]=[];
+ state[phaseUseKey].push(s.name);
  event('CP_CHANGED',{side,unit:side==='my'?'My CP':'Opponent CP',action:'CP -'+cpCost,before:beforeCP,after:afterCP,delta:-cpCost},before);
  event('STRATAGEM_USED',{name:s.name,side,cp:cpCost,phase,round,playerTurn:turn,source:s.source,detachment:s.detachment||'',action:s.name},before);
  state.stratagemsOpen=true;
@@ -4504,6 +4513,7 @@ function advancePhase(){
       }
       state.round=currentRound+1;
       state.phase='Command';
+      resetStratagemPhaseUses();
       state.battleRoundComplete=false;
       state.objectiveTurnStartOwners={...(state.objectiveTurnStartOwners||{})};
       state.objectiveTurnStartOwners[String(state.round)+'|'+firstTurn]=Object.fromEntries(
@@ -4521,6 +4531,7 @@ function advancePhase(){
     }
 
     state.phase='Command';
+    resetStratagemPhaseUses();
     state.battleRoundComplete=false;
     state.objectiveTurnStartOwners={...(state.objectiveTurnStartOwners||{})};
     state.objectiveTurnStartOwners[String(state.round)+'|'+otherTurn]=Object.fromEntries(
@@ -4538,6 +4549,7 @@ function advancePhase(){
 
   const next=phases[i+1];
   state.phase=next;
+  resetStratagemPhaseUses();
   state.my=sortBattleState(state.my);
   state.opp=sortBattleState(state.opp);
   event('PHASE_CHANGED',{from:phases[i],phase:next,action:'Next Phase'},before);
@@ -4551,6 +4563,7 @@ function previousPhase(){
   if(i<0)i=0;
   const prev=phases[(i-1+phases.length)%phases.length];
   state.phase=prev;
+  resetStratagemPhaseUses();
   state.battleRoundComplete=false;
   state.my=sortBattleState(state.my);
   state.opp=sortBattleState(state.opp);
@@ -8268,7 +8281,7 @@ refreshCurrentUnitDatabase(false);
 render();
 load40kAppSourceManifest();
 loadEventCompanionData();
-if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./service-worker.js?v=324',{updateViaCache:'none'}).catch(()=>{});});}
+if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./service-worker.js?v=325',{updateViaCache:'none'}).catch(()=>{});});}
 setTimeout(()=>initCloudOnLoad(),0);
 </script>
 </body></html>
