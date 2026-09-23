@@ -1369,6 +1369,18 @@ function useStratagem(side,index){
  if(!phaseLegal){alert('That stratagem cannot be used during the current phase.');return;}
  const existingIndex=history.findIndex(x=>x&&String(x.name)===String(s.name)&&Number(x.round)===round&&String(x.phase)===phase&&String(x.playerTurn)===turn);
  if(existingIndex>=0){
+   // A second click on the same stratagem immediately after its use reverses
+   // that exact recorded use. Never undo an unrelated action.
+   const latest=state.events?.[0];
+   const latestPayload=latest?.payload||{};
+   const canReverseLatest=latest?.kind==='STRATAGEM_USED'
+     && String(latestPayload.name||'')===String(s.name||'')
+     && String(latestPayload.side||'')===String(side)
+     && latest?.before;
+   if(canReverseLatest){
+     undoLastAction();
+     return;
+   }
    alert('That stratagem has already been used. Use Undo to reverse the recorded use and refund its CP.');
    return;
  }
