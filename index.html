@@ -4761,6 +4761,7 @@ function nextRound(){
  state.round=nextRoundNumber;
  state.currentTurn=nextTurn;
  state.phase='Command';
+ state.battleRoundComplete=false;
  restorePhaseCP(state.round,nextTurn,'Command');
  ensureObjectiveTurnSnapshot();
  ensureTacticalTurnDraw(nextTurn);
