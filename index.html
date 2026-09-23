@@ -5709,6 +5709,9 @@ function tacticalPreRollPrecisionPushHistory(s){
     precisionWeapon:s.precisionWeapon?{...s.precisionWeapon}:null,
     precisionPendingDamage:s.precisionPendingDamage??null,
     precisionPendingFnp:s.precisionPendingFnp??null,
+    precisionPendingKind:s.precisionPendingKind??null,
+    precisionPendingCriticalIndex:s.precisionPendingCriticalIndex??null,
+    precisionPendingTargetModelId:s.precisionPendingTargetModelId??null,
     saveOrder:Array.isArray(s.saveOrder)?s.saveOrder.slice():null,
     mixedResolution:s.mixedResolution?{...s.mixedResolution,
       modelStates:(s.mixedResolution.modelStates||[]).map(m=>({...m})),
@@ -5729,6 +5732,9 @@ function tacticalPreRollPrecisionBack(s){
   if(snap.precisionWeapon)s.precisionWeapon={...snap.precisionWeapon};else delete s.precisionWeapon;
   if(snap.precisionPendingDamage!=null)s.precisionPendingDamage=snap.precisionPendingDamage;else delete s.precisionPendingDamage;
   if(snap.precisionPendingFnp!=null)s.precisionPendingFnp=snap.precisionPendingFnp;else delete s.precisionPendingFnp;
+  if(snap.precisionPendingKind!=null)s.precisionPendingKind=snap.precisionPendingKind;else delete s.precisionPendingKind;
+  if(snap.precisionPendingCriticalIndex!=null)s.precisionPendingCriticalIndex=snap.precisionPendingCriticalIndex;else delete s.precisionPendingCriticalIndex;
+  if(snap.precisionPendingTargetModelId!=null)s.precisionPendingTargetModelId=snap.precisionPendingTargetModelId;else delete s.precisionPendingTargetModelId;
   if(Array.isArray(snap.saveOrder))s.saveOrder=snap.saveOrder.slice();else delete s.saveOrder;
   if(snap.mixedResolution){
     s.mixedResolution={...snap.mixedResolution,
