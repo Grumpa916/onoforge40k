@@ -5566,6 +5566,7 @@ function tacticalPreRollApplyMixedSaveRolls(current,rolls){
       }
     }
   };
+  if(plan.devastating&&criticalWounds>0)applyMortalPerCriticalWound(criticalWounds);
   for(const roll of sorted){
     let g,m;
     if(precisionActive){m=pickPrecisionModel();if(m)g=precisionGroup;else precisionActive=false;}
@@ -5575,7 +5576,6 @@ function tacticalPreRollApplyMixedSaveRolls(current,rolls){
     resolution.push({roll,groupId:g.id,groupLabel:g.label,modelId:m?.id||null,saveSucceeds,damage:applied,saveNeed,precision:!!(precisionActive&&precisionGroup&&g.id===precisionGroup.id)});
     while(currentGroupIndex<orderIds.length){const gg=groups.find(x=>x.id===orderIds[currentGroupIndex]);if((liveByGroup.get(gg.id)||[]).some(x=>x.alive!==false))break;currentGroupIndex++;}
   }
-  if(plan.devastating&&criticalWounds>0)applyMortalPerCriticalWound(criticalWounds);
   const modelStates=groups.flatMap(g=>liveByGroup.get(g.id)||[]).map(m=>({id:m.id,sourceEntryUid:m.sourceEntryUid,sourceUnitId:m.sourceUnitId,alive:m.alive!==false,woundsRemaining:Math.max(0,Number(m.woundsRemaining)||0)}));
   return {failedSaves:failed,damage,normalDamage:Math.max(0,damage-(plan.devastating?mortalDamage:0)),mortalDamage:plan.devastating?mortalDamage:0,resolution,modelStates,variableDamage,damageInstances:variableDamage?resolution.filter(x=>!x.saveSucceeds).map(x=>({kind:'failedSave',modelId:x.modelId,groupId:x.groupId})):[],devastatingInstances:variableDamage&&plan.devastating?devastatingInstances:[]};
 }
