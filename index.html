@@ -2246,6 +2246,23 @@ function save(){
     ensureScoreLedger();
     state.localSavedAt=new Date().toISOString();
     const safeState=JSON.parse(JSON.stringify(state));
+    // Persist a point-in-time timer snapshot so loading a saved battle never
+    // counts time elapsed while the app was closed as active game time.
+    const liveTimer=ensureGameTimer();
+    if(liveTimer&&typeof liveTimer==='object'){
+      const elapsed=gameTimerElapsed();
+      const currentSide=state.currentTurn==='opp'?'opp':'my';
+      const turnKey=currentSide==='opp'?'turnOppMs':'turnMyMs';
+      const savedTurn=Math.max(0,Number(liveTimer[turnKey])||0);
+      const turnStarted=Math.max(0,Number(liveTimer.turnStartedGameMs)||0);
+      const liveTurn=!liveTimer.turnPaused&&liveTimer.running&&!liveTimer.finishedAt
+        ?savedTurn+Math.max(0,elapsed-turnStarted)
+        :savedTurn;
+      safeState.gameTimer={...safeState.gameTimer,elapsedMs:elapsed};
+      safeState.gameTimer[turnKey]=liveTurn;
+      safeState.gameTimer.startedAt=liveTimer.running&&!liveTimer.finishedAt?Date.now():Number(liveTimer.startedAt)||0;
+      safeState.gameTimer.turnStartedGameMs=liveTimer.running&&!liveTimer.finishedAt?elapsed:Math.max(0,Number(liveTimer.turnStartedGameMs)||0);
+    }
     safeState.events=(Array.isArray(safeState.events)?safeState.events:[]).slice(0,100);
     localStorage.setItem(STORAGE_KEY,JSON.stringify({state:safeState,DEMO}));
     return true;
