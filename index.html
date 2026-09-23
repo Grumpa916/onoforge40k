@@ -1435,6 +1435,28 @@ function updatePersonalArmyNotes(value){
   }
   save();
 }
+function defaultSecondaryPersonalPlans(){return {};}
+function ensureSecondaryPersonalPlans(){
+  if(!state || typeof state!=='object') return {};
+  if(!state.secondaryPersonalPlans || typeof state.secondaryPersonalPlans!=='object' || Array.isArray(state.secondaryPersonalPlans)) state.secondaryPersonalPlans={};
+  return state.secondaryPersonalPlans;
+}
+// Backward-compatible name used by older deployed builds.
+function ensureSecondaryOrderPersonalPlans(){return ensureSecondaryPersonalPlans();}
+function ensureGameReferencePersonal(){
+  if(!state || typeof state!=='object') return {};
+  const base=gameReferencePersonalForBattle();
+  const current=state.gameReferencePersonal;
+  if(!current || typeof current!=='object' || Array.isArray(current)) state.gameReferencePersonal=base;
+  else{
+    state.gameReferencePersonal.phases=current.phases && typeof current.phases==='object' ? current.phases : base.phases;
+    for(const phase of Object.keys(base.phases)) if(!Array.isArray(state.gameReferencePersonal.phases[phase])) state.gameReferencePersonal.phases[phase]=[];
+    state.gameReferencePersonal.quick=Array.isArray(current.quick)?current.quick:[];
+    state.gameReferencePersonal.primary=Array.isArray(current.primary)?current.primary:[];
+    state.gameReferencePersonal.custom=String(current.custom||'');
+  }
+  return state.gameReferencePersonal;
+}
 function gameReferencePersonalForBattle(){return {phases:{Command:[],Movement:[],Shooting:[],Charge:[],Fight:[],End:[]},quick:[],primary:[],custom:''};}
 function gameReferenceEditorHtml(){
   const notes=ensurePersonalArmyNotes();
