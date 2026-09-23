@@ -5931,9 +5931,8 @@ function tacticalPreRollResolutionSet(field,value){
     const done=Number(s.counts.precisionDevastating||0),total=Math.max(0,Number(s.specials.criticalWounds)||0);if(done>=total){s.stage='review';return;}
     let roll;if(plan.variableDamage){roll=Math.floor(Number(value));const max=tacticalPreRollDamageMax(s.precisionWeapon?.D||'1');if(!Number.isInteger(roll)||roll<1||roll>max){alert('Enter the actual physical damage result.');return;}}else roll=Math.max(0,Number(plan.damageValue)||0);
     const te=entry('opp',current.targetEntryUid),groups=tacticalPreRollSaveGroups(te,s.precisionTargetState?[s.precisionTargetState]:null),orderIds=s.saveOrder||groups.map(g=>g.id);
-    const states=new Map();
-    const snap=combatSnapshot('opp',te);
-    (snap?.models||[]).filter(m=>m.alive!==false).forEach(m=>states.set(String(m.id),{...m,woundsRemaining:Math.max(0,Number(m.woundsRemaining)||0),alive:m.alive!==false}));
+    if(!s.mixedResolution)tacticalPreRollBuildPrecisionMixedResolution(s);
+    const states=new Map((s.mixedResolution?.modelStates||[]).map(m=>[String(m.id),{...m,woundsRemaining:Math.max(0,Number(m.woundsRemaining)||0),alive:m.alive!==false}]));
     if(s.precisionTargetState){const ps=s.precisionTargetState,pm=states.get(String(ps.modelId));if(pm){pm.woundsRemaining=Math.max(0,Number(ps.woundsRemaining)||0);pm.alive=ps.alive!==false;}}
     const pickGroupModel=g=>{const models=(g?.modelIds||[]).map(id=>states.get(String(id))).filter(Boolean).filter(m=>m.alive!==false);return models.find(m=>Number(m.woundsRemaining||0)<Number(m.maxWounds||m.profile?.W||1))||models[0]||null;};
     let target=null;
@@ -5946,6 +5945,7 @@ function tacticalPreRollResolutionSet(field,value){
     if(!target){s.counts.precisionDevastating=done+1;s.stage=s.counts.precisionDevastating<total?'precisionDevastating':'review';return;}
     const before=Math.max(0,Number(target.woundsRemaining)||0),applied=Math.min(before,roll);target.woundsRemaining=Math.max(0,before-roll);target.alive=target.woundsRemaining>0;
     if(String(target.id)===precisionId&&s.precisionTargetState){s.precisionTargetState.woundsRemaining=target.woundsRemaining;s.precisionTargetState.alive=target.alive;}
+    s.mixedResolution.modelStates=Array.from(states.values());
     s.counts.damage=(Number(s.counts.damage)||0)+applied;s.counts.precisionDevastating=done+1;s.stage=s.counts.precisionDevastating<total?'precisionDevastating':'review';
   }else if(field==='saveOrder'){
     const groups=tacticalPreRollSaveGroups(entry('opp',current.targetEntryUid),s.precisionTargetState?[s.precisionTargetState]:null);
