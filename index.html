@@ -5553,7 +5553,7 @@ function tacticalPreRollApplyMixedSaveRolls(current,rolls){
   const provisional=s.mixedResolution?.modelStates||((s.precisionTargetState)?[s.precisionTargetState]:null);
   const groups=tacticalPreRollSaveGroups(targetEntry,provisional),orderIds=s.saveOrder||groups.map(g=>g.id);
   if(!tacticalPreRollLegalSaveOrder(groups,orderIds))throw new Error('The allocation order is not legal under the 11th Edition save-roll rules.');
-  const sorted=rolls.slice().map(Number).filter(Number.isFinite).map(v=>Math.floor(v)).sort((a,b)=>a-b),saveable=Math.max(0,Number(current.saveable)||0);
+  const sorted=rolls.slice().map(Number).filter(Number.isFinite).map(v=>Math.floor(v)),saveable=Math.max(0,Number(current.saveable)||0);
   if(sorted.length!==saveable)throw new Error('Enter exactly '+saveable+' save results.');
   if(sorted.some(v=>v<1||v>6))throw new Error('Save results must be D6 values from 1 to 6.');
   const snap=combatSnapshot('opp',targetEntry);
@@ -5756,7 +5756,7 @@ function tacticalPreRollInitMixedVariable(s,rolls){
   const te=entry('opp',s.targetEntryUid),groups=tacticalPreRollSaveGroups(te,s.precisionTargetState?[s.precisionTargetState]:null);
   const orderIds=(s.saveOrder||groups.map(g=>g.id)).slice();
   if(!tacticalPreRollLegalSaveOrder(groups,orderIds))throw new Error('The allocation order is not legal under the 11th Edition save-roll rules.');
-  const sorted=rolls.slice().map(Number).filter(Number.isFinite).map(v=>Math.floor(v)).sort((a,b)=>a-b);
+  const sorted=rolls.slice().map(Number).filter(Number.isFinite).map(v=>Math.floor(v));
   if(sorted.some(v=>v<1||v>6))throw new Error('Save results must be D6 values from 1 to 6.');
   const expected=Math.max(0,(Number(s.counts.wounds)||0)-(s.plan.devastating?Math.min(Number(s.specials.criticalWounds)||0,Number(s.counts.wounds)||0):0)-(Number(s.counts.precisionResolved)||0));
   if(sorted.length!==expected)throw new Error('Enter exactly '+expected+' save results.');
