@@ -5804,10 +5804,12 @@ function tacticalPreRollResolutionBack(){
   if(i<=0){s.stage=s.plan.torrent?'wounds':'hits';delete s.counts.hits;delete s.specials.criticalHits;save();render();return;}
   s.stage=order[i-1];save();render();
 }
+function tacticalPreRollBuildPrecisionMixedResolution(s){const te=entry('opp',s.targetEntryUid),groups=tacticalPreRollSaveGroups(te);const states=groups.flatMap(g=>g.models).map(m=>({id:m.id,sourceEntryUid:m.sourceEntryUid,sourceUnitId:m.sourceUnitId,alive:m.alive!==false,woundsRemaining:Math.max(0,Number(m.woundsRemaining)||0)}));if(s.precisionTargetState){const i=states.findIndex(x=>String(x.id)===String(s.precisionTargetState.modelId));if(i>=0){states[i].alive=s.precisionTargetState.alive!==false;states[i].woundsRemaining=Math.max(0,Number(s.precisionTargetState.woundsRemaining)||0);}}s.mixedResolution={failedSaves:Number(s.counts.failedSaves)||0,damage:Number(s.counts.damage)||0,normalDamage:Number(s.counts.damage)||0,mortalDamage:0,resolution:s.precisionResolution||[],modelStates:states,variableDamage:false,damageInstances:[],devastatingInstances:[]};return s.mixedResolution;}
 function tacticalPreRollApplyResolution(){
   const current=tacticalPreRollResolutionCurrent();if(!current)return;
   const t=ensureTacticalState(),map=tacticalPreRollResolutionState(),s=map[current.key],r=current.result;
   if(!s||s.stage!=='review'||s.signature!==current.signature)return;
+  if(s.plan?.mixedSaveGroups&&!s.mixedResolution&&s.precisionTargetState)tacticalPreRollBuildPrecisionMixedResolution(s);
   const ae=entry('my',current.attackerEntryUid),te=entry('opp',current.targetEntryUid),w=(attachedCombatWeaponGroups('my',ae,te).map(g=>g.weapon).find(x=>String(x.name)===String(current.weaponName)));
   if(!ae||!te||!w)return;
   const fullBefore=snapshotForUndo(),targetUnit=combatTargetUnit('opp',te)||get(te.unitId);if(!targetUnit)return;
