@@ -5234,6 +5234,7 @@ function tacticalTargetLegality(attackerEntry,targetEntry,phase){
     const movementType=tacticalUnitMovementType(attackerEntry.uid);
     if(!tacticalPhaseActionAvailable(attackerEntry.uid,'Shooting'))return {status:'known',known:true,canTarget:false,reasons:['attacker has already completed its Shooting action'],context:ctx};
     const targetEngaged=ctx.engagement==='engaged'||tacticalUnitIsEngagedAny(targetEntry.uid);
+    const attackerMV=tacticalUnitIsMonsterVehicle(attackerEntry);
     const targetCombatUnit=combatTargetUnit('opp',targetEntry)||get(targetEntry.unitId);
     const targetIsMonsterVehicle=!!targetCombatUnit&&((targetCombatUnit.keywords||[]).map(k=>String(k||'').toUpperCase().trim()).some(k=>k==='MONSTER'||k==='VEHICLE'));
     const loneRange=tacticalLoneOperativeRange(targetCombatUnit);
@@ -5520,7 +5521,7 @@ function tacticalPreRollApplyMixedSaveRolls(current,rolls){
   const s=current.state||current.session,plan=current.plan||s.plan;
   const groups=tacticalPreRollSaveGroups(entry('opp',current.targetEntryUid)),orderIds=s.saveOrder||groups.map(g=>g.id);
   if(!tacticalPreRollLegalSaveOrder(groups,orderIds))throw new Error('The allocation order is not legal under the 11th Edition save-roll rules.');
-  const sorted=rolls.slice().map(Number).filter(Number.isFinite).map(v=>Math.floor(v)).sort((a,b)=>a-b),saveable=Math.max(0,Number(current.saveable)||0);
+  const sorted=rolls.slice().map(Number).filter(Number.isFinite).map(v=>Math.floor(v)),saveable=Math.max(0,Number(current.saveable)||0);
   if(sorted.length!==saveable)throw new Error('Enter exactly '+saveable+' save results.');
   if(sorted.some(v=>v<1||v>6))throw new Error('Save results must be D6 values from 1 to 6.');
   const targetEntry=entry('opp',current.targetEntryUid),targetUnit=combatTargetUnit('opp',targetEntry)||get(targetEntry?.unitId);if(!targetEntry||!targetUnit)throw new Error('Target state is no longer available.');
@@ -6882,6 +6883,8 @@ function resolveAttack(){
   const effectiveMovementDistance=m.stationary?0:movementDistance;
   const setUpThisTurn=movementActions?.setUpThisTurn;
   m.movementDistanceInches=effectiveMovementDistance;
+  m.distanceInches=pairCtx?.distanceInches??null;
+  m.halfRange=tacticalHalfRangeState(w,m.distanceInches).active===true;
   m.setUpThisTurn=setUpThisTurn;
   m.heavyEligible=!!movementEntry&&
     !tacticalUnitIsEngagedAny(movementEntry.uid)&&
