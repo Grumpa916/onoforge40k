@@ -6980,6 +6980,8 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     return Number(b.expectedDamage||0)-Number(a.expectedDamage||0);
   });
   const eligibleResults=results.filter(x=>x.recommendationEligible!==false);
+  const avoid=results.filter(x=>x.recommendationEligible===false||Number(x.avoidScore||0)>=0.55).sort((a,b)=>Number(b.avoidScore||0)-Number(a.avoidScore||0)).slice(0,3);
+  const naturalTargets=eligibleResults.filter(x=>Number(x.naturalTargetScore||0)>=0.50).sort((a,b)=>Number(b.naturalTargetScore||0)-Number(a.naturalTargetScore||0)).slice(0,3);
   const nearTieThreshold=0.01;
   eligibleResults.forEach((x,i)=>{
     const next=eligibleResults[i+1];
