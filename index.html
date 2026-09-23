@@ -5805,6 +5805,13 @@ function tacticalPreRollDiceAuthority(mode, value, max, label, min=1){
   }
   throw new Error('Unknown physical-dice input mode.');
 }
+function tacticalPreRollSaveableWounds(s,includePrecisionResolved=true){
+  const plan=s?.plan||{},hits=Math.max(0,Number(s?.counts?.hits)||0),wounds=Math.max(0,Number(s?.counts?.wounds)||0),critHits=Math.max(0,Number(s?.specials?.criticalHits)||0);
+  const lethal=plan.lethal?Math.min(Math.max(0,Number(s?.specials?.lethalHits)||0),critHits):0;
+  const critDev=plan.devastating?Math.min(Math.max(0,Number(s?.specials?.criticalWounds)||0),wounds):0;
+  const resolved=includePrecisionResolved?Math.max(0,Number(s?.counts?.precisionResolved)||0):0;
+  return Math.max(0,wounds+lethal-critDev-resolved);
+}
 function tacticalPreRollDiceRequirement(field,s){
   const p=s?.plan||{};
   if(field==='hits')return {mode:'count',max:p.attacks,reason:'Only the number of successful hits is needed.'};
