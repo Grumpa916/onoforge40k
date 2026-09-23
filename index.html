@@ -1205,19 +1205,20 @@ function primaryMissionPanel(mode='battle'){
     const disposition=forceDisposition(side);
     const opponentDisposition=forceDisposition(side==='my'?'opp':'my');
     return `
-<div class="setup-panel primary-mission-panel">
-      <div class="split"><h4>${esc(label)}</h4><span class="pill">Primary Mission</span></div>
+<details class="setup-panel primary-mission-panel" ${mission?'':'disabled'}>
+      <summary class="split" style="cursor:pointer"><h4>${esc(label)}</h4><span class="pill">${mission?'Open Scoring':'Primary Mission'}</span></summary>
       <div class="primary-mission-result">
         <span class="muted">Primary Mission</span>
         ${mission
           ? `<strong>${esc(mission)}</strong>
              ${disposition&&opponentDisposition?`<div class="primary-disposition">${esc(disposition)} vs ${esc(opponentDisposition)}</div>`:''}
+             ${primaryMissionDetailsHtml(mission,side)}
           `
           : `<strong>Not resolved</strong>`}
       </div>
-    </div>`;
+    </details>`;
   };
-  return `<div class="card primary-mission-card"><div class="primary-missions-header" style="font-weight:800;font-size:14px;margin:0 0 4px">Primary Mission</div><div class="muted small" style="margin-bottom:8px">Primary scoring is tracked during Battle Mode.</div><div class="primary-missions-body">
+  return `<div class="card primary-mission-card"><div class="primary-missions-header" style="font-weight:800;font-size:14px;margin:0 0 4px">Primary Mission</div><div class="muted small" style="margin-bottom:8px">Primary scoring is tracked during Battle Mode. Click an army below to open its scoring tracker.</div><div class="primary-missions-body">
     <div class="primary-mission-pair">${tracker('my',myPM)}${tracker('opp',oppPM)}</div>
   </div></div>`;
 }
