@@ -5925,7 +5925,13 @@ function tacticalPreRollResolutionBack(){
   if(i<=0){s.stage=s.plan.torrent?'wounds':'hits';delete s.counts.hits;delete s.specials.criticalHits;save();render();return;}
   s.stage=order[i-1];save();render();
 }
-function tacticalPreRollBuildPrecisionMixedResolution(s){const te=entry('opp',s.targetEntryUid),groups=tacticalPreRollSaveGroups(te);const states=groups.flatMap(g=>g.models).map(m=>({id:m.id,sourceEntryUid:m.sourceEntryUid,sourceUnitId:m.sourceUnitId,alive:m.alive!==false,woundsRemaining:Math.max(0,Number(m.woundsRemaining)||0)}));if(s.precisionTargetState){const i=states.findIndex(x=>String(x.id)===String(s.precisionTargetState.modelId));if(i>=0){states[i].alive=s.precisionTargetState.alive!==false;states[i].woundsRemaining=Math.max(0,Number(s.precisionTargetState.woundsRemaining)||0);}}s.mixedResolution={failedSaves:Number(s.counts.failedSaves)||0,damage:Number(s.counts.damage)||0,normalDamage:Number(s.counts.damage)||0,mortalDamage:0,resolution:s.precisionResolution||[],modelStates:states,variableDamage:false,damageInstances:[],devastatingInstances:[]};return s.mixedResolution;}
+function tacticalPreRollBuildPrecisionMixedResolution(s){
+  const te=entry('opp',s.targetEntryUid),groups=tacticalPreRollSaveGroups(te),snap=combatSnapshot('opp',te);
+  const states=(snap?.models||[]).filter(m=>m.alive!==false).map(m=>({id:m.id,sourceEntryUid:m.sourceEntryUid,sourceUnitId:m.sourceUnitId,character:!!m.character,profile:m.profile||{},maxWounds:Number(m.maxWounds||m.profile?.W||1)||1,alive:m.alive!==false,woundsRemaining:Math.max(0,Number(m.woundsRemaining)||0)}));
+  if(s.precisionTargetState){const ps=s.precisionTargetState,pm=states.find(x=>String(x.id)===String(ps.modelId));if(pm){pm.alive=ps.alive!==false;pm.woundsRemaining=Math.max(0,Number(ps.woundsRemaining)||0);}}
+  s.mixedResolution={failedSaves:Number(s.counts.failedSaves)||0,damage:Number(s.counts.damage)||0,normalDamage:Number(s.counts.damage)||0,mortalDamage:0,resolution:s.precisionResolution||[],modelStates:states,variableDamage:false,damageInstances:[],devastatingInstances:[]};
+  return s.mixedResolution;
+}
 function tacticalPreRollApplyResolution(){
   const current=tacticalPreRollResolutionCurrent();if(!current)return;
   const t=ensureTacticalState(),map=tacticalPreRollResolutionState(),s=map[current.key],r=current.result;
