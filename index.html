@@ -1302,8 +1302,19 @@ function stratagemUseHistory(side){
  return side==='opp'?state.stratagemUsesOpp:state.stratagemUsesMy;
 }
 function stratagemUsedThisPhase(side,name){
- const key=side==='opp'?'stratagemPhaseUsesOpp':'stratagemPhaseUsesMy';
- return (Array.isArray(state[key])?state[key]:[]).some(x=>String(x)===String(name));
+  // Phase-use state is derived from the persistent stratagem history so a
+  // stratagem remains marked used if the player leaves and later returns to
+  // the same round/phase/army turn.
+  const history=stratagemUseHistory(side);
+  const round=Math.max(1,Number(state.round)||1);
+  const phase=String(state.phase||'Command');
+  const turn=side==='opp'?'opp':'my';
+  return Array.isArray(history)&&history.some(x=>
+    x&&String(x.name)===String(name)
+    &&Number(x.round)===round
+    &&String(x.phase)===phase
+    &&String(x.playerTurn)===turn
+  );
 }
 function resetStratagemPhaseUses(){
  state.stratagemPhaseUsesMy=[];
@@ -8369,7 +8380,7 @@ refreshCurrentUnitDatabase(false);
 render();
 load40kAppSourceManifest();
 loadEventCompanionData();
-if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./service-worker.js?v=341',{updateViaCache:'none'}).catch(()=>{});});}
+if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./service-worker.js?v=342',{updateViaCache:'none'}).catch(()=>{});});}
 setTimeout(()=>initCloudOnLoad(),0);
 </script>
 </body></html>
