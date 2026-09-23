@@ -5624,7 +5624,7 @@ function tacticalPreRollResolutionPlan(ae,te,w,r,poolId=null){
   const mixedSaveGroups=targetSaveGroups.length>1||precision||!!engineFnp(c)||(targetSnap?.models||[]).some(m=>engineFnp(m));
   return {
     modelIds,models,attacks:modelIds.length*(basePer+rapid)+blast+cleave,hitNeed:c.torrent?'Auto':c.hitNeed,
-    hitCritThreshold:c.critHitThreshold||6,woundCritThreshold:c.critWoundThreshold||6,
+    hitCritThreshold:c.critHitThreshold,woundCritThreshold:c.critWoundThreshold||6,
     woundNeed:Math.min(6,Math.max(2,Number(c.woundNeed)||2)),
     saveNeed:r.save?.need>6?null:r.save?.need||null,
     saveInfo:r.save||null,
@@ -5967,7 +5967,7 @@ function tacticalPreRollResolutionSet(field,value){
     if(diceReq?.mode==='count')tacticalPreRollDiceAuthority('count',n,diceReq.max,'Successful hit count');
     if(n>plan.attacks){alert('Successful hit count cannot exceed the number of attacks.');return;}
     s.counts.hits=n;
-    if(plan.hitCritThreshold){s.stage=plan.lethal||plan.sustained?'hitSpecial':'wounds';}
+    if(plan.hitCritThreshold!=null&&(!plan.torrent)){s.stage=plan.lethal||plan.sustained?'hitSpecial':'wounds';}
     else s.stage='wounds';
   }else if(field==='criticalHits'){
     const max=Number(s.counts.hits)||0;
@@ -6944,7 +6944,7 @@ if(c.indirect){
   c.indirectHitNeed=m.indirectStationaryFriendlyVisible?4:6;
 }
 const baseHitNeed=Math.max(2,Number(String(w.BS||w.WS||'4+').replace('+',''))||4);let hitModifier=0;if(m.plusHit||m.abilityNodeLash||c.heavy&&m.heavyEligible===true)hitModifier+=1;if(m.minusHit||m.abilityHypnoticGaze)hitModifier-=1;if(c.cover)hitModifier-=1;if(damagedAttacker)hitModifier-=1;if(c.closeQuartersHitPenalty)hitModifier-=1;hitModifier=Math.max(-1,Math.min(1,hitModifier));c.hitNeed=baseHitNeed-hitModifier;
-if(c.indirect)c.hitNeed=Math.max(c.hitNeed,c.indirectHitNeed);c.hitNeed=Math.max(2,Math.min(6,c.hitNeed));c.hitReroll=c.indirect?'none':((m.rerollHits||m.abilitySingularPurpose)?'all':(m.rerollHit1||m.abilitySymbioticTargeting)?'ones':'none');let S=(Number(w.S)||4)+(m.plusStrength?1:0);let T=Number(t.profile.T)||4;c.woundNeed=targetNeed(S,T);if(m.plusWound||((m.abilityNodeLash)&&m.targetBattleShocked)||c.lance)c.woundNeed=Math.max(2,c.woundNeed-1);if(c.anti)c.woundNeed=Math.min(c.woundNeed,c.anti);c.woundNeed=Math.max(2,Math.min(6,c.woundNeed));c.woundReroll=(m.rerollWounds||m.abilitySingularPurpose)?'all':m.rerollWound1?'ones':c.twin?'all':'none';c.critHitThreshold=m.critHit5?5:m.critHit4?4:6;c.critWoundThreshold=m.critWound5?5:m.critWound4?4:6;return c}
+if(c.indirect)c.hitNeed=Math.max(c.hitNeed,c.indirectHitNeed);c.hitNeed=Math.max(2,Math.min(6,c.hitNeed));c.hitReroll=c.indirect?'none':((m.rerollHits||m.abilitySingularPurpose)?'all':(m.rerollHit1||m.abilitySymbioticTargeting)?'ones':'none');let S=(Number(w.S)||4)+(m.plusStrength?1:0);let T=Number(t.profile.T)||4;c.woundNeed=targetNeed(S,T);if(m.plusWound||((m.abilityNodeLash)&&m.targetBattleShocked)||c.lance)c.woundNeed=Math.max(2,c.woundNeed-1);if(c.anti)c.woundNeed=Math.min(c.woundNeed,c.anti);c.woundNeed=Math.max(2,Math.min(6,c.woundNeed));c.woundReroll=(m.rerollWounds||m.abilitySingularPurpose)?'all':m.rerollWound1?'ones':c.twin?'all':'none';c.critHitThreshold=c.torrent?null:(m.critHit5?5:m.critHit4?4:6);c.critWoundThreshold=Math.min(c.anti||6,m.critWound5?5:m.critWound4?4:6);return c}
 function engineDistForNeed(need,critThreshold,reroll){let success=0,crit=0;const qualifies=d=>d>=critThreshold;const hits=d=>qualifies(d)||d>=need;for(let d=1;d<=6;d++){let p=1/6;if((reroll==='all')||(reroll==='ones'&&d===1)){for(let r=1;r<=6;r++){const q=1/36;if(hits(r))success+=q;if(qualifies(r))crit+=q}}else{if(hits(d))success+=p;if(qualifies(d))crit+=p}}return {success,crit}}
 function engineRollDistribution(need,reroll,torrent,critThreshold){if(torrent)return {success:1,crit:0};return engineDistForNeed(need,critThreshold,reroll)}
 function engineWoundDistribution(c,events){const d=engineDistForNeed(c.woundNeed,c.critWoundThreshold,c.woundReroll);return {success:d.success,crit:d.crit}}
