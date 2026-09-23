@@ -5738,7 +5738,7 @@ function tacticalPreRollResolutionPlan(ae,te,w,r,poolId=null){
   const targetSaveGroups=tacticalPreRollSaveGroups(te);
   const profiles=new Set((targetSnap?.models||[]).filter(m=>m.alive!==false).map(m=>JSON.stringify({T:m.profile?.T,Sv:m.profile?.Sv,InSv:m.profile?.InSv,W:m.profile?.W,character:!!m.character})));
   const precisionTargetModelId=r?.precisionTargetModelId||null,precision=!!r?.precision,precisionTargetVisible=r?.precisionTargetVisible===true;
-  const mixedSaveGroups=targetSaveGroups.length>1||precision||!!engineFnp(c)||(targetSnap?.models||[]).some(m=>engineFnp(m));
+  const mixedSaveGroups=targetSaveGroups.length>1||precision||!!engineFnp(c)||!!c.devastating||(targetSnap?.models||[]).some(m=>engineFnp(m));
   return {
     modelIds,models,attacks:modelIds.length*(basePer+rapid)+blast+cleave,hitNeed:c.torrent?'Auto':c.hitNeed,
     hitCritThreshold:c.critHitThreshold,woundCritThreshold:c.critWoundThreshold||6,
