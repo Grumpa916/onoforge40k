@@ -5516,46 +5516,8 @@ function tacticalPreRollApplyMixedSaveRolls(current,rolls){
       currentGroupIndex++;
     }
   }
-  const rosterByEntry={};
-  (snap?.components||[]).forEach(c=>{
-    const ce=entry('opp',c.entryUid),u=get(c.unitId);
-    if(ce&&u&&modelRosterRule(u))rosterByEntry[ce.uid]=ensureModelRoster(ce,u);
-  });
-  resolution.forEach(x=>{
-    if(!x.modelId)return;
-    const original=modelMap.get(x.modelId),ce=entry('opp',original?.sourceEntryUid);
-    const roster=rosterByEntry[original?.sourceEntryUid];
-    const rm=roster?.find(m=>m.id===x.modelId);
-    if(rm&&original){rm.woundsRemaining=Math.max(0,Number(original.woundsRemaining||0)-(original.woundsRemaining-x.damage<0?original.woundsRemaining:x.damage));if(rm.woundsRemaining<=0)rm.alive=false;}
-  });
-  const devCount=plan.devastating?Math.min(Number(s.specials.criticalWounds)||0,Number(s.counts.wounds)||0):0;
-  let mortal=0;
-  if(devCount){
-    const liveModels=()=>groups.flatMap(g=>(liveByGroup.get(g.id)||[])).filter(m=>m.alive!==false);
-    for(let i=0;i<devCount;i++){
-      const candidates=liveModels();
-      const chosen=candidates.find(m=>!m.character&&Number(m.woundsRemaining||0)<Number(m.maxWounds||m.profile?.W||1))
-        ||candidates.find(m=>!m.character)
-        ||candidates.find(m=>m.character&&Number(m.woundsRemaining||0)<Number(m.maxWounds||m.profile?.W||1))
-        ||candidates.find(m=>m.character);
-      if(!chosen)break;
-      const d=Number(current.plan.damageValue)||1;
-      const dealt=Math.min(d,Number(chosen.woundsRemaining||0));
-      chosen.woundsRemaining=Math.max(0,Number(chosen.woundsRemaining||0)-dealt);
-      if(chosen.woundsRemaining<=0)chosen.alive=false;
-      mortal+=dealt;
-    }
-  }
-  const beforeGame=JSON.parse(JSON.stringify(targetEntry.game||{}));
-  groups.forEach(g=>{
-    const live=liveByGroup.get(g.id)||[];
-    live.forEach(m=>{
-      const ce=entry('opp',m.sourceEntryUid),u=get(m.sourceUnitId),rm=ce&&u&&modelRosterRule(u)?ensureModelRoster(ce,u).find(x=>x.id===m.id):null;
-      if(rm){rm.woundsRemaining=Math.max(0,Number(m.woundsRemaining)||0);rm.alive=m.alive!==false;}
-    });
-  });
-  (snap?.components||[]).forEach(c=>{const ce=entry('opp',c.entryUid),u=get(c.unitId);if(ce&&u&&modelRosterRule(u))syncModelRosterBattleState(ce,u);});\n  (snap?.components||[]).forEach(c=>{const ce=entry('opp',c.entryUid),u=get(c.unitId);if(!ce||!u||modelRosterRule(u))return;const live=(snap.models||[]).filter(m=>m.sourceEntryUid===ce.uid&&m.alive!==false);const maxW=Math.max(1,Number(u.wounds)||1),maxModels=Math.max(0,Number(ce.models)||Number(u.models)||0),maxTotal=maxModels*maxW,total=(groups.flatMap(g=>liveByGroup.get(g.id)||[])).filter(m=>m.sourceEntryUid===ce.uid).reduce((n,m)=>n+Math.max(0,Number(m.woundsRemaining)||0),0);ce.game=ce.game||{entryId:ce.uid,models:maxModels,wounds:maxTotal,status:'Alive'};ce.game.models=live.length;ce.game.wounds=Math.max(0,Math.min(maxTotal,total));ce.game.status=live.length<=0?'Destroyed':ce.game.wounds<maxTotal?'Damaged':'Alive';});
-  return {failedSaves:failed,damage:damage+mortal,normalDamage:damage,mortalDamage:mortal,resolution};
+  const modelStates=groups.flatMap(g=>liveByGroup.get(g.id)||[]).map(m=>({id:m.id,sourceEntryUid:m.sourceEntryUid,sourceUnitId:m.sourceUnitId,alive:m.alive!==false,woundsRemaining:Math.max(0,Number(m.woundsRemaining)||0)}));
+  return {failedSaves:failed,damage:damage+mortal,normalDamage:damage,mortalDamage:mortal,resolution,modelStates};
 }
 function tacticalPreRollResolutionPlan(ae,te,w,r){
   const ctx=r?.context||{};
