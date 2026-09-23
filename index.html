@@ -4708,6 +4708,7 @@ function previousPhase(){
     return;
   }
 
+  const fromTurn=state.currentTurn;
   const previousTurn=state.currentTurn===firstTurn?otherTurn:firstTurn;
   const previousRound=state.currentTurn===firstTurn
     ? Math.max(1,currentRound-1)
@@ -4744,7 +4745,7 @@ function previousPhase(){
     },before);
   }else{
     event('TURN_CHANGED',{
-      from:state.currentTurn===previousTurn?null:state.currentTurn,
+      from:fromTurn,
       to:previousTurn,
       round:previousRound,
       phase:'Fight',
