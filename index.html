@@ -5589,8 +5589,12 @@ function tacticalPreRollApplyMixedSaveRolls(current,rolls){
           ||all.find(x=>x.character);
       }
       if(!m)break;
-      const before=Math.max(0,Number(m.woundsRemaining)||0),applied=Math.min(before,normalDamage);
-      m.woundsRemaining=Math.max(0,before-applied);m.alive=m.woundsRemaining>0;damage+=applied;
+      if(variableDamage){
+        devastatingInstances.push({kind:'devastating',modelId:m.id,groupId:groups.find(g=>g.models.some(x=>x.id===m.id))?.id||null,precision:false});
+      }else{
+        const before=Math.max(0,Number(m.woundsRemaining)||0),applied=Math.min(before,normalDamage);
+        m.woundsRemaining=Math.max(0,before-applied);m.alive=m.woundsRemaining>0;damage+=applied;
+      }
     }
   }
   const modelStates=groups.flatMap(g=>liveByGroup.get(g.id)||[]).map(m=>({id:m.id,sourceEntryUid:m.sourceEntryUid,sourceUnitId:m.sourceUnitId,alive:m.alive!==false,woundsRemaining:Math.max(0,Number(m.woundsRemaining)||0)}));
