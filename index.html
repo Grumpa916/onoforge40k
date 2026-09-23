@@ -5769,7 +5769,7 @@ function tacticalPreRollInitMixedVariable(s,rolls){
     damage:Number(s.counts.damage)||0,
     normalDamage:Number(s.counts.damage)||0,
     mortalDamage:0,resolution:[],modelStates:states,
-    variableDamage:!!s.plan.variableDamage,damageInstances:[],devastatingInstances:[],damageRolls:[]
+    variableDamage:!!s.plan.variableDamage,damageInstances:[],devastatingInstances:[],damageRolls:[],fnpResults:[]
   };
   s.mixedVariableState={rolls:sorted,index:0,groupIndex:0,phase:'save',devastatingIndex:0,fixedDamage:!s.plan.variableDamage};
   s.counts.damageResolved=0;
@@ -5779,7 +5779,7 @@ function tacticalPreRollMixedVariablePushHistory(s){
   const vs=s.mixedVariableState,mr=s.mixedResolution;
   if(!vs||!mr)return;
   vs.history=Array.isArray(vs.history)?vs.history:[];
-  const snapshot={stage:s.stage,counts:{...s.counts},mixedVariableState:{...vs,history:undefined},mixedResolution:{...mr,modelStates:(mr.modelStates||[]).map(m=>({...m})),resolution:(mr.resolution||[]).map(r=>({...r})),damageRolls:[...(mr.damageRolls||[])],damageInstances:[...(mr.damageInstances||[])],devastatingInstances:[...(mr.devastatingInstances||[])]}};
+  const snapshot={stage:s.stage,counts:{...s.counts},mixedVariableState:{...vs,history:undefined},mixedResolution:{...mr,modelStates:(mr.modelStates||[]).map(m=>({...m})),resolution:(mr.resolution||[]).map(r=>({...r})),damageRolls:[...(mr.damageRolls||[])],fnpResults:(mr.fnpResults||[]).map(x=>({...x})),damageInstances:[...(mr.damageInstances||[])],devastatingInstances:[...(mr.devastatingInstances||[])]}};
   delete snapshot.mixedVariableState.history;
   vs.history.push(snapshot);
 }
@@ -5788,7 +5788,7 @@ function tacticalPreRollMixedVariableBack(s){
   if(!vs||!Array.isArray(vs.history)||!vs.history.length)return false;
   const snap=vs.history.pop();
   s.stage=snap.stage;s.counts={...snap.counts};s.mixedVariableState={...snap.mixedVariableState,history:vs.history};
-  s.mixedResolution={...snap.mixedResolution,modelStates:(snap.mixedResolution.modelStates||[]).map(m=>({...m})),resolution:(snap.mixedResolution.resolution||[]).map(r=>({...r})),damageRolls:[...(snap.mixedResolution.damageRolls||[])],damageInstances:[...(snap.mixedResolution.damageInstances||[])],devastatingInstances:[...(snap.mixedResolution.devastatingInstances||[])]};
+  s.mixedResolution={...snap.mixedResolution,modelStates:(snap.mixedResolution.modelStates||[]).map(m=>({...m})),resolution:(snap.mixedResolution.resolution||[]).map(r=>({...r})),damageRolls:[...(snap.mixedResolution.damageRolls||[])],fnpResults:(snap.mixedResolution.fnpResults||[]).map(x=>({...x})),damageInstances:[...(snap.mixedResolution.damageInstances||[])],devastatingInstances:[...(snap.mixedResolution.devastatingInstances||[])]};
   return true;
 }
 function tacticalPreRollPickMixedVariableTarget(s){
@@ -5878,7 +5878,7 @@ function tacticalPreRollResolveMixedFnp(s,ignored){
   m.woundsRemaining=Math.max(0,before-applied);m.alive=m.woundsRemaining>0;
   mr.damage=(Number(mr.damage)||0)+applied;
   if(vs.kind==='devastating')mr.mortalDamage=(Number(mr.mortalDamage)||0)+applied;else mr.normalDamage=(Number(mr.normalDamage)||0)+applied;
-  mr.damageRolls.push({damage:pending,ignored:n,applied});
+  mr.damageRolls.push(pending);mr.fnpResults=Array.isArray(mr.fnpResults)?mr.fnpResults:[];mr.fnpResults.push({damage:pending,ignored:n,applied});
   s.counts.damage=mr.damage;s.counts.damageResolved=(Number(s.counts.damageResolved)||0)+1;
   vs.pendingDamage=0;vs.pendingFnp=null;vs.currentModelId=null;vs.currentGroupId=null;vs.currentSaveNeed=null;vs.currentSaveSucceeds=null;
   if(vs.kind==='devastating'){vs.devastatingIndex++;s.stage=vs.devastatingIndex<Math.min(Number(s.specials.criticalWounds)||0,Number(s.counts.wounds)||0)?'mixedDamage':'review';vs.phase=vs.devastatingIndex<Math.min(Number(s.specials.criticalWounds)||0,Number(s.counts.wounds)||0)?'devastating':'done';}
@@ -6874,7 +6874,6 @@ function mathAbilityChecks(){
   return out.length?'<div class="status"><b>Detected Tyranid unit abilities</b><div class="check-grid" style="margin-top:7px">'+out.join('')+'</div></div>':'';
 }
 function mathCheck(key,label){const on=!!(state.mathRules&&state.mathRules[key]);return `<label class="check"><input type="checkbox" ${on?'checked':''} onchange="state.mathRules={...(state.mathRules||{}),${key}:this.checked};save();render()">${label}</label>`}
-function rerollExpected(p,mode){if(mode==='all')return 1-((1-p)**2);if(mode==='ones')return p+(1-p)*p;return p}
 function calculateMath(a,w,t,m){
   m=m||{};
   const halfState=tacticalHalfRangeState(w,m.distanceInches);
