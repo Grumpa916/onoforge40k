@@ -4420,8 +4420,15 @@ function setCurrentTurn(side){
     if(ensureTacticalTurnDraw(next)>0){save();render();}
     return;
   }
+  // Manual turn changes must use the same round/turn/phase state model as
+  // phase navigation so CP and phase-scoped stratagem usage stay bound to
+  // the selected player turn.
+  rememberPhaseCP();
   switchTurnClock(next);
   state.currentTurn=next;
+  restorePhaseCP(state.round,next,state.phase);
+  resetStratagemPhaseUses();
+  state.battleRoundComplete=false;
   ensureObjectiveTurnSnapshot();
   ensureTacticalTurnDraw(next);
   event('TURN_CHANGED',{
