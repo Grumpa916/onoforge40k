@@ -1517,7 +1517,7 @@ function stratagemsUI(){
 }
 let state={
   savedArmyLists:[],
-  stratagemsMy:[], stratagemsOpp:[], stratagemsOpen:false,primaryMissionsOpen:false,secondaryMissionsOpen:false,page:'builder',myName:'My Army',oppName:'Opponent Army',faction:'Tyranids',detachment:'Invasion Fleet',detachmentSelections:['Invasion Fleet'],oppFaction:'Ultramarines',oppDetachment:'Gladius Task Force',oppDetachmentSelections:['Gladius Task Force'],limit:2000,my:[],opp:[],searchMy:'',searchOpp:'',configure:null,attacker:'norn',weapon:'Rupture Cannon',target:'marine',round:1,phase:'Command',myVP:0,oppVP:0,myCP:0,oppCP:0,battleReadyMy:false,battleReadyOpp:false,secondaryMy:'tactical',secondaryOpp:'tactical',secondaryMyCards:[],secondaryOppCards:[],secondaryMyDeck:[],secondaryOppDeck:[],secondaryMyDeckInitialized:false,secondaryOppDeckInitialized:false,secondaryMyDiscard:[],secondaryOppDiscard:[],newOrdersCompletedMy:false,newOrdersCompletedOpp:false,secondaryMyScored:[],secondaryOppScored:[],secondaryMyScoredVP:{},secondaryOppScoredVP:{},secondaryMyScoredVPByRound:{},secondaryOppScoredVPByRound:{},secondaryMyScoredRound:{},secondaryOppScoredRound:{},secondaryPersonalPlans:{},secondaryPlanEdit:'',secondaryDetailSide:'',secondaryDetailName:'',gameReferencePersonal:{},myForceDisposition:'',oppForceDisposition:'',attackerSide:'my',firstTurn:'my',currentTurn:'my',objectives:{},events:[],gameAssistantChecks:{},gameAssistantNotes:'',personalArmyNotes:'',lists:[],activeRosterId:'',activeOpponentRosterId:'',dataStatus:'Expanded Tyranid + Ultramarines community catalogue',source:'BSData wh40k-11e (community)',revision:'current-community-catalogue',cloud:{email:'',userId:'',status:'Not connected',lastSync:'',error:''},cloudBattles:[],rulesLog:[],mathRules:{},gameTimer:{elapsedMs:0,running:false,paused:false,startedAt:0,pausedAt:0,finishedAt:0,turnMyMs:0,turnOppMs:0,turnStartedGameMs:0,turnPaused:false},cloudPasswordRecovery:false,localSavedAt:''};
+  stratagemsMy:[], stratagemsOpp:[], stratagemsOpen:false,primaryMissionsOpen:false,secondaryMissionsOpen:false,page:'builder',myName:'My Army',oppName:'Opponent Army',faction:'Tyranids',detachment:'Invasion Fleet',detachmentSelections:['Invasion Fleet'],oppFaction:'Ultramarines',oppDetachment:'Gladius Task Force',oppDetachmentSelections:['Gladius Task Force'],limit:2000,my:[],opp:[],searchMy:'',searchOpp:'',configure:null,attacker:'norn',weapon:'Rupture Cannon',target:'marine',round:1,phase:'Command',myVP:0,oppVP:0,myCP:0,oppCP:0,phaseCP:{},battleReadyMy:false,battleReadyOpp:false,secondaryMy:'tactical',secondaryOpp:'tactical',secondaryMyCards:[],secondaryOppCards:[],secondaryMyDeck:[],secondaryOppDeck:[],secondaryMyDeckInitialized:false,secondaryOppDeckInitialized:false,secondaryMyDiscard:[],secondaryOppDiscard:[],newOrdersCompletedMy:false,newOrdersCompletedOpp:false,secondaryMyScored:[],secondaryOppScored:[],secondaryMyScoredVP:{},secondaryOppScoredVP:{},secondaryMyScoredVPByRound:{},secondaryOppScoredVPByRound:{},secondaryMyScoredRound:{},secondaryOppScoredRound:{},secondaryPersonalPlans:{},secondaryPlanEdit:'',secondaryDetailSide:'',secondaryDetailName:'',gameReferencePersonal:{},myForceDisposition:'',oppForceDisposition:'',attackerSide:'my',firstTurn:'my',currentTurn:'my',objectives:{},events:[],gameAssistantChecks:{},gameAssistantNotes:'',personalArmyNotes:'',lists:[],activeRosterId:'',activeOpponentRosterId:'',dataStatus:'Expanded Tyranid + Ultramarines community catalogue',source:'BSData wh40k-11e (community)',revision:'current-community-catalogue',cloud:{email:'',userId:'',status:'Not connected',lastSync:'',error:''},cloudBattles:[],rulesLog:[],mathRules:{},gameTimer:{elapsedMs:0,running:false,paused:false,startedAt:0,pausedAt:0,finishedAt:0,turnMyMs:0,turnOppMs:0,turnStartedGameMs:0,turnPaused:false},cloudPasswordRecovery:false,localSavedAt:''};
 
 const GAME_REFERENCE_PHASES={Command:[],Movement:[],Shooting:[],Charge:[],Fight:[],End:[]};
 const GAME_REFERENCE_QUICK=[];
@@ -4032,7 +4032,7 @@ function startBattle(){
     });
   }
 
-state.myCP=1;state.oppCP=1;state.stratagemUsesMy=[];state.stratagemUsesOpp=[];resetStratagemPhaseUses();state.newOrdersCompletedMy=false;state.newOrdersCompletedOpp=false;state.tactical={version:TACTICAL_STATE_VERSION,pairs:{},unitUse:{},unitMovement:{},unitActions:{}};if(!forceDisposition('my')&&availableForceDispositions('my').length)state.myForceDisposition=availableForceDispositions('my')[0];if(!forceDisposition('opp')&&availableForceDispositions('opp').length)state.oppForceDisposition=availableForceDispositions('opp')[0];state.page='battle';state.phase='Command';state.currentTurn=state.firstTurn==='opp'?'opp':'my';state.gameTimer.turnMyMs=0;state.gameTimer.turnOppMs=0;state.gameTimer.turnStartedGameMs=gameTimerElapsed();state.gameTimer.turnPaused=false;state.manualVPMy=0;state.manualVPOpp=0;state.myVP=state.battleReadyMy?10:0;state.oppVP=state.battleReadyOpp?10:0;state.events=[];state.objectives={};if(Array.isArray(state.stratagemsMy))state.stratagemsMy.forEach(s=>{if(s)s.used=false});
+state.myCP=1;state.oppCP=1;state.phaseCP={};state.stratagemUsesMy=[];state.stratagemUsesOpp=[];resetStratagemPhaseUses();state.newOrdersCompletedMy=false;state.newOrdersCompletedOpp=false;state.tactical={version:TACTICAL_STATE_VERSION,pairs:{},unitUse:{},unitMovement:{},unitActions:{}};if(!forceDisposition('my')&&availableForceDispositions('my').length)state.myForceDisposition=availableForceDispositions('my')[0];if(!forceDisposition('opp')&&availableForceDispositions('opp').length)state.oppForceDisposition=availableForceDispositions('opp')[0];state.page='battle';state.phase='Command';state.currentTurn=state.firstTurn==='opp'?'opp':'my';state.gameTimer.turnMyMs=0;state.gameTimer.turnOppMs=0;state.gameTimer.turnStartedGameMs=gameTimerElapsed();state.gameTimer.turnPaused=false;state.manualVPMy=0;state.manualVPOpp=0;state.myVP=state.battleReadyMy?10:0;state.oppVP=state.battleReadyOpp?10:0;state.events=[];state.objectives={};if(Array.isArray(state.stratagemsMy))state.stratagemsMy.forEach(s=>{if(s)s.used=false});
 if(Array.isArray(state.stratagemsOpp))state.stratagemsOpp.forEach(s=>{if(s)s.used=false});
 state.secondaryMyDiscard=[];state.secondaryOppDiscard=[];state.secondaryTacticalDrawKeys={};state.secondaryMyScored=[];state.secondaryOppScored=[];state.secondaryMyDeck=[];state.secondaryOppDeck=[];state.secondaryMyDeckInitialized=false;state.secondaryOppDeckInitialized=false;if(state.secondaryMy==='tactical'){state.secondaryMyCards=[];initTacticalDeck('my')}else{state.secondaryMyCards=state.secondaryMyCards.slice(0,2)} if(state.secondaryOpp==='tactical'){state.secondaryOppCards=[];initTacticalDeck('opp')}else{state.secondaryOppCards=state.secondaryOppCards.slice(0,2)}ensureTacticalTurnDraw(state.currentTurn);state.my.forEach(e=>{const u=get(e.unitId),roster=ensureModelRoster(e,u);e.game={entryId:e.uid,models:e.models,wounds:e.models*get(e.unitId).wounds,status:'Alive',battleshocked:false,modelRoster:roster.map(m=>({...m,alive:true,woundsRemaining:Number(u.wounds)||1}))};});
 state.opp.forEach(e=>{const u=get(e.unitId),roster=ensureModelRoster(e,u);e.game={entryId:e.uid,models:e.models,wounds:e.models*get(e.unitId).wounds,status:'Alive',battleshocked:false,modelRoster:roster.map(m=>({...m,alive:true,woundsRemaining:Number(u.wounds)||1}))};});event('GAME_STARTED',{unit:'Game',action:'Start / Reset Battle',round:state.round,phase:state.phase,attacker:state.attackerSide,defender:state.attackerSide==='my'?'opp':'my',firstTurn:state.firstTurn,secondaryMy:state.secondaryMy,secondaryOpp:state.secondaryOpp,battleReadyMy:state.battleReadyMy,battleReadyOpp:state.battleReadyOpp,myStartingVP:state.myVP,oppStartingVP:state.oppVP,myDetachment:state.detachmentSelections,oppDetachment:state.oppDetachmentSelections,myDetachmentDP:detachmentDP('my'),oppDetachmentDP:detachmentDP('opp'),myForceDisposition:forceDisposition('my'),oppForceDisposition:forceDisposition('opp'),myPrimaryMission:primaryMission('my'),oppPrimaryMission:primaryMission('opp')},before);save();render()}
@@ -4577,7 +4577,29 @@ function objectiveStateSummary(){
 }
 
 function objectivePrompt(){const n=String(prompt('Objective name')||'').trim();if(!n)return;const rawOwner=String(prompt('Controlled by: my / opp / contested','my')||'').trim().toLowerCase();const owner=['my','opp','contested','none'].includes(rawOwner)?rawOwner:'';if(!owner){alert('Use my, opp, contested, or none.');return}const fullBefore=snapshotForUndo();const previous=state.objectives[n]||'none';state.objectives[n]=owner;event('OBJECTIVE_CHANGED',{name:n,unit:'Objective '+n,action:'Control → '+owner,owner,previous,after:owner},fullBefore);save();render()}
-function changeCP(side,d){d=Number(d)||0;const fullBefore=snapshotForUndo();const before=side==='my'?Number(state.myCP)||0:Number(state.oppCP)||0;const after=Math.max(0,before+d);const delta=after-before;if(side==='my')state.myCP=after;else state.oppCP=after;event('CP_CHANGED',{side,unit:side==='my'?'My CP':'Opponent CP',action:'CP '+(delta>0?'+':'')+delta,before,after,delta},fullBefore);save();render()}
+function ensurePhaseCPState(){
+ if(!state.phaseCP||typeof state.phaseCP!=='object')state.phaseCP={};
+}
+function phaseCPKey(round,turn,phase){
+ return `${Math.max(1,Number(round)||1)}|${turn==='opp'?'opp':'my'}|${String(phase||'Command')}`;
+}
+function rememberPhaseCP(){
+ ensurePhaseCPState();
+ const key=phaseCPKey(state.round,state.currentTurn,state.phase);
+ state.phaseCP[key]={my:Math.max(0,Number(state.myCP)||0),opp:Math.max(0,Number(state.oppCP)||0)};
+}
+function restorePhaseCP(round,turn,phase){
+ ensurePhaseCPState();
+ const key=phaseCPKey(round,turn,phase);
+ const saved=state.phaseCP[key];
+ if(saved&&typeof saved==='object'){
+   state.myCP=Math.max(0,Number(saved.my)||0);
+   state.oppCP=Math.max(0,Number(saved.opp)||0);
+ }else{
+   state.phaseCP[key]={my:Math.max(0,Number(state.myCP)||0),opp:Math.max(0,Number(state.oppCP)||0)};
+ }
+}
+function changeCP(side,d){d=Number(d)||0;const fullBefore=snapshotForUndo();const before=side==='my'?Number(state.myCP)||0:Number(state.oppCP)||0;const after=Math.max(0,before+d);const delta=after-before;if(side==='my')state.myCP=after;else state.oppCP=after;rememberPhaseCP();event('CP_CHANGED',{side,unit:side==='my'?'My CP':'Opponent CP',action:'CP '+(delta>0?'+':'')+delta,before,after,delta},fullBefore);save();render()}
 function advancePhase(){
   const before=snapshotForUndo();
   const phases=['Command','Movement','Shooting','Charge','Fight'];
@@ -4601,7 +4623,9 @@ function advancePhase(){
         return;
       }
       state.round=currentRound+1;
+      rememberPhaseCP();
       state.phase='Command';
+      restorePhaseCP(state.round,firstTurn,'Command');
       resetStratagemPhaseUses();
       state.battleRoundComplete=false;
       state.objectiveTurnStartOwners={...(state.objectiveTurnStartOwners||{})};
@@ -4619,7 +4643,9 @@ function advancePhase(){
       return;
     }
 
+    rememberPhaseCP();
     state.phase='Command';
+    restorePhaseCP(state.round,otherTurn,'Command');
     resetStratagemPhaseUses();
     state.battleRoundComplete=false;
     state.objectiveTurnStartOwners={...(state.objectiveTurnStartOwners||{})};
@@ -4637,7 +4663,9 @@ function advancePhase(){
   }
 
   const next=phases[i+1];
+  rememberPhaseCP();
   state.phase=next;
+  restorePhaseCP(state.round,state.currentTurn,next);
   resetStratagemPhaseUses();
   state.my=sortBattleState(state.my);
   state.opp=sortBattleState(state.opp);
@@ -4651,7 +4679,9 @@ function previousPhase(){
   let i=phases.indexOf(current);
   if(i<0)i=0;
   const prev=phases[(i-1+phases.length)%phases.length];
+  rememberPhaseCP();
   state.phase=prev;
+  restorePhaseCP(state.round,state.currentTurn,prev);
   resetStratagemPhaseUses();
   state.battleRoundComplete=false;
   state.my=sortBattleState(state.my);
