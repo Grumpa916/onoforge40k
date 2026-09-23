@@ -1369,21 +1369,41 @@ function useStratagem(side,index){
  if(!phaseLegal){alert('That stratagem cannot be used during the current phase.');return;}
  const existingIndex=history.findIndex(x=>x&&String(x.name)===String(s.name)&&Number(x.round)===round&&String(x.phase)===phase&&String(x.playerTurn)===turn);
  if(existingIndex>=0){
-   // A repeat click is an explicit request to reverse this stratagem when
-   // its recorded use is the newest reversible action. Match the complete
-   // use identity so an unrelated later action is never undone.
-   const latest=state.events?.[0];
-   const latestPayload=latest?.payload||{};
-   const canReverseLatest=latest?.kind==='STRATAGEM_USED'
-     && String(latestPayload.name||'')===String(s.name||'')
-     && String(latestPayload.side||'')===String(side)
-     && Number(latestPayload.round||0)===round
-     && String(latestPayload.phase||'')===phase
-     && String(latestPayload.playerTurn||'')===turn
-     && !!latest?.before;
-   if(canReverseLatest){
-     undoLastAction();
-     return;
+   // Repeat-click reversal is targeted to this stratagem use. It must work
+   // even when another stratagem was activated afterward, so do not restore
+   // the older full snapshot (that would erase the newer stratagem).
+   const stratIndex=state.events?.findIndex(e=>{
+     const p=e?.payload||{};
+     return e?.kind==='STRATAGEM_USED'
+       && String(p.name||'')===String(s.name||'')
+       && String(p.side||'')===String(side)
+       && Number(p.round||0)===round
+       && String(p.phase||'')===phase
+       && String(p.playerTurn||'')===turn;
+   });
+   if(stratIndex>=0){
+     const stratEvent=state.events[stratIndex];
+     const stratPayload=stratEvent.payload||{};
+     const cpEvent=state.events[stratIndex+1];
+     const cpPayload=cpEvent?.payload||{};
+     const cpCost=Math.max(0,Number(stratPayload.cp)||0);
+     const pairedCP=cpEvent?.kind==='CP_CHANGED'
+       && String(cpPayload.side||'')===String(side)
+       && Number(cpPayload.delta||0)===-cpCost;
+     if(pairedCP){
+       const historyItem=history[existingIndex];
+       const refund=Math.max(0,Number(historyItem?.cp)||cpCost);
+       state[cpKey]=Math.max(0,(Number(state[cpKey])||0)+refund);
+       history.splice(existingIndex,1);
+       const phaseUseKey=side==='opp'?'stratagemPhaseUsesOpp':'stratagemPhaseUsesMy';
+       const phaseUses=Array.isArray(state[phaseUseKey])?state[phaseUseKey]:[];
+       const phaseUseIndex=phaseUses.findIndex(x=>String(x)===String(s.name));
+       if(phaseUseIndex>=0)phaseUses.splice(phaseUseIndex,1);
+       state.events.splice(stratIndex,2);
+       save();
+       render();
+       return;
+     }
    }
    alert('That stratagem has already been used. Use Undo to reverse the recorded use and refund its CP.');
    return;
