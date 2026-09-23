@@ -5402,7 +5402,8 @@ function setTacticalPreRollPoolAllocation(poolId,index,field,value){
   delete raw.targetUid;
   t.preRollPools[String(poolId)]=raw;
   const normalized=tacticalPreRollNormalizePoolAllocations(pool,raw);
-  const selected=normalized.find(a=>a.targetUid);
+  const editedTarget=String(rows[i]?.targetUid||'');
+  const selected=normalized.find(a=>a.targetUid===editedTarget)||normalized.find(a=>a.targetUid);
   if(selected){
     t.selectedTargetUid=String(selected.targetUid);
     const key=String(ae.uid)+'>'+String(selected.targetUid);
