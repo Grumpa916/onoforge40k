@@ -4794,13 +4794,26 @@ function setObjectiveControl(name,owner){
   render();
 }
 function addTrackedObjective(){
-  const n=String(prompt('Objective name','Objective '+(Object.keys(state.objectives||{}).length+1))||'').trim();
-  if(!n)return;
-  if(Object.prototype.hasOwnProperty.call(state.objectives||{},n)){
-    alert('That objective is already tracked.');
-    return;
+  const objectives=state.objectives&&typeof state.objectives==='object'?state.objectives:{};
+  state.objectives=objectives;
+  let index=1;
+  let n='Objective '+index;
+  while(Object.prototype.hasOwnProperty.call(objectives,n)){
+    index++;
+    n='Objective '+index;
   }
-  setObjectiveControl(n,'none');
+  objectives[n]='none';
+  ensureObjectiveTurnSnapshot();
+  const fullBefore=snapshotForUndo();
+  event('OBJECTIVE_ADDED',{
+    name:n,unit:n,action:'Objective added to tracker',
+    owner:'none',previous:'none',after:'none',
+    round:Math.max(1,Number(state.round)||1),
+    phase:String(state.phase||'Command'),
+    playerTurn:state.currentTurn==='opp'?'opp':'my'
+  },fullBefore);
+  save();
+  render();
 }
 function removeTrackedObjective(name){
   const key=String(name||'').trim();
