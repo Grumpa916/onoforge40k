@@ -5977,11 +5977,42 @@ function tacticalAdvisorWeaponGroups(side,e,target=null){
   const cache=TACTICAL_RENDER_CACHE.signature?TACTICAL_RENDER_CACHE:null;
   const cacheKey=String(side||'')+'|'+String(e?.uid||'')+'|'+String(target?.uid||'');
   if(cache&&cache.weaponGroups.has(cacheKey))return cache.weaponGroups.get(cacheKey);
-  const base=attachedCombatWeaponGroups(side,e,target);
-  const covered=new Set(base.map(g=>String(g?.weapon?.name||'')));
+  const baseRaw=attachedCombatWeaponGroups(side,e,target);
   const root=combatRootEntry(side,e)||e;
   const snap=combatSnapshot(side,root);
   const models=Math.max(1,Number(snap?.survivingModels)||Number(root?.models)||Number(get(root?.unitId)?.models)||1);
+  // Repair incomplete legacy combat weapon profiles from the authoritative catalogue.
+  // The combat snapshot may omit range/BS/other fields; Tactical Advisor must not
+  // preserve those omissions simply because a weapon name already exists.
+  const authorityEntries=[root,...attachedCombatEntries(side,root)].filter(Boolean);
+  const authorityByName=new Map();
+  authorityEntries.forEach(ce=>{
+    const u=get(ce.unitId);
+    (u?.weapons||[]).forEach(w=>{
+      const name=String(w?.name||'');
+      if(name&&!authorityByName.has(name))authorityByName.set(name,w);
+    });
+  });
+  const normalizeWeapon=(w)=>{
+    const name=String(w?.name||'');
+    const canonical=authorityByName.get(name);
+    if(!canonical)return w;
+    const merged={...canonical,...w};
+    if((w?.rng==null||String(w.rng).trim()==='')&&(w?.range==null||String(w.range).trim()==='')){
+      if(canonical?.rng!=null)merged.rng=canonical.rng;
+      else if(canonical?.range!=null)merged.range=canonical.range;
+    }
+    if(merged.BS==null&&canonical?.BS!=null)merged.BS=canonical.BS;
+    if(merged.WS==null&&canonical?.WS!=null)merged.WS=canonical.WS;
+    if(merged.A==null&&canonical?.A!=null)merged.A=canonical.A;
+    if(merged.S==null&&canonical?.S!=null)merged.S=canonical.S;
+    if(merged.AP==null&&canonical?.AP!=null)merged.AP=canonical.AP;
+    if(merged.D==null&&canonical?.D!=null)merged.D=canonical.D;
+    if(!Array.isArray(merged.abilities)&&Array.isArray(canonical?.abilities))merged.abilities=[...canonical.abilities];
+    return merged;
+  };
+  const base=baseRaw.map(g=>({...g,weapon:normalizeWeapon(g?.weapon||{})}));
+  const covered=new Set(base.map(g=>String(g?.weapon?.name||'')));
   const groups=[...base];
   attachedCombatEntries(side,root).forEach(ce=>{
     const u=get(ce.unitId);if(!u)return;
