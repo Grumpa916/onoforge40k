@@ -545,6 +545,8 @@
 .data-sync-note{margin-top:7px;font-size:9px;line-height:1.3;color:#9fb2c4}
 @media(max-width:700px){.data-sync-grid{grid-template-columns:1fr}.data-sync-title{align-items:flex-start;flex-direction:column;gap:2px}}
 #battleforge-error{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:20000;margin:0;padding:12px 42px 12px 12px;background:#5b252c;border:1px solid #a44;color:#fff;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.45);font-size:14px;line-height:1.35;max-width:760px;margin-left:auto;margin-right:auto}#battleforge-error .error-title{font-weight:800}#battleforge-error .error-detail{margin-top:3px;word-break:break-word}#battleforge-error button{position:absolute;right:10px;top:8px;border:0;background:transparent;color:#fff;font-size:22px;line-height:1;padding:2px 6px}
+
+.primary-count-stepper{display:flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap}.primary-count-stepper .btn{width:26px;height:24px;min-height:24px;padding:0;font-size:16px;line-height:1}.primary-count-stepper output{min-width:34px;text-align:center;font-size:11px;font-weight:800;color:#e8edf4}
 </style></head><body><div id="app"></div><script>
 window.addEventListener('error',function(ev){var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var msg=String(ev.error?.message||ev.message||'Unknown error');a.innerHTML='<span class="error-title">OnoForge error</span><div class="error-detail">'+msg.replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</div><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});window.addEventListener('unhandledrejection',function(ev){var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var reason=ev.reason?.message||ev.reason||'Unhandled promise rejection';a.innerHTML='<span class="error-title">OnoForge error</span><div class="error-detail">'+String(reason).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</div><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});
 
@@ -1196,7 +1198,7 @@ function primaryMissionDetailsHtml(mission,side){
       return '<div class="primary-approved-score-row primary-score-click-target'+(done?' scored':'')+'" data-primary-score="1" data-primary-side="'+side+'" data-primary-index="'+i+'" data-primary-mission="'+esc(mission)+'" title="'+(done?'Click to remove this scoring condition':'Click to score this condition')+'">'+
         '<div class="primary-approved-icon">'+(done?'✓':(i===0?'⚑':i===1?'⌂':'◆'))+'</div>'+
         '<div class="primary-approved-copy"><strong>'+esc(r[2])+'</strong><span>Score '+esc(r[1])+(per?' × '+amount:'')+(done?' • Scored '+actual+' VP':'')+'</span></div>'+
-        (per&&!done?'<label class="primary-score-quantity">Count <input type="number" min="1" max="50" value="'+amount+'" data-primary-amount="1" data-primary-side="'+side+'" data-primary-index="'+i+'" data-primary-mission="'+esc(mission)+'" onclick="event.stopPropagation()"></label>':(done?'<div class="primary-approved-control"><output>'+actual+' VP</output></div>':''))+
+        (per&&!done?'<div class="primary-score-quantity primary-count-stepper" onclick="event.stopPropagation()"><button type="button" class="btn" data-primary-amount-step="-1" data-primary-side="'+side+'" data-primary-index="'+i+'" data-primary-mission="'+esc(mission)+'">−</button><output>'+amount+'/5</output><button type="button" class="btn" data-primary-amount-step="1" data-primary-side="'+side+'" data-primary-index="'+i+'" data-primary-mission="'+esc(mission)+'">+</button></div>':(done?'<div class="primary-approved-control"><output>'+actual+' VP</output></div>':''))+
       '</div>';
     }).join('')+'</div>'+
     primaryMissionRulesHtml(mission,side)+
@@ -8475,6 +8477,24 @@ document.addEventListener('click',function(ev){
     const mission=padj.dataset.primaryAdjustMission||'';
     const direction=Number(padj.dataset.primaryAdjustDirection)||0;
     if(side && Number.isInteger(index) && mission)primaryScoreAdjust(side,index,mission,direction);
+    return;
+  }
+  const pas=ev.target.closest('[data-primary-amount-step]');
+  if(pas){
+    ev.preventDefault();ev.stopPropagation();
+    const side=pas.dataset.primarySide;
+    const index=Number(pas.dataset.primaryIndex);
+    const mission=pas.dataset.primaryMission||'';
+    const delta=Number(pas.dataset.primaryAmountStep)||0;
+    const roundKey=String(Math.max(1,Number(state.round)||1));
+    const key=side==='my'?'primaryScoringAmountsByRoundMy':'primaryScoringAmountsByRoundOpp';
+    if(side && Number.isInteger(index) && mission){
+      if(!state[key]||typeof state[key]!=='object')state[key]={};
+      if(!state[key][roundKey]||typeof state[key][roundKey]!=='object')state[key][roundKey]={};
+      const current=Math.max(1,Math.min(5,Math.floor(Number(state[key][roundKey][index])||1)));
+      state[key][roundKey][index]=Math.max(1,Math.min(5,current+delta));
+      save();render();
+    }
     return;
   }
   const pm=ev.target.closest('[data-primary-score]');
