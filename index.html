@@ -512,6 +512,8 @@
   .battle-layout > .battle-log{grid-column:1!important;grid-row:auto!important}
 }
 
+/* v315: minimal live Game Assistant */
+.game-assistant-minimal{margin-top:6px!important}.game-assistant-minimal>summary{padding:6px 8px!important}.game-assistant-minimal>summary h3{font-size:12px!important;margin:0!important}.game-assistant-minimal-body{padding:5px 8px!important}.game-assistant-status-line{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:9px;color:#aebfd0}.game-assistant-notes{margin-top:5px}.game-assistant-notes summary{font-size:9px;color:#8fc8ff;cursor:pointer}.game-assistant-notes textarea{width:100%;box-sizing:border-box;margin-top:4px;min-height:42px;padding:5px;font-size:10px;background:#0b1220;border:1px solid #344a61;color:#e7eef6;border-radius:5px}
 /* v314: explicit secondary selection undo */
 .secondary-undo-btn{padding:2px 7px!important;font-size:8px!important;line-height:1.2!important;border:1px solid #65788c!important;background:#182433!important;color:#d9e7f4!important}.secondary-undo-btn:hover{background:#24364a!important}
 /* v313: scoring buttons use rule-defined VP values */
@@ -1699,19 +1701,15 @@ const SECONDARY_SCORING={
 
 function gameAssistantHtml(){
  const phase=state.phase||'Command';
- if(!state.gameAssistantChecks||typeof state.gameAssistantChecks!=='object')state.gameAssistantChecks={};
- return '<details class="card game-assistant-card" '+(state.gameAssistantOpen!==false?'open':'')+' ontoggle="state.gameAssistantOpen=this.open;save()">'+
-  '<summary><div class="split"><div><h3>Game Assistant</h3><div class="muted">Generic game-state reminders • '+esc(phase)+' Phase</div></div><div class="pill">'+esc(phase)+'</div></div></summary>'+
-  '<div class="game-assistant-body">'+
-   '<div class="game-assistant-current"><h4>'+esc(phase)+' Phase</h4><div class="empty">Rules, unit abilities, matchup guidance and tactical recommendations are handled by the Tactical Advisor.</div></div>'+
-   '<div class="grid2">'+
-    '<div><h4>Current Game State</h4><div class="game-assistant-quick"><b>Turn</b><span>Round '+esc(state.round||1)+' • '+esc(state.currentTurn==='opp'?'Opponent':'Your')+' turn</span></div><div class="game-assistant-quick"><b>Primary</b><span>'+esc(primaryMission('my')||'Mission not selected')+'</span></div><div class="game-assistant-quick"><b>Objectives</b><span>Track ownership in the battlefield state for scoring and Tactical Advisor decisions.</span></div></div>'+
-    '<div><h4>Mission Scoring</h4>'+primaryScoringHtml(primaryMission('my'))+'</div>'+
-   '</div>'+
-   '<div class="field" style="margin-top:12px"><label>Live Game Notes</label><textarea rows="4" placeholder="Add a temporary opponent action, target, CP plan, or anything you want to remember..." onchange="state.gameAssistantNotes=this.value;save()">'+esc(state.gameAssistantNotes||'')+'</textarea></div>'+
+ const player=state.currentTurn==='opp'?state.oppName:state.myName;
+ const primary=primaryMission('my')||'Not selected';
+ return '<details class="card game-assistant-card game-assistant-minimal" '+(state.gameAssistantOpen!==false?'open':'')+' ontoggle="state.gameAssistantOpen=this.open;save()">'+
+  '<summary><div class="split"><div><h3>Game Assistant</h3></div><div class="pill">R'+esc(state.round||1)+' • '+esc(phase)+' • '+esc(player)+'</div></div></summary>'+
+  '<div class="game-assistant-minimal-body">'+
+   '<div class="game-assistant-status-line"><span><b>Primary:</b> '+esc(primary)+'</span><span><b>Turn:</b> '+esc(player)+'</span></div>'+
+   '<details class="game-assistant-notes"><summary>Live Notes</summary><textarea rows="2" placeholder="Temporary game note..." onchange="state.gameAssistantNotes=this.value;save()">'+esc(state.gameAssistantNotes||'')+'</textarea></details>'+
   '</div></details>';
 }
-
 function toggleGameAssistantCheck(key,checked){
  if(!state.gameAssistantChecks||typeof state.gameAssistantChecks!=='object')state.gameAssistantChecks={};
  state.gameAssistantChecks[key]=!!checked;
