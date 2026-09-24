@@ -4406,7 +4406,7 @@ function battle(){const recent=state.events.slice(0,12);return `${gameTimerHtml(
 </div>
  <div class="tabs"><button class="active">Current State</button><button onclick="openMyListFromBattle()">My List</button><button onclick="openOpponentListFromBattle()">Opponent List</button><button onclick="state.page='log';state.builderView='full';render()">Full Action Log</button><button onclick="state.page='scorelog';render()">Scoring Log</button></div>
 ${primaryMissionPanel('battle')}
-${battleNotesHtml()}${tacticalContextHtml()}${tacticalShootingResultHtml()}${tacticalAdvisorHtml()}${tacticalPreRollResolutionModal()}
+${battleNotesHtml()}${tacticalAdvisorHtml()}${tacticalContextHtml()}${tacticalShootingResultHtml()}${tacticalPreRollResolutionModal()}
 <details class="card secondary-battle-card secondary-missions-collapsible" ${state.secondaryMissionsOpen===true?"open":""} ontoggle="state.secondaryMissionsOpen=this.open;save()">
 <summary><div class="split"><div><h3 style="margin:0">Secondary Missions</h3><div class="muted">All 18 missions • Active player: ${esc(state.currentTurn==='opp'?state.oppName:state.myName)} • Secondary VP ${state.myVP||0}–${state.oppVP||0}</div></div><div class="pill">Click to ${state.secondaryMissionsOpen===true?'collapse':'open'}</div></div></summary>
 <div class="secondary-missions-body"><div class="grid2">${secondaryActiveSide()==='my'?secondaryCatalogHtml('my')+secondaryCatalogHtml('opp'):secondaryCatalogHtml('opp')+secondaryCatalogHtml('my')}</div>${secondaryDetailHtml(secondaryActiveSide())}</div></details>
