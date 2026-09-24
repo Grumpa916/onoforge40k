@@ -1157,7 +1157,7 @@ function primaryScoringObjectiveAmount(side,row){
   const excludeHome=/excluding home|exclude home|excl\. home/.test(text);
   const enemyTerritory=/enemy territory|enemy's territory|enemy territory/.test(text);
   const central=/central objectives?/.test(text);
-  const filtered=owned.filter(o=>(!excludeHome||o.role!=='home')&&(!enemyTerritory||o.role==='enemy')&&(!central||o.role==='central'));
+  const filtered=owned.filter(o=>(!excludeHome||o.type!=='home')&&(!central||o.type==='central'));
   return filtered.length;
 }
 function primaryScoringMax(row){
@@ -4908,6 +4908,7 @@ function objectiveControlTrackerHtml(){
   return '<details class="card objective-control-card '+(opponentTurn?'objective-control-opponent':'objective-control-self')+'" '+(open?'open':'')+' ontoggle="state.objectiveControlOpen=this.open;save()">'+
     '<summary style="cursor:pointer;list-style:none"><div class="split"><div><h3 style="margin:0">Objective Control</h3><div class="muted">'+(opponentTurn?'Record objective changes during the opponent turn.':'Current battlefield objective ownership used by scoring and Tactical Advisor.')+'</div></div><span class="pill">'+(opponentTurn?'Opponent turn':'Your turn')+'</span></div></summary>'+
     objectiveLayoutHtml()+
+    '<div class="objective-layout-sync-row"><button type="button" class="btn" onclick="autoSeedObjectiveStructure();return false;">Sync Objectives to Layout</button><span class="tiny">Auto-build official objective count and types.</span></div>'+
     '<div class="row objective-control-summary" style="margin-top:8px"><span class="pill">My '+myCount+'</span><span class="pill">Opp '+oppCount+'</span><span class="pill">Contested '+contestedCount+'</span><button type="button" class="btn" onclick="addTrackedObjective();return false;">+ Objective</button></div>'+
     '<div class="objective-control-list" style="margin-top:8px">'+rows+'</div>'+
     '<div class="tiny" style="margin-top:8px">Start shows control at the beginning of this player turn. Ownership changes are written to the Action Log and support mission/Tactical Advisor context.</div>'+
