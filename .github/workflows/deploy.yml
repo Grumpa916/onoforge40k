@@ -60,7 +60,8 @@ jobs:
             function num(v,d=0){return Number.isFinite(Number(v))?Number(v).toFixed(d):'—'}
             function firstFriendly(){
               const arr=Array.isArray(window.state?.my)?window.state.my:[];
-              return arr.find(x=>x&&x.uid&&x.alive!==false&&!x.destroyed&&!x.isDestroyed)||arr.find(x=>x&&x.uid)||null;
+              const selected=window.state?.tactical?.selectedAttackerUid;
+              return arr.find(x=>x&&String(x.uid)===String(selected)&&!x.attachedTo&&!x.destroyed)||arr.find(x=>x&&x.uid&&!x.attachedTo&&x.alive!==false&&!x.destroyed&&!x.isDestroyed)||arr.find(x=>x&&x.uid)||null;
             }
             function extractTargets(result){
               const candidates=[];
@@ -86,13 +87,16 @@ jobs:
                 host.innerHTML='<div class="ta-decision-render"><div class="ta-decision-title">Tactical Advisor</div><div class="ta-unknown">Waiting for an active friendly unit and legal combat state.</div></div>';
                 return;
               }
-              const sig=[window.state.round,window.state.phase,window.state.turn,window.state.myVP,window.state.oppVP,a.uid].join('|');
+              const stateSig=typeof window.tacticalAdvisorStateSignature==='function'?window.tacticalAdvisorStateSignature():'';
+              const sig=[stateSig,window.state.page,a.uid].join('|');
               if(sig===lastSig)return;
               lastSig=sig;
               if(busy)return;
               busy=true;
               try{
-                const r=window.tacticalAdvisorV1(a.uid)||{};
+                const r=(typeof window.getTacticalAdvisorResult==='function'
+                  ?window.getTacticalAdvisorResult(a.uid,{samples:4000})
+                  :window.tacticalAdvisorV1(a.uid,{samples:4000}))||{};
                 const targets=extractTargets(r).slice(0,3);
                 const top=targets[0]||{};
                 const dc=top.decisionComponents||{};
@@ -122,20 +126,13 @@ jobs:
               }finally{busy=false}
             }
             function ensureHost(){
-              let h=document.getElementById('onoforge-advisor-render');
-              if(!h){
-                h=document.createElement('div');h.id='onoforge-advisor-render';
-                const battle=document.querySelector('.battle-layout');
-                const app=document.getElementById('app');
-                if(battle) battle.insertBefore(h,battle.firstChild);
-                else if(app) app.parentNode.insertBefore(h,app);
-              }
-              renderAdvisor();
+              const h=document.getElementById('onoforge-advisor-render');
+              if(h)renderAdvisor();
             }
-            window.addEventListener('load',function(){setTimeout(ensureHost,500);setInterval(ensureHost,1200)});
+            window.addEventListener('load',function(){setTimeout(ensureHost,500)});
             const oldRender=window.render;
             if(typeof oldRender==='function'){
-              window.render=function(){const out=oldRender.apply(this,arguments);setTimeout(ensureHost,0);return out}
+              window.render=function(){const out=oldRender.apply(this,arguments);ensureHost();return out}
             }
           })();
           </script>
