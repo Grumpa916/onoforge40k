@@ -644,7 +644,7 @@ body{overflow-x:hidden}
   .battle-layout>.battle-state-column .game-unit-row{grid-template-columns:minmax(80px,95px) minmax(0,1fr)!important}
 }
 </style>
-</style></head><body><div id="app"></div><script>
+.objective-layout-panel{margin-top:10px;padding:9px;background:#0d1722;border:1px solid #30465c;border-radius:9px}.objective-layout-buttons{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}.objective-layout-btn{padding:5px 9px;font-size:11px}.objective-layout-btn.active{background:#315174;border-color:#5b8bc0;color:#fff}.objective-layout-preview{margin-top:7px}.objective-layout-preview summary{cursor:pointer;color:#9ecbff;font-size:11px}.objective-layout-preview iframe{display:block;width:100%;height:420px;margin-top:7px;border:1px solid #30465c;border-radius:7px;background:#0b1018}@media(max-width:700px){.objective-layout-preview iframe{height:360px}.objective-layout-buttons .btn{flex:1;min-width:75px}}</style></head><body><div id="app"></div><script>
 window.addEventListener('error',function(ev){var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var msg=String(ev.error?.message||ev.message||'Unknown error');a.innerHTML='<span class="error-title">OnoForge error</span><div class="error-detail">'+msg.replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</div><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});window.addEventListener('unhandledrejection',function(ev){var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var reason=ev.reason?.message||ev.reason||'Unhandled promise rejection';a.innerHTML='<span class="error-title">OnoForge error</span><div class="error-detail">'+String(reason).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</div><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});
 
 window.__ONOFORGE_DETACHMENTS = window.__ONOFORGE_DETACHMENTS || {}; function detachmentCatalog(){return window.__ONOFORGE_DETACHMENTS;}
@@ -676,8 +676,14 @@ const PRIMARY_MISSIONS={
    'Take and Hold':'Reconnaissance Sweep','Disruption':'Surveil the Foe','Purge the Foe':'Triangulation','Priority Assets':'Search and Scour','Reconnaissance':'Gather Intel'
  }
 };
-
-
+const OBJECTIVE_LAYOUT_INDEX=[{missions:['Battlefield Dominance','Battlefield Dominance'],pages:[9,10,11]},{missions:['Immovable Object','Unstoppable Force'],pages:[12,13,14]},{missions:['Determined Acquisition','Death Trap'],pages:[15,16,17]},{missions:['Purge and Secure','Reconnaissance Sweep'],pages:[18,19,20]},{missions:['Inescapable Dominion','Secure Asset'],pages:[21,22,23]},{missions:['Meatgrinder','Meatgrinder'],pages:[24,25,26]},{missions:['Punishment','Delaying Action'],pages:[27,28,29]},{missions:['Consecrate','Triangulation'],pages:[30,31,32]},{missions:["Destroyer's Wrath",'Vital Link'],pages:[33,34,35]},{missions:['Outmanoeuvre','Outmanoeuvre'],pages:[36,37,38]},{missions:['Smoke and Mirrors','Surveil the Foe'],pages:[39,40,41]},{missions:['Locate and Deny','Extract Relic'],pages:[42,43,44]},{missions:['Gather Intel','Gather Intel'],pages:[45,46,47]},{missions:['Vanguard Operation','Search and Scour'],pages:[48,49,50]},{missions:['Sabotage','Sabotage'],pages:[51,52,53]}];
+const WARHAMMER_EVENT_COMPANION_PDF='https://assets.warhammer-community.com/eng_12-06_warhammer40000_event_companion-s3bfb5f9s1-ivsw5bceff1.pdf';
+function objectiveMissionKey(){return [primaryMission('my'),primaryMission('opp')].filter(Boolean).sort().join(' ↔ ');}
+function objectiveLayoutInfo(){const m=[primaryMission('my'),primaryMission('opp')];if(m.length<2||m.some(x=>!x))return null;const s=m.slice().sort();return OBJECTIVE_LAYOUT_INDEX.find(x=>x.missions[0]===s[0]&&x.missions[1]===s[1])||null;}
+function ensureObjectiveLayoutForMission(){const key=objectiveMissionKey();if(!key)return null;if(state.objectiveMapMissionKey!==key){state.objectiveMapMissionKey=key;state.objectiveMapLayout='A';}state.objectiveMapLayout=['A','B','C'].includes(state.objectiveMapLayout)?state.objectiveMapLayout:'A';return objectiveLayoutInfo();}
+function setObjectiveMapLayout(layout){const next=['A','B','C'].includes(layout)?layout:null;if(!next)return;const info=ensureObjectiveLayoutForMission();if(!info)return;const before=snapshotForUndo();const previous=state.objectiveMapLayout||'A';state.objectiveMapLayout=next;state.objectiveMapMissionKey=objectiveMissionKey();event('OBJECTIVE_LAYOUT_CHANGED',{unit:'Battlefield Layout',action:'Layout '+next+' selected',previous,after:next,round:Math.max(1,Number(state.round)||1),primaryMissions:[primaryMission('my'),primaryMission('opp')]},before);save();render();}
+function objectiveLayoutPage(){const info=ensureObjectiveLayoutForMission();if(!info)return null;const i=['A','B','C'].indexOf(state.objectiveMapLayout);return info.pages[i<0?0:i];}
+function objectiveLayoutHtml(){const info=ensureObjectiveLayoutForMission();if(!info)return '';const layout=state.objectiveMapLayout||'A';const page=objectiveLayoutPage();const buttons=['A','B','C'].map(letter=>'<button type="button" class="btn objective-layout-btn '+(layout===letter?'active':'')+'" aria-pressed="'+(layout===letter?'true':'false')+'" onclick="setObjectiveMapLayout(\''+letter+'\');return false;">Layout '+letter+'</button>').join('');return '<div class="objective-layout-panel"><div class="split"><div><strong>Recommended Battlefield Layout</strong><div class="tiny">'+esc(info.missions[0])+' ↔ '+esc(info.missions[1])+' • Layout '+layout+'</div></div><span class="pill">Event Companion p.'+page+'</span></div><div class="objective-layout-buttons">'+buttons+'<a class="btn" href="'+WARHAMMER_EVENT_COMPANION_PDF+'#page='+page+'" target="_blank" rel="noopener">Open Map</a></div><details class="objective-layout-preview"><summary>Preview selected layout</summary><iframe title="Warhammer Event Companion layout '+layout+'" src="'+WARHAMMER_EVENT_COMPANION_PDF+'#page='+page+'" loading="lazy"></iframe></details></div>';}
 const CURRENT_11E_DATA_SOURCES={
   Tyranids:'https://raw.githubusercontent.com/BSData/wh40k-11e/main/Tyranids.json',
   Ultramarines:'https://raw.githubusercontent.com/BSData/wh40k-11e/main/Imperium%20-%20Ultramarines.json'
@@ -1006,6 +1012,7 @@ function setForceDisposition(side,value){
   const key=side==='my'?'myForceDisposition':'oppForceDisposition';
   const before=snapshotForUndo();
   state[key]=value;
+  ensureObjectiveLayoutForMission();
   event('FORCE_DISPOSITION_CHANGED',{side,action:'Set Force Disposition',forceDisposition:value,primaryMission:primaryMission(side)},before);
   save();render();
 }
@@ -1142,6 +1149,13 @@ function primaryScoringIsPer(row){
   const text=String(row?.[2]||'').toLowerCase();
   return /\bper\b|\bfor each\b/.test(text);
 }
+function primaryScoringObjectiveAmount(side,row){
+  const text=String(row?.[2]||'').toLowerCase();
+  if(!/\bper\s+objective\b/.test(text))return 1;
+  const summary=objectiveStateSummary().current;
+  const owned=summary.filter(o=>o.owner===(side==='opp'?'opp':'my'));
+  return Math.max(1,owned.length);
+}
 function primaryScoringMax(row){
   const text=String(row?.[2]||'')+' '+String(row?.[3]||'');
   const m=text.match(/(?:up to|maximum|max(?:imum)?(?: of)?)[^0-9]{0,12}(\d+)/i);
@@ -1220,7 +1234,8 @@ function scorePrimaryItem(side,index,mission,amountOverride){
     event('PRIMARY_UNSCORED',{side,unit:side==='my'?'Primary Mission':'Opponent Primary Mission',action:'Primary scoring condition removed -'+Math.abs(delta)+' VP',before,after,delta,mission,round,scoringItem:row[2],scoringTiming:row[0]},fullBefore);
   }else{
     const per=primaryScoringIsPer(row);
-    const requestedAmount=per?Math.max(1,Math.min(50,Math.floor(Number(amountOverride??amounts[index]??1)||1))):1;
+    const suggestedAmount=primaryScoringObjectiveAmount(side,row);
+    const requestedAmount=per?Math.max(1,Math.min(50,Math.floor(Number(amountOverride??amounts[index]??suggestedAmount)||suggestedAmount))):1;
     const amount=per?Math.min(requestedAmount,primaryScoringMax(row)||50):1;
     const baseVP=primaryScoringVP(row[1]);
     const requestedVP=baseVP*amount;
@@ -1314,7 +1329,8 @@ function primaryMissionDetailsHtml(mission,side){
     '<div class="primary-detail-list">'+rows.map((r,i)=>{
       const per=primaryScoringIsPer(r),maxAmount=primaryScoringMax(r),done=scored.includes(i);
       const actual=done?Number(values[i])||0:0;
-      const amount=Math.min(maxAmount||5,Number(amounts[i])||1);
+      const suggestedAmount=primaryScoringObjectiveAmount(side,r);
+      const amount=Math.min(maxAmount||5,Number(amounts[i])||suggestedAmount);
       return '<div class="primary-approved-score-row primary-score-click-target'+(done?' scored':'')+'" data-primary-score="1" data-primary-side="'+side+'" data-primary-index="'+i+'" data-primary-mission="'+esc(mission)+'" title="'+(done?'Click to remove this scoring condition':'Click to score this condition')+'">'+
         '<div class="primary-approved-icon">'+(done?'✓':(i===0?'⚑':i===1?'⌂':'◆'))+'</div>'+
         '<div class="primary-approved-copy"><strong>'+esc(r[2])+'</strong><span>Score '+esc(r[1])+(per?' × '+amount:'')+(done?' • Scored '+actual+' VP':'')+'</span></div>'+
@@ -1655,7 +1671,7 @@ function stratagemsUI(){
 }
 let state={
   savedArmyLists:[],
-  stratagemsMy:[], stratagemsOpp:[], stratagemsOpen:false,primaryMissionsOpen:false,secondaryMissionsOpen:false,page:'builder',myName:'My Army',oppName:'Opponent Army',faction:'Tyranids',detachment:'Invasion Fleet',detachmentSelections:['Invasion Fleet'],oppFaction:'Ultramarines',oppDetachment:'Gladius Task Force',oppDetachmentSelections:['Gladius Task Force'],limit:2000,my:[],opp:[],searchMy:'',searchOpp:'',configure:null,attacker:'norn',weapon:'Rupture Cannon',target:'marine',round:1,phase:'Command',myVP:0,oppVP:0,myCP:0,oppCP:0,phaseCP:{},battleReadyMy:false,battleReadyOpp:false,secondaryMy:'tactical',secondaryOpp:'tactical',secondaryMyCards:[],secondaryOppCards:[],secondaryMyDeck:[],secondaryOppDeck:[],secondaryMyDeckInitialized:false,secondaryOppDeckInitialized:false,secondaryMyDiscard:[],secondaryOppDiscard:[],newOrdersCompletedMy:false,newOrdersCompletedOpp:false,secondaryMyScored:[],secondaryOppScored:[],secondaryMyScoredVP:{},secondaryOppScoredVP:{},secondaryMyScoredVPByRound:{},secondaryOppScoredVPByRound:{},secondaryMyScoredRound:{},secondaryOppScoredRound:{},secondaryPersonalPlans:{},secondaryPlanEdit:'',secondaryDetailSide:'',secondaryDetailName:'',gameReferencePersonal:{},myForceDisposition:'',oppForceDisposition:'',attackerSide:'my',firstTurn:'my',currentTurn:'my',objectives:{},events:[],gameAssistantChecks:{},gameAssistantNotes:'',personalArmyNotes:'',lists:[],activeRosterId:'',activeOpponentRosterId:'',dataStatus:'40k.app canonical manifest • embedded catalogue bootstrap fallback • BSData supplemental',source:'40k.app',revision:'925',cloud:{email:'',userId:'',status:'Not connected',lastSync:'',error:''},cloudBattles:[],rulesLog:[],mathRules:{},gameTimer:{elapsedMs:0,running:false,paused:false,startedAt:0,pausedAt:0,finishedAt:0,turnMyMs:0,turnOppMs:0,turnStartedGameMs:0,turnPaused:false},cloudPasswordRecovery:false,localSavedAt:''};
+  stratagemsMy:[], stratagemsOpp:[], stratagemsOpen:false,primaryMissionsOpen:false,secondaryMissionsOpen:false,page:'builder',myName:'My Army',oppName:'Opponent Army',faction:'Tyranids',detachment:'Invasion Fleet',detachmentSelections:['Invasion Fleet'],oppFaction:'Ultramarines',oppDetachment:'Gladius Task Force',oppDetachmentSelections:['Gladius Task Force'],limit:2000,my:[],opp:[],searchMy:'',searchOpp:'',configure:null,attacker:'norn',weapon:'Rupture Cannon',target:'marine',round:1,phase:'Command',myVP:0,oppVP:0,myCP:0,oppCP:0,phaseCP:{},battleReadyMy:false,battleReadyOpp:false,secondaryMy:'tactical',secondaryOpp:'tactical',secondaryMyCards:[],secondaryOppCards:[],secondaryMyDeck:[],secondaryOppDeck:[],secondaryMyDeckInitialized:false,secondaryOppDeckInitialized:false,secondaryMyDiscard:[],secondaryOppDiscard:[],newOrdersCompletedMy:false,newOrdersCompletedOpp:false,secondaryMyScored:[],secondaryOppScored:[],secondaryMyScoredVP:{},secondaryOppScoredVP:{},secondaryMyScoredVPByRound:{},secondaryOppScoredVPByRound:{},secondaryMyScoredRound:{},secondaryOppScoredRound:{},secondaryPersonalPlans:{},secondaryPlanEdit:'',secondaryDetailSide:'',secondaryDetailName:'',gameReferencePersonal:{},myForceDisposition:'',oppForceDisposition:'',attackerSide:'my',firstTurn:'my',currentTurn:'my',objectives:{},objectiveMapLayout:'A',objectiveMapMissionKey:'',objectiveControlHistory:{},events:[],gameAssistantChecks:{},gameAssistantNotes:'',personalArmyNotes:'',lists:[],activeRosterId:'',activeOpponentRosterId:'',dataStatus:'40k.app canonical manifest • embedded catalogue bootstrap fallback • BSData supplemental',source:'40k.app',revision:'925',cloud:{email:'',userId:'',status:'Not connected',lastSync:'',error:''},cloudBattles:[],rulesLog:[],mathRules:{},gameTimer:{elapsedMs:0,running:false,paused:false,startedAt:0,pausedAt:0,finishedAt:0,turnMyMs:0,turnOppMs:0,turnStartedGameMs:0,turnPaused:false},cloudPasswordRecovery:false,localSavedAt:''};
 
 const GAME_REFERENCE_PHASES={Command:[],Movement:[],Shooting:[],Charge:[],Fight:[],End:[]};
 const GAME_REFERENCE_QUICK=[];
@@ -4764,7 +4780,17 @@ function ensureObjectiveTurnSnapshot(){
   if(!state.objectiveTurnStartOwners[key]||typeof state.objectiveTurnStartOwners[key]!=='object'){
     state.objectiveTurnStartOwners[key]=Object.fromEntries(Object.entries(state.objectives||{}).map(([name,owner])=>[name,['my','opp','contested','none'].includes(owner)?owner:'none']));
   }
+  ensureObjectiveControlHistory();
+  if(!state.objectiveControlHistory[key])state.objectiveControlHistory[key]={};
   return state.objectiveTurnStartOwners[key];
+}
+function ensureObjectiveControlHistory(){
+  if(!state.objectiveControlHistory||typeof state.objectiveControlHistory!=='object')state.objectiveControlHistory={};
+  return state.objectiveControlHistory;
+}
+function recordObjectiveTurnState(){
+  const key=Math.max(1,Number(state.round)||1)+'|'+(state.currentTurn==='opp'?'opp':'my');
+  ensureObjectiveControlHistory()[key]={phase:String(state.phase||'Command'),objectives:Object.fromEntries(Object.entries(state.objectives||{}).map(([name,owner])=>[name,['my','opp','contested','none'].includes(owner)?owner:'none'])),updatedAt:new Date().toISOString()};
 }
 function objectiveTurnStartOwner(name){
   const snap=ensureObjectiveTurnSnapshot();
@@ -4785,6 +4811,7 @@ function setObjectiveControl(name,owner){
   if(!state.objectives||typeof state.objectives!=='object')state.objectives={};
   state.objectives[key]=next;
   ensureObjectiveTurnSnapshot();
+  recordObjectiveTurnState();
   event('OBJECTIVE_CHANGED',{
     name:key,unit:'Objective '+key,action:'Control → '+next,owner:next,previous,after:next,
     round:Math.max(1,Number(state.round)||1),phase:String(state.phase||'Command'),
@@ -4805,6 +4832,7 @@ function addTrackedObjective(){
   }
   objectives[n]='none';
   ensureObjectiveTurnSnapshot();
+  recordObjectiveTurnState();
   event('OBJECTIVE_ADDED',{
     name:n,unit:n,action:'Objective added to tracker',
     owner:'none',previous:'none',after:'none',
@@ -4820,6 +4848,7 @@ function removeTrackedObjective(name){
   if(!key||!Object.prototype.hasOwnProperty.call(state.objectives||{},key))return;
   const fullBefore=snapshotForUndo();
   delete state.objectives[key];
+  recordObjectiveTurnState();
   event('OBJECTIVE_REMOVED',{
     name:key,unit:'Objective '+key,action:'Objective removed from tracker',
     round:Math.max(1,Number(state.round)||1),phase:String(state.phase||'Command'),
@@ -4847,7 +4876,8 @@ function objectiveControlTrackerHtml(){
   }).join(''):'<div class="empty" style="padding:10px">No objectives tracked yet. Add the objectives from your mission.</div>';
   return '<details class="card objective-control-card '+(opponentTurn?'objective-control-opponent':'objective-control-self')+'" '+(open?'open':'')+' ontoggle="state.objectiveControlOpen=this.open;save()">'+
     '<summary style="cursor:pointer;list-style:none"><div class="split"><div><h3 style="margin:0">Objective Control</h3><div class="muted">'+(opponentTurn?'Record objective changes during the opponent turn.':'Current battlefield objective ownership used by scoring and Tactical Advisor.')+'</div></div><span class="pill">'+(opponentTurn?'Opponent turn':'Your turn')+'</span></div></summary>'+
-    '<div class="row objective-control-summary" style="margin-top:8px"><span class="pill">My '+myCount+'</span><span class="pill">Opp '+oppCount+'</span><span class="pill">Contested '+contestedCount+'</span><button type="button" class="btn" onclick="addTrackedObjective();return false;">+ Objective</button></div>'+
+    objectiveLayoutHtml()+
+    '<div class="row objective-control-summary" style="margin-top:8px"><span class="pill">My '+myCount+'<span class="pill">Opp '+oppCount+'</span><span class="pill">Contested '+contestedCount+'</span><button type="button" class="btn" onclick="addTrackedObjective();return false;">+ Objective</button></div>'+
     '<div class="objective-control-list" style="margin-top:8px">'+rows+'</div>'+
     '<div class="tiny" style="margin-top:8px">Start shows control at the beginning of this player turn. Ownership changes are written to the Action Log and support mission/Tactical Advisor context.</div>'+
   '</details>';
@@ -4907,6 +4937,7 @@ function advancePhase(){
       resetStratagemPhaseUses();
       state.battleRoundComplete=false;
       ensureObjectiveTurnSnapshot();
+      recordObjectiveTurnState();
       switchTurnClock(firstTurn);
       ensureTacticalTurnDraw(firstTurn);
       syncPrimaryScoringRound();
@@ -4926,6 +4957,7 @@ function advancePhase(){
     resetStratagemPhaseUses();
     state.battleRoundComplete=false;
     ensureObjectiveTurnSnapshot();
+    recordObjectiveTurnState();
     switchTurnClock(otherTurn);
     ensureTacticalTurnDraw(otherTurn);
     state.my=sortBattleState(state.my);
