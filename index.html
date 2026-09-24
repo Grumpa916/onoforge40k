@@ -589,6 +589,15 @@ body{overflow-x:hidden}
  .battle-layout>.battle-side .battle-state-column{position:static!important;width:100%!important;height:auto!important;overflow:visible!important}
 }
 
+/* v318: definitive responsive Battle Mode layout */
+.battle-layout{display:grid!important;grid-template-columns:minmax(0,1fr) 380px!important;gap:16px!important;align-items:start!important;width:100%!important;max-width:100%!important;min-width:0!important;margin:0!important}
+.battle-layout>div:first-child{display:block!important;visibility:visible!important;grid-column:1!important;grid-row:1!important;width:auto!important;min-width:0!important;max-width:100%!important;position:relative!important}
+.battle-layout>.battle-side{display:block!important;visibility:visible!important;grid-column:2!important;grid-row:1!important;width:auto!important;min-width:0!important;max-width:100%!important;position:relative!important}
+.battle-layout>.battle-side .battle-state-column{width:100%!important;min-width:0!important;position:static!important}
+@media(max-width:1150px){
+  .battle-layout{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:12px!important}
+  .battle-layout>div:first-child,.battle-layout>.battle-side{grid-column:1!important;grid-row:auto!important;width:100%!important;min-width:0!important;max-width:100%!important}
+}
 </style></head><body><div id="app"></div><script>
 window.addEventListener('error',function(ev){var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var msg=String(ev.error?.message||ev.message||'Unknown error');a.innerHTML='<span class="error-title">OnoForge error</span><div class="error-detail">'+msg.replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</div><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});window.addEventListener('unhandledrejection',function(ev){var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var reason=ev.reason?.message||ev.reason||'Unhandled promise rejection';a.innerHTML='<span class="error-title">OnoForge error</span><div class="error-detail">'+String(reason).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</div><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});
 
