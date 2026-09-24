@@ -1971,7 +1971,8 @@ function secondaryScoreRow(side,name,index){
  const modeKey=(side==='my'?state.secondaryMy:state.secondaryOpp)==='fixed'?'Fixed':'Tactical';
  const row=data?.[modeKey]?.[index];
  if(!row)return;
- const input=document.getElementById(secondaryRowInputId(side,name,index));
+ const quickInput=document.getElementById(secondaryRowInputId(side,name,index)+'-quick');
+ const input=quickInput||document.getElementById(secondaryRowInputId(side,name,index));
  const fallback=Number(String(row[0]).match(/\d+/)?.[0]||0);
  const amount=input?Number(input.value):fallback;
  const endOfBattle=/end of battle/i.test(String(row[1]||''));
