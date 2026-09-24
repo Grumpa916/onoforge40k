@@ -1478,6 +1478,7 @@ function primaryMissionPanel(mode='battle'){
         '<span class="muted">Primary Mission</span>'+
         '<strong>'+esc(mission)+'</strong>'+
         (disposition&&opponentDisposition?'<div class="primary-disposition">'+esc(disposition)+' vs '+esc(opponentDisposition)+'</div>':'')+
+        primaryObjectiveCheckpointHtml(side,mission)+
         primaryMissionDetailsHtml(mission,side)+
       '</div>':
       '<div class="primary-mission-result"><strong>Not resolved</strong></div>'}
