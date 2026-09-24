@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OnoForge 40K v333</title><style>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OnoForge 40K v334</title><style>
 .primary-score-click-target{cursor:pointer}.primary-score-click-target:hover{border-color:#4f9ad6;background:#142131}.primary-score-click-target.scored{border-color:#356747}.primary-score-click-target input{cursor:text}
 *{box-sizing:border-box}body{margin:0;background:#0b0f15;color:#e9edf3;font-family:Arial,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}.top{padding:18px 22px;background:#111722;border-bottom:1px solid #273142}.brand{font-size:25px;font-weight:800}.sub,.muted{color:#9ca8b8;font-size:13px}.nav{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:10px 16px;background:#0e141e;border-bottom:1px solid #273142}.nav-main{display:flex;gap:6px;flex-wrap:wrap}.nav button,.nav-tools summary{background:#171e2a;color:#cbd5e1;border:1px solid #2c3748;border-radius:7px;padding:9px 13px;font-size:14px;cursor:pointer}.nav button.active{background:#24334b;color:#fff;border-color:#49678f}.nav-tools{position:relative;margin-left:auto}.nav-tools summary{list-style:none}.nav-tools summary::-webkit-details-marker{display:none}.nav-tools summary:after{content:' ▾';font-size:11px}.nav-tools[open] summary{background:#24334b;color:#fff;border-color:#49678f}.nav-tools-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:1200;min-width:170px;padding:6px;background:#111722;border:1px solid #344052;border-radius:8px;box-shadow:0 12px 30px rgba(0,0,0,.4);display:grid;gap:4px}.nav-tools-menu button{width:100%;text-align:left}.wrap{max-width:1250px;margin:auto;padding:18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.card{background:#111722;border:1px solid #273142;border-radius:10px;padding:15px;margin-bottom:14px}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.split{display:flex;justify-content:space-between;gap:10px;align-items:center}.field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:150px}.field label{font-size:12px;color:#9ca8b8}.field input,.field select,.field textarea,input[type=text]{width:100%;background:#0b1018;color:#eef2f7;border:1px solid #344052;border-radius:7px;padding:9px}.btn{background:#1b2432;color:#e8edf4;border:1px solid #354255;border-radius:7px;padding:8px 11px}.btn.primary{background:#27598b;border-color:#3975b6}.btn.danger{background:#5b252c;border-color:#82404a}.pill{display:inline-block;border:1px solid #3a4658;border-radius:999px;padding:4px 8px;font-size:12px;margin:2px}.status,.warn,.ok{border-radius:7px;padding:9px;margin-top:8px}.status{background:#17202d;border:1px solid #304057}.warn{background:#38261b;border:1px solid #78512d;color:#f4c58f}.ok{background:#183022;border:1px solid #356747;color:#aee2bf}.big{font-size:24px;font-weight:800}.unit{padding:11px 0;border-top:1px solid #26303e}.empty{padding:25px;text-align:center;color:#8995a5}.bar{height:8px;background:#242d3a;border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;background:#4d86bd}.mono{font-family:monospace;font-size:12px;white-space:pre-wrap}.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.tabs button{background:#171e2a;color:#cbd5e1;border:1px solid #2c3748;border-radius:7px;padding:8px 11px}.tabs button.active{background:#315174}.logrow{border-top:1px solid #273142;padding:10px 0}.metric{font-size:20px;font-weight:700}.modal{position:fixed;inset:0;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;padding:18px;z-index:50}.modal>.card{width:min(850px,100%);max-height:92vh;overflow:auto}.tiny{font-size:11px;color:#8290a1}@media(max-width:850px){.grid,.grid3,.grid2{grid-template-columns:1fr}.wrap{padding:10px}}
 
@@ -628,7 +628,7 @@ body{overflow-x:hidden}
 /* v321: compact Army State for live tablet play */
 .battle-layout>.battle-state-column .army-state-card{padding:10px!important;margin-bottom:0!important}
 .battle-layout>.battle-state-column .army-state-card>h3{font-size:14px!important;margin:0 0 6px!important}
-.objective-control-card{padding:10px}.objective-control-summary{justify-content:flex-start}.objective-control-row{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:6px 0;border-top:1px solid #26303e}.objective-control-name{display:flex;flex-direction:column;gap:2px;min-width:115px}.objective-control-buttons{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}.objective-control-btn{padding:4px 7px;font-size:11px}.objective-control-btn.active{border-color:#5d82a9;background:#263b52;color:#fff}.objective-remove-btn{padding:4px 7px;font-size:12px}.objective-control-card summary::-webkit-details-marker{display:none}
+.objective-control-card{padding:10px}.objective-change-held{opacity:.8}.objective-change-contested{border-color:#a47b43}.objective-change-lost{border-color:#8d4d56}.objective-change-active{border-color:#4d86bd}.objective-control-summary{justify-content:flex-start}.objective-control-row{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:6px 0;border-top:1px solid #26303e}.objective-control-name{display:flex;flex-direction:column;gap:2px;min-width:115px}.objective-control-buttons{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}.objective-control-btn{padding:4px 7px;font-size:11px}.objective-control-btn.active{border-color:#5d82a9;background:#263b52;color:#fff}.objective-remove-btn{padding:4px 7px;font-size:12px}.objective-control-card summary::-webkit-details-marker{display:none}
 .battle-layout>.battle-state-column .game-unit-row{display:grid!important;grid-template-columns:minmax(90px,105px) minmax(0,1fr)!important;gap:6px!important;align-items:start!important;padding:7px 0!important}
 .battle-layout>.battle-state-column .game-unit-name{font-size:12px!important;line-height:1.15!important;min-width:0!important}
 .battle-layout>.battle-state-column .game-unit-stats{display:inline-block!important;font-size:10px!important;line-height:1.15!important;margin:0 6px 0 0!important;white-space:nowrap!important;color:#c7d5e3!important}
@@ -4970,9 +4970,64 @@ function ensureObjectiveControlHistory(){
   if(!state.objectiveControlHistory||typeof state.objectiveControlHistory!=='object')state.objectiveControlHistory={};
   return state.objectiveControlHistory;
 }
+function objectiveControlChangeType(name){
+  const current=['my','opp','contested','none'].includes(state.objectives?.[name])?state.objectives[name]:'none';
+  const start=objectiveTurnStartOwner(name);
+  if(current==='contested')return 'contested';
+  if(current===start){
+    if(current==='none')return 'uncontrolled';
+    return 'held';
+  }
+  if(current==='none')return start==='my'?'lost':start==='opp'?'lost':'uncontrolled';
+  if(start==='none')return 'newly_controlled';
+  if(start!==current)return start==='my'||start==='opp'?'recaptured':'gained';
+  return 'changed';
+}
+function objectiveControlChangeLabel(name){
+  const type=objectiveControlChangeType(name);
+  return ({held:'Held',lost:'Lost',recaptured:'Recaptured',newly_controlled:'Newly controlled',gained:'Gained',contested:'Contested',uncontrolled:'Uncontrolled',changed:'Changed'})[type]||'Changed';
+}
+function objectiveControlSourceSnapshots(name,side){
+  const roster=Array.isArray(state[side])?state[side]:[];
+  const ids=new Set(objectiveControlSourceIds(name));
+  return roster.filter(e=>e&&e.uid&&!e.attachedTo&&ids.has(String(e.uid))).map(e=>({
+    entryId:String(e.uid),
+    unitId:String(e.unitId||e.id||e.uid),
+    name:String(e.name||e.unitName||'Unit'),
+    faction:String(e.faction||''),
+    side
+  }));
+}
 function recordObjectiveTurnState(){
   const key=Math.max(1,Number(state.round)||1)+'|'+(state.currentTurn==='opp'?'opp':'my');
-  ensureObjectiveControlHistory()[key]={phase:String(state.phase||'Command'),objectives:Object.fromEntries(Object.entries(state.objectives||{}).map(([name,owner])=>[name,['my','opp','contested','none'].includes(owner)?owner:'none'])),updatedAt:new Date().toISOString()};
+  const objectives=Object.fromEntries(Object.entries(state.objectives||{}).map(([name,owner])=>{
+    const current=['my','opp','contested','none'].includes(owner)?owner:'none';
+    return [name,{
+      owner:current,
+      startOwner:objectiveTurnStartOwner(name),
+      changeType:objectiveControlChangeType(name),
+      role:objectiveType(name),
+      territory:objectiveTerritory(name),
+      deploymentZone:objectiveDeploymentZone(name),
+      controlSourceIds:objectiveControlSourceIds(name),
+      controlSources:current==='my'||current==='opp'?objectiveControlSourceSnapshots(name,current):[]
+    }];
+  }));
+  const transitions=Object.entries(objectives).filter(([,o])=>o.changeType!=='held'&&o.changeType!=='uncontrolled').map(([name,o])=>({
+    name,
+    from:o.startOwner,
+    to:o.owner,
+    changeType:o.changeType
+  }));
+  ensureObjectiveControlHistory()[key]={
+    round:Math.max(1,Number(state.round)||1),
+    turn:state.currentTurn==='opp'?'opp':'my',
+    phase:String(state.phase||'Command'),
+    startOwners:{...ensureObjectiveTurnSnapshot()},
+    objectives,
+    transitions,
+    updatedAt:new Date().toISOString()
+  };
 }
 function objectiveTurnStartOwner(name){
   const snap=ensureObjectiveTurnSnapshot();
@@ -5063,7 +5118,11 @@ function objectiveControlSourceHtml(name,current){
 function objectiveStateRecord(name){
   const owner=['my','opp','contested','none'].includes(state.objectives?.[name])?state.objectives[name]:'none';
   const startOwner=objectiveTurnStartOwner(name);
-  return {name,owner,type:objectiveType(name),territory:objectiveTerritory(name),deploymentZone:objectiveDeploymentZone(name),startOwner,changedThisTurn:owner!==startOwner,controlSourceIds:objectiveControlSourceIds(name)};
+  return {
+    name,owner,type:objectiveType(name),territory:objectiveTerritory(name),deploymentZone:objectiveDeploymentZone(name),
+    startOwner,changedThisTurn:owner!==startOwner,changeType:objectiveControlChangeType(name),
+    changeLabel:objectiveControlChangeLabel(name),controlSourceIds:objectiveControlSourceIds(name)
+  };
 }
 function objectiveTacticalSummary(){
   const list=Object.keys(state.objectives||{}).map(objectiveStateRecord);
@@ -5212,8 +5271,11 @@ function objectiveControlTrackerHtml(){
     const territoryOptions=['my','opp','nml'].map(value=>'<option value="'+value+'" '+(territory===value?'selected':'')+'>'+objectiveTerritoryLabel(value)+'</option>').join('');
     const deploymentZone=objectiveDeploymentZone(name);
     const deploymentOptions=['my','opp','none'].map(value=>'<option value="'+value+'" '+(deploymentZone===value?'selected':'')+'>'+objectiveDeploymentZoneLabel(value)+'</option>').join('');
+    const changeLabel=objectiveControlChangeLabel(name);
+    const changeType=objectiveControlChangeType(name);
+    const changeClass=changeType==='held'?'objective-change-held':changeType==='contested'?'objective-change-contested':changeType==='lost'?'objective-change-lost':'objective-change-active';
     const button=(value,label)=>'<button type="button" class="btn objective-control-btn '+(current===value?'active':'')+'" aria-pressed="'+(current===value?'true':'false')+'" onclick="setObjectiveControl(\''+escName(name)+'\',\''+value+'\');return false;">'+label+'</button>';
-    return '<div class="objective-control-row"><div class="objective-control-name"><b>'+esc(name)+'</b><span class="tiny">Start: '+esc(start==='my'?'My':start==='opp'?'Opp':start==='contested'?'Contested':'None')+'</span><select class="objective-role-select" aria-label="Objective location" onchange="setObjectiveRole(\''+escName(name)+'\',this.value);return false;">'+roleOptions+'</select><select class="objective-role-select" aria-label="Objective territory" onchange="setObjectiveTerritory(\''+escName(name)+'\',this.value);return false;">'+territoryOptions+'</select><select class="objective-role-select" aria-label="Objective deployment zone" onchange="setObjectiveDeploymentZone(\''+escName(name)+'\',this.value);return false;">'+deploymentOptions+'</select>'+objectiveControlSourceHtml(name,current)+'</div><div class="objective-control-buttons">'+button('my','My')+button('opp','Opp')+button('contested','Contested')+button('none','None')+'<button type="button" class="btn objective-remove-btn" title="Remove objective" onclick="removeTrackedObjective(\''+escName(name)+'\');return false;">×</button></div></div>';
+    return '<div class="objective-control-row"><div class="objective-control-name"><b>'+esc(name)+'</b><span class="tiny">Start: '+esc(start==='my'?'My':start==='opp'?'Opp':start==='contested'?'Contested':'None')+'</span><span class="pill '+changeClass+'">'+esc(changeLabel)+'</span><select class="objective-role-select" aria-label="Objective location" onchange="setObjectiveRole(\''+escName(name)+'\',this.value);return false;">'+roleOptions+'</select><select class="objective-role-select" aria-label="Objective territory" onchange="setObjectiveTerritory(\''+escName(name)+'\',this.value);return false;">'+territoryOptions+'</select><select class="objective-role-select" aria-label="Objective deployment zone" onchange="setObjectiveDeploymentZone(\''+escName(name)+'\',this.value);return false;">'+deploymentOptions+'</select>'+objectiveControlSourceHtml(name,current)+'</div><div class="objective-control-buttons">'+button('my','My')+button('opp','Opp')+button('contested','Contested')+button('none','None')+'<button type="button" class="btn objective-remove-btn" title="Remove objective" onclick="removeTrackedObjective(\''+escName(name)+'\');return false;">×</button></div></div>';
   }).join(''):'<div class="empty" style="padding:10px">No objectives tracked yet. Add the objectives from your mission.</div>';
   return '<details class="card objective-control-card '+(opponentTurn?'objective-control-opponent':'objective-control-self')+'" '+(open?'open':'')+' ontoggle="state.objectiveControlOpen=this.open;save()">'+
     '<summary style="cursor:pointer;list-style:none"><div class="split"><div><h3 style="margin:0">Objective Control</h3><div class="muted">'+(opponentTurn?'Record objective changes during the opponent turn.':'Current battlefield objective ownership used by scoring and Tactical Advisor.')+'</div></div><span class="pill">'+(opponentTurn?'Opponent turn':'Your turn')+'</span></div></summary>'+
@@ -9474,7 +9536,7 @@ function dataManagementPage(){const cfg=getCloudConfig();const battles=Array.isA
 
 function exportAllData(){
   try{
-    const backup={schema:'onoforge40k.backup.v272',app:'OnoForge 40K',version:'v329',exportedAt:new Date().toISOString(),state:JSON.parse(JSON.stringify(state)),DEMO:JSON.parse(JSON.stringify(DEMO))};
+    const backup={schema:'onoforge40k.backup.v272',app:'OnoForge 40K',version:'v334',exportedAt:new Date().toISOString(),state:JSON.parse(JSON.stringify(state)),DEMO:JSON.parse(JSON.stringify(DEMO))};
     const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
     const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='onoforge40k-backup-v272-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
   }catch(e){alert('Export failed: '+e.message)}
@@ -9575,7 +9637,7 @@ function render(){
     renderBattleOnly();
     return;
   }
-  app.innerHTML=`<div class="top"><div class="brand">ONOFORGE 40K</div><div class="sub">11th Edition • v333 • 40k.app v925 data source • Army-linked Mathhammer Engine</div></div>${nav()}<main class="wrap">
+  app.innerHTML=`<div class="top"><div class="brand">ONOFORGE 40K</div><div class="sub">11th Edition • v334 • 40k.app v925 data source • Army-linked Mathhammer Engine</div></div>${nav()}<main class="wrap">
   
 <div class="status">✓ Browser app loaded locally • Source: ${esc(state.source)} • ${esc(state.revision)} • 40k.app v${esc(String(ONOFORGE_40KAPP_SOURCE?.source?.revision||'925'))}</div>${dataSyncStatusHtml()}<div style="height:12px"></div><div id="onoforge-advisor-render"></div>${state.page==='battle'?'<div id="battle-view">'+pages.battle()+'</div>':(pages[state.page]||builder)()}${'<div id="secondary-plan-modal-root">'+secondaryPlanEditorModal()+'</div>'}</main></div>`;
   ensureLiveGameTimerDisplay();
