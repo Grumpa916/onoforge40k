@@ -5214,6 +5214,37 @@ function setObjectiveDeploymentZone(name,zone){
   event('OBJECTIVE_DEPLOYMENT_CHANGED',{name:key,unit:'Objective '+key,action:'Deployment zone → '+objectiveDeploymentZoneLabel(next),after:next,round:Math.max(1,Number(state.round)||1),phase:String(state.phase||'Command')},before);
   save();render();
 }
+function objectivePrimaryScoringImpact(side,name){
+  const player=side==='opp'?'opp':'my';
+  const mission=primaryMission(player);
+  const rows=primaryScoringRowsForRound(mission);
+  const key=String(name||'').trim();
+  if(!key||!rows.length)return {mission,objective:key,items:[],potentialVP:0,conditionCount:0};
+  const items=[];
+  let potentialVP=0;
+  rows.forEach((row,index)=>{
+    const condition=primaryObjectiveConditionStatus(player,row);
+    const qualifying=primaryObjectiveQualifyingList(player,row).some(o=>o.name===key);
+    const text=primaryObjectiveConditionText(row);
+    if(!qualifying && !condition)return;
+    const baseVP=primaryScoringVP(row[1]);
+    const perObjective=/\b(?:per|for each)\s+objective\b/i.test(text);
+    const contributesToCondition=!!condition && (condition.qualifying||[]).some(o=>o.name===key);
+    if(qualifying||contributesToCondition){
+      const vp=perObjective?baseVP:0;
+      potentialVP+=vp;
+      items.push({index,timing:String(row[0]||''),label:String(row[2]||''),baseVP,perObjective,vp,conditionType:condition?.type||null,conditionMet:condition?!!condition.met:true});
+    }
+  });
+  return {mission,objective:key,items,potentialVP,conditionCount:items.length};
+}
+function objectivePrimaryScoringImpactLabel(side,name){
+  const impact=objectivePrimaryScoringImpact(side,name);
+  if(!impact.items.length)return '';
+  const vp=impact.potentialVP;
+  if(vp>0)return 'Primary: up to '+vp+' VP contribution';
+  return 'Primary: helps satisfy a scoring condition';
+}
 function setObjectiveControl(name,owner){
   const key=String(name||'').trim();
   const next=['my','opp','contested','none'].includes(owner)?owner:null;
@@ -5221,15 +5252,20 @@ function setObjectiveControl(name,owner){
   const previous=['my','opp','contested','none'].includes(state.objectives?.[key])?state.objectives[key]:'none';
   if(previous===next)return;
   const fullBefore=snapshotForUndo();
+  const scoringSide=state.currentTurn==='opp'?'opp':'my';
+  const scoringBefore=objectivePrimaryScoringImpact(scoringSide,key);
   if(!state.objectives||typeof state.objectives!=='object')state.objectives={};
   state.objectives[key]=next;
   if(previous!==next)clearObjectiveControlSources(key);
   ensureObjectiveTurnSnapshot();
   recordObjectiveTurnState();
+  const scoringAfter=objectivePrimaryScoringImpact(scoringSide,key);
   event('OBJECTIVE_CHANGED',{
     name:key,unit:'Objective '+key,action:'Control → '+next,owner:next,previous,after:next,
     round:Math.max(1,Number(state.round)||1),phase:String(state.phase||'Command'),
-    playerTurn:state.currentTurn==='opp'?'opp':'my'
+    playerTurn:scoringSide,
+    scoringImpactBefore:scoringBefore,
+    scoringImpactAfter:scoringAfter
   },fullBefore);
   save();
   render();
@@ -5295,8 +5331,9 @@ function objectiveControlTrackerHtml(){
     const changeLabel=objectiveControlChangeLabel(name);
     const changeType=objectiveControlChangeType(name);
     const changeClass=changeType==='held'?'objective-change-held':changeType==='contested'?'objective-change-contested':changeType==='lost'?'objective-change-lost':'objective-change-active';
+    const scoringImpact=objectivePrimaryScoringImpactLabel(state.currentTurn==='opp'?'opp':'my',name);
     const button=(value,label)=>'<button type="button" class="btn objective-control-btn '+(current===value?'active':'')+'" aria-pressed="'+(current===value?'true':'false')+'" onclick="setObjectiveControl(\''+escName(name)+'\',\''+value+'\');return false;">'+label+'</button>';
-    return '<div class="objective-control-row"><div class="objective-control-name"><b>'+esc(name)+'</b><span class="tiny">Start: '+esc(start==='my'?'My':start==='opp'?'Opp':start==='contested'?'Contested':'None')+'</span><span class="pill '+changeClass+'">'+esc(changeLabel)+'</span><select class="objective-role-select" aria-label="Objective location" onchange="setObjectiveRole(\''+escName(name)+'\',this.value);return false;">'+roleOptions+'</select><select class="objective-role-select" aria-label="Objective territory" onchange="setObjectiveTerritory(\''+escName(name)+'\',this.value);return false;">'+territoryOptions+'</select><select class="objective-role-select" aria-label="Objective deployment zone" onchange="setObjectiveDeploymentZone(\''+escName(name)+'\',this.value);return false;">'+deploymentOptions+'</select>'+objectiveControlSourceHtml(name,current)+'</div><div class="objective-control-buttons">'+button('my','My')+button('opp','Opp')+button('contested','Contested')+button('none','None')+'<button type="button" class="btn objective-remove-btn" title="Remove objective" onclick="removeTrackedObjective(\''+escName(name)+'\');return false;">×</button></div></div>';
+    return '<div class="objective-control-row"><div class="objective-control-name"><b>'+esc(name)+'</b><span class="tiny">Start: '+esc(start==='my'?'My':start==='opp'?'Opp':start==='contested'?'Contested':'None')+'</span><span class="pill '+changeClass+'">'+esc(changeLabel)+'</span>'+(scoringImpact?'<span class="tiny" style="color:#aee2bf">'+esc(scoringImpact)+'</span>':'')+'<select class="objective-role-select" aria-label="Objective location" onchange="setObjectiveRole(\''+escName(name)+'\',this.value);return false;">'+roleOptions+'</select><select class="objective-role-select" aria-label="Objective territory" onchange="setObjectiveTerritory(\''+escName(name)+'\',this.value);return false;">'+territoryOptions+'</select><select class="objective-role-select" aria-label="Objective deployment zone" onchange="setObjectiveDeploymentZone(\''+escName(name)+'\',this.value);return false;">'+deploymentOptions+'</select>'+objectiveControlSourceHtml(name,current)+'</div><div class="objective-control-buttons">'+button('my','My')+button('opp','Opp')+button('contested','Contested')+button('none','None')+'<button type="button" class="btn objective-remove-btn" title="Remove objective" onclick="removeTrackedObjective(\''+escName(name)+'\');return false;">×</button></div></div>';
   }).join(''):'<div class="empty" style="padding:10px">No objectives tracked yet. Add the objectives from your mission.</div>';
   return '<details class="card objective-control-card '+(opponentTurn?'objective-control-opponent':'objective-control-self')+'" '+(open?'open':'')+' ontoggle="state.objectiveControlOpen=this.open;save()">'+
     '<summary style="cursor:pointer;list-style:none"><div class="split"><div><h3 style="margin:0">Objective Control</h3><div class="muted">'+(opponentTurn?'Record objective changes during the opponent turn.':'Current battlefield objective ownership used by scoring and Tactical Advisor.')+'</div></div><span class="pill">'+(opponentTurn?'Opponent turn':'Your turn')+'</span></div></summary>'+
@@ -7885,10 +7922,17 @@ function tacticalObjectiveAdvisor(side){
       action='Consider';
       reason='No player currently controls this objective.';
     }
+    const primaryImpact=objectivePrimaryScoringImpact(player,o.name);
+    const primaryVP=Math.max(0,Number(primaryImpact.potentialVP)||0);
+    const primaryConditionCount=Math.max(0,Number(primaryImpact.conditionCount)||0);
+    if(primaryVP>0)score+=primaryVP*4;
+    else if(primaryConditionCount>0)score+=primaryConditionCount*8;
+    if(primaryVP>0)reason+=' Primary scoring can contribute up to '+primaryVP+' VP from this objective.';
+    else if(primaryConditionCount>0)reason+=' This objective contributes to a current Primary scoring condition.';
     if(o.type==='central')score+=8;
     if(o.territory===enemy)score+=5;
     if(o.deploymentZone===enemy)score+=7;
-    return {...o,action,score,reason,missionRelevant,transition};
+    return {...o,action,score,reason,missionRelevant,transition,primaryImpact,primaryVP};
   }).sort((a,b)=>b.score-a.score);
   return {side:player,mission,round:Math.max(1,Number(state.round)||1),recommendations:relevant.slice(0,4),summary};
 }
@@ -7899,8 +7943,9 @@ function tacticalObjectiveAdvisorHtml(side){
   const cards=recs.map(o=>{
     const location=[o.type,o.territory,o.deploymentZone==='none'?'':o.deploymentZone].filter(Boolean).join(' • ');
     const control=o.owner==='my'?'Mine':o.owner==='opp'?'Enemy':o.owner==='contested'?'Contested':'Uncontrolled';
-    const transition=o.transition&&o.transition!=='held'&&o.transition!=='uncontrolled'?' • '+o.changeLabel:'';
-    return '<div class="status" style="margin-top:5px"><div class="split"><div><b>'+esc(o.name)+'</b><div class="tiny">'+esc(control)+' • '+esc(location)+esc(transition)+'</div></div><span class="pill">'+esc(o.action)+'</span></div><div class="tiny" style="margin-top:4px">'+esc(o.reason)+'</div></div>';
+    const transition=o.transition&&o.transition!=='held'&&o.transition!=='uncontrolled?' • '+o.changeLabel:'';
+    const primary=o.primaryVP>0?' • up to '+o.primaryVP+' VP':(o.primaryImpact?.conditionCount?' • Primary condition':'');
+    return '<div class="status" style="margin-top:5px"><div class="split"><div><b>'+esc(o.name)+'</b><div class="tiny">'+esc(control)+' • '+esc(location)+esc(transition)+esc(primary)+'</div></div><span class="pill">'+esc(o.action)+'</span></div><div class="tiny" style="margin-top:4px">'+esc(o.reason)+'</div></div>';
   }).join('');
   return '<div class="status" style="margin-bottom:8px"><div class="muted small">Objective priorities • Round '+intel.round+'</div>'+(recs.length?cards:'<div class="tiny" style="margin-top:4px">No objectives tracked.</div>')+'</div>';
 }
