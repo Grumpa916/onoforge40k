@@ -1174,6 +1174,12 @@ function primaryObjectiveConditionStatus(side,row){
   const text=primaryObjectiveConditionText(row);
   if(!/\b(?:control|controls)\b.*\bobjective/.test(text))return null;
   const enemy=side==='my'?'opp':'my';
+  if(/central.*and.*expansion objectives?/.test(text)){
+    const all=objectiveCountsForSide(side);
+    const central=all.filter(o=>o.type==='central');
+    const expansion=all.filter(o=>o.type==='expansion');
+    return {type:'central-and-expansion',count:central.length+expansion.length,centralCount:central.length,expansionCount:expansion.length,required:2,met:central.length>=1&&expansion.length>=1,qualifying:[...central,...expansion]};
+  }
   if(/control more objectives than your opponent/.test(text)){
     const mine=objectiveCountsForSide(side).length;
     const theirs=objectiveCountsForSide(enemy).length;
@@ -1257,6 +1263,7 @@ function primaryObjectiveConditionShortLabel(condition){
   if(condition.type==='opponent-home')return condition.met?'Opponent home objective controlled':'Opponent home objective not controlled';
   if(condition.type==='threshold')return (condition.met?'✓ ':'')+Math.max(0,Number(condition.count)||0)+' / '+Math.max(0,Number(condition.required)||0)+' objectives controlled';
   if(condition.type==='one-or-more')return condition.met?'✓ At least one qualifying objective controlled':'No qualifying objective currently controlled';
+  if(condition.type==='central-and-expansion')return condition.met?'✓ Central + expansion objective controlled':'Need at least 1 central and 1 expansion objective';
   return '';
 }
 function primaryScoringMax(row){
