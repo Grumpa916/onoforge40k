@@ -512,6 +512,8 @@
   .battle-layout > .battle-log{grid-column:1!important;grid-row:auto!important}
 }
 
+/* v314: explicit secondary selection undo */
+.secondary-undo-btn{padding:2px 7px!important;font-size:8px!important;line-height:1.2!important;border:1px solid #65788c!important;background:#182433!important;color:#d9e7f4!important}.secondary-undo-btn:hover{background:#24364a!important}
 /* v313: scoring buttons use rule-defined VP values */
 .secondary-vp-record{white-space:nowrap;padding:3px 8px!important;font-size:9px!important;font-weight:800}.secondary-compact-quick{display:flex!important;gap:5px!important;flex-wrap:wrap!important;margin-top:4px}.secondary-compact-quick .secondary-vp-record{min-width:48px}.secondary-compact-detail-row .secondary-row-action{display:flex;justify-content:flex-end}.secondary-compact-detail-row .secondary-vp-record{min-width:64px}
 /* v312: compact secondary scoring UI */
@@ -2019,8 +2021,9 @@ function secondaryDetailHtml(side){
      return '<div class="secondary-compact-detail-row"><div><b>'+esc(vpText)+'</b> <span>'+esc(condition)+'</span>'+(end?'<span class="secondary-row-timing">END OF BATTLE</span>':'')+'</div><div class="secondary-row-action"><input type="number" min="1" max="20" step="1" value="'+fallback+'" id="'+secondaryRowInputId(side,name,index)+'" aria-label="VP to score for '+esc(name)+' condition '+(index+1)+'"><button type="button" class="btn primary" data-secondary-row-score="1" data-secondary-row-score-side="'+side+'" data-secondary-row-score-name="'+esc(name)+'" data-secondary-row-score-index="'+index+'"'+dis+'>Record</button></div></div>';
    }).join('');
    const quick=first?'<div class="secondary-compact-quick"><span class="secondary-vp">'+esc(String(first[0]))+'</span><span class="secondary-quick-condition">'+esc(String(first[1]))+(endOfBattle?' <span class="secondary-row-timing">END OF BATTLE</span>':'')+'</span><input type="number" min="1" max="20" step="1" value="'+firstVP+'" id="'+secondaryRowInputId(side,name,0)+'-quick" aria-label="Quick VP for '+esc(name)+'"><button type="button" class="btn primary" data-secondary-row-score="1" data-secondary-row-score-side="'+side+'" data-secondary-row-score-name="'+esc(name)+'" data-secondary-row-score-index="0"'+disabled+'>Record</button></div>':'';
+   const undoBtn=!scoredVP?'<button type="button" class="btn secondary-undo-btn" data-secondary-undo-side="'+side+'" data-secondary-undo-name="'+esc(name)+'">Undo</button>':'';
    return '<div class="secondary-compact-selected-row">'+
-     '<div class="secondary-compact-selected-head"><div><span class="secondary-selected-check">✓</span><strong>'+esc(name)+'</strong><span class="muted small"> '+esc(card?.type||'Secondary Mission')+'</span></div><div class="secondary-compact-status">'+(scoredVP?'Scored '+scoredVP+' VP':'0 VP')+'</div></div>'+
+     '<div class="secondary-compact-selected-head"><div><span class="secondary-selected-check">✓</span><strong>'+esc(name)+'</strong><span class="muted small"> '+esc(card?.type||'Secondary Mission')+'</span></div><div class="secondary-compact-status">'+(scoredVP?'Scored '+scoredVP+' VP':undoBtn)+'</div></div>'+
      quick+
      '<details class="secondary-compact-details"><summary>Details'+(detailPlan?' / Plan':'')+' ▾</summary>'+
        '<div class="secondary-compact-description">'+(items.length?esc(String(items[0]?.[1]||'')):'No scoring details available.')+'</div>'+
