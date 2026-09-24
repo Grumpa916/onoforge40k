@@ -1157,7 +1157,8 @@ function primaryScoringObjectiveAmount(side,row){
   const excludeHome=/excluding home|exclude home|excl\. home/.test(text);
   const enemyTerritory=/enemy territory|enemy's territory|enemy territory/.test(text);
   const central=/central objectives?/.test(text);
-  const filtered=owned.filter(o=>(!excludeHome||o.type!=='home')&&(!central||o.type==='central')&&(!enemyTerritory||objectiveIsInTerritory(o.name,side)));
+  const deploymentZone=/deployment zone/.test(text);
+  const filtered=owned.filter(o=>(!excludeHome||o.type!=='home')&&(!central||o.type==='central')&&(!enemyTerritory||objectiveIsInTerritory(o.name,side))&&(!deploymentZone||objectiveDeploymentZone(o.name)===side));
   return filtered.length;
 }
 function primaryScoringMax(row){
@@ -1202,7 +1203,7 @@ function missionDecisionContext(){
     round,turn:state.currentTurn||'my',score:{my,opp,gap:my-opp},
     primary:{my:primaryMy,opp:primaryOpp,myRemaining:45-primaryMy,oppRemaining:45-primaryOpp,myRound:myRoundPrimary,oppRound:oppRoundPrimary,myRoundRemaining:Math.max(0,15-myRoundPrimary),oppRoundRemaining:Math.max(0,15-oppRoundPrimary)},
     secondary:{my:secondaryMy,opp:secondaryOpp,myRemaining:45-secondaryMy,oppRemaining:45-secondaryOpp,myRound:myRoundSecondary,oppRound:oppRoundSecondary,myRoundRemaining:Math.max(0,15-myRoundSecondary),oppRoundRemaining:Math.max(0,15-oppRoundSecondary)},
-    objectives:{my:myObjectives,opp:oppObjectives,summary:objectiveSummary.current}
+    objectives:{my:myObjectives,opp:oppObjectives,summary:objectiveSummary.current,tactical:objectiveTacticalSummary()}
   };
 }
 function scorePrimaryItem(side,index,mission,amountOverride){
@@ -7426,6 +7427,12 @@ function tacticalAdvisorHtml(){
   const ae=tacticalAdvisorAttackerEntry();
   if(!ae)return '<div class="card tactical-advisor-card"><h3 style="margin:0">Tactical Advisor</h3><div class="muted">Build your army and select an attacker to receive target recommendations.</div></div>';
   const attackerOptions=(state.my||[]).filter(e=>!e.attachedTo&&!tacticalUnitState('my',e)?.destroyed).map(e=>'<option value="'+esc(e.uid)+'" '+(e.uid===ae.uid?'selected':'')+'>'+esc(unitDisplayName('my',e))+'</option>').join('');
+  const objectiveIntel=objectiveTacticalSummary();
+  const objectiveIntelHtml='<div class="status" style="margin-bottom:8px"><div class="muted small">Objective state</div><div class="tiny" style="margin-top:3px">'+
+    'Controlled: <b>'+objectiveIntel.controlled.length+'</b> • Contested: <b>'+objectiveIntel.contested.length+'</b> • Enemy: <b>'+objectiveIntel.enemyControlled.length+'</b> • Central: <b>'+objectiveIntel.central.length+'</b>'+
+    (objectiveIntel.enemyTerritory.length?' • Enemy territory: <b>'+objectiveIntel.enemyTerritory.length+'</b>':'')+
+    (objectiveIntel.enemyDeployment.length?' • Enemy deployment: <b>'+objectiveIntel.enemyDeployment.length+'</b>':'')+
+    '</div></div>';
   const result=getTacticalAdvisorResult(ae.uid,{samples:4000});
   if(result.status!=='ok'){
     const detail=result.attacker?(' • '+esc(result.attacker)):'',phaseLabel=result.phase?(' • '+esc(result.phase)):'',gateLabel=result.status==='action-already-completed'?'Action complete':result.status==='no-ranged-weapons'?'No ranged weapons':result.status==='charge-target-evaluation-not-yet-modeled'?'Charge targeting':'Phase gate';
@@ -7456,6 +7463,7 @@ function tacticalAdvisorHtml(){
   return '<details class="card tactical-advisor-card" open><summary><div class="split"><div><h3 style="margin:0">Tactical Advisor</h3><div class="muted">Quick target comparison</div></div><span class="pill">'+esc(result.evaluatedAt?.phase||state.phase||'Command')+'</span></div></summary>'+
     '<div style="margin-top:10px">'+
       '<div class="field" style="margin-bottom:8px"><label>Attacker</label><select onchange="setTacticalAdvisorAttacker(this.value)">'+attackerOptions+'</select></div>'+
+      objectiveIntelHtml+
       '<div class="status" style="margin-bottom:8px"><div class="muted small">Recommended targets</div><div class="tiny" style="margin-top:2px">Compare expected damage and wipe chance. Unknown battlefield facts lower confidence but do not hide valid target candidates.</div></div>'+
       (recs.slice(0,3).map(recCard).join('')||'<div class="empty">No eligible target recommendations for the current phase.</div>')+
       '<div class="grid2" style="margin-top:8px"><div class="status"><b>Natural targets</b><div style="margin-top:4px">'+(natural||'<span class="muted">None</span>')+'</div></div><div class="status"><b>Avoid / high-risk</b><div style="margin-top:4px">'+(avoidTargets||'<span class="muted">None</span>')+'</div></div></div>'+
@@ -7473,7 +7481,7 @@ function tacticalUnitState(side,e){
 }
 function tacticalBattleState(){
   ensureTacticalState();
-  const objectives=Object.entries(state.objectives||{}).map(([name,owner])=>({name,owner:owner||'none'}));
+  const objectives=Object.keys(state.objectives||{}).map(objectiveStateRecord);
   return {version:TACTICAL_STATE_VERSION,round:Math.max(1,Number(state.round)||1),phase:state.phase||'Command',turn:state.currentTurn==='opp'?'opp':'my',
     vp:{my:Number(state.myVP)||0,opp:Number(state.oppVP)||0},cp:{my:Number(state.myCP)||0,opp:Number(state.oppCP)||0},
     objectives,units:{my:(state.my||[]).map(e=>tacticalUnitState('my',e)).filter(Boolean),opp:(state.opp||[]).map(e=>tacticalUnitState('opp',e)).filter(Boolean)},
