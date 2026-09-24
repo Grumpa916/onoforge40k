@@ -6060,28 +6060,57 @@ function tacticalAdvisorWeaponGroups(side,e,target=null){
   return groups;
 }
 function weaponDataIntegrityScan(){
-  const units=Array.isArray(DEMO)?DEMO:[];
+  const units=Array.isArray(unitDatabase())?unitDatabase():[];
+  const sourceRole=Array.isArray(window.CURRENT_UNIT_DATABASE)?'canonical':'bootstrap';
   const errors=[],warnings=[],unitRows=[];
-  const push=(bucket,code,u,detail)=>bucket.push({code,unitId:String(u?.id||''),unit:String(u?.name||u?.id||'Unknown unit'),faction:String(u?.faction||''),detail});
+  const push=(bucket,code,u,detail)=>bucket.push({
+    code,unitId:String(u?.id||''),unit:String(u?.name||u?.id||'Unknown unit'),
+    faction:String(u?.faction||''),detail,sourceRole:String(u?.sourceRole||sourceRole)
+  });
+  const unitKeys=new Map(),unitIds=new Map();
+
   units.forEach(u=>{
-    const label=String(u?.name||u?.id||'Unknown unit');
+    const label=String(u?.name||u?.id||'Unknown unit'),key=String(u?.faction||'')+'|'+label,id=String(u?.id||'');
+    if(!u?.name)push(errors,'UNIT_MISSING_NAME',u,'Unit is missing a name.');
+    if(unitKeys.has(key))push(errors,'DUPLICATE_UNIT_KEY',u,'Duplicate faction/name with '+String(unitKeys.get(key)?.id||'unknown')+'.');
+    else unitKeys.set(key,u);
+    if(id&&unitIds.has(id))push(errors,'DUPLICATE_UNIT_ID',u,'Duplicate unit id with '+String(unitIds.get(id)?.name||'unknown')+'.');
+    else if(id)unitIds.set(id,u);
+
     const weapons=Array.isArray(u?.weapons)?u.weapons:[];
-    if(!weapons.length){push(errors,'NO_WEAPONS',u,'Unit has no weapon profiles in the normalized catalogue.');unitRows.push({unit:label,faction:String(u?.faction||''),status:'error',ranged:0,melee:0,active:0,snapshot:0,tactical:0});return;}
+    if(!weapons.length){
+      push(errors,'NO_WEAPONS',u,'Unit has no weapon profiles.');
+      unitRows.push({unit:label,faction:String(u?.faction||''),status:'error',ranged:0,melee:0,active:0,snapshot:0,tactical:0});
+      return;
+    }
     const names=weapons.map(w=>String(w?.name||'').trim()).filter(Boolean);
-    const duplicates=names.filter((n,i)=>names.indexOf(n)!==i);
-    if(duplicates.length)push(errors,'DUPLICATE_WEAPON_NAME',u,'Duplicate profile name: '+Array.from(new Set(duplicates)).join(', '));
+    const duplicates=[...new Set(names.filter((n,i)=>names.indexOf(n)!==i))];
+    if(duplicates.length)push(errors,'DUPLICATE_WEAPON_NAME',u,'Duplicate profile name: '+duplicates.join(', '));
+
     let ranged=0,melee=0,ambiguous=0;
-    weapons.forEach(w=>{
+    for(const w of weapons){
       const name=String(w?.name||'').trim();
-      if(!name){push(errors,'WEAPON_MISSING_NAME',u,'A weapon profile is missing its name.');return;}
-      const isRanged=tacticalWeaponIsRanged(w),range=tacticalWeaponRange(w);
+      if(!name){push(errors,'WEAPON_MISSING_NAME',u,'A weapon profile is missing its name.');continue;}
+      const rawRange=String(w?.rng??w?.range??'').trim();
+      const isRanged=tacticalWeaponIsRanged(w);
+      const resolvedRange=tacticalWeaponRange(w);
       if(isRanged)ranged++;else melee++;
       const hasBS=w?.BS!=null,hasWS=w?.WS!=null;
-      if(hasBS&&hasWS){ambiguous++;push(warnings,'WEAPON_BOTH_BS_WS',u,name+' has both BS and WS; classification may require manual review.');}
-      else if(!hasBS&&!hasWS&&!String(w?.rng??w?.range??'').trim()){ambiguous++;push(warnings,'WEAPON_CLASSIFICATION_AMBIGUOUS',u,name+' has no range, BS, or WS marker.');}
-      if(isRanged&&range===null)push(errors,'RANGED_RANGE_MISSING',u,name+' is classified as ranged but no numeric range can be resolved.');
-    });
-    const auditEntry={uid:'__weapon-audit__'+String(u.id||label).replace(/[^A-Za-z0-9_-]/g,'_'),unitId:u.id,qty:1,models:Math.max(1,Number(u.models)||1),wargear:[],wargearSelections:{},weapons:weapons.map(w=>w.name).filter(Boolean),enhancement:'',notes:'',attachedTo:null,leaderUid:null};
+      if(hasBS&&hasWS){ambiguous++;push(warnings,'WEAPON_BOTH_BS_WS',u,name+' has both BS and WS.');}
+      else if(!hasBS&&!hasWS&&!rawRange){ambiguous++;push(warnings,'WEAPON_CLASSIFICATION_AMBIGUOUS',u,name+' has no range, BS or WS marker.');}
+      const missingCore=['A','S','AP','D'].filter(k=>w?.[k]==null||String(w[k]).trim()==='');
+      if(missingCore.length)push(errors,'WEAPON_CORE_STAT_MISSING',u,name+' missing '+missingCore.join(', ')+'.');
+      if(isRanged&&resolvedRange===null){
+        if(sourceRole==='canonical')push(errors,'RANGED_RANGE_UNRESOLVED',u,name+' is ranged but 40k.app-canonical data does not resolve a numeric range.');
+        else push(warnings,'BOOTSTRAP_RANGED_RANGE_MISSING',u,name+' lacks a direct range in the embedded bootstrap catalogue; this must be resolved from the canonical 40k.app source before promotion.');
+      }
+    }
+
+    const auditEntry={
+      uid:'__weapon-audit__'+String(u?.id||label).replace(/[^A-Za-z0-9_-]/g,'_'),
+      unitId:u.id,qty:1,models:Math.max(1,Number(u?.models)||1),wargear:[],wargearSelections:{},
+      weapons:weapons.map(w=>w?.name).filter(Boolean),enhancement:'',notes:'',attachedTo:null,leaderUid:null
+    };
     const activeNames=Array.from(new Set(activeWeaponNames(auditEntry,u).map(String)));
     const snapshot=combatSnapshot('my',auditEntry);
     const snapshotNames=Array.from(new Set((snapshot?.weapons||[]).map(x=>String(x?.weapon?.name||'')).filter(Boolean)));
@@ -6094,6 +6123,7 @@ function weaponDataIntegrityScan(){
     const rowStatus=missingFromTactical.length?'error':(missingFromSnapshot.length||ambiguous?'warning':'ok');
     unitRows.push({unit:label,faction:String(u?.faction||''),status:rowStatus,ranged,melee,active:activeNames.length,snapshot:snapshotNames.length,tactical:tacticalNames.length});
   });
+
   const currentArmy={my:[],opp:[]};
   ['my','opp'].forEach(side=>{
     const entries=(state?.[side]||[]).filter(e=>!e?.attachedTo);
@@ -6105,10 +6135,22 @@ function weaponDataIntegrityScan(){
       const visible=Array.from(new Set(groups.map(g=>String(g?.weapon?.name||'')).filter(Boolean)));
       const missing=active.filter(n=>!visible.includes(n));
       if(missing.length)currentArmy[side].push({unit:unitDisplayName(side,e),unitId:u.id,detail:'Tactical Advisor is missing active profiles: '+missing.join(', ')});
-      if(side==='my'&&active.some(n=>tacticalWeaponIsRanged((u.weapons||[]).find(w=>w.name===n)))&&!ranged.length)currentArmy[side].push({unit:unitDisplayName(side,e),unitId:u.id,detail:'Unit has active ranged profiles but Tactical Advisor exposes none.'});
+      if(side==='my'&&active.some(n=>tacticalWeaponIsRanged((u.weapons||[]).find(w=>w.name===n)))&&!ranged.length){
+        currentArmy[side].push({unit:unitDisplayName(side,e),unitId:u.id,detail:'Unit has active ranged profiles but Tactical Advisor exposes none.'});
+      }
     });
   });
-  return {generatedAt:new Date().toISOString(),totalUnits:units.length,errorCount:errors.length,warningCount:warnings.length,passCount:unitRows.filter(x=>x.status==='ok').length,errors,warnings,unitRows,currentArmy};
+
+  return {
+    generatedAt:new Date().toISOString(),
+    sourcePolicy:ONOFORGE_SOURCE_POLICY_11E,
+    activeSource:sourceRole==='canonical'?'40k.app canonical':'Embedded bootstrap fallback — canonical 40k.app dataset not loaded',
+    totalUnits:units.length,
+    errorCount:errors.length,
+    warningCount:warnings.length,
+    passCount:unitRows.filter(x=>x.status==='ok').length,
+    errors,warnings,unitRows,currentArmy
+  };
 }
 function weaponDataIntegrityAuditHtml(){
   const a=weaponDataIntegrityScan();
