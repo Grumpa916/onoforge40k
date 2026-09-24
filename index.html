@@ -6007,9 +6007,79 @@ function tacticalAdvisorWeaponGroups(side,e,target=null){
   });
   return groups;
 }
+function weaponDataIntegrityScan(){
+  const units=Array.isArray(DEMO)?DEMO:[];
+  const errors=[],warnings=[],unitRows=[];
+  const push=(bucket,code,u,detail)=>bucket.push({code,unitId:String(u?.id||''),unit:String(u?.name||u?.id||'Unknown unit'),faction:String(u?.faction||''),detail});
+  units.forEach(u=>{
+    const label=String(u?.name||u?.id||'Unknown unit');
+    const weapons=Array.isArray(u?.weapons)?u.weapons:[];
+    if(!weapons.length){push(errors,'NO_WEAPONS',u,'Unit has no weapon profiles in the normalized catalogue.');unitRows.push({unit:label,faction:String(u?.faction||''),status:'error',ranged:0,melee:0,active:0,snapshot:0,tactical:0});return;}
+    const names=weapons.map(w=>String(w?.name||'').trim()).filter(Boolean);
+    const duplicates=names.filter((n,i)=>names.indexOf(n)!==i);
+    if(duplicates.length)push(errors,'DUPLICATE_WEAPON_NAME',u,'Duplicate profile name: '+Array.from(new Set(duplicates)).join(', '));
+    let ranged=0,melee=0,ambiguous=0;
+    weapons.forEach(w=>{
+      const name=String(w?.name||'').trim();
+      if(!name){push(errors,'WEAPON_MISSING_NAME',u,'A weapon profile is missing its name.');return;}
+      const isRanged=tacticalWeaponIsRanged(w),range=tacticalWeaponRange(w);
+      if(isRanged)ranged++;else melee++;
+      const hasBS=w?.BS!=null,hasWS=w?.WS!=null;
+      if(hasBS&&hasWS){ambiguous++;push(warnings,'WEAPON_BOTH_BS_WS',u,name+' has both BS and WS; classification may require manual review.');}
+      else if(!hasBS&&!hasWS&&!String(w?.rng??w?.range??'').trim()){ambiguous++;push(warnings,'WEAPON_CLASSIFICATION_AMBIGUOUS',u,name+' has no range, BS, or WS marker.');}
+      if(isRanged&&range===null)push(errors,'RANGED_RANGE_MISSING',u,name+' is classified as ranged but no numeric range can be resolved.');
+    });
+    const auditEntry={uid:'__weapon-audit__'+String(u.id||label).replace(/[^A-Za-z0-9_-]/g,'_'),unitId:u.id,qty:1,models:Math.max(1,Number(u.models)||1),wargear:[],wargearSelections:{},weapons:weapons.map(w=>w.name).filter(Boolean),enhancement:'',notes:'',attachedTo:null,leaderUid:null};
+    const activeNames=Array.from(new Set(activeWeaponNames(auditEntry,u).map(String)));
+    const snapshot=combatSnapshot('my',auditEntry);
+    const snapshotNames=Array.from(new Set((snapshot?.weapons||[]).map(x=>String(x?.weapon?.name||'')).filter(Boolean)));
+    const tacticalGroups=tacticalAdvisorWeaponGroups('my',auditEntry);
+    const tacticalNames=Array.from(new Set(tacticalGroups.map(g=>String(g?.weapon?.name||'')).filter(Boolean)));
+    const missingFromSnapshot=activeNames.filter(n=>!snapshotNames.includes(n));
+    const missingFromTactical=activeNames.filter(n=>!tacticalNames.includes(n));
+    if(missingFromSnapshot.length)push(warnings,'COMBAT_SNAPSHOT_WEAPON_GAP',u,'Active catalogue profiles omitted by combat snapshot: '+missingFromSnapshot.join(', '));
+    if(missingFromTactical.length)push(errors,'TACTICAL_WEAPON_GAP',u,'Active catalogue profiles missing from Tactical Advisor: '+missingFromTactical.join(', '));
+    const rowStatus=missingFromTactical.length?'error':(missingFromSnapshot.length||ambiguous?'warning':'ok');
+    unitRows.push({unit:label,faction:String(u?.faction||''),status:rowStatus,ranged,melee,active:activeNames.length,snapshot:snapshotNames.length,tactical:tacticalNames.length});
+  });
+  const currentArmy={my:[],opp:[]};
+  ['my','opp'].forEach(side=>{
+    const entries=(state?.[side]||[]).filter(e=>!e?.attachedTo);
+    entries.forEach(e=>{
+      const u=get(e?.unitId);if(!u)return;
+      const groups=tacticalAdvisorWeaponGroups(side,e);
+      const ranged=groups.filter(g=>tacticalWeaponIsRanged(g?.weapon));
+      const active=Array.from(new Set(activeWeaponNames(e,u).map(String)));
+      const visible=Array.from(new Set(groups.map(g=>String(g?.weapon?.name||'')).filter(Boolean)));
+      const missing=active.filter(n=>!visible.includes(n));
+      if(missing.length)currentArmy[side].push({unit:unitDisplayName(side,e),unitId:u.id,detail:'Tactical Advisor is missing active profiles: '+missing.join(', ')});
+      if(side==='my'&&active.some(n=>tacticalWeaponIsRanged((u.weapons||[]).find(w=>w.name===n)))&&!ranged.length)currentArmy[side].push({unit:unitDisplayName(side,e),unitId:u.id,detail:'Unit has active ranged profiles but Tactical Advisor exposes none.'});
+    });
+  });
+  return {generatedAt:new Date().toISOString(),totalUnits:units.length,errorCount:errors.length,warningCount:warnings.length,passCount:unitRows.filter(x=>x.status==='ok').length,errors,warnings,unitRows,currentArmy};
+}
+function weaponDataIntegrityAuditHtml(){
+  const a=weaponDataIntegrityScan();
+  const badge=a.errorCount?'<span class="pill danger">Needs attention</span>':a.warningCount?'<span class="pill">Review warnings</span>':'<span class="pill ok">All checks passed</span>';
+  const issueRows=[...a.errors.map(x=>({...x,severity:'ERROR'})),...a.warnings.map(x=>({...x,severity:'WARNING'}))];
+  const armyIssues=[...a.currentArmy.my.map(x=>({...x,side:'My Army'})),...a.currentArmy.opp.map(x=>({...x,side:'Opponent'}))];
+  const issueHtml=issueRows.length?'<div style="margin-top:10px">'+issueRows.slice(0,40).map(x=>'<div class="status" style="margin-top:5px"><b>'+esc(x.severity)+' • '+esc(x.unit)+'</b><div class="tiny">'+esc(x.code)+' — '+esc(x.detail)+'</div></div>').join('')+(issueRows.length>40?'<div class="tiny" style="margin-top:6px">Showing first 40 issues.</div>':'')+'</div>':'<div class="ok" style="margin-top:10px">No catalogue or Tactical Advisor weapon gaps detected.</div>';
+  const armyHtml=armyIssues.length?'<div style="margin-top:10px">'+armyIssues.map(x=>'<div class="status" style="margin-top:5px"><b>'+esc(x.side)+' • '+esc(x.unit)+'</b><div class="tiny">'+esc(x.detail)+'</div></div>').join('')+'</div>':'<div class="tiny" style="margin-top:8px">No weapon visibility problems detected in the currently loaded armies.</div>';
+  const rows=a.unitRows.map(x=>'<tr><td>'+esc(x.unit)+'</td><td>'+esc(x.faction)+'</td><td>'+esc(x.status)+'</td><td>'+x.ranged+'</td><td>'+x.melee+'</td><td>'+x.active+'</td><td>'+x.snapshot+'</td><td>'+x.tactical+'</td></tr>').join('');
+  return '<details class="card" style="margin-top:12px" open><summary style="cursor:pointer"><div class="split"><div><h3 style="margin:0">Weapon &amp; Data Integrity Audit</h3><div class="muted" style="margin-top:4px">Automatic catalogue-wide check of weapon classification, ranges, combat-snapshot coverage, and Tactical Advisor visibility.</div></div>'+badge+'</div></summary>'+
+    '<div class="grid3" style="margin-top:10px"><div class="status"><div class="muted small">Units scanned</div><b>'+a.totalUnits+'</b></div><div class="status"><div class="muted small">Errors</div><b>'+a.errorCount+'</b></div><div class="status"><div class="muted small">Warnings</div><b>'+a.warningCount+'</b></div></div>'+
+    '<div style="margin-top:10px"><b>Current armies</b>'+armyHtml+'</div>'+
+    '<div style="margin-top:12px"><b>Issues</b>'+issueHtml+'</div>'+
+    '<details style="margin-top:12px"><summary><b>Unit scan details</b></summary><div style="overflow:auto;margin-top:8px"><table style="width:100%;font-size:11px"><thead><tr><th>Unit</th><th>Faction</th><th>Status</th><th>Ranged</th><th>Melee</th><th>Active</th><th>Snapshot</th><th>Tactical</th></tr></thead><tbody>'+rows+'</tbody></table></div></details>'+
+    '<div class="tiny" style="margin-top:8px">A snapshot gap is a warning when the catalogue is correct and Tactical Advisor can recover the profile. This identifies legacy combat-layer omissions without treating them as missing rules data.</div>'+
+  '</details>';
+}
+
 function tacticalAdvisorAttackerHasRangedWeapons(entry){
   if(!entry)return false;
-  return attachedCombatWeaponGroups('my',entry).some(g=>tacticalWeaponIsRanged(g?.weapon));
+  // Weapon ownership comes from the authoritative catalogue-aware Tactical Advisor,
+  // not only the legacy combat snapshot.
+  return tacticalAdvisorWeaponGroups('my',entry).some(g=>tacticalWeaponIsRanged(g?.weapon));
 }
 function setTacticalAdvisorAttacker(uid){
   const e=entry('my',uid);
@@ -8713,7 +8783,7 @@ function clearAllLocalData(){
   location.reload();
 }
 
-function dataPage(){return `<div class="card"><h2>Data Sources</h2><div class="status">${esc(state.dataStatus)} • ${esc(state.revision)}</div><p class="muted">The standalone prototype keeps source data separate from saved rosters and personal notes.</p><div class="card" style="margin-top:12px"><h3 style="margin-top:0">Reference Sources</h3><div class="unit"><strong>40k.app</strong><div class="muted">Primary structured source • Revision ${esc(String(ONOFORGE_40KAPP_SOURCE?.source?.revision||'925'))}</div></div><div class="unit"><strong>Warhammer Event Companion v1.1</strong><div class="muted">Event procedures, CP/VP limits, missions, terrain and base-size reference</div></div><div class="unit"><strong>MathHammer</strong><div class="muted">11th Edition combat calculator • v2.1.17 (Sep 18, 2026) • unit and weapon-profile reference</div><div class="tiny" style="margin-top:4px">Candidate supplemental source for weapon-profile enrichment and Mathhammer validation. Verify against authoritative 40K sources before treating values as canonical.</div></div></div><label class="btn">Import JSON<input type="file" accept=".json,application/json" style="display:none" onchange="importJSON(this)"></label><button class="btn" onclick="exportJSON()">Export Catalogue</button><div class="card"><h3>Normalized Catalogue</h3>${DEMO.map(u=>`<div class="unit"><strong>${esc(u.name)}</strong><div class="muted">${u.faction} • ${u.points} pts • ${u.weapons.length} weapons • ${u.abilities.length} abilities</div></div>`).join('')}</div></div>`}
+function dataPage(){return `<div class="card"><h2>Data Sources</h2><div class="status">${esc(state.dataStatus)} • ${esc(state.revision)}</div>${weaponDataIntegrityAuditHtml()}<p class="muted">The standalone prototype keeps source data separate from saved rosters and personal notes.</p><div class="card" style="margin-top:12px"><h3 style="margin-top:0">Reference Sources</h3><div class="unit"><strong>40k.app</strong><div class="muted">Primary structured source • Revision ${esc(String(ONOFORGE_40KAPP_SOURCE?.source?.revision||'925'))}</div></div><div class="unit"><strong>Warhammer Event Companion v1.1</strong><div class="muted">Event procedures, CP/VP limits, missions, terrain and base-size reference</div></div><div class="unit"><strong>MathHammer</strong><div class="muted">11th Edition combat calculator • v2.1.17 (Sep 18, 2026) • unit and weapon-profile reference</div><div class="tiny" style="margin-top:4px">Candidate supplemental source for weapon-profile enrichment and Mathhammer validation. Verify against authoritative 40K sources before treating values as canonical.</div></div></div><label class="btn">Import JSON<input type="file" accept=".json,application/json" style="display:none" onchange="importJSON(this)"></label><button class="btn" onclick="exportJSON()">Export Catalogue</button><div class="card"><h3>Normalized Catalogue</h3>${DEMO.map(u=>`<div class="unit"><strong>${esc(u.name)}</strong><div class="muted">${u.faction} • ${u.points} pts • ${u.weapons.length} weapons • ${u.abilities.length} abilities</div></div>`).join('')}</div></div>`}
 function importJSON(inp){const f=inp.files?.[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const raw=JSON.parse(rd.result);const arr=Array.isArray(raw)?raw:(raw.units||raw.catalogue?.units||[]);if(!arr.length)throw new Error('No normalized units found');DEMO.splice(0,DEMO.length,...arr);state.source=f.name;state.revision='imported';state.dataStatus='Imported normalized catalogue';save();render()}catch(e){alert('Import failed: '+e.message)}};rd.readAsText(f)}
 function exportJSON(){const blob=new Blob([JSON.stringify({schema:'battleforge.11e.v57',source:state.source,revision:state.revision,units:DEMO},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='battleforge-v46-catalogue.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
 function logPage(){return `<div class="card"><div class="split"><h2>Action Log</h2><button class="btn danger" onclick="undoLastAction()">↶ Undo Last</button></div><div class="action-log-list">${state.events.length?state.events.map((e,i)=>actionLogLine(e,i)).join(''):'<div class="empty">No events yet.</div>'}</div></div>`}
