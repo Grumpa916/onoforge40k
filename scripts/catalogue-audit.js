@@ -46,7 +46,10 @@ report.identity={units:bootstrap.length,uniqueKeys:unitKeys.size,uniqueIds:unitI
 let rangedProfiles=0,missingDirectRange=0,coreStatErrors=0;
 for(const u of bootstrap){
   const weapons=Array.isArray(u?.weapons)?u.weapons:[];
-  if(!weapons.length){failures.push({code:'NO_WEAPONS',unit:key(u)});continue;}
+  if(!weapons.length){
+    warnings.push({code:'NO_WEAPONS',unit:key(u),sourceRole:'bootstrap',detail:'Embedded bootstrap entry has no weapon profiles; canonical 40k.app data must supply the runtime definition.'});
+    continue;
+  }
   const names=weapons.map(w=>String(w?.name||'').trim()).filter(Boolean);
   const dup=[...new Set(names.filter((n,i)=>names.indexOf(n)!==i))];
   if(dup.length)failures.push({code:'DUPLICATE_WEAPON_NAME',unit:key(u),weapons:dup});
