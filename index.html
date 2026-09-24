@@ -1454,15 +1454,22 @@ function primaryObjectiveCheckpointHtml(side,mission){
   const checkpoint=primaryObjectiveCheckpoint(side,mission);
   if(!checkpoint)return '';
   const label=side==='my'?'Your':'Opponent';
-  const total=checkpoint.checks.reduce((n,c)=>n+c.count,0);
   const anyEligible=checkpoint.checks.some(c=>c.count>0);
   const detail=checkpoint.checks.map(c=>{
     const short=String(c.condition||'').replace(/\bper objective\b/i,'objective');
-    return '<div class="tiny" style="margin-top:3px">'+esc(short)+' • '+c.count+' qualifying'+(c.max!==c.count?' • max '+c.max:'')+'</div>';
+    const amount=Math.max(0,Math.min(c.max||c.count,c.count));
+    const baseVP=primaryScoringVP(c.row?.[1]);
+    const suggestedVP=baseVP*amount;
+    const button=amount>0
+      ? '<button type="button" class="btn" style="padding:4px 7px;font-size:10px;white-space:nowrap" onclick="event.stopPropagation();scorePrimaryItem(\''+esc(side)+'\','+c.index+',\''+esc(mission)+'\','+amount+')">Confirm '+suggestedVP+' VP</button>'
+      : '';
+    return '<div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;align-items:center;margin-top:4px">'+
+      '<div class="tiny">'+esc(short)+' • '+c.count+' qualifying'+(c.max!==c.count?' • max '+c.max:'')+'</div>'+button+
+    '</div>';
   }).join('');
   return '<div class="primary-objective-check" style="margin:7px 0 0;padding:7px 9px;border:1px solid '+(anyEligible?'#356747':'#5b4650')+';border-radius:7px;background:#0d151d">'+
     '<div class="split"><strong style="font-size:11px">'+esc(label)+' Primary objective check</strong><span class="tiny">'+esc(checkpoint.phase)+' • R'+checkpoint.round+'</span></div>'+
-    '<div class="tiny" style="margin-top:3px">'+(anyEligible?'Objective control is ready to evaluate. Review the scoring row below.':'No qualifying objectives currently controlled.')+'</div>'+
+    '<div class="tiny" style="margin-top:3px">'+(anyEligible?'Objective control is ready. Confirm the calculated score when appropriate.':'No qualifying objectives currently controlled.')+'</div>'+
     detail+
   '</div>';
 }
