@@ -5973,6 +5973,40 @@ function tacticalWeaponIsRanged(w){
   if(abilities.includes('CLOSE QUARTERS')&&w.WS!=null&&w.BS==null)return false;
   return false;
 }
+function tacticalAdvisorWeaponGroups(side,e,target=null){
+  const base=attachedCombatWeaponGroups(side,e,target);
+  const covered=new Set(base.map(g=>String(g?.weapon?.name||'')));
+  const root=combatRootEntry(side,e)||e;
+  const snap=combatSnapshot(side,root);
+  const models=Math.max(1,Number(snap?.survivingModels)||Number(root?.models)||Number(get(root?.unitId)?.models)||1);
+  const groups=[...base];
+  attachedCombatEntries(side,root).forEach(ce=>{
+    const u=get(ce.unitId);if(!u)return;
+    activeWeaponNames(ce,u).forEach(name=>{
+      if(covered.has(String(name)))return;
+      const weapon=(u.weapons||[]).find(w=>String(w?.name||'')===String(name));
+      if(!weapon)return;
+      // Some fixed-weapon monsters can legally use several weapon profiles,
+      // but the legacy combat snapshot allocates only one profile per model.
+      // Supply missing catalogue weapons to Tactical Advisor without changing
+      // the underlying Mathhammer allocation UI.
+      groups.push({
+        key:String(ce.uid)+'|tactical|' + String(name),
+        poolKey:String(ce.uid)+'|tactical|' + String(name),
+        entry:ce,
+        attacker:u,
+        weapon:{...weapon},
+        count:models,
+        modelIds:[],
+        role:combatComponentRole(side,root,ce,u),
+        identityExact:false,
+        weaponVariants:[{weapon:{...weapon},count:models}]
+      });
+      covered.add(String(name));
+    });
+  });
+  return groups;
+}
 function tacticalAdvisorAttackerHasRangedWeapons(entry){
   if(!entry)return false;
   return attachedCombatWeaponGroups('my',entry).some(g=>tacticalWeaponIsRanged(g?.weapon));
@@ -6928,7 +6962,7 @@ function tacticalShootingResultHtml(){
   const rec=Array.isArray(result.recommendations)?result.recommendations.find(x=>x.entryUid===te.uid):null;
   const unitLegality=tacticalLegalityForUnit('my',ae);
   const status=unitLegality.reason==='not-your-turn'?'Waiting for your turn':unitLegality.reason==='destroyed'?'Unit destroyed':result.status==='action-already-completed'?'Shooting already completed':legality.canTarget===false?'Not eligible':rec?'Ready to resolve':'Needs information';
-  const allGroups=attachedCombatWeaponGroups('my',ae,te);
+  const allGroups=tacticalAdvisorWeaponGroups('my',ae,te);
   const rangedGroups=allGroups.filter(g=>tacticalWeaponIsRanged(g.weapon));
   const weaponRows=rangedGroups.map(g=>{
     const w=g.weapon||{},name=String(w.name||'Weapon'),range=tacticalWeaponRange(w),abilities=(w.abilities||[]).map(x=>String(x||'').toUpperCase().replace(/-/g,' '));
@@ -7205,7 +7239,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     missionContext:missionCtx,
     note:'This unit has no ranged weapons — no shooting action is available.'
   };
-  const groups=attachedCombatWeaponGroups(side,atkEntry).filter(g=>tacticalWeaponPhaseEligible(g.weapon,phase,atkEntry));
+  const groups=tacticalAdvisorWeaponGroups(side,atkEntry).filter(g=>tacticalWeaponPhaseEligible(g.weapon,phase,g.entry||atkEntry));
   if(!groups.length)return {version:'tactical-advisor-v1',status:'no-phase-eligible-weapons',attacker:attacker.name,recommendations:[],avoid:[],naturalTargets:[],phase:state.phase};
   const roots=(state.opp||[]).filter(e=>!e.attachedTo);
   const results=roots.map(targetEntry=>{
@@ -7252,7 +7286,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
       m.defenderModels=Math.max(1,bodySlots.length+charSlots.length);
       m.defenderWoundsState=[...bodySlots,...charSlots].map(slot=>Math.max(0,Number(slot.model?.woundsRemaining)||slot.maxWounds));
     }
-    const targetGroups=attachedCombatWeaponGroups(side,atkEntry,target);
+    const targetGroups=tacticalAdvisorWeaponGroups(side,atkEntry,target);
     const targetPhaseGroups=targetGroups.filter(g=>tacticalWeaponPhaseEligible(g.weapon,state.phase,g.entry,targetEntry));
     const availableGroups=targetPhaseGroups.map(g=>{
       const uid=g.entry?.uid||atkEntry?.uid;
