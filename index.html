@@ -5837,7 +5837,7 @@ function tacticalTargetLegality(attackerEntry,targetEntry,phase){
       }
     }
     // A target's engagement with a different friendly unit does not by itself make it illegal to shoot.
-    const groups=attachedCombatWeaponGroups('my',attackerEntry,targetEntry).filter(g=>tacticalWeaponPhaseEligible(g.weapon,'Shooting',attackerEntry,targetEntry));
+    const groups=tacticalAdvisorWeaponGroups('my',attackerEntry,targetEntry).filter(g=>tacticalWeaponPhaseEligible(g.weapon,'Shooting',attackerEntry,targetEntry));
     const hasIndirect=groups.some(g=>tacticalWeaponIsIndirect(g.weapon));
     if(ctx.los==='no'&&!hasIndirect){
       return {status:'known',known:true,canTarget:false,reasons:['line of sight confirmed unavailable and no Indirect Fire weapon is eligible'],context:ctx};
