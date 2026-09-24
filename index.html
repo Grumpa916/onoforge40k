@@ -1239,7 +1239,8 @@ function scorePrimaryItem(side,index,mission,amountOverride){
   }else{
     const per=primaryScoringIsPer(row);
     const suggestedAmount=primaryScoringObjectiveAmount(side,row);
-    const requestedAmount=per?Math.max(1,Math.min(50,Math.floor(Number(amountOverride??amounts[index]??suggestedAmount)||suggestedAmount))):1;
+    const objectiveBased=/\bper\s+objective\b/i.test(String(row?.[2]||''));
+    const requestedAmount=per?Math.max(objectiveBased?0:1,Math.min(50,Math.floor(Number(amountOverride??amounts[index]??suggestedAmount)||suggestedAmount))):1;
     const amount=per?Math.min(requestedAmount,primaryScoringMax(row)||50):1;
     const baseVP=primaryScoringVP(row[1]);
     const requestedVP=baseVP*amount;
