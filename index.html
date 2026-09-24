@@ -5380,11 +5380,22 @@ function tacticalFightOrderState(entry){
     availableNow:effectiveEligible&&!selected&&(phase.step==='unknown'||phase.step===(f.fightsFirst?'fightsFirst':'remaining'))};
 }
 function tacticalPairKey(attackerUid,targetUid){return String(attackerUid||'')+'>'+String(targetUid||'')}
+function tacticalDistanceBandFromInches(value){
+  const d=Number(value);
+  if(!Number.isFinite(d)||d<0)return 'unknown';
+  if(d<6)return '<6';
+  if(d<12)return '6-12';
+  if(d<18)return '12-18';
+  if(d<24)return '18-24';
+  return '24+';
+}
 function tacticalPairState(attackerUid,targetUid){
   const t=ensureTacticalState(),key=tacticalPairKey(attackerUid,targetUid);
   const raw=t.pairs[key]&&typeof t.pairs[key]==='object'?t.pairs[key]:{};
+  const exact=Number.isFinite(Number(raw.distanceInches))?Math.max(0,Number(raw.distanceInches)):null;
+  const distanceBand=['unknown','<6','6-12','12-18','18-24','24+'].includes(raw.distanceBand)?raw.distanceBand:tacticalDistanceBandFromInches(exact);
   return {key,attackerUid:attackerUid||null,targetUid:targetUid||null,
-    distanceInches:Number.isFinite(Number(raw.distanceInches))?Math.max(0,Number(raw.distanceInches)):null,
+    distanceInches:exact,distanceBand,
     los:['yes','no','unknown'].includes(raw.los)?raw.los:'unknown',
     engagement:['engaged','notEngaged','unknown'].includes(raw.engagement)?raw.engagement:'unknown',
     objective:raw.objective==null?'':String(raw.objective),
@@ -5399,7 +5410,7 @@ function setTacticalPairField(attackerUid,targetUid,field,value){
     const n=Number(value);
     next[field]=Number.isFinite(n)&&n>=0?Math.round(n*10)/10:null;
   }
-  t.pairs[key]={attackerUid,targetUid,distanceInches:next.distanceInches,los:next.los,engagement:next.engagement,objective:next.objective,notes:next.notes};
+  t.pairs[key]={attackerUid,targetUid,distanceInches:next.distanceInches,distanceBand:next.distanceBand||tacticalDistanceBandFromInches(next.distanceInches),los:next.los,engagement:next.engagement,objective:next.objective,notes:next.notes};
   event('TACTICAL_CONTEXT_CHANGED',{attackerUid,targetUid,field,action:'Tactical context '+field+' changed',before:cur,after:t.pairs[key]},before);
   save();render();
 }
@@ -5909,11 +5920,11 @@ function tacticalContextHtmlBody(){
       '<div class="field"><label>Enemy target</label><select onchange="ensureTacticalState().selectedTargetUid=this.value;save();render()">'+options+'</select></div>'+
     '</div>'+
     '<div class="grid3" style="margin-top:8px">'+
-      '<div class="field"><label>Distance</label><input type="number" min="0" step="0.1" value="'+(ctx.distanceInches===null?'':ctx.distanceInches)+'" placeholder="Unknown" onchange="setTacticalPairField(\''+ae.uid+'\',\''+selectedUid+'\',\'distanceInches\',this.value)"></div>'+
+      '<div class="field"><label>Distance</label><select onchange="setTacticalPairField(\''+ae.uid+'\',\''+selectedUid+'\',\'distanceBand\',this.value)"><option value="unknown" '+(ctx.distanceBand==='unknown'?'selected':'')+'>Unknown</option><option value="<6" '+(ctx.distanceBand==='<6'?'selected':'')+'>Under 6"</option><option value="6-12" '+(ctx.distanceBand==='6-12'?'selected':'')+'>6–12"</option><option value="12-18" '+(ctx.distanceBand==='12-18'?'selected':'')+'>12–18"</option><option value="18-24" '+(ctx.distanceBand==='18-24'?'selected':'')+'>18–24"</option><option value="24+" '+(ctx.distanceBand==='24+'?'selected':'')+'>24"+</option></select></div>'+
       '<div class="field"><label>Line of sight</label><select onchange="setTacticalPairField(\''+ae.uid+'\',\''+selectedUid+'\',\'los\',this.value)"><option value="unknown" '+(ctx.los==='unknown'?'selected':'')+'>Unknown</option><option value="yes" '+(ctx.los==='yes'?'selected':'')+'>Yes</option><option value="no" '+(ctx.los==='no'?'selected':'')+'>No</option></select></div>'+
       '<div class="field"><label>Engagement</label><select onchange="setTacticalPairField(\''+ae.uid+'\',\''+selectedUid+'\',\'engagement\',this.value)"><option value="unknown" '+(ctx.engagement==='unknown'?'selected':'')+'>Unknown</option><option value="engaged" '+(ctx.engagement==='engaged'?'selected':'')+'>Engaged</option><option value="notEngaged" '+(ctx.engagement==='notEngaged'?'selected':'')+'>Not engaged</option></select></div>'+
     '</div>'+
-    '<div class="field" style="margin-top:8px"><label>Objective / battlefield note <span class="tiny">(optional)</span></label><input type="text" value="'+esc(ctx.objective)+'" placeholder="e.g. Objective 2" onchange="setTacticalPairField(\''+ae.uid+'\',\''+selectedUid+'\',\'objective\',this.value)"></div>'+
+    ((phase==='Shooting'||phase==='Charge')?'<div class="field" style="margin-top:8px"><label>Exact distance <span class="tiny">(needed for weapon-range / charge math)</span></label><input type="number" min="0" step="0.1" value="'+(ctx.distanceInches===null?'':ctx.distanceInches)+'" placeholder="Enter measured inches if needed" onchange="setTacticalPairField(\''+ae.uid+'\',\''+selectedUid+'\',\'distanceInches\',this.value)"></div>':'')+    '<div class="field" style="margin-top:8px"><label>Objective / battlefield note <span class="tiny">(optional)</span></label><input type="text" value="'+esc(ctx.objective)+'" placeholder="e.g. Objective 2" onchange="setTacticalPairField(\''+ae.uid+'\',\''+selectedUid+'\',\'objective\',this.value)"></div>'+
     phaseSpecific+
     warning+
     '<div class="row" style="margin-top:8px"><button class="btn" type="button" onclick="clearTacticalPair(\''+ae.uid+'\',\''+selectedUid+'\')">Reset Context</button></div>'+
