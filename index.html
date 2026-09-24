@@ -5803,52 +5803,60 @@ function tacticalDistanceLabel(ctx){
   return ctx.distanceInches===null?'Unknown':ctx.distanceInches+'"';
 }
 function tacticalContextHtml(){
-  const open=state.tacticalContextOpen!==false;
+  const open=state.tacticalContextOpen===true;
   return '<details class="card tactical-context-card" '+(open?'open':'')+' ontoggle="state.tacticalContextOpen=this.open;save()">'+
     '<summary style="list-style:none;cursor:pointer;user-select:none;padding:2px 0">'+
-      '<div class="split"><div><h3 style="margin:0">Tactical Context</h3><div class="muted">Optional battlefield state for the Tactical Advisor • Unknown values are never guessed.</div></div>'+
+      '<div class="split"><div><h3 style="margin:0">Tactical Context</h3><div class="muted">Optional battlefield input for the Tactical Advisor • Unknown values are never guessed.</div></div>'+
       '<span class="pill">'+esc(state.phase||'Command')+'</span></div>'+
     '</summary>'+
-    '<div style="margin-top:12px">'+tacticalContextHtmlBody()+'</div>'+
+    '<div style="margin-top:10px">'+tacticalContextHtmlBody()+'</div>'+
   '</details>';
 }
 
 function tacticalContextHtmlBody(){
   const ae=tacticalAdvisorAttackerEntry();
   const targets=(state.opp||[]).filter(e=>!e.attachedTo&&!tacticalUnitState('opp',e)?.destroyed);
-  if(!ae||!targets.length)return '<div class="muted">Build both armies and select an attacker/target to record range and battlefield context.</div>';
+  if(!ae||!targets.length)return '<div class="muted">Build both armies and select an attacker/target to record battlefield context.</div>';
   const selectedUid=(state.tactical?.selectedTargetUid&&targets.some(e=>e.uid===state.tactical.selectedTargetUid))?state.tactical.selectedTargetUid:targets[0].uid;
   ensureTacticalState().selectedTargetUid=selectedUid;
   const te=entry('opp',selectedUid),ctx=tacticalPairState(ae.uid,selectedUid),leg=tacticalTargetLegality(ae,te,state.phase),actions=tacticalAdvisorActionState(ae.uid),movementType=tacticalUnitMovementType(ae.uid);
   const options=targets.map(e=>'<option value="'+esc(e.uid)+'" '+(e.uid===selectedUid?'selected':'')+'>'+esc(unitDisplayName('opp',e))+'</option>').join('');
-  const status=leg.canTarget===true?'Known / eligible':leg.canTarget===false?'Known / not eligible':'Needs battlefield info';
-  const fightState=tacticalFightOrderState(ae);
-  const fightPriority=fightState.fightsFirst?'Fights First':fightState.eligible?'Remaining Combats':'Not eligible';
-  return '<div class="tactical-context-body"><div class="muted small" style="margin-bottom:10px">'+esc(state.phase||'Command')+' • '+esc(status)+'</div>'+
-    '<div class="grid2" style="margin-top:12px">'+
-    '<div class="field"><label>Attacker</label><div class="status">'+esc(unitDisplayName('my',ae))+'</div></div>'+
-    '<div class="field"><label>Enemy target</label><select onchange="ensureTacticalState().selectedTargetUid=this.value;save();render()">'+options+'</select></div>'+
+  const phase=String(state.phase||'Command');
+  const phaseLabel=phase==='Movement'?'Movement':phase==='Shooting'?'Shooting':phase==='Charge'?'Charge':phase==='Fight'?'Fight':phase;
+  const status=leg.canTarget===true?'Ready':leg.canTarget===false?'Not eligible':'Needs battlefield info';
+  const warning=leg.reasons.length?'<div class="warn tactical-context-warning" style="margin-top:8px">⚠ '+esc(leg.reasons.join(' • '))+'.</div>':'';
+  let phaseSpecific='';
+  if(phase==='Movement'){
+    phaseSpecific=
+      '<div class="grid2" style="margin-top:8px">'+
+      '<div class="field"><label>Movement decision</label><select onchange="setTacticalUnitAction(\''+ae.uid+'\',\'movement\',this.value)"><option value="unknown" '+(movementType==='unknown'?'selected':'')+'>Unknown</option><option value="remained" '+(movementType==='remained'?'selected':'')+'>Remain Stationary</option><option value="normal" '+(movementType==='normal'?'selected':'')+'>Normal Move</option><option value="advance" '+(movementType==='advance'?'selected':'')+'>Advance</option><option value="fallback" '+(movementType==='fallback'?'selected':'')+'>Fall Back</option></select></div>'+
+      '<div class="field"><label>Set up this turn?</label><select onchange="setTacticalUnitAction(\''+ae.uid+'\',\'setUpThisTurn\',this.value)"><option value="" '+(actions.setUpThisTurn===null?'selected':'')+'>Unknown</option><option value="false" '+(actions.setUpThisTurn===false?'selected':'')+'>No</option><option value="true" '+(actions.setUpThisTurn===true?'selected':'')+'>Yes</option></select></div>'+
+      '</div>'+
+      '<div class="muted small" style="margin-top:7px">Movement distance is read from the selected unit when available; no manual maximum-movement entry is required.</div>';
+  }else if(phase==='Fight'){
+    const fs=tacticalFightPhaseState();
+    phaseSpecific=
+      '<div class="grid2" style="margin-top:8px">'+
+      '<div class="field"><label>Fight step</label><select onchange="setTacticalFightPhase(\'step\',this.value)"><option value="unknown" '+(fs.step==='unknown'?'selected':'')+'>Unknown</option><option value="fightsFirst" '+(fs.step==='fightsFirst'?'selected':'')+'>Fights First</option><option value="remaining" '+(fs.step==='remaining'?'selected':'')+'>Remaining Combats</option></select></div>'+
+      '<div class="field"><label>Next</label><select onchange="setTacticalFightPhase(\'nextSide\',this.value)"><option value="my" '+(fs.nextSide==='my'?'selected':'')+'>My army</option><option value="opp" '+(fs.nextSide==='opp'?'selected':'')+'>Opponent</option></select></div>'+
+      '</div>';
+  }
+  return '<div class="tactical-context-body">'+
+    '<div class="split" style="margin-bottom:8px"><div class="muted small">'+esc(phaseLabel)+' • '+esc(status)+'</div><span class="tiny">Enter only battlefield facts</span></div>'+
+    '<div class="grid2">'+
+      '<div class="field"><label>Attacker</label><div class="status">'+esc(unitDisplayName('my',ae))+'</div></div>'+
+      '<div class="field"><label>Enemy target</label><select onchange="ensureTacticalState().selectedTargetUid=this.value;save();render()">'+options+'</select></div>'+
     '</div>'+
-    '<div class="grid3" style="margin-top:10px">'+
-    '<div class="field"><label>Distance (inches)</label><input type="number" min="0" step="0.1" value="'+(ctx.distanceInches===null?'':ctx.distanceInches)+'" placeholder="Unknown" onchange="setTacticalPairField(\''+ae.uid+'\',\''+selectedUid+'\',\'distanceInches\',this.value)"></div>'+
-    '<div class="field"><label>Line of sight</label><select onchange="setTacticalPairField(\''+ae.uid+'\',\''+selectedUid+'\',\'los\',this.value)"><option value="unknown" '+(ctx.los==='unknown'?'selected':'')+'>Unknown</option><option value="yes" '+(ctx.los==='yes'?'selected':'')+'>Yes</option><option value="no" '+(ctx.los==='no'?'selected':'')+'>No</option></select></div>'+
-    '<div class="field"><label>Engagement</label><select onchange="setTacticalPairField(\''+ae.uid+'\',\''+selectedUid+'\',\'engagement\',this.value)"><option value="unknown" '+(ctx.engagement==='unknown'?'selected':'')+'>Unknown</option><option value="engaged" '+(ctx.engagement==='engaged'?'selected':'')+'>Engaged</option><option value="notEngaged" '+(ctx.engagement==='notEngaged'?'selected':'')+'>Not engaged</option></select></div>'+
+    '<div class="grid3" style="margin-top:8px">'+
+      '<div class="field"><label>Distance</label><input type="number" min="0" step="0.1" value="'+(ctx.distanceInches===null?'':ctx.distanceInches)+'" placeholder="Unknown" onchange="setTacticalPairField(\''+ae.uid+'\',\''+selectedUid+'\',\'distanceInches\',this.value)"></div>'+
+      '<div class="field"><label>Line of sight</label><select onchange="setTacticalPairField(\''+ae.uid+'\',\''+selectedUid+'\',\'los\',this.value)"><option value="unknown" '+(ctx.los==='unknown'?'selected':'')+'>Unknown</option><option value="yes" '+(ctx.los==='yes'?'selected':'')+'>Yes</option><option value="no" '+(ctx.los==='no'?'selected':'')+'>No</option></select></div>'+
+      '<div class="field"><label>Engagement</label><select onchange="setTacticalPairField(\''+ae.uid+'\',\''+selectedUid+'\',\'engagement\',this.value)"><option value="unknown" '+(ctx.engagement==='unknown'?'selected':'')+'>Unknown</option><option value="engaged" '+(ctx.engagement==='engaged'?'selected':'')+'>Engaged</option><option value="notEngaged" '+(ctx.engagement==='notEngaged'?'selected':'')+'>Not engaged</option></select></div>'+
     '</div>'+
-    '<div class="grid2" style="margin-top:10px">'+
-    '<div class="field"><label>Objective / battlefield note</label><input type="text" value="'+esc(ctx.objective)+'" placeholder="e.g. Objective 2" onchange="setTacticalPairField(\''+ae.uid+'\',\''+selectedUid+'\',\'objective\',this.value)"></div>'+
-    '<div class="field"><label>Context</label><div class="status">Distance: <b>'+esc(tacticalDistanceLabel(ctx))+'</b> • LOS: <b>'+esc(ctx.los)+'</b> • Engagement: <b>'+esc(ctx.engagement)+'</b> • Fight: <b>'+esc(fightPriority)+'</b></div></div>'+
-    '</div>'+
-    '<div class="grid2" style="margin-top:10px">'+
-    '<div class="field"><label>Movement</label><select onchange="setTacticalUnitAction(\''+ae.uid+'\',\'movement\',this.value)"><option value="unknown" '+(movementType==='unknown'?'selected':'')+'>Unknown</option><option value="remained" '+(movementType==='remained'?'selected':'')+'>Remained</option><option value="normal" '+(movementType==='normal'?'selected':'')+'>Normal Move</option><option value="advance" '+(movementType==='advance'?'selected':'')+'>Advanced</option><option value="fallback" '+(movementType==='fallback'?'selected':'')+'>Fell Back</option></select></div>'+
-    '<div class="field" style="margin-top:8px"><label>Maximum model movement this turn (inches)</label><input type="number" min="0" max="60" step="0.1" value="'+(actions.movementDistanceInches==null?'':esc(String(actions.movementDistanceInches)))+'" placeholder="Unknown" onchange="setTacticalUnitAction(\''+ae.uid+'\',\'movementDistanceInches\',this.value)"></div>'+
-    '<div class="field" style="margin-top:8px"><label>Set up on battlefield this turn</label><select onchange="setTacticalUnitAction(\''+ae.uid+'\',\'setUpThisTurn\',this.value)"><option value="" '+(actions.setUpThisTurn===null?'selected':'')+'>Unknown</option><option value="false" '+(actions.setUpThisTurn===false?'selected':'')+'>No</option><option value="true" '+(actions.setUpThisTurn===true?'selected':'')+'>Yes</option></select></div>'+
-    '<div class="field"><label>Phase actions</label><div class="status"><select onchange="setTacticalUnitAction(\''+ae.uid+'\',\'shootingDone\',this.value===\'true\')" style="margin-right:6px"><option value="false" '+(!actions.shootingDone?'selected':'')+'>Shooting: Available</option><option value="true" '+(actions.shootingDone?'selected':'')+'>Shooting: Completed</option></select><select onchange="setTacticalUnitAction(\''+ae.uid+'\',\'chargeDone\',this.value===\'true\')" style="margin-right:6px"><option value="false" '+(!actions.chargeDone?'selected':'')+'>Charge: Available</option><option value="true" '+(actions.chargeDone?'selected':'')+'>Charge: Completed</option></select><select onchange="setTacticalUnitAction(\''+ae.uid+'\',\'chargeMade\',this.value===\'true\')" style="margin-right:6px"><option value="false" '+(!actions.chargeMade?'selected':'')+'>Charge move: Not made</option><option value="true" '+(actions.chargeMade?'selected':'')+'>Charge move: Made</option></select><select onchange="setTacticalUnitAction(\''+ae.uid+'\',\'fightDone\',this.value===\'true\')"><option value="false" '+(!actions.fightDone?'selected':'')+'>Fight: Available</option><option value="true" '+(actions.fightDone?'selected':'')+'>Fight: Completed</option></select></div></div>'+
-    '</div>'+
-    '<div class="field"><label>Fight sequencing</label><div class="status"><select onchange="setTacticalFightPhase(\'step\',this.value)"><option value="unknown" '+(tacticalFightPhaseState().step==='unknown'?'selected':'')+'>Fight step: Unknown</option><option value="fightsFirst" '+(tacticalFightPhaseState().step==='fightsFirst'?'selected':'')+'>Fights First</option><option value="remaining" '+(tacticalFightPhaseState().step==='remaining'?'selected':'')+'>Remaining Combats</option></select><select onchange="setTacticalFightPhase(\'nextSide\',this.value)" style="margin-left:6px"><option value="my" '+(tacticalFightPhaseState().nextSide==='my'?'selected':'')+'>Next: My army</option><option value="opp" '+(tacticalFightPhaseState().nextSide==='opp'?'selected':'')+'>Next: Opponent</option></select></div></div><div class="field"><label>Phase actions</label><div class="status"><select onchange="setTacticalUnitAction(\''+ae.uid+'\',\'shootingDone\',this.value===\'true\')" style="margin-right:6px"><option value="false" '+(!actions.shootingDone?'selected':'')+'>Shooting: Available</option><option value="true" '+(actions.shootingDone?'selected':'')+'>Shooting: Completed</option></select><select onchange="setTacticalUnitAction(\''+ae.uid+'\',\'chargeDone\',this.value===\'true\')" style="margin-right:6px"><option value="false" '+(!actions.chargeDone?'selected':'')+'>Charge: Available</option><option value="true" '+(actions.chargeDone?'selected':'')+'>Charge: Completed</option></select><select onchange="setTacticalUnitAction(\''+ae.uid+'\',\'chargeMade\',this.value===\'true\')" style="margin-right:6px"><option value="false" '+(!actions.chargeMade?'selected':'')+'>Charge move: Not made</option><option value="true" '+(actions.chargeMade?'selected':'')+'>Charge move: Made</option></select><select onchange="setTacticalUnitAction(\''+ae.uid+'\',\'fightDone\',this.value===\'true\')"><option value="false" '+(!actions.fightDone?'selected':'')+'>Fight: Available</option><option value="true" '+(actions.fightDone?'selected':'')+'>Fight: Completed</option></select></div></div>'+
-    '</div>'+
-    '<div class="muted small" style="margin-top:6px">Action state is scoped to the current round and player turn. Advanced units are restricted to Assault weapons; Fell Back units cannot shoot. Heavy requires the unit to be unengaged, not set up this turn, and no model to have moved more than 3 inches; unknown movement/setup data conservatively withholds the bonus.</div>'+
-    (leg.reasons.length?'<div class="warn" style="margin-top:10px">Advisor status: '+esc(leg.reasons.join(' • '))+'.</div>':'<div class="ok" style="margin-top:10px">Advisor has the minimum battlefield context needed for the current phase.</div>')+
-    '<div class="row" style="margin-top:10px"><button class="btn" type="button" onclick="clearTacticalPair(\''+ae.uid+'\',\''+selectedUid+'\')">Clear Context</button></div>';
+    '<div class="field" style="margin-top:8px"><label>Objective / battlefield note <span class="tiny">(optional)</span></label><input type="text" value="'+esc(ctx.objective)+'" placeholder="e.g. Objective 2" onchange="setTacticalPairField(\''+ae.uid+'\',\''+selectedUid+'\',\'objective\',this.value)"></div>'+
+    phaseSpecific+
+    warning+
+    '<div class="row" style="margin-top:8px"><button class="btn" type="button" onclick="clearTacticalPair(\''+ae.uid+'\',\''+selectedUid+'\')">Reset Context</button></div>'+
+  '</div>';
 }
 
 function tacticalAdvisorAttackerEntry(){
