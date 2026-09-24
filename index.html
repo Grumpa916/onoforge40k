@@ -5877,6 +5877,8 @@ function tacticalDistanceLabel(ctx){
 function tacticalContextHtml(){
   const currentPhase=String(state.phase||'Command');
   if(currentPhase==='Command') return '';
+  const advisorEntry=tacticalAdvisorAttackerEntry();
+  if(currentPhase==='Shooting'&&advisorEntry&&!tacticalAdvisorAttackerHasRangedWeapons(advisorEntry)) return '';
   const open=state.tacticalContextOpen===true;
   return '<details class="card tactical-context-card" '+(open?'open':'')+' ontoggle="state.tacticalContextOpen=this.open;save()">'+
     '<summary style="list-style:none;cursor:pointer;user-select:none;padding:2px 0">'+
@@ -5941,6 +5943,13 @@ function tacticalAdvisorAttackerEntry(){
   const candidates=(state.my||[]).filter(e=>!e.attachedTo&&!tacticalUnitState('my',e)?.destroyed);
   const selected=state.tactical?.selectedAttackerUid;
   return candidates.find(e=>e.uid===selected)||mathRosterEntry('my')||candidates[0]||null;
+}
+function tacticalAdvisorAttackerHasRangedWeapons(entry){
+  if(!entry)return false;
+  return attachedCombatWeaponGroups('my',entry).some(g=>{
+    const range=g?.weapon?.rng??g?.weapon?.range??'';
+    return String(range).trim().toUpperCase()!=='MELEE';
+  });
 }
 function setTacticalAdvisorAttacker(uid){
   const e=entry('my',uid);
@@ -6942,7 +6951,14 @@ function tacticalAdvisorHtml(){
   const attackerOptions=(state.my||[]).filter(e=>!e.attachedTo&&!tacticalUnitState('my',e)?.destroyed).map(e=>'<option value="'+esc(e.uid)+'" '+(e.uid===ae.uid?'selected':'')+'>'+esc(unitDisplayName('my',e))+'</option>').join('');
   const result=tacticalAdvisorV1(ae.uid,{samples:4000});
   if(result.status!=='ok'){
-    const detail=result.attacker?(' • '+esc(result.attacker)):'',phaseLabel=result.phase?(' • '+esc(result.phase)):'',gateLabel=result.status==='action-already-completed'?'Action complete':result.status==='charge-target-evaluation-not-yet-modeled'?'Charge targeting':'Phase gate';
+    const detail=result.attacker?(' • '+esc(result.attacker)):'',phaseLabel=result.phase?(' • '+esc(result.phase)):'',gateLabel=result.status==='action-already-completed'?'Action complete':result.status==='no-ranged-weapons'?'No ranged weapons':result.status==='charge-target-evaluation-not-yet-modeled'?'Charge targeting':'Phase gate';
+    if(result.status==='no-ranged-weapons'){
+      return '<details class="card tactical-advisor-card" open><summary><div class="split"><div><h3 style="margin:0">Tactical Advisor</h3><div class="muted">No shooting action available for this unit</div></div><span class="pill">No ranged weapons</span></div></summary>'+
+        '<div style="margin-top:10px">'+
+          '<div class="status"><b>'+esc(result.attacker||'Selected unit')+'</b><div class="muted" style="margin-top:4px">This unit has no ranged weapons, so there is nothing to enter or resolve in the Shooting phase.</div></div>'+
+          '<div class="tiny" style="margin-top:8px">Choose another attacker above to evaluate a unit that can shoot.</div>'+
+        '</div></details>';
+    }
     return '<div class="card tactical-advisor-card"><div class="split"><div><h3 style="margin:0">Tactical Advisor</h3><div class="muted">'+esc(result.status||'Advisor unavailable')+detail+phaseLabel+'</div></div><span class="pill">'+gateLabel+'</span></div><div class="status" style="margin-top:10px">'+esc(result.note||'The advisor is not producing a weapon-target recommendation from the current game state.')+'</div></div>';
   }
   const recs=Array.isArray(result.recommendations)?result.recommendations:[],confidenceClass=v=>v==='High'?'ok':v==='Medium'?'status':'warn';
@@ -7137,6 +7153,18 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
       note:'This unit has already completed its action for the current phase.'
     };
   }
+  const hasRangedWeapons=tacticalAdvisorAttackerHasRangedWeapons(atkEntry);
+  if(!hasRangedWeapons)return {
+    version:'tactical-advisor-v1',
+    status:'no-ranged-weapons',
+    attacker:attacker.name,
+    phase,
+    recommendations:[],
+    avoid:[],
+    naturalTargets:[],
+    missionContext:missionCtx,
+    note:'This unit has no ranged weapons — no shooting action is available.'
+  };
   const groups=attachedCombatWeaponGroups(side,atkEntry).filter(g=>tacticalWeaponPhaseEligible(g.weapon,phase,atkEntry));
   if(!groups.length)return {version:'tactical-advisor-v1',status:'no-phase-eligible-weapons',attacker:attacker.name,recommendations:[],avoid:[],naturalTargets:[],phase:state.phase};
   const roots=(state.opp||[]).filter(e=>!e.attachedTo);
