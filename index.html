@@ -1116,7 +1116,9 @@ function scorePrimaryItem(side,index,mission,amountOverride){
     const replacementBaseVP=Math.max(0,before-groupExistingVP);
     const replacementRoundBase=Math.max(0,roundTotalBefore-groupExistingVP);
     const endOfBattle=String(row[0]||'').toLowerCase().includes('end of battle');
-    if(endOfBattle&&!state.battleEnded){alert('This Primary scoring condition can only be recorded after the battle ends.');return;}
+    // End-of-battle conditions are recorded during Round 5; they do not require
+    // the Battle End control to have been pressed first.
+    if(endOfBattle&&Number(state.round)!==5){return;}
     const roundAllowance=Math.max(0,15-replacementRoundBase);
     const gameAllowance=Math.max(0,45-replacementBaseVP);
     const allowedVP=Math.min(requestedVP,roundAllowance,gameAllowance);
