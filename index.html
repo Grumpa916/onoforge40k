@@ -4806,15 +4806,37 @@ function ensureObjectiveMeta(){
   return state.objectiveMeta;
 }
 function objectiveRole(name){
-  const role=ensureObjectiveMeta()[String(name||'')]?.role;
-  return ['home','nml','enemy','central'].includes(role)?role:'nml';
+  const meta=ensureObjectiveMeta()[String(name||'')]||{};
+  if(meta.type==='home')return 'home';
+  if(meta.type==='central')return 'central';
+  if(meta.type==='expansion')return 'expansion';
+  return ['home','central','expansion'].includes(meta.role)?meta.role:'expansion';
 }
-function objectiveRoleLabel(role){
-  return ({home:'My Home',nml:'No Man’s Land',enemy:'Enemy Territory',central:'Central'})[role]||'No Man’s Land';
+function objectiveType(name){return objectiveRole(name);}
+function objectiveHomeSide(name){return ensureObjectiveMeta()[String(name||'')]?.homeSide||null;}
+function objectiveRoleLabel(role,name){
+  if(role==='home')return objectiveHomeSide(name)==='opp'?'Opponent Home':'My Home';
+  return ({central:'Central',expansion:'Expansion'})[role]||'Expansion';
 }
-function objectiveCountsForSide(side){
-  const owner=side==='opp'?'opp':'my';
-  return Object.entries(state.objectives||{}).filter(([name,current])=>current===owner).map(([name])=>({name,type:objectiveType(name)}));
+function objectiveLayoutTypePlan(){
+  const six=new Set(['Inescapable Dominion','Consecrate','Smoke and Mirrors','Vital Link']);
+  return six.has(primaryMission('my'))?['home','expansion','central','central','expansion','home']:['home','expansion','central','expansion','home'];
+}
+function autoSeedObjectiveStructure(){
+  const plan=objectiveLayoutTypePlan(),current=Object.keys(state.objectives||{});
+  if(current.length)return false;
+  const before=snapshotForUndo();state.objectives={};state.objectiveMeta={};
+  let ex=0,ce=0;
+  plan.forEach((type,i)=>{
+    const name=type==='home'?(i===0?'My Home':'Opponent Home'):type==='central'?'Central '+(++ce):'Expansion '+(++ex);
+    state.objectives[name]='none';
+    state.objectiveMeta[name]={type,homeSide:type==='home'?(i===0?'my':'opp'):null,autoLayout:true};
+  });
+  state.objectiveMapMissionKey=objectiveMissionKey();
+  ensureObjectiveTurnSnapshot();recordObjectiveTurnState();
+  event('OBJECTIVE_LAYOUT_SYNCED',{unit:'Objective Layout',action:'Auto-created objective structure',layout:state.objectiveMapLayout,objectiveCount:plan.length,objectiveTypes:plan},before);
+  save();render();
+  return true;
 }
 function objectiveStateSummary(){
   const current=Object.entries(state.objectives||{}).map(([name,owner])=>({name,owner:['my','opp','contested','none'].includes(owner)?owner:'none',role:objectiveRole(name),startOwner:objectiveTurnStartOwner(name)}));
@@ -4823,10 +4845,10 @@ function objectiveStateSummary(){
 
 function setObjectiveRole(name,role){
   const key=String(name||'').trim();
-  const next=['home','nml','enemy','central'].includes(role)?role:null;
+  const next=['home','central','expansion'].includes(role)?role:null;
   if(!key||!next)return;
   const before=snapshotForUndo();
-  ensureObjectiveMeta()[key]={...(ensureObjectiveMeta()[key]||{}),role:next};
+  const meta=ensureObjectiveMeta()[key]||{};meta.type=next;if(next!=='home')meta.homeSide=null;ensureObjectiveMeta()[key]=meta;
   event('OBJECTIVE_ROLE_CHANGED',{name:key,unit:'Objective '+key,action:'Location → '+objectiveRoleLabel(next),after:next,round:Math.max(1,Number(state.round)||1),phase:String(state.phase||'Command')},before);
   save();render();
 }
@@ -4901,7 +4923,7 @@ function objectiveControlTrackerHtml(){
     const current=['my','opp','contested','none'].includes(owner)?owner:'none';
     const role=objectiveRole(name);
     const start=objectiveTurnStartOwner(name);
-    const roleOptions=['home','nml','enemy','central'].map(value=>'<option value="'+value+'" '+(role===value?'selected':'')+'>'+objectiveRoleLabel(value)+'</option>').join('');
+    const roleOptions=['home','central','expansion'].map(value=>'<option value="'+value+'" '+(role===value?'selected':'')+'>'+objectiveRoleLabel(value,name)+'</option>').join('');
     const button=(value,label)=>'<button type="button" class="btn objective-control-btn '+(current===value?'active':'')+'" aria-pressed="'+(current===value?'true':'false')+'" onclick="setObjectiveControl(\''+escName(name)+'\',\''+value+'\');return false;">'+label+'</button>';
     return '<div class="objective-control-row"><div class="objective-control-name"><b>'+esc(name)+'</b><span class="tiny">Start: '+esc(start==='my'?'My':start==='opp'?'Opp':start==='contested'?'Contested':'None')+'</span><select class="objective-role-select" aria-label="Objective location" onchange="setObjectiveRole(\''+escName(name)+'\',this.value);return false;">'+roleOptions+'</select></div><div class="objective-control-buttons">'+button('my','My')+button('opp','Opp')+button('contested','Contested')+button('none','None')+'<button type="button" class="btn objective-remove-btn" title="Remove objective" onclick="removeTrackedObjective(\''+escName(name)+'\');return false;">×</button></div></div>';
   }).join(''):'<div class="empty" style="padding:10px">No objectives tracked yet. Add the objectives from your mission.</div>';
