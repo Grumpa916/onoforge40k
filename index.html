@@ -5726,8 +5726,22 @@ function tacticalWeaponPhaseEligible(w,phase,attackerEntry,targetEntry){
 }
 function tacticalWeaponRange(w){
   if(!w)return null;
-  const raw=String(w.rng??w.range??'').trim().toUpperCase();
-  if(!raw||raw==='MELEE'||raw==='—'||raw==='-')return null;
+  let raw=String(w.rng??w.range??'').trim().toUpperCase();
+  if(!raw||raw==='MELEE'||raw==='—'||raw==='-'){
+    const name=String(w.name||'');
+    const profile=typeof WARGEAR_PROFILES_11E==='object'
+      ?Object.values(WARGEAR_PROFILES_11E).flatMap(x=>Object.values(x||{})).find(p=>p&&typeof p==='object'&&String(p.name||'')===name)
+      :null;
+    raw=String(profile?.rng??'').trim().toUpperCase();
+  }
+  if(!raw||raw==='MELEE'||raw==='—'||raw==='-'){
+    const name=String(w.name||'');
+    if(name&&typeof WARGEAR_PROFILES_11E==='object'){
+      const profile=Object.values(WARGEAR_PROFILES_11E).flatMap(x=>Object.values(x||{})).find(p=>p&&typeof p==='object'&&p.rng&&String(p.rng).toUpperCase()!=='MELEE'&&String(p.rng).match(/\d/)&&String(p.name||'')===name);
+      raw=String(profile?.rng??'').trim().toUpperCase();
+    }
+  }
+  if(!raw)return null;
   const m=raw.match(/(\d+(?:\.\d+)?)/);
   return m?Number(m[1]):null;
 }
@@ -6966,7 +6980,7 @@ function tacticalAdvisorHtml(){
     const e=r.recommendationExplanation||{},expected=e.expected||{},risk=e.risk||{},conf=e.confidence||{},changes=Array.isArray(e.whatCouldChange)?e.whatCouldChange:[];
     const selected=state.tactical?.selectedTargetUid===r.entryUid;
     return '<details class="tactical-recommendation-card" style="margin-top:6px" '+(selected?'open':'')+'>'+
-      '<summary style="cursor:pointer;list-style:none"><div class="split"><div><b>#'+esc(e.rank||'')+' '+esc(r.name||'Target')+'</b><div class="tiny">'+Number(expected.damage||0).toFixed(1)+'W • '+Number(expected.modelsKilled||0).toFixed(1)+' models • '+(Number(expected.wipeChance||0)*100).toFixed(0)+'% wipe</div></div><span class="pill '+(selected?'ok':'')+'">'+(selected?'Selected':'Select')+'</span></div></summary>'+
+      '<summary style="cursor:pointer;list-style:none"><div class="split"><div><b>#'+esc(e.rank||'')+' '+esc(r.name||'Target')+'</b><div class="tiny">'+Number(expected.damage||0).toFixed(1)+'W • '+Number(expected.modelsKilled||0).toFixed(1)+' models • '+(Number(expected.wipeChance||0)*100).toFixed(0)+'% wipe</div></div><span class="pill '+(selected?'ok':'')+'">'+(selected?'Selected':(e.confidence?.label==='Limited'?'Verify context':'Select'))+'</span></div></summary>'+
       '<div class="grid3" style="margin-top:7px"><div class="status"><div class="muted small">Expected damage</div><b>'+Number(expected.damage||0).toFixed(1)+'W</b></div><div class="status"><div class="muted small">Models killed</div><b>'+Number(expected.modelsKilled||0).toFixed(1)+'</b></div><div class="status"><div class="'+confidenceClass(conf.label)+'"><div class="muted small">Confidence</div><b>'+esc(conf.label||'Limited')+'</b></div></div></div>'+
       '<div style="margin-top:7px"><b>Why:</b> '+esc(e.why||'Combat and mission factors are combined.')+'</div>'+
       '<div style="margin-top:7px"><b>Risk:</b> '+esc(String(risk.band||'unknown'))+' • '+Number(risk.incomingThreat||0).toFixed(1)+' incoming W • '+Number(risk.pointsAtRisk||0).toFixed(0)+' pts at risk</div>'+
@@ -6978,7 +6992,7 @@ function tacticalAdvisorHtml(){
   return '<details class="card tactical-advisor-card" open><summary><div class="split"><div><h3 style="margin:0">Tactical Advisor</h3><div class="muted">Quick target comparison</div></div><span class="pill">'+esc(result.evaluatedAt?.phase||state.phase||'Command')+'</span></div></summary>'+
     '<div style="margin-top:10px">'+
       '<div class="field" style="margin-bottom:8px"><label>Attacker</label><select onchange="setTacticalAdvisorAttacker(this.value)">'+attackerOptions+'</select></div>'+
-      '<div class="status" style="margin-bottom:8px"><div class="muted small">Recommended targets</div><div class="tiny" style="margin-top:2px">Compare expected damage and wipe chance, then select the target you want to evaluate.</div></div>'+
+      '<div class="status" style="margin-bottom:8px"><div class="muted small">Recommended targets</div><div class="tiny" style="margin-top:2px">Compare expected damage and wipe chance. Unknown battlefield facts lower confidence but do not hide valid target candidates.</div></div>'+
       (recs.slice(0,3).map(recCard).join('')||'<div class="empty">No eligible target recommendations for the current phase.</div>')+
       '<div class="grid2" style="margin-top:8px"><div class="status"><b>Natural targets</b><div style="margin-top:4px">'+(natural||'<span class="muted">None</span>')+'</div></div><div class="status"><b>Avoid / high-risk</b><div style="margin-top:4px">'+(avoidTargets||'<span class="muted">None</span>')+'</div></div></div>'+
       '<div class="muted small" style="margin-top:8px">Recommendations update from current army roster, weapon availability, battlefield context, objectives, and tracked game state.</div>'+
@@ -7302,7 +7316,10 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
       damageFraction:damageFrac,killFraction:killFrac,damagePerPoint:efficiency,weaponProfiles:weaponKeys,
       antiMatches:[...new Set(antiMatches)],confidence,simulationConfidence,
       tacticalLegality,
-      recommendationEligible:tacticalLegality.canTarget===true&&phaseActionAvailable&&availableGroups.length>0,
+      // Unknown battlefield facts should not suppress the Advisor's target comparison.
+      // A target is excluded only when the rules already establish that it cannot be
+      // targeted. Unknown range/LOS/movement remain visible as verification warnings.
+      recommendationEligible:tacticalLegality.canTarget!==false&&phaseActionAvailable&&availableGroups.length>0,
       scoreComponents:{
         wipeChance:wipe,
         killFraction:killFrac,
