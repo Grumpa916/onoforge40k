@@ -598,6 +598,14 @@ body{overflow-x:hidden}
   .battle-layout{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:12px!important}
   .battle-layout>div:first-child,.battle-layout>.battle-side{grid-column:1!important;grid-row:auto!important;width:100%!important;min-width:0!important;max-width:100%!important}
 }
+/* v319: move Action Log below the live Battle Mode workspace */
+.battle-layout>.battle-side{display:contents!important}
+.battle-layout>.battle-side>.battle-state-column{display:block!important;grid-column:2!important;grid-row:1!important;width:auto!important;min-width:0!important;max-width:100%!important}
+.battle-layout>.battle-side>.battle-log{display:block!important;grid-column:1 / -1!important;grid-row:2!important;width:100%!important;max-width:100%!important;margin-top:0!important;position:static!important;max-height:none!important;overflow:visible!important}
+@media(max-width:1150px){
+  .battle-layout>.battle-side>.battle-state-column{grid-column:1!important;grid-row:auto!important}
+  .battle-layout>.battle-side>.battle-log{grid-column:1!important;grid-row:auto!important}
+}
 </style></head><body><div id="app"></div><script>
 window.addEventListener('error',function(ev){var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var msg=String(ev.error?.message||ev.message||'Unknown error');a.innerHTML='<span class="error-title">OnoForge error</span><div class="error-detail">'+msg.replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</div><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});window.addEventListener('unhandledrejection',function(ev){var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var reason=ev.reason?.message||ev.reason||'Unhandled promise rejection';a.innerHTML='<span class="error-title">OnoForge error</span><div class="error-detail">'+String(reason).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</div><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});
 
