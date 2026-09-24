@@ -1305,34 +1305,36 @@ function primaryMissionDetailsHtml(mission,side){
   '</div>';
 }
 
-function togglePrimaryMissionPanel(side){
-  const key=side==='my'?'primaryMissionOpenMy':'primaryMissionOpenOpp';
-  state[key]=!state[key];
+function togglePrimaryMissionPanel(){
+  state.primaryMissionsOpen=state.primaryMissionsOpen!==true;
   save();
   render();
 }
 function primaryMissionPanel(mode='battle'){
   const myPM=primaryMission('my'),oppPM=primaryMission('opp');
+  const open=state.primaryMissionsOpen===true;
   const tracker=(side,mission)=>{
     const label=activeArmyDisplayName(side);
     const disposition=forceDisposition(side);
     const opponentDisposition=forceDisposition(side==='my'?'opp':'my');
-    const open=side==='my'?state.primaryMissionOpenMy===true:state.primaryMissionOpenOpp===true;
     return `
 <div class="setup-panel primary-mission-panel">
-      <button type="button" class="btn" style="width:100%;text-align:left;display:flex;justify-content:space-between;align-items:center" onclick="togglePrimaryMissionPanel('${side}');return false;">
-        <span><strong>${esc(label)}</strong></span><span class="pill">${mission?(open?'Close Scoring':'Open Scoring'):'Primary Mission'}</span>
-      </button>
-      ${open&&mission?'<div class="primary-mission-result">'+
+      <div class="primary-mission-army-title"><strong>${esc(label)}</strong></div>
+      ${mission?'<div class="primary-mission-result">'+
         '<span class="muted">Primary Mission</span>'+
         '<strong>'+esc(mission)+'</strong>'+
         (disposition&&opponentDisposition?'<div class="primary-disposition">'+esc(disposition)+' vs '+esc(opponentDisposition)+'</div>':'')+
         primaryMissionDetailsHtml(mission,side)+
       '</div>':
-      (!mission?'<div class="primary-mission-result"><strong>Not resolved</strong></div>':'')}
+      '<div class="primary-mission-result"><strong>Not resolved</strong></div>'}
     </div>`;
   };
-  return `<div class="card primary-mission-card"><div class="primary-missions-header" style="font-weight:800;font-size:14px;margin:0 0 4px">Primary Mission</div><div class="muted small" style="margin-bottom:8px">Primary scoring is tracked during Battle Mode. Both trackers can remain open while scoring.</div><div class="primary-mission-pair">${tracker('my',myPM)}${tracker('opp',oppPM)}</div></div>`;
+  return `<div class="card primary-mission-card">
+    <button type="button" class="primary-mission-link" onclick="togglePrimaryMissionPanel();return false;" aria-expanded="${open?'true':'false'}" title="${open?'Hide primary scoring':'Show both primary mission scoring trackers'}">
+      <span>Primary Mission</span><span class="pill">${open?'Hide Scoring':'Show Scoring'}</span>
+    </button>
+    ${open?`<div class="primary-mission-pair">${tracker('my',myPM)}${tracker('opp',oppPM)}</div>`:''}
+  </div>`;
 }
 function detachmentOptions(faction,current){const arr=detachmentCatalog()[faction]||[];return arr.map(d=>`<option value="${esc(d[0])}" ${d[0]===current?'selected':''}>${esc(d[0])} — ${d[1]} DP • ${esc(d[2])}</option>`).join('')}
 function detachmentInfo(faction,name){return (detachmentCatalog()[faction]||[]).find(d=>d[0]===name)||null}
