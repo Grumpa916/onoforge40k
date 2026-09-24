@@ -1175,11 +1175,45 @@ function primaryScoringEffectiveMax(side,row){
   if(objectiveCount===null)return explicit||5;
   return Math.max(0,Math.min(explicit||objectiveCount,objectiveCount));
 }
-function primaryScoringObjectiveLinkHtml(side,row,done,actual){
+function ensurePrimaryObjectiveScoreSnapshots(){
+  if(!state.primaryObjectiveScoreSnapshots||typeof state.primaryObjectiveScoreSnapshots!=='object')state.primaryObjectiveScoreSnapshots={};
+  return state.primaryObjectiveScoreSnapshots;
+}
+function primaryObjectiveScoreSnapshotKey(side,round,index){
+  return String(Math.max(1,Number(round)||1))+'|'+(side==='opp'?'opp':'my')+'|'+String(index);
+}
+function capturePrimaryObjectiveScoreSnapshot(side,index,row){
+  const round=Math.max(1,Number(state.round)||1);
   const count=primaryScoringObjectiveCount(side,row);
-  if(count===null)return '';
-  const cap=primaryScoringEffectiveMax(side,row);
-  if(done)return '<span class="tiny">Objective control at scoring: '+count+' qualifying</span>';
+  if(count===null)return null;
+  const list=objectiveCountsForSide(side);
+  const qualifying=list.filter(o=>{
+    const text=String(row?.[2]||'').toLowerCase();
+    const excludeHome=/excluding home|exclude home|excl\\. home/.test(text);
+    const central=/central objectives?/.test(text);
+    const enemyTerritory=/enemy territory|enemy's territory/.test(text);
+    const deploymentZone=/deployment zone/.test(text);
+    return (!excludeHome||o.type!=='home')&&(!central||o.type==='central')&&(!enemyTerritory||objectiveIsInTerritory(o.name,side))&&(!deploymentZone||objectiveDeploymentZone(o.name)===(side==='opp'?'opp':'my'));
+  }).map(o=>({name:o.name,owner:o.owner,type:o.type,territory:o.territory,deploymentZone:o.deploymentZone}));
+  const snap={round,side,index,mission:primaryMission(side),condition:String(row?.[2]||''),qualifyingCount:count,qualifyingObjectives:qualifying,capturedAtPhase:String(state.phase||'Command'),capturedAtTurn:state.currentTurn==='opp'?'opp':'my'};
+  ensurePrimaryObjectiveScoreSnapshots()[primaryObjectiveScoreSnapshotKey(side,round,index)]=snap;
+  return snap;
+}
+function primaryObjectiveScoreSnapshot(side,index){
+  const round=Math.max(1,Number(state.round)||1);
+  return ensurePrimaryObjectiveScoreSnapshots()[primaryObjectiveScoreSnapshotKey(side,round,index)]||null;
+}
+function clearPrimaryObjectiveScoreSnapshot(side,index){
+  const round=Math.max(1,Number(state.round)||1);
+  delete ensurePrimaryObjectiveScoreSnapshots()[primaryObjectiveScoreSnapshotKey(side,round,index)];
+}
+function primaryScoringObjectiveLinkHtml(side,row,done,actual,index){
+  const liveCount=primaryScoringObjectiveCount(side,row);
+  if(liveCount===null)return '';
+  const snap=done?primaryObjectiveScoreSnapshot(side,index):null;
+  const count=snap?Number(snap.qualifyingCount)||0:liveCount;
+  const cap=snap?Math.min(primaryScoringMax(row)||count,count):primaryScoringEffectiveMax(side,row);
+  if(done)return '<span class="tiny">Objective snapshot: '+count+' qualifying at scoring'+(snap?' • '+esc(snap.capturedAtPhase):'')+'</span>';
   if(count===0)return '<span class="tiny" style="color:#d99a9a">No qualifying objectives currently controlled</span>';
   return '<span class="tiny" style="color:#aee2bf">'+count+' qualifying objective'+(count===1?'':'s')+' • up to '+cap+' scoring</span>';
 }
@@ -1257,6 +1291,7 @@ function scorePrimaryItem(side,index,mission,amountOverride){
     state[byRoundKey][roundKey]=scored.filter(i=>i!==index);
     delete values[index];
     delete amounts[index];
+    clearPrimaryObjectiveScoreSnapshot(side,index);
     state[listKey]=state[byRoundKey][roundKey];
     event('PRIMARY_UNSCORED',{side,unit:side==='my'?'Primary Mission':'Opponent Primary Mission',action:'Primary scoring condition removed -'+Math.abs(delta)+' VP',before,after,delta,mission,round,scoringItem:row[2],scoringTiming:row[0]},fullBefore);
   }else{
@@ -1267,8 +1302,11 @@ function scorePrimaryItem(side,index,mission,amountOverride){
     const requestedAmount=per
       ? Math.max(objectiveBased?0:1,Math.min(50,Math.floor(Number.isFinite(requestedRaw)?requestedRaw:suggestedAmount)))
       : 1;
-    const objectiveCap=primaryScoringEffectiveMax(side,row);
-    const amount=per?Math.min(requestedAmount,objectiveBased?objectiveCap:(primaryScoringMax(row)||50)):1;
+    const objectiveSnapshot=objectiveBased?capturePrimaryObjectiveScoreSnapshot(side,index,row):null;
+    const objectiveCap=objectiveBased
+      ? (objectiveSnapshot?Math.min(primaryScoringMax(row)||objectiveSnapshot.qualifyingCount,objectiveSnapshot.qualifyingCount):primaryScoringEffectiveMax(side,row))
+      : primaryScoringMax(row)||50;
+    const amount=per?Math.min(requestedAmount,objectiveCap):1;
     if(objectiveBased&&objectiveCap<=0){
       alert('Objective control does not currently satisfy this Primary scoring condition.');
       return;
@@ -1373,7 +1411,7 @@ function primaryMissionDetailsHtml(mission,side){
       return '<div class="primary-approved-score-row primary-score-click-target'+(done?' scored':'')+'" data-primary-score="1" data-primary-side="'+side+'" data-primary-index="'+i+'" data-primary-mission="'+esc(mission)+'" title="'+(done?'Click to remove this scoring condition':'Click to score this condition')+'">'+
         '<div class="primary-approved-icon">'+(done?'✓':(i===0?'⚑':i===1?'⌂':'◆'))+'</div>'+
         '<div class="primary-approved-copy"><strong>'+esc(r[2])+'</strong><span>Score '+esc(r[1])+(per?' × '+amount:'')+(done?' • Scored '+actual+' VP':'')+'</span></div>'+
-        (per&&!done?'<div class="primary-score-quantity primary-count-stepper"><button type="button" class="btn" data-primary-amount-step="-1" data-primary-side="'+side+'" data-primary-index="'+i+'" data-primary-mission="'+esc(mission)+'">−</button><output>'+amount+'/'+(primaryScoringObjectiveCount(side,r)!==null?effectiveMax:(maxAmount||5))+'</output>'+(primaryScoringObjectiveCount(side,r)!==null?primaryScoringObjectiveLinkHtml(side,r,done,actual):(maxAmount?'<span class="tiny primary-count-max">Max '+maxAmount+' scoring</span>':'<span class="tiny primary-count-max">Objective count not required</span>'))+'<button type="button" class="btn" data-primary-amount-step="1" data-primary-side="'+side+'" data-primary-index="'+i+'" data-primary-mission="'+esc(mission)+'">+</button></div>':(done?'<div class="primary-approved-control"><output>'+actual+' VP</output>'+primaryScoringObjectiveLinkHtml(side,r,done,actual)+'</div>':''))+
+        (per&&!done?'<div class="primary-score-quantity primary-count-stepper"><button type="button" class="btn" data-primary-amount-step="-1" data-primary-side="'+side+'" data-primary-index="'+i+'" data-primary-mission="'+esc(mission)+'">−</button><output>'+amount+'/'+(primaryScoringObjectiveCount(side,r)!==null?effectiveMax:(maxAmount||5))+'</output>'+(primaryScoringObjectiveCount(side,r)!==null?primaryScoringObjectiveLinkHtml(side,r,done,actual,i):(maxAmount?'<span class="tiny primary-count-max">Max '+maxAmount+' scoring</span>':'<span class="tiny primary-count-max">Objective count not required</span>'))+'<button type="button" class="btn" data-primary-amount-step="1" data-primary-side="'+side+'" data-primary-index="'+i+'" data-primary-mission="'+esc(mission)+'">+</button></div>':(done?'<div class="primary-approved-control"><output>'+actual+' VP</output>'+primaryScoringObjectiveLinkHtml(side,r,done,actual,i)+'</div>':''))+
       '</div>';
     }).join('')+'</div>'+
     primaryMissionRulesHtml(mission,side)+
