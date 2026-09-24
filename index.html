@@ -5911,7 +5911,7 @@ function tacticalContextHtmlBody(){
   if(!ae||!targets.length)return '<div class="muted">Build both armies and select an attacker/target to record battlefield context.</div>';
   const selectedUid=(state.tactical?.selectedTargetUid&&targets.some(e=>e.uid===state.tactical.selectedTargetUid))?state.tactical.selectedTargetUid:targets[0].uid;
   ensureTacticalState().selectedTargetUid=selectedUid;
-  const te=entry('opp',selectedUid),ctx=tacticalPairState(ae.uid,selectedUid),leg=tacticalTargetLegality(ae,te,state.phase),actions=tacticalAdvisorActionState(ae.uid),movementType=tacticalUnitMovementType(ae.uid);
+  const te=entry('opp',selectedUid),renderBundle=getTacticalRenderBundle(ae,te),ctx=renderBundle.context,leg=renderBundle.legality,actions=tacticalAdvisorActionState(ae.uid),movementType=tacticalUnitMovementType(ae.uid);
   const options=targets.map(e=>'<option value="'+esc(e.uid)+'" '+(e.uid===selectedUid?'selected':'')+'>'+esc(unitDisplayName('opp',e))+'</option>').join('');
   const phase=String(state.phase||'Command');
   const phaseLabel=phase==='Movement'?'Movement':phase==='Shooting'?'Shooting':phase==='Charge'?'Charge':phase==='Fight'?'Fight':phase;
@@ -5974,6 +5974,9 @@ function tacticalWeaponIsRanged(w){
   return false;
 }
 function tacticalAdvisorWeaponGroups(side,e,target=null){
+  const cache=TACTICAL_RENDER_CACHE.signature?TACTICAL_RENDER_CACHE:null;
+  const cacheKey=String(side||'')+'|'+String(e?.uid||'')+'|'+String(target?.uid||'');
+  if(cache&&cache.weaponGroups.has(cacheKey))return cache.weaponGroups.get(cacheKey);
   const base=attachedCombatWeaponGroups(side,e,target);
   const covered=new Set(base.map(g=>String(g?.weapon?.name||'')));
   const root=combatRootEntry(side,e)||e;
@@ -6005,6 +6008,7 @@ function tacticalAdvisorWeaponGroups(side,e,target=null){
       covered.add(String(name));
     });
   });
+  if(cache)cache.weaponGroups.set(cacheKey,groups);
   return groups;
 }
 function weaponDataIntegrityScan(){
@@ -7026,13 +7030,14 @@ function tacticalShootingResultHtml(){
   const teUid=state.tactical?.selectedTargetUid;
   const te=teUid?entry('opp',teUid):null;
   if(!ae||!te)return '';
-  const ctx=tacticalPairState(ae.uid,te.uid);
-  const legality=tacticalTargetLegality(ae,te,'Shooting');
-  const result=tacticalAdvisorV1(ae.uid,{samples:4000});
+  const renderBundle=getTacticalRenderBundle(ae,te);
+  const ctx=renderBundle.context;
+  const legality=renderBundle.legality;
+  const result=renderBundle.result;
   const rec=Array.isArray(result.recommendations)?result.recommendations.find(x=>x.entryUid===te.uid):null;
   const unitLegality=tacticalLegalityForUnit('my',ae);
   const status=unitLegality.reason==='not-your-turn'?'Waiting for your turn':unitLegality.reason==='destroyed'?'Unit destroyed':result.status==='action-already-completed'?'Shooting already completed':legality.canTarget===false?'Not eligible':rec?'Ready to resolve':'Needs information';
-  const allGroups=tacticalAdvisorWeaponGroups('my',ae,te);
+  const allGroups=renderBundle.groups;
   const rangedGroups=allGroups.filter(g=>tacticalWeaponIsRanged(g.weapon));
   const weaponRows=rangedGroups.map(g=>{
     const w=g.weapon||{},name=String(w.name||'Weapon'),range=tacticalWeaponRange(w),abilities=(w.abilities||[]).map(x=>String(x||'').toUpperCase().replace(/-/g,' '));
@@ -7092,7 +7097,7 @@ function tacticalAdvisorHtml(){
   const ae=tacticalAdvisorAttackerEntry();
   if(!ae)return '<div class="card tactical-advisor-card"><h3 style="margin:0">Tactical Advisor</h3><div class="muted">Build your army and select an attacker to receive target recommendations.</div></div>';
   const attackerOptions=(state.my||[]).filter(e=>!e.attachedTo&&!tacticalUnitState('my',e)?.destroyed).map(e=>'<option value="'+esc(e.uid)+'" '+(e.uid===ae.uid?'selected':'')+'>'+esc(unitDisplayName('my',e))+'</option>').join('');
-  const result=tacticalAdvisorV1(ae.uid,{samples:4000});
+  const result=getTacticalAdvisorResult(ae.uid,{samples:4000});
   if(result.status!=='ok'){
     const detail=result.attacker?(' • '+esc(result.attacker)):'',phaseLabel=result.phase?(' • '+esc(result.phase)):'',gateLabel=result.status==='action-already-completed'?'Action complete':result.status==='no-ranged-weapons'?'No ranged weapons':result.status==='charge-target-evaluation-not-yet-modeled'?'Charge targeting':'Phase gate';
     if(result.status==='no-ranged-weapons'){
@@ -7189,6 +7194,100 @@ function tacticalAdvisorStateSnapshot(attackerEntryUid){
   return {battle:tacticalBattleState(),attacker:atk?tacticalUnitState('my',atk):null,targetCount:targets.length,
     targets:targets.map(e=>{const s=tacticalUnitState('opp',e);return s?{...s,tacticalContext:tacticalPairState(atk?.uid,e.uid)}:null}).filter(Boolean)};
 }
+const TACTICAL_RENDER_CACHE={
+  signature:'',
+  advisor:new Map(),
+  weaponGroups:new Map(),
+  legality:new Map()
+};
+
+function tacticalAdvisorStateSignature(){
+  const t=ensureTacticalState();
+  const entrySignature=side=>(state[side]||[]).map(e=>({
+    uid:e?.uid,unitId:e?.unitId,models:e?.models,qty:e?.qty,points:e?.points,
+    weapons:e?.weapons,wargearSelections:e?.wargearSelections,attachedTo:e?.attachedTo,
+    leaderUid:e?.leaderUid,attachedRole:e?.attachedRole,game:e?.game
+  }));
+  return JSON.stringify({
+    phase:state.phase||'Command',
+    round:Math.max(1,Number(state.round)||1),
+    currentTurn:state.currentTurn==='opp'?'opp':'my',
+    myVP:Number(state.myVP)||0,oppVP:Number(state.oppVP)||0,
+    myCP:Number(state.myCP)||0,oppCP:Number(state.oppCP)||0,
+    objectives:state.objectives||{},
+    objectiveTurnStartOwners:state.objectiveTurnStartOwners||{},
+    mission:state.mission||state.primaryMission||state.missionName||'',
+    primaryMyScoredVP:Number(state.primaryMyScoredVP)||0,
+    primaryOppScoredVP:Number(state.primaryOppScoredVP)||0,
+    primaryScoringByRoundMy:state.primaryScoringByRoundMy||{},
+    primaryScoringByRoundOpp:state.primaryScoringByRoundOpp||{},
+    primaryScoringValuesByRoundMy:state.primaryScoringValuesByRoundMy||{},
+    primaryScoringValuesByRoundOpp:state.primaryScoringValuesByRoundOpp||{},
+    secondaryMyScoredVP:state.secondaryMyScoredVP||{},
+    secondaryOppScoredVP:state.secondaryOppScoredVP||{},
+    secondaryMyScoredVPByRound:state.secondaryMyScoredVPByRound||{},
+    secondaryOppScoredVPByRound:state.secondaryOppScoredVPByRound||{},
+    mathRules:state.mathRules||{},
+    my:entrySignature('my'),
+    opp:entrySignature('opp'),
+    tactical:{
+      pairs:t.pairs||{},
+      unitUse:t.unitUse||{},
+      unitMovement:t.unitMovement||{},
+      unitActions:t.unitActions||{},
+      fightPhase:t.fightPhase||{}
+    },
+    events:(state.events||[]).filter(e=>e?.kind==='ATTACK_RESOLUTION').map(e=>({
+      kind:e.kind,round:e.round,phase:e.phase,playerTurn:e.playerTurn,payload:e.payload||{}
+    }))
+  });
+}
+function prepareTacticalRenderCache(){
+  const signature=tacticalAdvisorStateSignature();
+  if(signature!==TACTICAL_RENDER_CACHE.signature){
+    TACTICAL_RENDER_CACHE.signature=signature;
+    TACTICAL_RENDER_CACHE.advisor.clear();
+    TACTICAL_RENDER_CACHE.weaponGroups.clear();
+    TACTICAL_RENDER_CACHE.legality.clear();
+  }
+  return TACTICAL_RENDER_CACHE;
+}
+function getTacticalAdvisorResult(attackerEntryUid,options={}){
+  const cache=prepareTacticalRenderCache();
+  const samples=Math.min(10000,Math.max(2000,Number(options.samples)||4000));
+  const key=String(attackerEntryUid||'')+'|'+samples;
+  if(cache.advisor.has(key))return cache.advisor.get(key);
+  const result=tacticalAdvisorV1(attackerEntryUid,{...options,samples});
+  cache.advisor.set(key,result);
+  return result;
+}
+function getTacticalTargetLegalityCached(attackerEntry,targetEntry,phase){
+  const cache=prepareTacticalRenderCache();
+  const key=String(attackerEntry?.uid||'')+'>'+String(targetEntry?.uid||'')+'|'+String(phase||state.phase||'Command');
+  if(cache.legality.has(key))return cache.legality.get(key);
+  const result=tacticalTargetLegality(attackerEntry,targetEntry,phase);
+  cache.legality.set(key,result);
+  return result;
+}
+function getTacticalRenderBundle(attackerEntry,targetEntry){
+  const cache=prepareTacticalRenderCache();
+  const phase=String(state.phase||'Command');
+  const key=String(attackerEntry?.uid||'')+'>'+String(targetEntry?.uid||'')+'|'+phase;
+  const bundleKey='bundle|'+key;
+  if(!cache.weaponGroups.has(bundleKey)){
+    const groups=targetEntry?tacticalAdvisorWeaponGroups('my',attackerEntry,targetEntry):[];
+    const legality=targetEntry?getTacticalTargetLegalityCached(attackerEntry,targetEntry,phase):null;
+    cache.weaponGroups.set(bundleKey,{groups,legality});
+  }
+  const bundle=cache.weaponGroups.get(bundleKey)||{groups:[],legality:null};
+  return {
+    result:getTacticalAdvisorResult(attackerEntry?.uid,{samples:4000}),
+    groups:bundle.groups,
+    legality:bundle.legality,
+    context:targetEntry?tacticalPairState(attackerEntry.uid,targetEntry.uid):null
+  };
+}
+
 function tacticalAdvisorV1(attackerEntryUid,options={}){
   const side='my',atkEntry=entry(side,attackerEntryUid)||mathRosterEntry(side);
   const missionCtx=missionDecisionContext();
@@ -7206,7 +7305,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
       const target=combatTargetUnit('opp',targetEntry)||get(targetEntry.unitId);
       if(!target)return null;
       const pairCtx=tacticalPairState(atkEntry.uid,targetEntry.uid);
-      const legality=tacticalTargetLegality(atkEntry,targetEntry,'Charge');
+      const legality=getTacticalTargetLegalityCached(atkEntry,targetEntry,'Charge');
       const distance=Number(pairCtx?.distanceInches);
       const knownDistance=Number.isFinite(distance);
       const rolls=[];
@@ -7416,7 +7515,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
       return !!m&&targetKeywords.some(k=>m[1].trim().split(/\s+/).includes(k)||m[1].trim()===k);
     }));
     const confidence=snap?.exactModelIdentity&&snap?.exactWeaponIdentity?'high':(snap?.exactWeaponIdentity?'medium':'limited');
-    const tacticalLegality=tacticalTargetLegality(atkEntry,targetEntry,state.phase);
+    const tacticalLegality=getTacticalTargetLegalityCached(atkEntry,targetEntry,state.phase);
     const legalityBlocked=tacticalLegality.canTarget===false;
     const phaseActionAvailable=tacticalPhaseActionAvailable(advisorActionEntry?.uid||atkEntry?.uid,phase);
     const fightOrder=phase==='Fight' ? (()=>{
@@ -8834,9 +8933,25 @@ async function load40kAppSourceManifest(){
   render();
 }
 
-function render(){const pages={builder,saved:savedListsPage,battle,setup,math,rules,data:dataPage,manage:dataManagementPage,log:logPage,scorelog:scoringLogPage};document.getElementById('app').innerHTML=`<div class="top"><div class="brand">ONOFORGE 40K</div><div class="sub">11th Edition • v311 • 40k.app v925 data source • Army-linked Mathhammer Engine</div></div>${nav()}<main class="wrap">
+function renderBattleOnly(){
+  prepareTacticalRenderCache();
+  const battleRoot=document.getElementById('battle-view');
+  if(battleRoot)battleRoot.innerHTML=battle();
+  const modalRoot=document.getElementById('secondary-plan-modal-root');
+  if(modalRoot)modalRoot.innerHTML=secondaryPlanEditorModal();
+  ensureLiveGameTimerDisplay();
+}
+function render(){
+  const pages={builder,saved:savedListsPage,battle,setup,math,rules,data:dataPage,manage:dataManagementPage,log:logPage,scorelog:scoringLogPage};
+  prepareTacticalRenderCache();
+  const app=document.getElementById('app');
+  if(state.page==='battle'&&app&&document.getElementById('battle-view')){
+    renderBattleOnly();
+    return;
+  }
+  app.innerHTML=`<div class="top"><div class="brand">ONOFORGE 40K</div><div class="sub">11th Edition • v320 • 40k.app v925 data source • Army-linked Mathhammer Engine</div></div>${nav()}<main class="wrap">
   
-<div class="status">✓ Browser app loaded locally • Source: ${esc(state.source)} • ${esc(state.revision)} • 40k.app v${esc(String(ONOFORGE_40KAPP_SOURCE?.source?.revision||'925'))}</div>${dataSyncStatusHtml()}<div style="height:12px"></div>${(pages[state.page]||builder)()}${secondaryPlanEditorModal()}</main></div>`
+<div class="status">✓ Browser app loaded locally • Source: ${esc(state.source)} • ${esc(state.revision)} • 40k.app v${esc(String(ONOFORGE_40KAPP_SOURCE?.source?.revision||'925'))}</div>${dataSyncStatusHtml()}<div style="height:12px"></div>${state.page==='battle'?'<div id="battle-view">'+pages.battle()+'</div>':(pages[state.page]||builder)}${'<div id="secondary-plan-modal-root">'+secondaryPlanEditorModal()+'</div>'}</main></div>`;
   ensureLiveGameTimerDisplay();
 }
 
