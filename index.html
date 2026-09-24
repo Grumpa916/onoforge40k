@@ -621,6 +621,26 @@ body{overflow-x:hidden}
   .battle-layout>.battle-log{grid-column:1!important;grid-row:3!important;width:100%!important}
 }
 </style>
+
+<style id="army-state-compact-fix">
+/* v321: compact Army State for live tablet play */
+.battle-layout>.battle-state-column .army-state-card{padding:10px!important;margin-bottom:0!important}
+.battle-layout>.battle-state-column .army-state-card>h3{font-size:14px!important;margin:0 0 6px!important}
+.battle-layout>.battle-state-column .game-unit-row{display:grid!important;grid-template-columns:minmax(90px,105px) minmax(0,1fr)!important;gap:6px!important;align-items:start!important;padding:7px 0!important}
+.battle-layout>.battle-state-column .game-unit-name{font-size:12px!important;line-height:1.15!important;min-width:0!important}
+.battle-layout>.battle-state-column .game-unit-stats{display:inline-block!important;font-size:10px!important;line-height:1.15!important;margin:0 6px 0 0!important;white-space:nowrap!important;color:#c7d5e3!important}
+.battle-layout>.battle-state-column .game-unit-controls{min-width:0!important;display:flex!important;align-items:center!important;gap:4px!important;flex-wrap:wrap!important}
+.battle-layout>.battle-state-column .game-unit-actions{display:inline-flex!important;gap:3px!important;margin:0!important;flex-wrap:nowrap!important;vertical-align:middle!important}
+.battle-layout>.battle-state-column .game-unit-actions .btn{font-size:9px!important;line-height:1!important;padding:3px 5px!important;min-height:21px!important;border-radius:5px!important}
+.battle-layout>.battle-state-column .game-unit-reference{grid-column:1 / -1!important;display:flex!important;gap:3px!important;margin:2px 0 0!important;flex-wrap:wrap!important}
+.battle-layout>.battle-state-column .game-unit-reference-pill{padding:3px 5px!important;font-size:8px!important;line-height:1.1!important}
+.battle-layout>.battle-state-column .model-roster-list{grid-column:1 / -1!important;margin-top:4px!important;padding:4px!important;gap:3px!important}
+.battle-layout>.battle-state-column .model-roster-title{font-size:8px!important;margin-bottom:2px!important}
+.battle-layout>.battle-state-column .model-roster-row{padding:4px 5px!important;gap:5px!important}
+@media(max-width:700px){
+  .battle-layout>.battle-state-column .game-unit-row{grid-template-columns:minmax(80px,95px) minmax(0,1fr)!important}
+}
+</style>
 </style></head><body><div id="app"></div><script>
 window.addEventListener('error',function(ev){var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var msg=String(ev.error?.message||ev.message||'Unknown error');a.innerHTML='<span class="error-title">OnoForge error</span><div class="error-detail">'+msg.replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</div><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});window.addEventListener('unhandledrejection',function(ev){var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var reason=ev.reason?.message||ev.reason||'Unhandled promise rejection';a.innerHTML='<span class="error-title">OnoForge error</span><div class="error-detail">'+String(reason).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</div><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});
 
