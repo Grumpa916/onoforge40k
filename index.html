@@ -4794,6 +4794,7 @@ function setObjectiveControl(name,owner){
   render();
 }
 function addTrackedObjective(){
+  const fullBefore=snapshotForUndo();
   const objectives=state.objectives&&typeof state.objectives==='object'?state.objectives:{};
   state.objectives=objectives;
   let index=1;
@@ -4804,7 +4805,6 @@ function addTrackedObjective(){
   }
   objectives[n]='none';
   ensureObjectiveTurnSnapshot();
-  const fullBefore=snapshotForUndo();
   event('OBJECTIVE_ADDED',{
     name:n,unit:n,action:'Objective added to tracker',
     owner:'none',previous:'none',after:'none',
