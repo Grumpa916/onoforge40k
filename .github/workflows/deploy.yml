@@ -24,7 +24,12 @@ jobs:
 
     steps:
       - name: Checkout
+
         uses: actions/checkout@v6
+
+      - name: Run five-part catalogue integrity audit
+        shell: bash
+        run: node scripts/catalogue-audit.js
 
       - name: Render Tactical Advisor decision surface
         shell: bash
