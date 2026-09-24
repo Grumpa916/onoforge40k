@@ -4970,6 +4970,18 @@ function ensureObjectiveControlHistory(){
   if(!state.objectiveControlHistory||typeof state.objectiveControlHistory!=='object')state.objectiveControlHistory={};
   return state.objectiveControlHistory;
 }
+function objectivePreviousTurnKey(){
+  const round=Math.max(1,Number(state.round)||1),turn=state.currentTurn==='opp'?'opp':'my',first=state.battleFirstTurn==='opp'?'opp':'my';
+  if(turn!==first)return round+'|'+first;
+  if(round<=1)return '';
+  return (round-1)+'|'+(first==='my'?'opp':'my');
+}
+function objectivePreviousTurnOwner(name){
+  const key=objectivePreviousTurnKey();
+  const record=key?ensureObjectiveControlHistory()[key]:null;
+  const item=record?.objectives?.[String(name||'')];
+  return item&&['my','opp','contested','none'].includes(item.owner)?item.owner:null;
+}
 function objectiveControlChangeType(name){
   const current=['my','opp','contested','none'].includes(state.objectives?.[name])?state.objectives[name]:'none';
   const start=objectiveTurnStartOwner(name);
@@ -4978,10 +4990,11 @@ function objectiveControlChangeType(name){
     if(current==='none')return 'uncontrolled';
     return 'held';
   }
-  if(current==='none')return start==='my'?'lost':start==='opp'?'lost':'uncontrolled';
+  if(current==='none')return start==='my'||start==='opp'?'lost':'uncontrolled';
   if(start==='none')return 'newly_controlled';
-  if(start!==current)return start==='my'||start==='opp'?'recaptured':'gained';
-  return 'changed';
+  const previous=objectivePreviousTurnOwner(name);
+  if(previous===current)return 'recaptured';
+  return 'gained';
 }
 function objectiveControlChangeLabel(name){
   const type=objectiveControlChangeType(name);
