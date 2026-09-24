@@ -5897,8 +5897,12 @@ function tacticalContextHtmlBody(){
   const options=targets.map(e=>'<option value="'+esc(e.uid)+'" '+(e.uid===selectedUid?'selected':'')+'>'+esc(unitDisplayName('opp',e))+'</option>').join('');
   const phase=String(state.phase||'Command');
   const phaseLabel=phase==='Movement'?'Movement':phase==='Shooting'?'Shooting':phase==='Charge'?'Charge':phase==='Fight'?'Fight':phase;
-  const status=leg.canTarget===true?'Ready':leg.canTarget===false?'Not eligible':'Needs battlefield info';
-  const warning=leg.reasons.length?'<div class="warn tactical-context-warning" style="margin-top:8px">⚠ '+esc(leg.reasons.join(' • '))+'.</div>':'';
+  const unitLegality=tacticalLegalityForUnit('my',ae);
+  const status=unitLegality.legal===false
+    ?(unitLegality.reason==='not-your-turn'?'Waiting for your turn':unitLegality.reason==='destroyed'?'Unit destroyed':'Unit unavailable')
+    :(leg.canTarget===true?'Ready':leg.canTarget===false?'Not eligible':'Needs battlefield info');
+  const warningReasons=[...(unitLegality.legal===false?[unitLegality.reason==='not-your-turn'?'This is not your active turn. Switch the active player to your army before resolving Shooting.':unitLegality.reason==='destroyed'?'This unit is destroyed.':'This unit is unavailable.']:[]),...(leg.reasons||[])];
+  const warning=warningReasons.length?'<div class="warn tactical-context-warning" style="margin-top:8px">⚠ '+esc(warningReasons.join(' • '))+'.</div>':'';
   let phaseSpecific='';
   if(phase==='Movement'){
     phaseSpecific=
@@ -6887,7 +6891,8 @@ function tacticalShootingResultHtml(){
   const legality=tacticalTargetLegality(ae,te,'Shooting');
   const result=tacticalAdvisorV1(ae.uid,{samples:4000});
   const rec=Array.isArray(result.recommendations)?result.recommendations.find(x=>x.entryUid===te.uid):null;
-  const status=legality.canTarget===false?'Not eligible':rec?'Ready to resolve':'Needs information';
+  const unitLegality=tacticalLegalityForUnit('my',ae);
+  const status=unitLegality.reason==='not-your-turn'?'Waiting for your turn':unitLegality.reason==='destroyed'?'Unit destroyed':result.status==='action-already-completed'?'Shooting already completed':legality.canTarget===false?'Not eligible':rec?'Ready to resolve':'Needs information';
   const allGroups=attachedCombatWeaponGroups('my',ae,te);
   const rangedGroups=allGroups.filter(g=>String(g.weapon?.rng??g.weapon?.range??'').trim().toUpperCase()!=='MELEE');
   const weaponRows=rangedGroups.map(g=>{
@@ -6903,7 +6908,11 @@ function tacticalShootingResultHtml(){
     }
     return '<div class="status" style="margin:0"><div class="split"><div><b>'+esc(name)+'</b><div class="tiny">'+(range===null?'Range unknown':range+'"')+(abilities.length?' • '+esc(abilities.join(' • ')):'')+'</div></div><span class="pill '+(reasons.length?'warn':'ok')+'">'+(reasons.length?'Not eligible':'Eligible')+'</span></div>'+(reasons.length?'<div class="tiny" style="margin-top:5px">⚠ '+esc(reasons.join(' • '))+'</div>':'<div class="tiny" style="margin-top:5px">Available for this target.</div>')+'</div>';
   }).join('');
-  const reasons=(legality.reasons||[]).map(x=>'<li>'+esc(x)+'</li>').join('');
+  const resultReason=result.status==='attacker-not-legal'
+    ?(result.attackerLegality?.reason==='not-your-turn'?'This is not your active turn. Switch the active player to your army before resolving this Shooting action.':result.attackerLegality?.reason==='destroyed'?'The selected attacker is destroyed.':'The selected attacker is not currently available.')
+    :result.status==='action-already-completed'?'This unit has already completed its Shooting action this turn.'
+    :null;
+  const reasons=[...(legality.reasons||[]),...(resultReason?[resultReason]:[])].map(x=>'<li>'+esc(x)+'</li>').join('');
   const expected=rec?'<div class="grid3" style="margin-top:10px">'+
     '<div class="status"><div class="muted small">Expected damage</div><b style="font-size:1.35em">'+Number(rec.expectedDamage||0).toFixed(1)+'W</b></div>'+
     '<div class="status"><div class="muted small">Expected models killed</div><b style="font-size:1.35em">'+Number(rec.modelsKilled||0).toFixed(1)+'</b></div>'+
