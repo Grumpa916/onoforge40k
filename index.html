@@ -5697,9 +5697,7 @@ function tacticalWeaponPhaseEligible(w,phase,attackerEntry,targetEntry){
   const assault=tacticalWeaponIsAssault(w);
   const monsterVehicle=tacticalUnitIsMonsterVehicle(attackerEntry);
   const ctx=attackerEntry&&targetEntry?tacticalPairState(attackerEntry.uid,targetEntry.uid):null;
-  const targetEngaged=!!targetEntry&&(
-    ctx?.engagement==='engaged'||tacticalUnitIsEngagedAny(targetEntry.uid)
-  );
+  const targetEngaged=!!targetEntry&&ctx?.engagement==='engaged';
   const movementEntry=attackerEntry?combatRootEntry('my',attackerEntry):null;
   const movementType=tacticalUnitMovementType(movementEntry?.uid||attackerEntry?.uid);
   const advanced=movementType==='advance';
@@ -5817,7 +5815,9 @@ function tacticalTargetLegality(attackerEntry,targetEntry,phase){
     const advanced=tacticalUnitAdvancedState(attackerEntry.uid);
     const movementType=tacticalUnitMovementType(attackerEntry.uid);
     if(!tacticalPhaseActionAvailable(attackerEntry.uid,'Shooting'))return {status:'known',known:true,canTarget:false,reasons:['attacker has already completed its Shooting action'],context:ctx};
-    const targetEngaged=ctx.engagement==='engaged'||tacticalUnitIsEngagedAny(targetEntry.uid);
+    // Only the attacker's engagement with this selected target matters here.
+    // A target being engaged with some other friendly unit does not by itself prevent shooting.
+    const targetEngaged=ctx.engagement==='engaged';
     const attackerMV=tacticalUnitIsMonsterVehicle(attackerEntry);
     const targetCombatUnit=combatTargetUnit('opp',targetEntry)||get(targetEntry.unitId);
     const targetIsMonsterVehicle=!!targetCombatUnit&&((targetCombatUnit.keywords||[]).map(k=>String(k||'').toUpperCase().trim()).some(k=>k==='MONSTER'||k==='VEHICLE'));
@@ -5836,9 +5836,7 @@ function tacticalTargetLegality(attackerEntry,targetEntry,phase){
         return {status:'known',known:true,canTarget:false,reasons:['engaged MONSTER/VEHICLE requires an eligible Close-quarters shooting attack against this target'],context:ctx};
       }
     }
-    if(!engaged&&targetEngaged&&!targetIsMonsterVehicle){
-      return {status:'known',known:true,canTarget:false,reasons:['engaged non-MONSTER/VEHICLE targets cannot be selected by normal/assault/indirect shooting'],context:ctx};
-    }
+    // A target's engagement with a different friendly unit does not by itself make it illegal to shoot.
     const groups=attachedCombatWeaponGroups('my',attackerEntry,targetEntry).filter(g=>tacticalWeaponPhaseEligible(g.weapon,'Shooting',attackerEntry,targetEntry));
     const hasIndirect=groups.some(g=>tacticalWeaponIsIndirect(g.weapon));
     if(ctx.los==='no'&&!hasIndirect){
@@ -5946,7 +5944,7 @@ function tacticalContextHtmlBody(){
     '<div class="grid3" style="margin-top:8px">'+
       '<div class="field"><label>Distance</label><select onchange="setTacticalPairField(\''+ae.uid+'\',\''+selectedUid+'\',\'distanceBand\',this.value)"><option value="unknown" '+(ctx.distanceBand==='unknown'?'selected':'')+'>Unknown</option><option value="<6" '+(ctx.distanceBand==='<6'?'selected':'')+'>Under 6"</option><option value="6-12" '+(ctx.distanceBand==='6-12'?'selected':'')+'>6–12"</option><option value="12-18" '+(ctx.distanceBand==='12-18'?'selected':'')+'>12–18"</option><option value="18-24" '+(ctx.distanceBand==='18-24'?'selected':'')+'>18–24"</option><option value="24+" '+(ctx.distanceBand==='24+'?'selected':'')+'>24"+</option></select></div>'+
       '<div class="field"><label>Line of sight</label><select onchange="setTacticalPairField(\''+ae.uid+'\',\''+selectedUid+'\',\'los\',this.value)"><option value="unknown" '+(ctx.los==='unknown'?'selected':'')+'>Unknown</option><option value="yes" '+(ctx.los==='yes'?'selected':'')+'>Yes</option><option value="no" '+(ctx.los==='no'?'selected':'')+'>No</option></select></div>'+
-      '<div class="field"><label>Engagement</label><select onchange="setTacticalPairField(\''+ae.uid+'\',\''+selectedUid+'\',\'engagement\',this.value)"><option value="unknown" '+(ctx.engagement==='unknown'?'selected':'')+'>Unknown</option><option value="engaged" '+(ctx.engagement==='engaged'?'selected':'')+'>Engaged</option><option value="notEngaged" '+(ctx.engagement==='notEngaged'?'selected':'')+'>Not engaged</option></select></div>'+
+      '<div class="field"><label>'+(phase==='Shooting'?'Attacker engaged with this target?':phase==='Charge'?'Already engaged with this target?':'Attacker engaged with this target?')+'</label><select onchange="setTacticalPairField(\''+ae.uid+'\',\''+selectedUid+'\',\'engagement\',this.value)"><option value="unknown" '+(ctx.engagement==='unknown'?'selected':'')+'>Unknown</option><option value="engaged" '+(ctx.engagement==='engaged'?'selected':'')+'>Yes</option><option value="notEngaged" '+(ctx.engagement==='notEngaged'?'selected':'')+'>No</option></select>'+(phase==='Shooting'?'<div class="tiny" style="margin-top:4px">This means your attacking unit is engaged with this specific target. It does not mean the enemy is engaged elsewhere.</div>':'')+'</div>'+
     '</div>'+
     ((phase==='Shooting'||phase==='Charge')?'<div class="field" style="margin-top:8px"><label>Exact distance <span class="tiny">(needed for weapon-range / charge math)</span></label><input type="number" min="0" step="0.1" value="'+(ctx.distanceInches===null?'':ctx.distanceInches)+'" placeholder="Enter measured inches if needed" onchange="setTacticalPairField(\''+ae.uid+'\',\''+selectedUid+'\',\'distanceInches\',this.value)"></div>':'')+    '<div class="field" style="margin-top:8px"><label>Objective / battlefield note <span class="tiny">(optional)</span></label><input type="text" value="'+esc(ctx.objective)+'" placeholder="e.g. Objective 2" onchange="setTacticalPairField(\''+ae.uid+'\',\''+selectedUid+'\',\'objective\',this.value)"></div>'+
     phaseSpecific+
