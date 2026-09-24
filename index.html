@@ -512,6 +512,8 @@
   .battle-layout > .battle-log{grid-column:1!important;grid-row:auto!important}
 }
 
+/* v313: scoring buttons use rule-defined VP values */
+.secondary-vp-record{white-space:nowrap;padding:3px 8px!important;font-size:9px!important;font-weight:800}.secondary-compact-quick{display:flex!important;gap:5px!important;flex-wrap:wrap!important;margin-top:4px}.secondary-compact-quick .secondary-vp-record{min-width:48px}.secondary-compact-detail-row .secondary-row-action{display:flex;justify-content:flex-end}.secondary-compact-detail-row .secondary-vp-record{min-width:64px}
 /* v312: compact secondary scoring UI */
 .secondary-selected-section{margin-top:8px;padding:7px 8px;border:1px solid #36506a;border-radius:8px;background:#0f1a27}.secondary-selected-section-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px;font-size:9px;color:#9ecbff;letter-spacing:.06em}.secondary-selected-section-head span{color:#8ea5ba;letter-spacing:0}.secondary-compact-selected-row{padding:6px 0;border-top:1px solid #26364d}.secondary-compact-selected-row:first-of-type{border-top:0}.secondary-compact-selected-head{display:flex;align-items:center;justify-content:space-between;gap:8px;line-height:1.2}.secondary-selected-check{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;margin-right:4px;border-radius:50%;background:#28c77b;color:#07140e;font-size:9px;font-weight:900}.secondary-compact-status{font-size:9px;color:#9fb2c5;white-space:nowrap}.secondary-compact-quick{display:grid;grid-template-columns:auto minmax(0,1fr) 45px auto;gap:5px;align-items:center;margin-top:4px;font-size:9px}.secondary-quick-condition{color:#c7d5e3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.secondary-compact-quick input{width:45px;padding:3px 4px;background:#0b1220;border:1px solid #40546b;color:#f1f5f9;border-radius:5px;font-size:10px}.secondary-compact-quick .btn{padding:3px 7px;font-size:9px}.secondary-compact-details{margin-top:3px}.secondary-compact-details summary{cursor:pointer;color:#8fc8ff;font-size:9px;font-weight:700}.secondary-compact-description{margin-top:4px;font-size:9px;color:#b9c9d8;line-height:1.3}.secondary-compact-full-rules{display:grid;gap:4px;margin-top:5px}.secondary-compact-detail-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center;padding:4px 5px;border:1px solid #26364d;border-radius:5px;background:#0b1220;font-size:9px;color:#c7d5e3}.secondary-compact-detail-row .secondary-row-action{white-space:nowrap}.secondary-compact-detail-row input{width:45px;padding:3px 4px;background:#0b1220;border:1px solid #40546b;color:#f1f5f9;border-radius:5px;font-size:10px}.secondary-compact-detail-row .btn{padding:3px 7px;font-size:9px}.secondary-compact-plan{margin-top:5px;font-size:9px}.secondary-compact-limits{margin-top:5px;font-size:8px;color:#8198ad}.secondary-compact-rule-note{margin-top:5px;padding-top:4px;border-top:1px solid #26364d;font-size:8px;color:#8198ad}@media(max-width:650px){.secondary-compact-quick{grid-template-columns:auto minmax(0,1fr) 42px}.secondary-compact-quick .btn{grid-column:1/-1;justify-self:start}.secondary-compact-detail-row{grid-template-columns:1fr}.secondary-selected-section-head{align-items:flex-start;flex-direction:column}}
 /* v311: battle display regression guard */
@@ -1971,10 +1973,8 @@ function secondaryScoreRow(side,name,index){
  const modeKey=(side==='my'?state.secondaryMy:state.secondaryOpp)==='fixed'?'Fixed':'Tactical';
  const row=data?.[modeKey]?.[index];
  if(!row)return;
- const quickInput=document.getElementById(secondaryRowInputId(side,name,index)+'-quick');
- const input=quickInput||document.getElementById(secondaryRowInputId(side,name,index));
  const fallback=Number(String(row[0]).match(/\d+/)?.[0]||0);
- const amount=input?Number(input.value):fallback;
+ const amount=fallback;
  const endOfBattle=/end of battle/i.test(String(row[1]||''));
  scoreSecondary(side,name,amount,{endOfBattle});
 }
