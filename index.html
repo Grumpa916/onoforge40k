@@ -512,6 +512,9 @@
   .battle-layout > .battle-log{grid-column:1!important;grid-row:auto!important}
 }
 
+/* v316: restore Battle Mode primary column visibility and prevent horizontal layout drift */
+.battle-layout{width:100%!important;max-width:100%!important;box-sizing:border-box!important;min-width:0!important;overflow:visible!important}.battle-layout>div:first-child{display:block!important;visibility:visible!important;width:auto!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important}.battle-layout>.battle-side{display:block!important;visibility:visible!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important}.battle-layout .card{max-width:100%;box-sizing:border-box!important}@media(max-width:1200px){.battle-layout{display:block!important}.battle-layout>div:first-child,.battle-layout>.battle-side{width:100%!important;grid-column:auto!important;grid-row:auto!important}.battle-side{margin-top:12px!important}.battle-state-column{width:100%!important;position:static!important;height:auto!important;overflow:visible!important}}
+body{overflow-x:hidden}
 /* v315: minimal live Game Assistant */
 .game-assistant-minimal{margin-top:6px!important}.game-assistant-minimal>summary{padding:6px 8px!important}.game-assistant-minimal>summary h3{font-size:12px!important;margin:0!important}.game-assistant-minimal-body{padding:5px 8px!important}.game-assistant-status-line{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:9px;color:#aebfd0}.game-assistant-notes{margin-top:5px}.game-assistant-notes summary{font-size:9px;color:#8fc8ff;cursor:pointer}.game-assistant-notes textarea{width:100%;box-sizing:border-box;margin-top:4px;min-height:42px;padding:5px;font-size:10px;background:#0b1220;border:1px solid #344a61;color:#e7eef6;border-radius:5px}
 /* v314: explicit secondary selection undo */
