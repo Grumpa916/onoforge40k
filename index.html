@@ -7427,6 +7427,7 @@ function tacticalAdvisorHtml(){
   const ae=tacticalAdvisorAttackerEntry();
   if(!ae)return '<div class="card tactical-advisor-card"><h3 style="margin:0">Tactical Advisor</h3><div class="muted">Build your army and select an attacker to receive target recommendations.</div></div>';
   const attackerOptions=(state.my||[]).filter(e=>!e.attachedTo&&!tacticalUnitState('my',e)?.destroyed).map(e=>'<option value="'+esc(e.uid)+'" '+(e.uid===ae.uid?'selected':'')+'>'+esc(unitDisplayName('my',e))+'</option>').join('');
+  const objectivePriorityHtml=tacticalObjectiveAdvisorHtml('my');
   const objectiveIntel=objectiveTacticalSummary();
   const objectiveIntelHtml='<div class="status" style="margin-bottom:8px"><div class="muted small">Objective state</div><div class="tiny" style="margin-top:3px">'+
     'Controlled: <b>'+objectiveIntel.controlled.length+'</b> • Contested: <b>'+objectiveIntel.contested.length+'</b> • Enemy: <b>'+objectiveIntel.enemyControlled.length+'</b> • Central: <b>'+objectiveIntel.central.length+'</b>'+
@@ -7463,7 +7464,8 @@ function tacticalAdvisorHtml(){
   return '<details class="card tactical-advisor-card" open><summary><div class="split"><div><h3 style="margin:0">Tactical Advisor</h3><div class="muted">Quick target comparison</div></div><span class="pill">'+esc(result.evaluatedAt?.phase||state.phase||'Command')+'</span></div></summary>'+
     '<div style="margin-top:10px">'+
       '<div class="field" style="margin-bottom:8px"><label>Attacker</label><select onchange="setTacticalAdvisorAttacker(this.value)">'+attackerOptions+'</select></div>'+
-      objectiveIntelHtml+
+      objectivePriorityHtml+
+            objectiveIntelHtml+
       '<div class="status" style="margin-bottom:8px"><div class="muted small">Recommended targets</div><div class="tiny" style="margin-top:2px">Compare expected damage and wipe chance. Unknown battlefield facts lower confidence but do not hide valid target candidates.</div></div>'+
       (recs.slice(0,3).map(recCard).join('')||'<div class="empty">No eligible target recommendations for the current phase.</div>')+
       '<div class="grid2" style="margin-top:8px"><div class="status"><b>Natural targets</b><div style="margin-top:4px">'+(natural||'<span class="muted">None</span>')+'</div></div><div class="status"><b>Avoid / high-risk</b><div style="margin-top:4px">'+(avoidTargets||'<span class="muted">None</span>')+'</div></div></div>'+
@@ -7511,6 +7513,58 @@ function tacticalLegalityForUnit(side,e){
   const available={movement:p==='Movement',shooting:p==='Shooting'&&action.remainingShootingModels>0,charge:p==='Charge',fight:p==='Fight',command:p==='Command'};
   return {legal:true,phase:p,action,available};
 }
+function tacticalObjectiveAdvisor(side){
+  const player=side==='opp'?'opp':'my',enemy=player==='my'?'opp':'my';
+  const mission=primaryMission(player);
+  const rows=primaryScoringRowsForRound(mission);
+  const summary=objectiveTacticalSummary();
+  const list=Object.keys(state.objectives||{}).map(objectiveStateRecord);
+  const relevant=list.map(o=>{
+    const text=rows.map(r=>String(r?.[2]||'')).join(' ').toLowerCase();
+    const centralRule=/central objectives?/.test(text)&&o.type==='central';
+    const homeRule=/home objective|your home|home/.test(text)&&o.type==='home'&&o.homeSide===player;
+    const enemyTerritoryRule=/enemy territory/.test(text)&&o.territory===enemy;
+    const deploymentRule=/deployment zone/.test(text)&&o.deploymentZone===player;
+    const genericObjectiveRule=/objective/.test(text);
+    const missionRelevant=centralRule||homeRule||enemyTerritoryRule||deploymentRule||genericObjectiveRule;
+    let action='Monitor',score=0,reason='No immediate control change is indicated.';
+    if(o.owner===player){
+      score+=missionRelevant?45:10;
+      if(o.changedThisTurn)score+=10;
+      action=missionRelevant?'Defend':'Hold';
+      reason=o.changedThisTurn?'You gained control this turn; protect the new control.':'You currently control it.';
+    }else if(o.owner==='contested'){
+      score+=missionRelevant?55:25;
+      action='Contest';
+      reason='Control is contested; resolving control may affect scoring.';
+    }else if(o.owner===enemy){
+      score+=missionRelevant?50:15;
+      action='Take';
+      reason=missionRelevant?'Enemy control is directly relevant to current mission conditions.':'Taking it may improve board control.';
+    }else{
+      score+=missionRelevant?30:5;
+      action='Consider';
+      reason='No player currently controls this objective.';
+    }
+    if(o.type==='central')score+=8;
+    if(o.territory===enemy)score+=5;
+    if(o.deploymentZone===enemy)score+=7;
+    if(o.changedThisTurn&&o.owner===enemy)score+=8;
+    return {...o,action,score,reason,missionRelevant};
+  }).sort((a,b)=>b.score-a.score);
+  return {side:player,mission,round:Math.max(1,Number(state.round)||1),recommendations:relevant.slice(0,4),summary};
+}
+function tacticalObjectiveAdvisorHtml(side){
+  const intel=tacticalObjectiveAdvisor(side||'my');
+  const recs=intel.recommendations||[];
+  const cards=recs.map(o=>{
+    const location=[o.type,o.territory,o.deploymentZone==='none'?'':o.deploymentZone].filter(Boolean).join(' • ');
+    const control=o.owner==='my'?'Mine':o.owner==='opp'?'Enemy':o.owner==='contested'?'Contested':'Uncontrolled';
+    return '<div class="status" style="margin-top:5px"><div class="split"><div><b>'+esc(o.name)+'</b><div class="tiny">'+esc(control)+' • '+esc(location)+'</div></div><span class="pill">'+esc(o.action)+'</span></div><div class="tiny" style="margin-top:4px">'+esc(o.reason)+'</div></div>';
+  }).join('');
+  return '<div class="status" style="margin-bottom:8px"><div class="muted small">Objective priorities • Round '+intel.round+'</div>'+(recs.length?cards:'<div class="tiny" style="margin-top:4px">No objectives tracked.</div>')+'</div>';
+}
+
 function tacticalObjectiveValueForTarget(targetEntry,pairCtx){
   const label=String(pairCtx?.objective||'').trim();
   if(!label)return {value:0,status:'unknown',reason:'no-objective-context',objective:''};
