@@ -8949,9 +8949,9 @@ function render(){
     renderBattleOnly();
     return;
   }
-  app.innerHTML=`<div class="top"><div class="brand">ONOFORGE 40K</div><div class="sub">11th Edition • v320 • 40k.app v925 data source • Army-linked Mathhammer Engine</div></div>${nav()}<main class="wrap">
+  app.innerHTML=`<div class="top"><div class="brand">ONOFORGE 40K</div><div class="sub">11th Edition • v321 • 40k.app v925 data source • Army-linked Mathhammer Engine</div></div>${nav()}<main class="wrap">
   
-<div class="status">✓ Browser app loaded locally • Source: ${esc(state.source)} • ${esc(state.revision)} • 40k.app v${esc(String(ONOFORGE_40KAPP_SOURCE?.source?.revision||'925'))}</div>${dataSyncStatusHtml()}<div style="height:12px"></div>${state.page==='battle'?'<div id="battle-view">'+pages.battle()+'</div>':(pages[state.page]||builder)}${'<div id="secondary-plan-modal-root">'+secondaryPlanEditorModal()+'</div>'}</main></div>`;
+<div class="status">✓ Browser app loaded locally • Source: ${esc(state.source)} • ${esc(state.revision)} • 40k.app v${esc(String(ONOFORGE_40KAPP_SOURCE?.source?.revision||'925'))}</div>${dataSyncStatusHtml()}<div style="height:12px"></div><div id="onoforge-advisor-render"></div>${state.page==='battle'?'<div id="battle-view">'+pages.battle()+'</div>':(pages[state.page]||builder)}${'<div id="secondary-plan-modal-root">'+secondaryPlanEditorModal()+'</div>'}</main></div>`;
   ensureLiveGameTimerDisplay();
 }
 
