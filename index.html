@@ -5960,12 +5960,22 @@ function tacticalAdvisorAttackerEntry(){
   const selected=state.tactical?.selectedAttackerUid;
   return candidates.find(e=>e.uid===selected)||mathRosterEntry('my')||candidates[0]||null;
 }
+function tacticalWeaponIsRanged(w){
+  if(!w)return false;
+  const raw=String(w.rng??w.range??'').trim().toUpperCase();
+  if(raw==='MELEE')return false;
+  if(raw)return true;
+  // Normalized catalogue entries distinguish melee and ranged weapons by
+  // WS vs BS when a range value is absent.
+  if(w.WS!=null&&w.BS==null)return false;
+  if(w.BS!=null)return true;
+  const abilities=Array.isArray(w.abilities)?w.abilities.map(x=>String(x).toUpperCase()):[];
+  if(abilities.includes('CLOSE QUARTERS')&&w.WS!=null&&w.BS==null)return false;
+  return false;
+}
 function tacticalAdvisorAttackerHasRangedWeapons(entry){
   if(!entry)return false;
-  return attachedCombatWeaponGroups('my',entry).some(g=>{
-    const range=g?.weapon?.rng??g?.weapon?.range??'';
-    return String(range).trim().toUpperCase()!=='MELEE';
-  });
+  return attachedCombatWeaponGroups('my',entry).some(g=>tacticalWeaponIsRanged(g?.weapon));
 }
 function setTacticalAdvisorAttacker(uid){
   const e=entry('my',uid);
@@ -6919,7 +6929,7 @@ function tacticalShootingResultHtml(){
   const unitLegality=tacticalLegalityForUnit('my',ae);
   const status=unitLegality.reason==='not-your-turn'?'Waiting for your turn':unitLegality.reason==='destroyed'?'Unit destroyed':result.status==='action-already-completed'?'Shooting already completed':legality.canTarget===false?'Not eligible':rec?'Ready to resolve':'Needs information';
   const allGroups=attachedCombatWeaponGroups('my',ae,te);
-  const rangedGroups=allGroups.filter(g=>String(g.weapon?.rng??g.weapon?.range??'').trim().toUpperCase()!=='MELEE');
+  const rangedGroups=allGroups.filter(g=>tacticalWeaponIsRanged(g.weapon));
   const weaponRows=rangedGroups.map(g=>{
     const w=g.weapon||{},name=String(w.name||'Weapon'),range=tacticalWeaponRange(w),abilities=(w.abilities||[]).map(x=>String(x||'').toUpperCase().replace(/-/g,' '));
     const reasons=[];
@@ -6984,6 +6994,7 @@ function tacticalAdvisorHtml(){
     if(result.status==='no-ranged-weapons'){
       return '<details class="card tactical-advisor-card" open><summary><div class="split"><div><h3 style="margin:0">Tactical Advisor</h3><div class="muted">No shooting action available for this unit</div></div><span class="pill">No ranged weapons</span></div></summary>'+
         '<div style="margin-top:10px">'+
+          '<div class="field" style="margin-bottom:8px"><label>Attacker</label><select onchange="setTacticalAdvisorAttacker(this.value)">'+attackerOptions+'</select></div>'+
           '<div class="status"><b>'+esc(result.attacker||'Selected unit')+'</b><div class="muted" style="margin-top:4px">This unit has no ranged weapons, so there is nothing to enter or resolve in the Shooting phase.</div></div>'+
           '<div class="tiny" style="margin-top:8px">Choose another attacker above to evaluate a unit that can shoot.</div>'+
         '</div></details>';
