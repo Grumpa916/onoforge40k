@@ -2035,7 +2035,8 @@ function toggleSecondaryTracking(side,name){
  const mode=side==='my'?state.secondaryMy:state.secondaryOpp;
  const active=secState(side);
  if(!name)return;
- if(secScored(side).includes(name)){
+ const scoredVP=Number((side==='my'?state.secondaryMyScoredVP:state.secondaryOppScoredVP)?.[name])||0;
+ if(secScored(side).includes(name)||scoredVP>0){
    selectSecondaryDetail(side,name);
    return;
  }
@@ -2060,7 +2061,7 @@ function secondaryCatalogHtml(side){
  const isActivePlayer=secondaryActiveSide()===side,name=esc(isMy?state.myName:state.oppName);
  const fixedFull=(isMy?state.secondaryMy:state.secondaryOpp)==='fixed'&&active.length>=2;
  const rows=SECONDARY_CARDS.map(c=>{
-   const n=c.name,activeNow=active.includes(n),scoredNow=scored.includes(n);
+   const n=c.name,activeNow=active.includes(n),scoredNow=scored.includes(n)||Number((side==='my'?state.secondaryMyScoredVP:state.secondaryOppScoredVP)?.[n])>0;
    const unavailable=fixedFull&&!activeNow&&!scoredNow;
    const cls=activeNow?' tracked':(scoredNow?' scored':(unavailable?' unavailable':''));
    return '<button type="button" class="secondary-compact-row'+cls+'" data-secondary-toggle="1" data-secondary-toggle-side="'+side+'" data-secondary-toggle-name="'+esc(n)+'" '+(unavailable?'disabled ':'')+'>'+
