@@ -4831,8 +4831,9 @@ function objectiveRoleLabel(role,name){
   return ({central:'Central',expansion:'Expansion'})[role]||'Expansion';
 }
 function objectiveLayoutTypePlan(){
-  const six=new Set(['Inescapable Dominion','Consecrate','Smoke and Mirrors','Vital Link']);
-  return six.has(primaryMission('my'))?['home','expansion','central','central','expansion','home']:['home','expansion','central','expansion','home'];
+  const purgeMissions=new Set(['Unstoppable Force','Meatgrinder','Punishment','Consecrate',"Destroyer's Wrath"]);
+  const six=purgeMissions.has(primaryMission('my'))||purgeMissions.has(primaryMission('opp'));
+  return six?['home','expansion','central','central','expansion','home']:['home','expansion','central','expansion','home'];
 }
 function autoSeedObjectiveStructure(){
   const plan=objectiveLayoutTypePlan(),current=Object.keys(state.objectives||{});
