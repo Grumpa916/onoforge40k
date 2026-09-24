@@ -1149,17 +1149,39 @@ function primaryScoringIsPer(row){
   const text=String(row?.[2]||'').toLowerCase();
   return /\bper\b|\bfor each\b/.test(text);
 }
-function primaryScoringObjectiveAmount(side,row){
+function primaryScoringObjectiveCount(side,row){
   const text=String(row?.[2]||'').toLowerCase();
-  if(!/\bper\s+objective\b/.test(text))return 1;
-  const owner=side==='opp'?'opp':'my';
+  if(!/\b(?:per|for each)\s+objective\b/.test(text))return null;
   const owned=objectiveCountsForSide(side);
   const excludeHome=/excluding home|exclude home|excl\. home/.test(text);
-  const enemyTerritory=/enemy territory|enemy's territory|enemy territory/.test(text);
   const central=/central objectives?/.test(text);
+  const enemyTerritory=/enemy territory|enemy's territory/.test(text);
   const deploymentZone=/deployment zone/.test(text);
-  const filtered=owned.filter(o=>(!excludeHome||o.type!=='home')&&(!central||o.type==='central')&&(!enemyTerritory||objectiveIsInTerritory(o.name,side))&&(!deploymentZone||objectiveDeploymentZone(o.name)===side));
+  const filtered=owned.filter(o=>
+    (!excludeHome||o.type!=='home') &&
+    (!central||o.type==='central') &&
+    (!enemyTerritory||objectiveIsInTerritory(o.name,side)) &&
+    (!deploymentZone||objectiveDeploymentZone(o.name)===(side==='opp'?'opp':'my'))
+  );
   return filtered.length;
+}
+function primaryScoringObjectiveAmount(side,row){
+  const count=primaryScoringObjectiveCount(side,row);
+  return count===null?1:count;
+}
+function primaryScoringEffectiveMax(side,row){
+  const explicit=primaryScoringMax(row);
+  const objectiveCount=primaryScoringObjectiveCount(side,row);
+  if(objectiveCount===null)return explicit||5;
+  return Math.max(0,Math.min(explicit||objectiveCount,objectiveCount));
+}
+function primaryScoringObjectiveLinkHtml(side,row,done,actual){
+  const count=primaryScoringObjectiveCount(side,row);
+  if(count===null)return '';
+  const cap=primaryScoringEffectiveMax(side,row);
+  if(done)return '<span class="tiny">Objective control at scoring: '+count+' qualifying</span>';
+  if(count===0)return '<span class="tiny" style="color:#d99a9a">No qualifying objectives currently controlled</span>';
+  return '<span class="tiny" style="color:#aee2bf">'+count+' qualifying objective'+(count===1?'':'s')+' • up to '+cap+' scoring</span>';
 }
 function primaryScoringMax(row){
   const text=String(row?.[2]||'')+' '+String(row?.[3]||'');
@@ -1241,8 +1263,16 @@ function scorePrimaryItem(side,index,mission,amountOverride){
     const per=primaryScoringIsPer(row);
     const suggestedAmount=primaryScoringObjectiveAmount(side,row);
     const objectiveBased=/\bper\s+objective\b/i.test(String(row?.[2]||''));
-    const requestedAmount=per?Math.max(objectiveBased?0:1,Math.min(50,Math.floor(Number(amountOverride??amounts[index]??suggestedAmount)||suggestedAmount))):1;
-    const amount=per?Math.min(requestedAmount,primaryScoringMax(row)||50):1;
+    const requestedRaw=Number(amountOverride??amounts[index]??suggestedAmount);
+    const requestedAmount=per
+      ? Math.max(objectiveBased?0:1,Math.min(50,Math.floor(Number.isFinite(requestedRaw)?requestedRaw:suggestedAmount)))
+      : 1;
+    const objectiveCap=primaryScoringEffectiveMax(side,row);
+    const amount=per?Math.min(requestedAmount,objectiveBased?objectiveCap:(primaryScoringMax(row)||50)):1;
+    if(objectiveBased&&objectiveCap<=0){
+      alert('Objective control does not currently satisfy this Primary scoring condition.');
+      return;
+    }
     const baseVP=primaryScoringVP(row[1]);
     const requestedVP=baseVP*amount;
     const originalIndex=primaryScoringOriginalIndex(mission,index);
@@ -1336,11 +1366,14 @@ function primaryMissionDetailsHtml(mission,side){
       const per=primaryScoringIsPer(r),maxAmount=primaryScoringMax(r),done=scored.includes(i);
       const actual=done?Number(values[i])||0:0;
       const suggestedAmount=primaryScoringObjectiveAmount(side,r);
-      const amount=Math.min(maxAmount||5,Number(amounts[i])||suggestedAmount);
+      const effectiveMax=primaryScoringEffectiveMax(side,r);
+      const amount=primaryScoringObjectiveCount(side,r)!==null
+        ? Math.max(0,Math.min(effectiveMax,Number(amounts[i]??suggestedAmount)))
+        : Math.min(maxAmount||5,Number(amounts[i])||suggestedAmount);
       return '<div class="primary-approved-score-row primary-score-click-target'+(done?' scored':'')+'" data-primary-score="1" data-primary-side="'+side+'" data-primary-index="'+i+'" data-primary-mission="'+esc(mission)+'" title="'+(done?'Click to remove this scoring condition':'Click to score this condition')+'">'+
         '<div class="primary-approved-icon">'+(done?'✓':(i===0?'⚑':i===1?'⌂':'◆'))+'</div>'+
         '<div class="primary-approved-copy"><strong>'+esc(r[2])+'</strong><span>Score '+esc(r[1])+(per?' × '+amount:'')+(done?' • Scored '+actual+' VP':'')+'</span></div>'+
-        (per&&!done?'<div class="primary-score-quantity primary-count-stepper"><button type="button" class="btn" data-primary-amount-step="-1" data-primary-side="'+side+'" data-primary-index="'+i+'" data-primary-mission="'+esc(mission)+'">−</button><output>'+amount+'/'+(maxAmount||5)+'</output>'+(maxAmount?'<span class="tiny primary-count-max">Max '+maxAmount+' scoring</span>':'')+'<button type="button" class="btn" data-primary-amount-step="1" data-primary-side="'+side+'" data-primary-index="'+i+'" data-primary-mission="'+esc(mission)+'">+</button></div>':(done?'<div class="primary-approved-control"><output>'+actual+' VP</output></div>':''))+
+        (per&&!done?'<div class="primary-score-quantity primary-count-stepper"><button type="button" class="btn" data-primary-amount-step="-1" data-primary-side="'+side+'" data-primary-index="'+i+'" data-primary-mission="'+esc(mission)+'">−</button><output>'+amount+'/'+(primaryScoringObjectiveCount(side,r)!==null?effectiveMax:(maxAmount||5))+'</output>'+(primaryScoringObjectiveCount(side,r)!==null?primaryScoringObjectiveLinkHtml(side,r,done,actual):(maxAmount?'<span class="tiny primary-count-max">Max '+maxAmount+' scoring</span>':'<span class="tiny primary-count-max">Objective count not required</span>'))+'<button type="button" class="btn" data-primary-amount-step="1" data-primary-side="'+side+'" data-primary-index="'+i+'" data-primary-mission="'+esc(mission)+'">+</button></div>':(done?'<div class="primary-approved-control"><output>'+actual+' VP</output>'+primaryScoringObjectiveLinkHtml(side,r,done,actual)+'</div>':''))+
       '</div>';
     }).join('')+'</div>'+
     primaryMissionRulesHtml(mission,side)+
@@ -9240,7 +9273,7 @@ function dataManagementPage(){const cfg=getCloudConfig();const battles=Array.isA
 
 function exportAllData(){
   try{
-    const backup={schema:'onoforge40k.backup.v272',app:'OnoForge 40K',version:'v272',exportedAt:new Date().toISOString(),state:JSON.parse(JSON.stringify(state)),DEMO:JSON.parse(JSON.stringify(DEMO))};
+    const backup={schema:'onoforge40k.backup.v272',app:'OnoForge 40K',version:'v329',exportedAt:new Date().toISOString(),state:JSON.parse(JSON.stringify(state)),DEMO:JSON.parse(JSON.stringify(DEMO))};
     const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
     const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='onoforge40k-backup-v272-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
   }catch(e){alert('Export failed: '+e.message)}
