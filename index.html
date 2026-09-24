@@ -5890,7 +5890,9 @@ function tacticalDistanceLabel(ctx){
 }
 function tacticalContextHtml(){
   const currentPhase=String(state.phase||'Command');
-  if(currentPhase==='Command') return '';
+  // Movement has its own unit-by-unit tracker. Tactical Context is intentionally
+  // hidden here so the live-game workflow stays focused on recording movement.
+  if(currentPhase==='Command'||currentPhase==='Movement') return '';
   const advisorEntry=tacticalAdvisorAttackerEntry();
   if(currentPhase==='Shooting'&&advisorEntry&&!tacticalAdvisorAttackerHasRangedWeapons(advisorEntry)) return '';
   const open=state.tacticalContextOpen===true;
