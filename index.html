@@ -4820,6 +4820,23 @@ function objectiveTerritory(name){
   if(meta.type==='home'&&['my','opp'].includes(meta.homeSide))return meta.homeSide;
   return 'nml';
 }
+function objectiveDeploymentZone(name){
+  const meta=ensureObjectiveMeta()[String(name||'')]||{};
+  if(['my','opp','none'].includes(meta.deploymentZone))return meta.deploymentZone;
+  if(meta.type==='home'&&['my','opp'].includes(meta.homeSide))return meta.homeSide;
+  return 'none';
+}
+function objectiveDeploymentZoneLabel(zone){return ({my:'My Deployment Zone',opp:'Opponent Deployment Zone',none:'No Deployment Zone'})[zone]||'No Deployment Zone';}
+function objectiveStateRecord(name){
+  const owner=['my','opp','contested','none'].includes(state.objectives?.[name])?state.objectives[name]:'none';
+  const startOwner=objectiveTurnStartOwner(name);
+  return {name,owner,type:objectiveType(name),territory:objectiveTerritory(name),deploymentZone:objectiveDeploymentZone(name),startOwner,changedThisTurn:owner!==startOwner};
+}
+function objectiveTacticalSummary(){
+  const list=Object.keys(state.objectives||{}).map(objectiveStateRecord);
+  const side=state.currentTurn==='opp'?'opp':'my',enemy=side==='my'?'opp':'my';
+  return {side,controlled:list.filter(o=>o.owner===side),contested:list.filter(o=>o.owner==='contested'),enemyControlled:list.filter(o=>o.owner===enemy),enemyTerritory:list.filter(o=>o.territory===enemy),enemyDeployment:list.filter(o=>o.deploymentZone===enemy),central:list.filter(o=>o.type==='central')};
+}
 function objectiveTerritoryLabel(territory){
   return ({my:'My Territory',opp:'Opponent Territory',nml:"No Man's Land"})[territory]||"No Man's Land";
 }
@@ -4843,7 +4860,7 @@ function autoSeedObjectiveStructure(){
   plan.forEach((type,i)=>{
     const name=type==='home'?(i===0?'My Home':'Opponent Home'):type==='central'?'Central '+(++ce):'Expansion '+(++ex);
     state.objectives[name]='none';
-    state.objectiveMeta[name]={type,homeSide:type==='home'?(i===0?'my':'opp'):null,territory:type==='home'?(i===0?'my':'opp'):'nml',autoLayout:true};
+    state.objectiveMeta[name]={type,homeSide:type==='home'?(i===0?'my':'opp'):null,territory:type==='home'?(i===0?'my':'opp'):'nml',deploymentZone:type==='home'?(i===0?'my':'opp'):'none',autoLayout:true};
   });
   state.objectiveMapMissionKey=objectiveMissionKey();
   ensureObjectiveTurnSnapshot();recordObjectiveTurnState();
@@ -4874,6 +4891,14 @@ function setObjectiveTerritory(name,territory){
   meta.territory=next;
   ensureObjectiveMeta()[key]=meta;
   event('OBJECTIVE_TERRITORY_CHANGED',{name:key,unit:'Objective '+key,action:'Territory → '+objectiveTerritoryLabel(next),after:next,round:Math.max(1,Number(state.round)||1),phase:String(state.phase||'Command')},before);
+  save();render();
+}
+function setObjectiveDeploymentZone(name,zone){
+  const key=String(name||'').trim(),next=['my','opp','none'].includes(zone)?zone:null;
+  if(!key||!next)return;
+  const before=snapshotForUndo(),meta=ensureObjectiveMeta()[key]||{};
+  meta.deploymentZone=next;ensureObjectiveMeta()[key]=meta;
+  event('OBJECTIVE_DEPLOYMENT_CHANGED',{name:key,unit:'Objective '+key,action:'Deployment zone → '+objectiveDeploymentZoneLabel(next),after:next,round:Math.max(1,Number(state.round)||1),phase:String(state.phase||'Command')},before);
   save();render();
 }
 function setObjectiveControl(name,owner){
@@ -4950,8 +4975,10 @@ function objectiveControlTrackerHtml(){
     const roleOptions=['home','central','expansion'].map(value=>'<option value="'+value+'" '+(role===value?'selected':'')+'>'+objectiveRoleLabel(value,name)+'</option>').join('');
     const territory=objectiveTerritory(name);
     const territoryOptions=['my','opp','nml'].map(value=>'<option value="'+value+'" '+(territory===value?'selected':'')+'>'+objectiveTerritoryLabel(value)+'</option>').join('');
+    const deploymentZone=objectiveDeploymentZone(name);
+    const deploymentOptions=['my','opp','none'].map(value=>'<option value="'+value+'" '+(deploymentZone===value?'selected':'')+'>'+objectiveDeploymentZoneLabel(value)+'</option>').join('');
     const button=(value,label)=>'<button type="button" class="btn objective-control-btn '+(current===value?'active':'')+'" aria-pressed="'+(current===value?'true':'false')+'" onclick="setObjectiveControl(\''+escName(name)+'\',\''+value+'\');return false;">'+label+'</button>';
-    return '<div class="objective-control-row"><div class="objective-control-name"><b>'+esc(name)+'</b><span class="tiny">Start: '+esc(start==='my'?'My':start==='opp'?'Opp':start==='contested'?'Contested':'None')+'</span><select class="objective-role-select" aria-label="Objective location" onchange="setObjectiveRole(\''+escName(name)+'\',this.value);return false;">'+roleOptions+'</select><select class="objective-role-select" aria-label="Objective territory" onchange="setObjectiveTerritory(\''+escName(name)+'\',this.value);return false;">'+territoryOptions+'</select></div><div class="objective-control-buttons">'+button('my','My')+button('opp','Opp')+button('contested','Contested')+button('none','None')+'<button type="button" class="btn objective-remove-btn" title="Remove objective" onclick="removeTrackedObjective(\''+escName(name)+'\');return false;">×</button></div></div>';
+    return '<div class="objective-control-row"><div class="objective-control-name"><b>'+esc(name)+'</b><span class="tiny">Start: '+esc(start==='my'?'My':start==='opp'?'Opp':start==='contested'?'Contested':'None')+'</span><select class="objective-role-select" aria-label="Objective location" onchange="setObjectiveRole(\''+escName(name)+'\',this.value);return false;">'+roleOptions+'</select><select class="objective-role-select" aria-label="Objective territory" onchange="setObjectiveTerritory(\''+escName(name)+'\',this.value);return false;">'+territoryOptions+'</select><select class="objective-role-select" aria-label="Objective deployment zone" onchange="setObjectiveDeploymentZone(\''+escName(name)+'\',this.value);return false;">'+deploymentOptions+'</select></div><div class="objective-control-buttons">'+button('my','My')+button('opp','Opp')+button('contested','Contested')+button('none','None')+'<button type="button" class="btn objective-remove-btn" title="Remove objective" onclick="removeTrackedObjective(\''+escName(name)+'\');return false;">×</button></div></div>';
   }).join(''):'<div class="empty" style="padding:10px">No objectives tracked yet. Add the objectives from your mission.</div>';
   return '<details class="card objective-control-card '+(opponentTurn?'objective-control-opponent':'objective-control-self')+'" '+(open?'open':'')+' ontoggle="state.objectiveControlOpen=this.open;save()">'+
     '<summary style="cursor:pointer;list-style:none"><div class="split"><div><h3 style="margin:0">Objective Control</h3><div class="muted">'+(opponentTurn?'Record objective changes during the opponent turn.':'Current battlefield objective ownership used by scoring and Tactical Advisor.')+'</div></div><span class="pill">'+(opponentTurn?'Opponent turn':'Your turn')+'</span></div></summary>'+
