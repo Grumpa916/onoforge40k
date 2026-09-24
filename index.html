@@ -4814,7 +4814,7 @@ function objectiveRoleLabel(role){
 }
 function objectiveCountsForSide(side){
   const owner=side==='opp'?'opp':'my';
-  return Object.entries(state.objectives||{}).filter(([name,current])=>current===owner).map(([name])=>({name,role:objectiveRole(name)}));
+  return Object.entries(state.objectives||{}).filter(([name,current])=>current===owner).map(([name])=>({name,type:objectiveType(name)}));
 }
 function objectiveStateSummary(){
   const current=Object.entries(state.objectives||{}).map(([name,owner])=>({name,owner:['my','opp','contested','none'].includes(owner)?owner:'none',role:objectiveRole(name),startOwner:objectiveTurnStartOwner(name)}));
