@@ -4406,7 +4406,7 @@ function battle(){const recent=state.events.slice(0,12);return `${gameTimerHtml(
 </div>
  <div class="tabs"><button class="active">Current State</button><button onclick="openMyListFromBattle()">My List</button><button onclick="openOpponentListFromBattle()">Opponent List</button><button onclick="state.page='log';state.builderView='full';render()">Full Action Log</button><button onclick="state.page='scorelog';render()">Scoring Log</button></div>
 ${primaryMissionPanel('battle')}
-${battleNotesHtml()}${tacticalContextHtml()}${tacticalAdvisorHtml()}${tacticalPreRollResolutionModal()}
+${battleNotesHtml()}${tacticalContextHtml()}${tacticalShootingResultHtml()}${tacticalAdvisorHtml()}${tacticalPreRollResolutionModal()}
 <details class="card secondary-battle-card secondary-missions-collapsible" ${state.secondaryMissionsOpen===true?"open":""} ontoggle="state.secondaryMissionsOpen=this.open;save()">
 <summary><div class="split"><div><h3 style="margin:0">Secondary Missions</h3><div class="muted">All 18 missions • Active player: ${esc(state.currentTurn==='opp'?state.oppName:state.myName)} • Secondary VP ${state.myVP||0}–${state.oppVP||0}</div></div><div class="pill">Click to ${state.secondaryMissionsOpen===true?'collapse':'open'}</div></div></summary>
 <div class="secondary-missions-body"><div class="grid2">${secondaryActiveSide()==='my'?secondaryCatalogHtml('my')+secondaryCatalogHtml('opp'):secondaryCatalogHtml('opp')+secondaryCatalogHtml('my')}</div>${secondaryDetailHtml(secondaryActiveSide())}</div></details>
@@ -6875,6 +6875,41 @@ function tacticalPreRollHtml(){
   const precisionUi=r.precision&&precisionChars.length?'<div class="status" style="margin-top:10px"><b>Precision allocation group</b><div class="tiny" style="margin:5px 0 8px">Select the visible CHARACTER group to make current for Precision attacks. The group remains current until it is destroyed.</div><select onchange="state.mathRules={...(state.mathRules||{}),precisionTargetModelId:this.value};save();render()"><option value="">Choose CHARACTER…</option>'+precisionChars.map(m=>'<option value="'+esc(m.id)+'" '+(String((state.mathRules||{}).precisionTargetModelId||'')===String(m.id)?'selected':'')+'>'+esc(m.role||m.unitName||'Character')+' • '+esc(String(m.woundsRemaining))+'/'+esc(String(m.maxWounds))+'W</option>').join('')+'</select><label style="display:block;margin-top:8px;font-size:11px"><input type="checkbox" '+((state.mathRules||{}).precisionTargetVisible===true?'checked':'')+' onchange="state.mathRules={...(state.mathRules||{}),precisionTargetVisible:this.checked};save();render()"> Character is visible to at least one attacking model</label></div>':'';
   const splitHtml=splitPools.length>1?'<div class="status" style="margin-top:10px"><b>Split-fire / multiple weapon pools</b><div class="tiny" style="margin-top:4px">Assign individual models from each identical weapon pool to targets. One model’s weapon cannot be split between targets.</div><div style="display:grid;gap:7px;margin-top:8px">'+splitPools.map(p=>{const opts=(state.opp||[]).filter(e=>!e.attachedTo&&!tacticalUnitState('opp',e)?.destroyed).map(e=>'<option value="'+esc(e.uid)+'">'+esc(unitDisplayName('opp',e))+'</option>').join('');const rows=(p.allocations.length? p.allocations:[{targetUid:'',count:p.count}]).slice(0,5);return '<div class="status" style="margin:0"><b>'+esc(p.weapon.name)+'</b><div class="tiny">'+p.count+' model'+(p.count===1?'':'s')+' available</div>'+rows.map((a,i)=>'<div class="split" style="margin-top:6px"><select style="min-width:180px" onchange="setTacticalPreRollPoolAllocation(\''+esc(p.key).replace(/'/g,"&#39;")+'\','+i+',\'targetUid\',this.value)"><option value="">Choose target…</option>'+opts.replace('value="'+esc(a.targetUid)+'"','value="'+esc(a.targetUid)+'" selected')+'</select><input type="number" min="0" max="'+p.count+'" value="'+a.count+'" style="width:80px" onchange="setTacticalPreRollPoolAllocation(\''+esc(p.key).replace(/'/g,"&#39;")+'\','+i+',\'count\',this.value)"><span class="tiny">models</span></div>').join('')+'</div>'}).join('')+'</div></div>':'';
   return '<div class="card tactical-preroll-card" style="border-color:#4f6f8f;margin-top:12px"><div class="split"><div><h3 style="margin:0">Pre-Roll Check</h3><div class="muted">Verify the final target number before rolling physical dice.</div></div><span class="pill">PHYSICAL DICE</span></div>'+splitHtml+selector+precisionUi+'<div class="'+cls+'" style="margin-top:10px"><b>'+esc(r.status==='ready'||r.status==='ready-with-warnings'?'ROLL WHEN READY':'CHECK REQUIRED')+'</b>'+(r.weapon?' • '+esc(r.weapon):'')+'</div><div class="grid3" style="margin-top:10px">'+steps+'</div>'+(warningHtml?'<div class="warn" style="margin-top:10px"><b>Rules / context reminders</b><ul style="margin:5px 0 0 18px">'+warningHtml+'</ul></div>':'')+(canEnter?'<button type="button" class="btn primary" style="width:100%;margin-top:12px;font-size:16px;font-weight:800" onclick="tacticalPreRollOpenResolution()">Enter Physical Dice Results</button>':'')+'<div class="tiny" style="margin-top:8px">Final values are calculated from the current battlefield state and the same combat engine used by Tactical Advisor. The app does not roll the physical dice.</div></div>';
+}
+
+function tacticalShootingResultHtml(){
+  if(String(state.phase||'Command')!=='Shooting')return '';
+  const ae=tacticalAdvisorAttackerEntry();
+  const teUid=state.tactical?.selectedTargetUid;
+  const te=teUid?entry('opp',teUid):null;
+  if(!ae||!te)return '';
+  const ctx=tacticalPairState(ae.uid,te.uid);
+  const legality=tacticalTargetLegality(ae,te,'Shooting');
+  const result=tacticalAdvisorV1(ae.uid,{samples:4000});
+  const rec=Array.isArray(result.recommendations)?result.recommendations.find(x=>x.entryUid===te.uid):null;
+  const status=legality.canTarget===false?'Not eligible':rec?'Ready to resolve':'Needs information';
+  const statusClass=legality.canTarget===false?'warn':rec?'ok':'status';
+  const reasons=(legality.reasons||[]).map(x=>'<li>'+esc(x)+'</li>').join('');
+  const weapons=rec?.weaponProfiles?.length?rec.weaponProfiles.map(x=>'<span class="pill" style="margin:2px">'+esc(x)+'</span>').join(''):'<span class="muted">No eligible ranged weapons established</span>';
+  const expected=rec?'<div class="grid3" style="margin-top:10px">'+
+    '<div class="status"><div class="muted small">Expected damage</div><b style="font-size:1.35em">'+Number(rec.expectedDamage||0).toFixed(1)+'W</b></div>'+
+    '<div class="status"><div class="muted small">Expected models killed</div><b style="font-size:1.35em">'+Number(rec.modelsKilled||0).toFixed(1)+'</b></div>'+
+    '<div class="status"><div class="muted small">Wipe chance</div><b style="font-size:1.35em">'+(Number(rec.wipeChance||0)*100).toFixed(0)+'%</b></div>'+
+  '</div>':'<div class="status" style="margin-top:10px">Enter the required battlefield information above to calculate this matchup.</div>';
+  return '<details class="card tactical-shooting-result-card" open>'+
+    '<summary><div class="split"><div><h3 style="margin:0">Shooting Result</h3><div class="muted">'+esc(unitDisplayName('my',ae))+' → '+esc(unitDisplayName('opp',te))+'</div></div><span class="pill">'+status+'</span></div></summary>'+
+    '<div style="margin-top:10px">'+
+      '<div class="grid3">'+
+        '<div class="status"><div class="muted small">Distance</div><b>'+esc(ctx.distanceInches===null?(ctx.distanceBand==='unknown'?'Unknown':ctx.distanceBand):ctx.distanceInches+'"')+'</b></div>'+
+        '<div class="status"><div class="muted small">LOS</div><b>'+esc(ctx.los==='yes'?'Yes':ctx.los==='no'?'No':'Unknown')+'</b></div>'+
+        '<div class="status"><div class="muted small">Target</div><b>'+esc(unitDisplayName('opp',te))+'</b></div>'+
+      '</div>'+
+      '<div class="status" style="margin-top:10px"><div class="muted small">Eligible weapons</div><div style="margin-top:5px">'+weapons+'</div></div>'+
+      expected+
+      (reasons?'<div class="warn" style="margin-top:10px"><b>Check</b><ul style="margin:5px 0 0 18px">'+reasons+'</ul></div>':'')+
+      '<div class="tiny" style="margin-top:8px">Expected values use the same combat engine as the Tactical Advisor. The app does not roll your physical dice.</div>'+
+    '</div>'+
+  '</details>';
 }
 
 function tacticalAdvisorHtml(){
