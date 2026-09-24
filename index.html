@@ -1439,6 +1439,8 @@ function primaryScoringCheckpointRows(side,mission){
 }
 function primaryObjectiveCheckpoint(side,mission){
   if(!mission)return null;
+  const activeTurn=state.currentTurn==='opp'?'opp':'my';
+  if(side!==activeTurn)return null;
   const rows=primaryScoringCheckpointRows(side,mission).filter(({row})=>primaryScoringObjectiveCount(side,row)!==null);
   if(!rows.length)return null;
   const checks=rows.map(({row,index})=>{
