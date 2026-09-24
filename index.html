@@ -512,6 +512,11 @@
   .battle-layout > .battle-log{grid-column:1!important;grid-row:auto!important}
 }
 
+/* v311: battle display regression guard */
+.battle-layout{grid-template-columns:minmax(0,1fr) minmax(420px,480px)!important;align-items:start!important}
+.battle-layout>div:first-child{grid-column:1!important;grid-row:1!important;min-width:0!important}
+.battle-layout>.battle-side{grid-column:2!important;grid-row:1!important;min-width:0!important}
+@media(max-width:1300px){.battle-layout{display:block!important;grid-template-columns:1fr!important;width:100%!important;min-width:0!important}.battle-layout>div:first-child,.battle-layout>.battle-side{display:block!important;width:100%!important;min-width:0!important;grid-column:auto!important;grid-row:auto!important}.battle-state-column{position:static!important;width:100%!important;height:auto!important;overflow:visible!important}}
 /* v290: full Army State side panel */
 .battle-layout{grid-template-columns:minmax(0,1fr) minmax(460px,480px)!important}
 .battle-state-column{position:sticky;top:10px;height:calc(100vh - 20px);overflow:auto;scrollbar-width:thin}
