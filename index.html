@@ -1107,7 +1107,8 @@ function scorePrimaryItem(side,index,mission,amountOverride){
     event('PRIMARY_UNSCORED',{side,unit:side==='my'?'Primary Mission':'Opponent Primary Mission',action:'Primary scoring condition removed -'+Math.abs(delta)+' VP',before,after,delta,mission,round,scoringItem:row[2],scoringTiming:row[0]},fullBefore);
   }else{
     const per=primaryScoringIsPer(row);
-    const amount=per?Math.max(1,Math.min(50,Math.floor(Number(amountOverride??amounts[index]??1)||1))):1;
+    const requestedAmount=per?Math.max(1,Math.min(50,Math.floor(Number(amountOverride??amounts[index]??1)||1))):1;
+    const amount=per?Math.min(requestedAmount,primaryScoringMax(row)||50):1;
     const baseVP=primaryScoringVP(row[1]);
     const requestedVP=baseVP*amount;
     const originalIndex=primaryScoringOriginalIndex(mission,index);
@@ -1204,7 +1205,7 @@ function primaryMissionDetailsHtml(mission,side){
       return '<div class="primary-approved-score-row primary-score-click-target'+(done?' scored':'')+'" data-primary-score="1" data-primary-side="'+side+'" data-primary-index="'+i+'" data-primary-mission="'+esc(mission)+'" title="'+(done?'Click to remove this scoring condition':'Click to score this condition')+'">'+
         '<div class="primary-approved-icon">'+(done?'✓':(i===0?'⚑':i===1?'⌂':'◆'))+'</div>'+
         '<div class="primary-approved-copy"><strong>'+esc(r[2])+'</strong><span>Score '+esc(r[1])+(per?' × '+amount:'')+(done?' • Scored '+actual+' VP':'')+'</span></div>'+
-        (per&&!done?'<div class="primary-score-quantity primary-count-stepper"><button type="button" class="btn" data-primary-amount-step="-1" data-primary-side="'+side+'" data-primary-index="'+i+'" data-primary-mission="'+esc(mission)+'">−</button><output>'+amount+'/'+(maxAmount||5)+'</output>'+(maxAmount?'<span class="tiny primary-count-max">Max '+maxAmount+'</span>':'')+'<button type="button" class="btn" data-primary-amount-step="1" data-primary-side="'+side+'" data-primary-index="'+i+'" data-primary-mission="'+esc(mission)+'">+</button></div>':(done?'<div class="primary-approved-control"><output>'+actual+' VP</output></div>':''))+
+        (per&&!done?'<div class="primary-score-quantity primary-count-stepper"><button type="button" class="btn" data-primary-amount-step="-1" data-primary-side="'+side+'" data-primary-index="'+i+'" data-primary-mission="'+esc(mission)+'">−</button><output>'+amount+'/'+(maxAmount||5)+'</output>'+(maxAmount?'<span class="tiny primary-count-max">Max '+maxAmount+' scoring</span>':'')+'<button type="button" class="btn" data-primary-amount-step="1" data-primary-side="'+side+'" data-primary-index="'+i+'" data-primary-mission="'+esc(mission)+'">+</button></div>':(done?'<div class="primary-approved-control"><output>'+actual+' VP</output></div>':''))+
       '</div>';
     }).join('')+'</div>'+
     primaryMissionRulesHtml(mission,side)+
@@ -8498,9 +8499,8 @@ document.addEventListener('click',function(ev){
       if(!state[key]||typeof state[key]!=='object')state[key]={};
       if(!state[key][roundKey]||typeof state[key][roundKey]!=='object')state[key][roundKey]={};
       const row=primaryScoringRowsForRound(mission)[index];
-      const maxAmount=primaryScoringMax(row)||5;
-      const current=Math.max(1,Math.min(maxAmount,Math.floor(Number(state[key][roundKey][index])||1)));
-      state[key][roundKey][index]=Math.max(1,Math.min(maxAmount,current+delta));
+      const current=Math.max(1,Math.min(50,Math.floor(Number(state[key][roundKey][index])||1)));
+      state[key][roundKey][index]=Math.max(1,Math.min(50,current+delta));
       save();render();
     }
     return;
