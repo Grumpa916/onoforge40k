@@ -701,7 +701,7 @@ function bootstrapUnitDatabase(){
   return typeof EXPANDED_CATALOGUE!=='undefined'?EXPANDED_CATALOGUE:(Array.isArray(DEMO)?DEMO:[]);
 }
 function mergeSupplementalUnits(canonical,supplemental){
-  const out=Array.isArray(canonical)?canonical.map(u=>({...u,sourceRole:'canonical')):[];
+  const out=Array.isArray(canonical)?canonical.map(u=>({...u,sourceRole:'canonical'})):[];
   const seen=new Set(out.map(u=>String(u?.faction||'')+'|'+String(u?.name||'')));
   for(const u of (Array.isArray(supplemental)?supplemental:[])){
     const k=String(u?.faction||'')+'|'+String(u?.name||'');
