@@ -548,6 +548,15 @@
 
 .primary-count-stepper{display:flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap}.primary-count-stepper .btn{width:26px;height:24px;min-height:24px;padding:0;font-size:16px;line-height:1}.primary-count-stepper output{min-width:34px;text-align:center;font-size:11px;font-weight:800;color:#e8edf4}
 .primary-count-max{margin:0 3px;font-weight:800}.primary-count-stepper{flex-wrap:wrap}
+
+/* Battle Mode responsive layout guard: keep the live control center full-width on narrower viewports. */
+@media(max-width:1200px){
+  .battle-layout{display:block!important;width:100%!important;min-width:0!important}
+  .battle-layout>div:first-child{width:100%!important;min-width:0!important}
+  .battle-side{width:100%!important;min-width:0!important;margin-top:16px}
+  .battle-state-column{position:static!important;width:100%!important;height:auto!important;overflow:visible!important}
+  .battle-log{position:static!important;width:100%!important;max-height:none!important;overflow:visible!important}
+}
 </style></head><body><div id="app"></div><script>
 window.addEventListener('error',function(ev){var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var msg=String(ev.error?.message||ev.message||'Unknown error');a.innerHTML='<span class="error-title">OnoForge error</span><div class="error-detail">'+msg.replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</div><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});window.addEventListener('unhandledrejection',function(ev){var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var reason=ev.reason?.message||ev.reason||'Unhandled promise rejection';a.innerHTML='<span class="error-title">OnoForge error</span><div class="error-detail">'+String(reason).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</div><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});
 
