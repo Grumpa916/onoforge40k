@@ -4861,7 +4861,7 @@ function setObjectiveRole(name,role){
   const next=['home','central','expansion'].includes(role)?role:null;
   if(!key||!next)return;
   const before=snapshotForUndo();
-  const meta=ensureObjectiveMeta()[key]||{};meta.type=next;if(next!=='home')meta.homeSide=null;ensureObjectiveMeta()[key]=meta;
+  const meta=ensureObjectiveMeta()[key]||{};meta.type=next;if(next!=='home'){meta.homeSide=null;meta.territory='nml';}else{meta.homeSide=meta.homeSide||'my';meta.territory=meta.homeSide;}ensureObjectiveMeta()[key]=meta;
   event('OBJECTIVE_ROLE_CHANGED',{name:key,unit:'Objective '+key,action:'Location → '+objectiveRoleLabel(next),after:next,round:Math.max(1,Number(state.round)||1),phase:String(state.phase||'Command')},before);
   save();render();
 }
