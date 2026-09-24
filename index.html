@@ -606,6 +606,21 @@ body{overflow-x:hidden}
   .battle-layout>.battle-side>.battle-state-column{grid-column:1!important;grid-row:auto!important}
   .battle-layout>.battle-side>.battle-log{grid-column:1!important;grid-row:auto!important}
 }
+
+<style id="battle-layout-final-fix">
+/* v320: stable Battle Mode structure — no display:contents, no sticky Army State */
+.battle-layout{display:grid!important;grid-template-columns:minmax(0,1fr) 380px!important;grid-template-rows:auto auto!important;gap:16px!important;align-items:start!important;width:100%!important;max-width:100%!important;min-width:0!important;margin:0!important}
+.battle-layout>div:first-child{display:block!important;grid-column:1!important;grid-row:1!important;width:auto!important;min-width:0!important;max-width:100%!important;visibility:visible!important;position:static!important}
+.battle-layout>.battle-state-column{display:block!important;grid-column:2!important;grid-row:1!important;width:100%!important;min-width:0!important;max-width:100%!important;position:static!important;height:auto!important;max-height:none!important;overflow:visible!important}
+.battle-layout>.battle-log{display:block!important;grid-column:1 / -1!important;grid-row:2!important;width:100%!important;min-width:0!important;max-width:100%!important;margin:0!important;position:static!important;height:auto!important;max-height:none!important;overflow:visible!important}
+.battle-layout>.battle-state-column .army-state-grid{width:100%!important;min-width:0!important}
+@media(max-width:1150px){
+  .battle-layout{grid-template-columns:minmax(0,1fr)!important;grid-template-rows:auto!important;gap:12px!important}
+  .battle-layout>div:first-child{grid-column:1!important;grid-row:1!important;width:100%!important}
+  .battle-layout>.battle-state-column{grid-column:1!important;grid-row:2!important;width:100%!important}
+  .battle-layout>.battle-log{grid-column:1!important;grid-row:3!important;width:100%!important}
+}
+</style>
 </style></head><body><div id="app"></div><script>
 window.addEventListener('error',function(ev){var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var msg=String(ev.error?.message||ev.message||'Unknown error');a.innerHTML='<span class="error-title">OnoForge error</span><div class="error-detail">'+msg.replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</div><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});window.addEventListener('unhandledrejection',function(ev){var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var reason=ev.reason?.message||ev.reason||'Unhandled promise rejection';a.innerHTML='<span class="error-title">OnoForge error</span><div class="error-detail">'+String(reason).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</div><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});
 
@@ -4375,9 +4390,8 @@ ${battleNotesHtml()}${tacticalContextHtml()}${tacticalAdvisorHtml()}${tacticalPr
 <div class="secondary-missions-body"><div class="grid2">${secondaryActiveSide()==='my'?secondaryCatalogHtml('my')+secondaryCatalogHtml('opp'):secondaryCatalogHtml('opp')+secondaryCatalogHtml('my')}</div>${secondaryDetailHtml(secondaryActiveSide())}</div></details>
   ${stratagemsUI()}
 
-</div><div class="battle-side"><div class="battle-state-column"><div class="army-state-grid"><div>${armyStateCard('my','My Army State')}</div><div>${armyStateCard('opp','Opponent Army State')}</div></div></div>
+</div><div class="battle-state-column"><div class="army-state-grid"><div>${armyStateCard('my','My Army State')}</div><div>${armyStateCard('opp','Opponent Army State')}</div></div></div>
 <div class="battle-log card"><div class="split"><div><h3>Action Log</h3><div class="muted">Latest actions</div></div></div>${recent.length?recent.map((e,i)=>actionLogLine(e,i)).join(''):'<div class="empty">No actions yet.</div>'}</div>
-</div>
 </div>
 ${currentArmyDisplay()}
 `}
