@@ -512,6 +512,8 @@
   .battle-layout > .battle-log{grid-column:1!important;grid-row:auto!important}
 }
 
+/* v312: compact secondary scoring UI */
+.secondary-selected-section{margin-top:8px;padding:7px 8px;border:1px solid #36506a;border-radius:8px;background:#0f1a27}.secondary-selected-section-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px;font-size:9px;color:#9ecbff;letter-spacing:.06em}.secondary-selected-section-head span{color:#8ea5ba;letter-spacing:0}.secondary-compact-selected-row{padding:6px 0;border-top:1px solid #26364d}.secondary-compact-selected-row:first-of-type{border-top:0}.secondary-compact-selected-head{display:flex;align-items:center;justify-content:space-between;gap:8px;line-height:1.2}.secondary-selected-check{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;margin-right:4px;border-radius:50%;background:#28c77b;color:#07140e;font-size:9px;font-weight:900}.secondary-compact-status{font-size:9px;color:#9fb2c5;white-space:nowrap}.secondary-compact-quick{display:grid;grid-template-columns:auto minmax(0,1fr) 45px auto;gap:5px;align-items:center;margin-top:4px;font-size:9px}.secondary-quick-condition{color:#c7d5e3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.secondary-compact-quick input{width:45px;padding:3px 4px;background:#0b1220;border:1px solid #40546b;color:#f1f5f9;border-radius:5px;font-size:10px}.secondary-compact-quick .btn{padding:3px 7px;font-size:9px}.secondary-compact-details{margin-top:3px}.secondary-compact-details summary{cursor:pointer;color:#8fc8ff;font-size:9px;font-weight:700}.secondary-compact-description{margin-top:4px;font-size:9px;color:#b9c9d8;line-height:1.3}.secondary-compact-full-rules{display:grid;gap:4px;margin-top:5px}.secondary-compact-detail-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center;padding:4px 5px;border:1px solid #26364d;border-radius:5px;background:#0b1220;font-size:9px;color:#c7d5e3}.secondary-compact-detail-row .secondary-row-action{white-space:nowrap}.secondary-compact-detail-row input{width:45px;padding:3px 4px;background:#0b1220;border:1px solid #40546b;color:#f1f5f9;border-radius:5px;font-size:10px}.secondary-compact-detail-row .btn{padding:3px 7px;font-size:9px}.secondary-compact-plan{margin-top:5px;font-size:9px}.secondary-compact-limits{margin-top:5px;font-size:8px;color:#8198ad}.secondary-compact-rule-note{margin-top:5px;padding-top:4px;border-top:1px solid #26364d;font-size:8px;color:#8198ad}@media(max-width:650px){.secondary-compact-quick{grid-template-columns:auto minmax(0,1fr) 42px}.secondary-compact-quick .btn{grid-column:1/-1;justify-self:start}.secondary-compact-detail-row{grid-template-columns:1fr}.secondary-selected-section-head{align-items:flex-start;flex-direction:column}}
 /* v311: battle display regression guard */
 .battle-layout{grid-template-columns:minmax(0,1fr) minmax(420px,480px)!important;align-items:start!important}
 .battle-layout>div:first-child{grid-column:1!important;grid-row:1!important;min-width:0!important}
@@ -1992,25 +1994,42 @@ function secondaryScoringRowsHtml(side,name,data,modeKey){
    }).join('')+'</div>';
 }
 function secondaryDetailHtml(side){
- const name=secondaryDetailTarget(side);if(!name)return '';
- const card=secondaryByName(name);
- const scoredVP=Number((side==='my'?state.secondaryMyScoredVP:state.secondaryOppScoredVP)?.[name])||0;
- const active=secState(side).includes(name),scored=secScored(side).includes(name)||scoredVP>0;
- const data=SECONDARY_SCORING[name]||SECONDARY_SCORING[card?.name]||null;
+ const active=secState(side);
+ if(!active.length)return '';
  const mode=side==='my'?state.secondaryMy:state.secondaryOpp;
  const modeKey=mode==='fixed'?'Fixed':'Tactical';
- const scoringText=data?Object.entries(data).filter(([m])=>m===modeKey).flatMap(([,items])=>items.map(x=>x[0]+' VP — '+x[1])).join(' • '):(card?.type||'Secondary mission');
- const detailPlan=secondaryPersonalPlanHtml(name);
- const roundVP=secondaryRoundScoredVP(side),totalVP=secondaryTotalScoredVP(side);
- const rowHtml=secondaryScoringRowsHtml(side,name,data,modeKey);
- return '<div class="secondary-detail-panel"><div class="secondary-detail-columns">'+
-   '<div class="secondary-detail-info"><div class="muted small">MISSION DETAILS • '+esc(side==='my'?state.myName:state.oppName)+'</div><h4>'+esc(name)+'</h4><div class="muted small">'+esc(card?.type||'Secondary Mission')+'</div><div class="secondary-detail-description"><b>Scoring:</b> '+esc(scoringText)+'</div>'+
-   (detailPlan?'<details class="secondary-detail-plan"><summary>Personal plan / notes</summary>'+detailPlan+'</details>':'')+'</div>'+
-   '<div class="secondary-detail-score"><div class="secondary-detail-section-title">This Round <span>'+roundVP+' / 15 VP</span></div><div class="muted small">'+(scored?'Scored '+scoredVP+' VP':'Not scored')+'</div><div class="secondary-cap-note">Secondary total: '+totalVP+' / 45 VP</div></div>'+
-   '</div>'+rowHtml+'<div class="secondary-rules-strip"><b>11th Edition VP limits:</b> Secondary Missions max 15 VP per battle round and 45 VP total. Fixed Secondary Missions can score up to 20 VP per card. End-of-battle conditions are still subject to the final round’s 15 VP Secondary cap.</div>'+
-   '<div class="secondary-detail-hint">'+(active?'Record the specific scoring condition you achieved. The app enforces the round and game caps.':'Click the mission title above to track it before scoring it.')+'</div></div>';
+ const totalVP=secondaryTotalScoredVP(side),roundVP=secondaryRoundScoredVP(side);
+ const rows=active.map(name=>{
+   const card=secondaryByName(name);
+   const data=SECONDARY_SCORING[name]||SECONDARY_SCORING[card?.name]||null;
+   const items=data?.[modeKey]||[];
+   const scoredVP=Number((side==='my'?state.secondaryMyScoredVP:state.secondaryOppScoredVP)?.[name])||0;
+   const first=items[0];
+   const firstVP=Number(String(first?.[0]||'').match(/\\d+/)?.[0]||0);
+   const endOfBattle=first?/end of battle/i.test(String(first?.[1]||'')):false;
+   const disabled=endOfBattle&&!state.battleEnded?' disabled':'';
+   const detailPlan=secondaryPersonalPlanHtml(name);
+   const fullRules=items.map((row,index)=>{
+     const vpText=String(row?.[0]||'');
+     const condition=String(row?.[1]||'');
+     const end=/end of battle/i.test(condition);
+     const fallback=Number(vpText.match(/\\d+/)?.[0]||0);
+     const dis=end&&!state.battleEnded?' disabled':'';
+     return '<div class="secondary-compact-detail-row"><div><b>'+esc(vpText)+'</b> <span>'+esc(condition)+'</span>'+(end?'<span class="secondary-row-timing">END OF BATTLE</span>':'')+'</div><div class="secondary-row-action"><input type="number" min="1" max="20" step="1" value="'+fallback+'" id="'+secondaryRowInputId(side,name,index)+'" aria-label="VP to score for '+esc(name)+' condition '+(index+1)+'"><button type="button" class="btn primary" data-secondary-row-score="1" data-secondary-row-score-side="'+side+'" data-secondary-row-score-name="'+esc(name)+'" data-secondary-row-score-index="'+index+'"'+dis+'>Record</button></div></div>';
+   }).join('');
+   const quick=first?'<div class="secondary-compact-quick"><span class="secondary-vp">'+esc(String(first[0]))+'</span><span class="secondary-quick-condition">'+esc(String(first[1]))+(endOfBattle?' <span class="secondary-row-timing">END OF BATTLE</span>':'')+'</span><input type="number" min="1" max="20" step="1" value="'+firstVP+'" id="'+secondaryRowInputId(side,name,0)+'-quick" aria-label="Quick VP for '+esc(name)+'"><button type="button" class="btn primary" data-secondary-row-score="1" data-secondary-row-score-side="'+side+'" data-secondary-row-score-name="'+esc(name)+'" data-secondary-row-score-index="0"'+disabled+'>Record</button></div>':'';
+   return '<div class="secondary-compact-selected-row">'+
+     '<div class="secondary-compact-selected-head"><div><span class="secondary-selected-check">✓</span><strong>'+esc(name)+'</strong><span class="muted small"> '+esc(card?.type||'Secondary Mission')+'</span></div><div class="secondary-compact-status">'+(scoredVP?'Scored '+scoredVP+' VP':'0 VP')+'</div></div>'+
+     quick+
+     '<details class="secondary-compact-details"><summary>Details'+(detailPlan?' / Plan':'')+' ▾</summary>'+
+       '<div class="secondary-compact-description">'+(items.length?esc(String(items[0]?.[1]||'')):'No scoring details available.')+'</div>'+
+       (fullRules?'<div class="secondary-compact-full-rules">'+fullRules+'</div>':'')+
+       (detailPlan?'<div class="secondary-compact-plan">'+detailPlan+'</div>':'')+
+       '<div class="secondary-compact-limits">Round '+roundVP+' / 15 VP • Battle '+totalVP+' / 45 VP</div>'+
+     '</details></div>';
+ }).join('');
+ return '<div class="secondary-selected-section"><div class="secondary-selected-section-head"><strong>SELECTED MISSIONS</strong><span>'+roundVP+' / 15 this round • '+totalVP+' / 45 total</span></div>'+rows+'<div class="secondary-compact-rule-note">15 VP per battle round • 45 VP total</div></div>';
 }
-
 function toggleSecondaryTracking(side,name){
  const mode=side==='my'?state.secondaryMy:state.secondaryOpp;
  const active=secState(side);
