@@ -4425,7 +4425,7 @@ function battle(){const recent=state.events.slice(0,12);return `${gameTimerHtml(
 </div>
  <div class="tabs"><button class="active">Current State</button><button onclick="openMyListFromBattle()">My List</button><button onclick="openOpponentListFromBattle()">Opponent List</button><button onclick="state.page='log';state.builderView='full';render()">Full Action Log</button><button onclick="state.page='scorelog';render()">Scoring Log</button></div>
 ${primaryMissionPanel('battle')}
-${battleNotesHtml()}${tacticalMovementTrackerHtml()}${tacticalAdvisorHtml()}${tacticalContextHtml()}${tacticalShootingResultHtml()}${tacticalPreRollResolutionModal()}
+${battleNotesHtml()}${state.currentTurn==='opp'?opponentTurnTrackingHtml():(tacticalMovementTrackerHtml()+tacticalAdvisorHtml()+tacticalContextHtml()+tacticalShootingResultHtml()+tacticalPreRollResolutionModal())}
 <details class="card secondary-battle-card secondary-missions-collapsible" ${state.secondaryMissionsOpen===true?"open":""} ontoggle="state.secondaryMissionsOpen=this.open;save()">
 <summary><div class="split"><div><h3 style="margin:0">Secondary Missions</h3><div class="muted">All 18 missions • Active player: ${esc(state.currentTurn==='opp'?state.oppName:state.myName)} • Secondary VP ${state.myVP||0}–${state.oppVP||0}</div></div><div class="pill">Click to ${state.secondaryMissionsOpen===true?'collapse':'open'}</div></div></summary>
 <div class="secondary-missions-body"><div class="grid2">${secondaryActiveSide()==='my'?secondaryCatalogHtml('my')+secondaryCatalogHtml('opp'):secondaryCatalogHtml('opp')+secondaryCatalogHtml('my')}</div>${secondaryDetailHtml(secondaryActiveSide())}</div></details>
@@ -7168,6 +7168,29 @@ function tacticalShootingResultHtml(){
   '</details>';
 }
 
+function opponentTurnTrackingHtml(){
+  const phase=String(state.phase||'Command');
+  const units=(state.opp||[]).filter(e=>!e.attachedTo&&!tacticalUnitState('opp',e)?.destroyed);
+  const phaseHelp={
+    Command:'Track opponent CP, stratagems, scoring, and Battleshock results.',
+    Movement:'Record enemy movement choices that will matter when your turn begins.',
+    Shooting:'Record incoming damage, destroyed units, Battleshock, and stratagem use below.',
+    Charge:'Record charges through the Action Log; update damage and relevant unit state below.',
+    Fight:'Record incoming damage, destroyed units, and relevant fight changes below.'
+  };
+  const rows=phase==='Movement'&&units.length
+    ?units.map(e=>{
+      const m=tacticalUnitMovementType(e.uid);
+      const label=unitDisplayName('opp',e);
+      const btn=(value,text)=>'<button type="button" class="btn tactical-movement-btn '+(m===value?'active':'')+'" onclick="setTacticalUnitAction(&quot;'+esc(e.uid)+'&quot;,&quot;movement&quot;,&quot;'+value+'&quot;);return false;">'+text+'</button>';
+      return '<div class="tactical-movement-row"><div class="tactical-movement-name"><b>'+esc(label)+'</b><span class="tiny">'+(m==='unknown'?'Not recorded':m==='remained'?'Stationary':m==='normal'?'Normal move':m==='advance'?'Advanced':'Fell back')+'</span></div><div class="tactical-movement-buttons">'+btn('remained','Stationary')+btn('normal','Normal')+btn('advance','Advance')+btn('fallback','Fall Back')+'</div></div>';
+    }).join('')
+    :'';
+  return '<div class="card opponent-turn-tracker"><div class="split"><div><h3 style="margin:0">Opponent Turn Tracking</h3><div class="muted">'+esc(phaseHelp[phase]||'Track only battlefield changes that affect your next turn.')+'</div></div><span class="pill">'+esc(phase)+'</span></div>'+
+    (rows?'<div style="margin-top:8px">'+rows+'</div>':'<div class="status" style="margin-top:8px">Use the scoring controls, stratagem panel, opponent army state, and Action Log to record this phase. Tactical Advisor activates when your turn begins.</div>')+
+    '</div>';
+}
+
 function tacticalMovementTrackerHtml(){
   if(String(state.phase||'Command')!=='Movement'||state.currentTurn!=='my')return '';
   const units=(state.my||[]).filter(e=>!e.attachedTo&&!tacticalUnitState('my',e)?.destroyed);
@@ -9039,7 +9062,7 @@ function render(){
     renderBattleOnly();
     return;
   }
-  app.innerHTML=`<div class="top"><div class="brand">ONOFORGE 40K</div><div class="sub">11th Edition • v326 • 40k.app v925 data source • Army-linked Mathhammer Engine</div></div>${nav()}<main class="wrap">
+  app.innerHTML=`<div class="top"><div class="brand">ONOFORGE 40K</div><div class="sub">11th Edition • v327 • 40k.app v925 data source • Army-linked Mathhammer Engine</div></div>${nav()}<main class="wrap">
   
 <div class="status">✓ Browser app loaded locally • Source: ${esc(state.source)} • ${esc(state.revision)} • 40k.app v${esc(String(ONOFORGE_40KAPP_SOURCE?.source?.revision||'925'))}</div>${dataSyncStatusHtml()}<div style="height:12px"></div><div id="onoforge-advisor-render"></div>${state.page==='battle'?'<div id="battle-view">'+pages.battle()+'</div>':(pages[state.page]||builder)()}${'<div id="secondary-plan-modal-root">'+secondaryPlanEditorModal()+'</div>'}</main></div>`;
   ensureLiveGameTimerDisplay();
