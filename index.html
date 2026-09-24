@@ -628,6 +628,7 @@ body{overflow-x:hidden}
 /* v321: compact Army State for live tablet play */
 .battle-layout>.battle-state-column .army-state-card{padding:10px!important;margin-bottom:0!important}
 .battle-layout>.battle-state-column .army-state-card>h3{font-size:14px!important;margin:0 0 6px!important}
+.objective-control-card{padding:10px}.objective-control-summary{justify-content:flex-start}.objective-control-row{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:6px 0;border-top:1px solid #26303e}.objective-control-name{display:flex;flex-direction:column;gap:2px;min-width:115px}.objective-control-buttons{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}.objective-control-btn{padding:4px 7px;font-size:11px}.objective-control-btn.active{border-color:#5d82a9;background:#263b52;color:#fff}.objective-remove-btn{padding:4px 7px;font-size:12px}.objective-control-card summary::-webkit-details-marker{display:none}
 .battle-layout>.battle-state-column .game-unit-row{display:grid!important;grid-template-columns:minmax(90px,105px) minmax(0,1fr)!important;gap:6px!important;align-items:start!important;padding:7px 0!important}
 .battle-layout>.battle-state-column .game-unit-name{font-size:12px!important;line-height:1.15!important;min-width:0!important}
 .battle-layout>.battle-state-column .game-unit-stats{display:inline-block!important;font-size:10px!important;line-height:1.15!important;margin:0 6px 0 0!important;white-space:nowrap!important;color:#c7d5e3!important}
@@ -4425,7 +4426,7 @@ function battle(){const recent=state.events.slice(0,12);return `${gameTimerHtml(
 </div>
  <div class="tabs"><button class="active">Current State</button><button onclick="openMyListFromBattle()">My List</button><button onclick="openOpponentListFromBattle()">Opponent List</button><button onclick="state.page='log';state.builderView='full';render()">Full Action Log</button><button onclick="state.page='scorelog';render()">Scoring Log</button></div>
 ${primaryMissionPanel('battle')}
-${battleNotesHtml()}${state.currentTurn==='opp'?opponentTurnTrackingHtml():(tacticalMovementTrackerHtml()+tacticalAdvisorHtml()+tacticalContextHtml()+tacticalShootingResultHtml()+tacticalPreRollResolutionModal())}
+${objectiveControlTrackerHtml()}${battleNotesHtml()}${state.currentTurn==='opp'?opponentTurnTrackingHtml():(tacticalMovementTrackerHtml()+tacticalAdvisorHtml()+tacticalContextHtml()+tacticalShootingResultHtml()+tacticalPreRollResolutionModal())}
 <details class="card secondary-battle-card secondary-missions-collapsible" ${state.secondaryMissionsOpen===true?"open":""} ontoggle="state.secondaryMissionsOpen=this.open;save()">
 <summary><div class="split"><div><h3 style="margin:0">Secondary Missions</h3><div class="muted">All 18 missions • Active player: ${esc(state.currentTurn==='opp'?state.oppName:state.myName)} • Secondary VP ${state.myVP||0}–${state.oppVP||0}</div></div><div class="pill">Click to ${state.secondaryMissionsOpen===true?'collapse':'open'}</div></div></summary>
 <div class="secondary-missions-body"><div class="grid2">${secondaryActiveSide()==='my'?secondaryCatalogHtml('my')+secondaryCatalogHtml('opp'):secondaryCatalogHtml('opp')+secondaryCatalogHtml('my')}</div>${secondaryDetailHtml(secondaryActiveSide())}</div></details>
@@ -4774,7 +4775,70 @@ function objectiveStateSummary(){
   return {current,turnStartOwners:ensureObjectiveTurnSnapshot()};
 }
 
-function objectivePrompt(){const n=String(prompt('Objective name')||'').trim();if(!n)return;const rawOwner=String(prompt('Controlled by: my / opp / contested','my')||'').trim().toLowerCase();const owner=['my','opp','contested','none'].includes(rawOwner)?rawOwner:'';if(!owner){alert('Use my, opp, contested, or none.');return}const fullBefore=snapshotForUndo();const previous=state.objectives[n]||'none';state.objectives[n]=owner;event('OBJECTIVE_CHANGED',{name:n,unit:'Objective '+n,action:'Control → '+owner,owner,previous,after:owner},fullBefore);save();render()}
+function setObjectiveControl(name,owner){
+  const key=String(name||'').trim();
+  const next=['my','opp','contested','none'].includes(owner)?owner:null;
+  if(!key||!next)return;
+  const previous=['my','opp','contested','none'].includes(state.objectives?.[key])?state.objectives[key]:'none';
+  if(previous===next)return;
+  const fullBefore=snapshotForUndo();
+  if(!state.objectives||typeof state.objectives!=='object')state.objectives={};
+  state.objectives[key]=next;
+  ensureObjectiveTurnSnapshot();
+  event('OBJECTIVE_CHANGED',{
+    name:key,unit:'Objective '+key,action:'Control → '+next,owner:next,previous,after:next,
+    round:Math.max(1,Number(state.round)||1),phase:String(state.phase||'Command'),
+    playerTurn:state.currentTurn==='opp'?'opp':'my'
+  },fullBefore);
+  save();
+  render();
+}
+function addTrackedObjective(){
+  const n=String(prompt('Objective name','Objective '+(Object.keys(state.objectives||{}).length+1))||'').trim();
+  if(!n)return;
+  if(Object.prototype.hasOwnProperty.call(state.objectives||{},n)){
+    alert('That objective is already tracked.');
+    return;
+  }
+  setObjectiveControl(n,'none');
+}
+function removeTrackedObjective(name){
+  const key=String(name||'').trim();
+  if(!key||!Object.prototype.hasOwnProperty.call(state.objectives||{},key))return;
+  const fullBefore=snapshotForUndo();
+  delete state.objectives[key];
+  event('OBJECTIVE_REMOVED',{
+    name:key,unit:'Objective '+key,action:'Objective removed from tracker',
+    round:Math.max(1,Number(state.round)||1),phase:String(state.phase||'Command'),
+    playerTurn:state.currentTurn==='opp'?'opp':'my'
+  },fullBefore);
+  save();
+  render();
+}
+function objectivePrompt(){addTrackedObjective()}
+function objectiveControlTrackerHtml(){
+  ensureObjectiveTurnSnapshot();
+  const entries=Object.entries(state.objectives||{});
+  const opponentTurn=state.currentTurn==='opp';
+  const open=state.objectiveControlOpen===true || (opponentTurn && state.objectiveControlOpen!==false);
+  const summary=objectiveStateSummary().current;
+  const myCount=summary.filter(x=>x.owner==='my').length;
+  const oppCount=summary.filter(x=>x.owner==='opp').length;
+  const contestedCount=summary.filter(x=>x.owner==='contested').length;
+  const escName=name=>esc(String(name||'')).replace(/'/g,"\\'");
+  const rows=entries.length?entries.map(([name,owner])=>{
+    const current=['my','opp','contested','none'].includes(owner)?owner:'none';
+    const start=objectiveTurnStartOwner(name);
+    const button=(value,label)=>'<button type="button" class="btn objective-control-btn '+(current===value?'active':'')+'" aria-pressed="'+(current===value?'true':'false')+'" onclick="setObjectiveControl(\''+escName(name)+'\',\''+value+'\');return false;">'+label+'</button>';
+    return '<div class="objective-control-row"><div class="objective-control-name"><b>'+esc(name)+'</b><span class="tiny">Start: '+esc(start==='my'?'My':start==='opp'?'Opp':start==='contested'?'Contested':'None')+'</span></div><div class="objective-control-buttons">'+button('my','My')+button('opp','Opp')+button('contested','Contested')+button('none','None')+'<button type="button" class="btn objective-remove-btn" title="Remove objective" onclick="removeTrackedObjective(\''+escName(name)+'\');return false;">×</button></div></div>';
+  }).join(''):'<div class="empty" style="padding:10px">No objectives tracked yet. Add the objectives from your mission.</div>';
+  return '<details class="card objective-control-card '+(opponentTurn?'objective-control-opponent':'objective-control-self')+'" '+(open?'open':'')+' ontoggle="state.objectiveControlOpen=this.open;save()">'+
+    '<summary style="cursor:pointer;list-style:none"><div class="split"><div><h3 style="margin:0">Objective Control</h3><div class="muted">'+(opponentTurn?'Record objective changes during the opponent turn.':'Current battlefield objective ownership used by scoring and Tactical Advisor.')+'</div></div><span class="pill">'+(opponentTurn?'Opponent turn':'Your turn')+'</span></div></summary>'+
+    '<div class="row objective-control-summary" style="margin-top:8px"><span class="pill">My '+myCount+'</span><span class="pill">Opp '+oppCount+'</span><span class="pill">Contested '+contestedCount+'</span><button type="button" class="btn" onclick="addTrackedObjective();return false;">+ Objective</button></div>'+
+    '<div class="objective-control-list" style="margin-top:8px">'+rows+'</div>'+
+    '<div class="tiny" style="margin-top:8px">Start shows control at the beginning of this player turn. Ownership changes are written to the Action Log and support mission/Tactical Advisor context.</div>'+
+  '</details>';
+}
 function ensurePhaseCPState(){
  if(!state.phaseCP||typeof state.phaseCP!=='object')state.phaseCP={};
 }
