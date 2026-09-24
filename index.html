@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OnoForge 40K v334</title><style>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OnoForge 40K v335</title><style>
 .primary-score-click-target{cursor:pointer}.primary-score-click-target:hover{border-color:#4f9ad6;background:#142131}.primary-score-click-target.scored{border-color:#356747}.primary-score-click-target input{cursor:text}
 *{box-sizing:border-box}body{margin:0;background:#0b0f15;color:#e9edf3;font-family:Arial,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}.top{padding:18px 22px;background:#111722;border-bottom:1px solid #273142}.brand{font-size:25px;font-weight:800}.sub,.muted{color:#9ca8b8;font-size:13px}.nav{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:10px 16px;background:#0e141e;border-bottom:1px solid #273142}.nav-main{display:flex;gap:6px;flex-wrap:wrap}.nav button,.nav-tools summary{background:#171e2a;color:#cbd5e1;border:1px solid #2c3748;border-radius:7px;padding:9px 13px;font-size:14px;cursor:pointer}.nav button.active{background:#24334b;color:#fff;border-color:#49678f}.nav-tools{position:relative;margin-left:auto}.nav-tools summary{list-style:none}.nav-tools summary::-webkit-details-marker{display:none}.nav-tools summary:after{content:' ▾';font-size:11px}.nav-tools[open] summary{background:#24334b;color:#fff;border-color:#49678f}.nav-tools-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:1200;min-width:170px;padding:6px;background:#111722;border:1px solid #344052;border-radius:8px;box-shadow:0 12px 30px rgba(0,0,0,.4);display:grid;gap:4px}.nav-tools-menu button{width:100%;text-align:left}.wrap{max-width:1250px;margin:auto;padding:18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.card{background:#111722;border:1px solid #273142;border-radius:10px;padding:15px;margin-bottom:14px}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.split{display:flex;justify-content:space-between;gap:10px;align-items:center}.field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:150px}.field label{font-size:12px;color:#9ca8b8}.field input,.field select,.field textarea,input[type=text]{width:100%;background:#0b1018;color:#eef2f7;border:1px solid #344052;border-radius:7px;padding:9px}.btn{background:#1b2432;color:#e8edf4;border:1px solid #354255;border-radius:7px;padding:8px 11px}.btn.primary{background:#27598b;border-color:#3975b6}.btn.danger{background:#5b252c;border-color:#82404a}.pill{display:inline-block;border:1px solid #3a4658;border-radius:999px;padding:4px 8px;font-size:12px;margin:2px}.status,.warn,.ok{border-radius:7px;padding:9px;margin-top:8px}.status{background:#17202d;border:1px solid #304057}.warn{background:#38261b;border:1px solid #78512d;color:#f4c58f}.ok{background:#183022;border:1px solid #356747;color:#aee2bf}.big{font-size:24px;font-weight:800}.unit{padding:11px 0;border-top:1px solid #26303e}.empty{padding:25px;text-align:center;color:#8995a5}.bar{height:8px;background:#242d3a;border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;background:#4d86bd}.mono{font-family:monospace;font-size:12px;white-space:pre-wrap}.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.tabs button{background:#171e2a;color:#cbd5e1;border:1px solid #2c3748;border-radius:7px;padding:8px 11px}.tabs button.active{background:#315174}.logrow{border-top:1px solid #273142;padding:10px 0}.metric{font-size:20px;font-weight:700}.modal{position:fixed;inset:0;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;padding:18px;z-index:50}.modal>.card{width:min(850px,100%);max-height:92vh;overflow:auto}.tiny{font-size:11px;color:#8290a1}@media(max-width:850px){.grid,.grid3,.grid2{grid-template-columns:1fr}.wrap{padding:10px}}
 
@@ -7836,20 +7836,42 @@ function tacticalObjectiveAdvisor(side){
     const deploymentRule=/deployment zone/.test(text)&&o.deploymentZone===player;
     const genericObjectiveRule=/objective/.test(text);
     const missionRelevant=centralRule||homeRule||enemyTerritoryRule||deploymentRule||genericObjectiveRule;
+    const transition=o.changeType||'uncontrolled';
     let action='Monitor',score=0,reason='No immediate control change is indicated.';
     if(o.owner===player){
       score+=missionRelevant?45:10;
-      if(o.changedThisTurn)score+=10;
       action=missionRelevant?'Defend':'Hold';
-      reason=o.changedThisTurn?'You gained control this turn; protect the new control.':'You currently control it.';
+      if(transition==='newly_controlled'){
+        score+=18; action='Defend';
+        reason='You newly controlled this objective this turn; protect that control.';
+      }else if(transition==='recaptured'){
+        score+=22; action='Defend';
+        reason='You recaptured this objective; protect the recovered control.';
+      }else if(transition==='gained'){
+        score+=14; action='Defend';
+        reason='You gained control of this objective this turn; protect the new control.';
+      }else if(transition==='held'){
+        reason=missionRelevant?'You continue to control a mission-relevant objective.':'You currently control it.';
+      }else{
+        reason='You currently control it.';
+      }
     }else if(o.owner==='contested'){
       score+=missionRelevant?55:25;
       action='Contest';
-      reason='Control is contested; resolving control may affect scoring.';
+      if(transition==='contested')score+=15;
+      reason=transition==='contested'?'This objective became contested during the current turn; resolving control may affect scoring.':'Control is contested; resolving control may affect scoring.';
     }else if(o.owner===enemy){
       score+=missionRelevant?50:15;
       action='Take';
-      reason=missionRelevant?'Enemy control is directly relevant to current mission conditions.':'Taking it may improve board control.';
+      if(transition==='lost'){
+        score+=20; action='Retake';
+        reason='You lost control of this objective during the current turn; retaking it may restore control.';
+      }else if(transition==='gained'){
+        score+=10;
+        reason=missionRelevant?'The opponent gained control this turn and the objective is relevant to the mission.':'The opponent gained control this turn.';
+      }else{
+        reason=missionRelevant?'Enemy control is directly relevant to current mission conditions.':'Taking it may improve board control.';
+      }
     }else{
       score+=missionRelevant?30:5;
       action='Consider';
@@ -7858,18 +7880,19 @@ function tacticalObjectiveAdvisor(side){
     if(o.type==='central')score+=8;
     if(o.territory===enemy)score+=5;
     if(o.deploymentZone===enemy)score+=7;
-    if(o.changedThisTurn&&o.owner===enemy)score+=8;
-    return {...o,action,score,reason,missionRelevant};
+    return {...o,action,score,reason,missionRelevant,transition};
   }).sort((a,b)=>b.score-a.score);
   return {side:player,mission,round:Math.max(1,Number(state.round)||1),recommendations:relevant.slice(0,4),summary};
 }
+
 function tacticalObjectiveAdvisorHtml(side){
   const intel=tacticalObjectiveAdvisor(side||'my');
   const recs=intel.recommendations||[];
   const cards=recs.map(o=>{
     const location=[o.type,o.territory,o.deploymentZone==='none'?'':o.deploymentZone].filter(Boolean).join(' • ');
     const control=o.owner==='my'?'Mine':o.owner==='opp'?'Enemy':o.owner==='contested'?'Contested':'Uncontrolled';
-    return '<div class="status" style="margin-top:5px"><div class="split"><div><b>'+esc(o.name)+'</b><div class="tiny">'+esc(control)+' • '+esc(location)+'</div></div><span class="pill">'+esc(o.action)+'</span></div><div class="tiny" style="margin-top:4px">'+esc(o.reason)+'</div></div>';
+    const transition=o.transition&&o.transition!=='held'&&o.transition!=='uncontrolled'?' • '+o.changeLabel:'';
+    return '<div class="status" style="margin-top:5px"><div class="split"><div><b>'+esc(o.name)+'</b><div class="tiny">'+esc(control)+' • '+esc(location)+esc(transition)+'</div></div><span class="pill">'+esc(o.action)+'</span></div><div class="tiny" style="margin-top:4px">'+esc(o.reason)+'</div></div>';
   }).join('');
   return '<div class="status" style="margin-bottom:8px"><div class="muted small">Objective priorities • Round '+intel.round+'</div>'+(recs.length?cards:'<div class="tiny" style="margin-top:4px">No objectives tracked.</div>')+'</div>';
 }
@@ -7917,6 +7940,7 @@ function tacticalAdvisorStateSignature(){
     objectives:state.objectives||{},
     objectiveMeta:state.objectiveMeta||{},
     objectiveTurnStartOwners:state.objectiveTurnStartOwners||{},
+    objectiveControlHistory:state.objectiveControlHistory||{},
     mission:state.mission||state.primaryMission||state.missionName||'',
     primaryMyScoredVP:Number(state.primaryMyScoredVP)||0,
     primaryOppScoredVP:Number(state.primaryOppScoredVP)||0,
@@ -9650,7 +9674,7 @@ function render(){
     renderBattleOnly();
     return;
   }
-  app.innerHTML=`<div class="top"><div class="brand">ONOFORGE 40K</div><div class="sub">11th Edition • v334 • 40k.app v925 data source • Army-linked Mathhammer Engine</div></div>${nav()}<main class="wrap">
+  app.innerHTML=`<div class="top"><div class="brand">ONOFORGE 40K</div><div class="sub">11th Edition • v335 • 40k.app v925 data source • Army-linked Mathhammer Engine</div></div>${nav()}<main class="wrap">
   
 <div class="status">✓ Browser app loaded locally • Source: ${esc(state.source)} • ${esc(state.revision)} • 40k.app v${esc(String(ONOFORGE_40KAPP_SOURCE?.source?.revision||'925'))}</div>${dataSyncStatusHtml()}<div style="height:12px"></div><div id="onoforge-advisor-render"></div>${state.page==='battle'?'<div id="battle-view">'+pages.battle()+'</div>':(pages[state.page]||builder)()}${'<div id="secondary-plan-modal-root">'+secondaryPlanEditorModal()+'</div>'}</main></div>`;
   ensureLiveGameTimerDisplay();
