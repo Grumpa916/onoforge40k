@@ -1005,6 +1005,9 @@ function primaryScoringRoundRange(timing){
   return {min:1,max:5};
 }
 function primaryScoringRowAvailable(timing,round){
+  const timingText=String(timing||'').toLowerCase();
+  // End-of-battle Primary scoring is only displayed during the final game round.
+  if(timingText.includes('end of battle')) return Number(round)===5;
   const range=primaryScoringRoundRange(timing);
   return round>=range.min&&round<=range.max;
 }
