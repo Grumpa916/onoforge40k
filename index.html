@@ -620,6 +620,8 @@ body{overflow-x:hidden}
   .battle-layout>.battle-state-column{grid-column:1!important;grid-row:2!important;width:100%!important}
   .battle-layout>.battle-log{grid-column:1!important;grid-row:3!important;width:100%!important}
 }
+
+.tactical-movement-tracker{border-color:#355c7c}.tactical-movement-row{display:grid;grid-template-columns:minmax(150px,1fr) minmax(360px,2fr);gap:8px;align-items:center;padding:8px 0;border-top:1px solid #273142}.tactical-movement-name{display:flex;flex-direction:column;gap:2px;min-width:0}.tactical-movement-buttons{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}.tactical-movement-btn{padding:6px 5px;font-size:10px;min-width:0}.tactical-movement-btn.active{background:#27598b;border-color:#4f9ad6;color:#fff}@media(max-width:700px){.tactical-movement-row{grid-template-columns:1fr}.tactical-movement-buttons{grid-template-columns:repeat(2,1fr)}}
 </style>
 
 <style id="army-state-compact-fix">
@@ -4406,7 +4408,7 @@ function battle(){const recent=state.events.slice(0,12);return `${gameTimerHtml(
 </div>
  <div class="tabs"><button class="active">Current State</button><button onclick="openMyListFromBattle()">My List</button><button onclick="openOpponentListFromBattle()">Opponent List</button><button onclick="state.page='log';state.builderView='full';render()">Full Action Log</button><button onclick="state.page='scorelog';render()">Scoring Log</button></div>
 ${primaryMissionPanel('battle')}
-${battleNotesHtml()}${tacticalAdvisorHtml()}${tacticalContextHtml()}${tacticalShootingResultHtml()}${tacticalPreRollResolutionModal()}
+${battleNotesHtml()}${tacticalMovementTrackerHtml()}${tacticalAdvisorHtml()}${tacticalContextHtml()}${tacticalShootingResultHtml()}${tacticalPreRollResolutionModal()}
 <details class="card secondary-battle-card secondary-missions-collapsible" ${state.secondaryMissionsOpen===true?"open":""} ontoggle="state.secondaryMissionsOpen=this.open;save()">
 <summary><div class="split"><div><h3 style="margin:0">Secondary Missions</h3><div class="muted">All 18 missions • Active player: ${esc(state.currentTurn==='opp'?state.oppName:state.myName)} • Secondary VP ${state.myVP||0}–${state.oppVP||0}</div></div><div class="pill">Click to ${state.secondaryMissionsOpen===true?'collapse':'open'}</div></div></summary>
 <div class="secondary-missions-body"><div class="grid2">${secondaryActiveSide()==='my'?secondaryCatalogHtml('my')+secondaryCatalogHtml('opp'):secondaryCatalogHtml('opp')+secondaryCatalogHtml('my')}</div>${secondaryDetailHtml(secondaryActiveSide())}</div></details>
@@ -5825,7 +5827,7 @@ function tacticalTargetLegality(attackerEntry,targetEntry,phase){
       if(ctx.distanceInches===null)reasons.push('Lone Operative range unknown');
       else if(ctx.distanceInches>loneRange)return {status:'known',known:true,canTarget:false,reasons:['Lone Operative: attacker is '+String(ctx.distanceInches)+'" away; target must be within '+loneRange+'".'],context:ctx};
     }
-    if(advanced===null)reasons.push('movement state unknown');
+    if(advanced===null)reasons.push('movement not recorded for attacker');
     if(engaged&&ctx.engagement!=='engaged'){
       if(!attackerMV){
         return {status:'known',known:true,canTarget:false,reasons:['engaged unit can only shoot its engaged target with Close-quarters shooting'],context:ctx};
@@ -6955,6 +6957,19 @@ function tacticalShootingResultHtml(){
       '<div class="tiny" style="margin-top:8px">Expected values use the same combat engine as the Tactical Advisor. The app does not roll your physical dice.</div>'+
     '</div>'+
   '</details>';
+}
+
+function tacticalMovementTrackerHtml(){
+  if(String(state.phase||'Command')!=='Movement'||state.currentTurn!=='my')return '';
+  const units=(state.my||[]).filter(e=>!e.attachedTo&&!tacticalUnitState('my',e)?.destroyed);
+  if(!units.length)return '';
+  const rows=units.map(e=>{
+    const m=tacticalUnitMovementType(e.uid);
+    const label=unitDisplayName('my',e);
+    const btn=(value,text)=>'<button type="button" class="btn tactical-movement-btn '+(m===value?'active':'')+'" onclick="setTacticalUnitAction(&quot;'+esc(e.uid)+'&quot;,&quot;movement&quot;,&quot;'+value+'&quot;);return false;">'+text+'</button>';
+    return '<div class="tactical-movement-row"><div class="tactical-movement-name"><b>'+esc(label)+'</b><span class="tiny">'+(m==='unknown'?'Not recorded':m==='remained'?'Remained stationary':m==='normal'?'Normal move':m==='advance'?'Advanced':'Fell back')+'</span></div><div class="tactical-movement-buttons">'+btn('remained','Stationary')+btn('normal','Normal')+btn('advance','Advance')+btn('fallback','Fall Back')+'</div></div>';
+  }).join('');
+  return '<div class="card tactical-movement-tracker"><div class="split"><div><h3 style="margin:0">Movement Tracking</h3><div class="muted">Record one movement decision per unit. Exact inches are not required.</div></div><span class="pill">Movement</span></div><div style="margin-top:8px">'+rows+'</div></div>';
 }
 
 function tacticalAdvisorHtml(){
