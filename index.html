@@ -10225,13 +10225,9 @@ let supabaseClient=null;
 let supabaseAuthListenerBound=false;
 let supabaseLoadPromise=null;
 
+const ONOFORGE_CLOUD_CONFIG={url:'https://plcjjiozdfojdjpimlin.supabase.co',key:'sb_publishable_hL6kJeYPTUI-7aodPJ88AA_9jzgGH2S'};
 function getCloudConfig(){
-  try{
-    const raw=localStorage.getItem(CLOUD_CONFIG_KEY);
-    const x=raw?JSON.parse(raw):null;
-    if(x?.url&&x?.key)return {url:String(x.url).trim(),key:String(x.key).trim()};
-  }catch(_){}
-  return {url:'',key:''};
+  return {url:ONOFORGE_CLOUD_CONFIG.url,key:ONOFORGE_CLOUD_CONFIG.key};
 }
 function cloudConfigReady(){
   const c=getCloudConfig();
@@ -10587,10 +10583,7 @@ function dataManagementPage(){const cfg=getCloudConfig();const battles=Array.isA
       <div class="cloud-status"><span class="cloud-dot ${cloudStatusClass()}"></span><strong>${cloudStatusText()}</strong></div>
     </div>
     ${state.cloud?.error?`<div class="warn" style="margin-top:10px">${esc(state.cloud.error)}</div>`:''}
-    <div class="cloud-auth-grid" style="margin-top:12px">
-      <div class="field"><label>Supabase Project URL</label><input id="cloud-project-url" type="text" placeholder="https://your-project.supabase.co" value="${esc(cfg.url)}"></div>
-      <div class="field"><label>Supabase Publishable Key</label><input id="cloud-publishable-key" type="text" placeholder="sb_publishable_..." value="${esc(cfg.key)}"></div>
-    </div>
+    <div class="ok" style="margin-top:12px">Cloud service is configured automatically. Your browser never needs Supabase connection details.</div>
     <div class="cloud-actions">
       <button class="btn primary" type="button" onclick="connectCloudFromInputs()">Save &amp; Connect</button>
       ${state.cloud?.userId?`<button class="btn" type="button" onclick="cloudSyncSavedLists()">Sync Saved Lists</button><button class="btn primary" type="button" onclick="cloudSaveCurrentBattle()">${state.cloudBattleSaving?'Saving…':'Save Battle'}</button><button class="btn" type="button" onclick="cloudNewBattle()">New Battle</button><button class="btn" type="button" onclick="cloudSignOut()">Sign Out</button>`:''}
