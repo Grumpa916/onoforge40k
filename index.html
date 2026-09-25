@@ -7845,6 +7845,8 @@ function tacticalAdvisorHtml(){
     (objectiveIntel.enemyTerritory.length?' • Enemy territory: <b>'+objectiveIntel.enemyTerritory.length+'</b>':'')+
     (objectiveIntel.enemyDeployment.length?' • Enemy deployment: <b>'+objectiveIntel.enemyDeployment.length+'</b>':'')+
     '</div></div>';
+  const battlefieldGeometry=objectiveBattlefieldGeometry();
+  const battlefieldGeometryHtml='<div class="status" style="margin-bottom:8px;border-color:'+(battlefieldGeometry.verified?'#356747':'#78512d')+'"><div class="split"><div><div class="muted small">Battlefield geometry</div><div class="tiny" style="margin-top:3px">'+esc(battlefieldGeometry.layout)+' • Event Companion p.'+esc(String(battlefieldGeometry.page||'—'))+' • '+esc(battlefieldGeometry.table.widthInches+' x '+battlefieldGeometry.table.depthInches+' in')+'</div></div><span class="pill">'+(battlefieldGeometry.verified?'Verified':'Position data pending')+'</span></div><div class="tiny" style="margin-top:5px">'+esc(battlefieldGeometry.status)+'</div></div>';
   const result=getTacticalAdvisorResult(ae.uid,{samples:4000});
   if(result.status!=='ok'){
     const detail=result.attacker?(' • '+esc(result.attacker)):'',phaseLabel=result.phase?(' • '+esc(result.phase)):'',gateLabel=result.status==='action-already-completed'?'Action complete':result.status==='no-ranged-weapons'?'No ranged weapons':result.status==='charge-target-evaluation-not-yet-modeled'?'Charge targeting':'Phase gate';
