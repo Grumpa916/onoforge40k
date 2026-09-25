@@ -745,6 +745,55 @@ function objectiveDistanceFromUnit(side,uid,objectiveName){
   const objective=objectiveStateRecord(objectiveName);
   return unit&&objective.battlefieldPosition?battlefieldDistanceBetween(unit,objective.battlefieldPosition):null;
 }
+function battlefieldTerrainGeometry(){
+  const geometry=objectiveBattlefieldGeometry();
+  if(!geometry.verified)return {verified:false,terrain:{}};
+  const raw=geometry.source.geometryEntry?.terrainGeometry;
+  return {verified:true,terrain:raw&&typeof raw==='object'?raw:{}};
+}
+function battlefieldTerrainAtPoint(x,y){
+  const geo=battlefieldTerrainGeometry();
+  if(!geo.verified)return [];
+  const p={x:Number(x),y:Number(y)};
+  if(!Number.isFinite(p.x)||!Number.isFinite(p.y))return [];
+  const pointInRegion=(r)=>{
+    if(!r||typeof r!=='object')return false;
+    if([r.x,r.y,r.width,r.height].every(v=>Number.isFinite(Number(v))))
+      return p.x>=Number(r.x)&&p.x<=Number(r.x)+Number(r.width)&&p.y>=Number(r.y)&&p.y<=Number(r.y)+Number(r.height);
+    if(Array.isArray(r.points)&&r.points.length>=3){
+      let inside=false;
+      for(let i=0,j=r.points.length-1;i<r.points.length;j=i++){
+        const a=r.points[i],b=r.points[j],hit=((Number(a.y)>p.y)!==(Number(b.y)>p.y))&&(p.x<(Number(b.x)-Number(a.x))*(p.y-Number(a.y))/(Number(b.y)-Number(a.y))+Number(a.x));
+        if(hit)inside=!inside;
+      }
+      return inside;
+    }
+    return false;
+  };
+  return Object.entries(geo.terrain).filter(([,r])=>pointInRegion(r)).map(([name])=>name);
+}
+function battlefieldTerrainPathIntersections(a,b){
+  const geo=battlefieldTerrainGeometry();
+  if(!geo.verified||!a||!b)return [];
+  const steps=Math.max(2,Math.ceil(battlefieldDistanceBetween(a,b)));
+  const hits=new Set();
+  for(let i=0;i<=steps;i++){
+    const t=i/steps;
+    battlefieldTerrainAtPoint(Number(a.x)+(Number(b.x)-Number(a.x))*t,Number(a.y)+(Number(b.y)-Number(a.y))*t).forEach(x=>hits.add(x));
+  }
+  return Array.from(hits);
+}
+function objectiveMapUnitNodesHtml(model,pct){
+  if(!model.verified)return '';
+  const units=[...(Array.isArray(state.my)?state.my:[]).map(e=>({side:'my',entry:e})),...(Array.isArray(state.opp)?state.opp:[]).map(e=>({side:'opp',entry:e}))];
+  return units.map(({side,entry})=>{
+    const p=battlefieldUnitPosition(side,entry?.uid);
+    if(!p)return '';
+    const nearest=Object.values(state.objectives||{}).length?Object.keys(state.objectives||{}).map(name=>({name,distance:objectiveDistanceFromUnit(side,entry.uid,name)})).filter(x=>x.distance!==null).sort((a,b)=>a.distance-b.distance)[0]:null;
+    const title=unitDisplayName(side,entry)+(nearest?' • '+nearest.name+' '+nearest.distance.toFixed(1)+'″':'');
+    return '<div class="objective-map-unit '+side+'" style="left:'+pct(p.x,60)+'%;top:'+pct(44-p.y,44)+'%;" title="'+esc(title)+'">'+esc((unitDisplayName(side,entry)||'Unit').slice(0,8))+'</div>';
+  }).join('');
+}
 function objectiveMapRendererHtml(){
   const model=objectiveMapModel();
   const status=model.verified?'Verified geometry':'Geometry pending verification';
@@ -764,6 +813,7 @@ function objectiveMapRendererHtml(){
     return '';
   };
   const regions=model.verified?Object.entries(model.deploymentZones||{}).map(([k,v])=>renderRegion(k,v)).join(''):'';
+  const unitNodes=objectiveMapUnitNodesHtml(model,pct);
   const objectiveNodes=model.objectives.map(o=>{
     const p=o.position;
     const x=point(p)?pct(p.x,60):null;
@@ -773,7 +823,7 @@ function objectiveMapRendererHtml(){
   }).join('');
   const pending='<div class="status" style="margin-top:8px"><b>Map geometry pending verification.</b><div class="tiny" style="margin-top:4px">No deployment zone, territory, terrain, or objective position is inferred from the 60 × 44 table boundary. The Event Companion geometry must be verified first.</div></div>';
   return '<div class="card objective-map-renderer"><div class="split"><div><h3 style="margin:0">Battlefield Map</h3><div class="muted">'+esc(model.missionKey)+' • Layout '+esc(model.layout)+' • Event Companion p.'+esc(String(model.page||'—'))+'</div></div><span class="pill">'+status+'</span></div>'+
-    '<div class="objective-map-canvas" role="img" aria-label="60 by 44 inch battlefield map">'+(model.verified?regions+objectiveNodes:'<div class="objective-map-placeholder">Verified Event Companion geometry required</div>')+'</div>'+
+    '<div class="objective-map-canvas" role="img" aria-label="60 by 44 inch battlefield map">'+(model.verified?regions+objectiveNodes+unitNodes:'<div class="objective-map-placeholder">Verified Event Companion geometry required</div>')+'</div>'+
     '<div class="tiny" style="margin-top:6px">60 × 44 inches • Deployment zones and territory are rendered only from verified Event Companion geometry.</div>'+(!model.verified?pending:'')+'</div>';
 }
 function objectiveLayoutHtml(){const info=ensureObjectiveLayoutForMission();if(!info)return '';const layout=state.objectiveMapLayout||'A';const page=objectiveLayoutPage();const buttons=['A','B','C'].map(letter=>'<button type="button" class="btn objective-layout-btn '+(layout===letter?'active':'')+'" aria-pressed="'+(layout===letter?'true':'false')+'" onclick="setObjectiveMapLayout(\''+letter+'\');return false;">Layout '+letter+'</button>').join('');return '<div class="objective-layout-panel"><div class="split"><div><strong>Recommended Battlefield Layout</strong><div class="tiny">'+esc(info.missions[0])+' ↔ '+esc(info.missions[1])+' • Layout '+layout+'</div></div><span class="pill">Event Companion p.'+page+'</span></div><div class="objective-layout-buttons">'+buttons+'<a class="btn" href="'+WARHAMMER_EVENT_COMPANION_PDF+'#page='+page+'" target="_blank" rel="noopener">Open Map</a></div><details class="objective-layout-preview"><summary>Preview selected layout</summary><iframe title="Warhammer Event Companion layout '+layout+'" src="'+WARHAMMER_EVENT_COMPANION_PDF+'#page='+page+'" loading="lazy"></iframe></details></div>'+objectiveMapRendererHtml();}
@@ -5459,14 +5509,26 @@ function objectiveSpatialClassification(name){
     return false;
   };
   const matches=Object.entries(regions).filter(([key,r])=>pointInRegion(position,r)).map(([key])=>String(key));
-  const deployment=matches.find(k=>/deploy|home/i.test(k))||'none';
-  const territory=matches.find(k=>/myterritory|my.?territory|oppt?erritory|opponentterritory/i.test(k))||matches.find(k=>/territory/i.test(k))||null;
-  let normalizedTerritory='nml';
-  if(territory){
-    normalizedTerritory=/^my/i.test(territory)?'my':/^opp/i.test(territory)?'opp':'nml';
-  }else if(deployment==='my'||/my.*deploy/i.test(deployment))normalizedTerritory='my';
-  else if(deployment==='opp'||/opp.*deploy/i.test(deployment))normalizedTerritory='opp';
-  return {verified:true,territory:normalizedTerritory,deploymentZone:/^my/i.test(deployment)?'my':/^opp/i.test(deployment)?'opp':'none',matchedRegions:matches,source:'event-companion-geometry'};
+  const regionSide=(key)=>{
+    const k=String(key||'').toLowerCase().replace(/[\s_-]+/g,'');
+    if(/^(my|friendly|own)(deployment|zone)?$/.test(k)||k.includes('mydeployment')||k.includes('myterritory'))return 'my';
+    if(/^(opp|opponent|enemy)(deployment|zone)?$/.test(k)||k.includes('oppdeployment')||k.includes('opponentdeployment')||k.includes('opponentterritory'))return 'opp';
+    if(k.includes('attacker')){
+      const a=state.attackerSide==='opp'?'opp':'my';
+      return a;
+    }
+    if(k.includes('defender')){
+      const a=state.attackerSide==='opp'?'opp':'my';
+      return a==='my'?'opp':'my';
+    }
+    return null;
+  };
+  const deploymentKey=matches.find(k=>/deploy|home|attacker|defender/i.test(k))||'none';
+  const territoryKey=matches.find(k=>/territory/i.test(k))||null;
+  const deploymentSide=regionSide(deploymentKey);
+  const territorySide=regionSide(territoryKey);
+  const normalizedTerritory=territorySide||deploymentSide||'nml';
+  return {verified:true,territory:normalizedTerritory,deploymentZone:deploymentSide||'none',matchedRegions:matches,source:'event-companion-geometry'};
 }
 function objectiveStateRecord(name){
   const owner=['my','opp','contested','none'].includes(state.objectives?.[name])?state.objectives[name]:'none';
@@ -10162,6 +10224,22 @@ function eventCompanionGeometryVerificationConsoleHtml(){
     '<div class="unit"><strong>Current safety behavior</strong><div class="tiny" style="margin-top:4px">Unverified layouts do not render inferred deployment zones, territory, terrain, objective positions, or distance calculations. The app will not substitute “my side / opponent side” or table fractions.</div></div>'+
     '<div class="unit"><strong>Next verification input</strong><div class="tiny" style="margin-top:4px">When the official Event Companion artwork is available, record exact measurements for one layout at a time. Keep the source page number attached to every geometry record. Do not estimate from screenshots or generic battlefield proportions.</div></div>'+
     '<div class="tiny" style="margin-top:10px">Recommended order: Layout A → Layout B → Layout C for each mission pair, then run the structural audit before enabling objective-control distance/scoring dependencies.</div></div>';
+}
+function eventCompanionMapRegressionAudit(){
+  const layouts=Array.isArray(ONOFORGE_EVENT_COMPANION?.layoutGeometry?.layouts)?ONOFORGE_EVENT_COMPANION.layoutGeometry.layouts:[];
+  const index=Array.isArray(ONOFORGE_EVENT_COMPANION?.layoutIndex)?ONOFORGE_EVENT_COMPANION.layoutIndex:[];
+  const keys=new Set(),pages=new Set(),issues=[];
+  layouts.forEach(x=>{
+    const key=String(x?.missionKey||'')+'|'+String(x?.layout||'')+'|'+String(x?.page||'');
+    if(keys.has(key))issues.push('Duplicate layout record '+key); keys.add(key);
+    if(pages.has(Number(x?.page)))issues.push('Duplicate layout page '+x.page); pages.add(Number(x?.page));
+    if(!['A','B','C'].includes(x?.layout))issues.push('Invalid layout '+key);
+  });
+  const expectedPages=index.flatMap(x=>x.pages||[]);
+  if(layouts.length!==45)issues.push('Expected 45 layout records; found '+layouts.length);
+  if(index.length!==15)issues.push('Expected 15 mission pairs; found '+index.length);
+  if(new Set(expectedPages).size!==45)issues.push('Mission layout index does not expose 45 unique pages');
+  return {ok:issues.length===0,layoutCount:layouts.length,missionPairCount:index.length,uniquePages:pages.size,verifiedCount:layouts.filter(x=>x?.verified===true).length,issues};
 }
 function eventCompanionGeometryAuditHtml(){
   const audit=validateEventCompanionGeometry();
