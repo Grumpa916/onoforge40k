@@ -5,7 +5,7 @@ const scoreStart=html.indexOf('function scorePrimaryItem(');
 const scoreEnd=html.indexOf('function primaryScoreAdjust(',scoreStart);
 const score=scoreStart>=0&&scoreEnd>scoreStart?html.slice(scoreStart,scoreEnd):'';
 const cpStart=html.indexOf('function changeCP(');
-const cpEnd=html.indexOf('function ensureSecondaryPersonalPlans',cpStart);
+const cpEnd=html.indexOf('function autoScorePrimaryEndOfTurn',cpStart);
 const cp=cpStart>=0&&cpEnd>cpStart?html.slice(cpStart,cpEnd):'';
 
 check('Primary scoring function exists',score.length>0);
