@@ -8756,6 +8756,15 @@ function getTacticalAdvisorResult(attackerEntryUid,options={}){
   cache.advisor.set(key,result);
   return result;
 }
+function getTacticalAdvisorV2Result(attackerEntryUid,options={}){
+  const cache=prepareTacticalRenderCache();
+  const samples=Math.min(10000,Math.max(2000,Number(options.samples)||4000));
+  const key='v2|'+String(attackerEntryUid||'')+'|'+samples;
+  if(cache.advisor.has(key))return cache.advisor.get(key);
+  const result=tacticalAdvisorV2(attackerEntryUid,{...options,samples});
+  cache.advisor.set(key,result);
+  return result;
+}
 function getTacticalTargetLegalityCached(attackerEntry,targetEntry,phase){
   const cache=prepareTacticalRenderCache();
   const key=String(attackerEntry?.uid||'')+'>'+String(targetEntry?.uid||'')+'|'+String(phase||state.phase||'Command');
@@ -8783,6 +8792,50 @@ function getTacticalRenderBundle(attackerEntry,targetEntry){
   };
 }
 
+function tacticalAdvisorBattleStateContext(){
+  const mission=missionDecisionContext();
+  const activeSecondary=(side)=>{
+    const key=side==='my'?'secondaryMyCards':'secondaryOppCards';
+    return (Array.isArray(state[key])?state[key]:[]).map(x=>typeof x==='string'?x:(x?.name||x?.id||'')).filter(Boolean);
+  };
+  const reserved=(side)=>reserveUnitsForSide(side).map(e=>({uid:e.uid,unitId:e.unitId,name:get(e.unitId)?.name||e.name||e.unitId}));
+  const positioned=(side)=>{
+    const src=state.battlefieldUnitPositions||{};
+    return (Array.isArray(state[side])?state[side]:[]).filter(e=>e&&!e.attachedTo).map(e=>{
+      const p=src[String(e.uid)];
+      return {uid:e.uid,x:Number(p?.x),y:Number(p?.y),known:Number.isFinite(Number(p?.x))&&Number.isFinite(Number(p?.y))};
+    }).filter(x=>x.known);
+  };
+  return {
+    round:mission.round,phase:state.phase||'Command',currentTurn:state.currentTurn||'my',
+    vp:{my:mission.score.my,opp:mission.score.opp,gap:mission.score.gap},
+    cp:{my:Number(state.myCP)||0,opp:Number(state.oppCP)||0},
+    primary:mission.primary,secondary:mission.secondary,objectives:mission.objectives,
+    battlefield:mission.battlefield,reserves:{my:reserved('my'),opp:reserved('opp')},
+    positions:{my:positioned('my'),opp:positioned('opp')},
+    activeSecondaries:{my:activeSecondary('my'),opp:activeSecondary('opp')}
+  };
+}
+function tacticalAdvisorV2(attackerEntryUid,options={}){
+  const base=tacticalAdvisorV1(attackerEntryUid,options);
+  const battle=tacticalAdvisorBattleStateContext();
+  const recommendations=Array.isArray(base.recommendations)?base.recommendations:[];
+  const top=recommendations[0]||null;
+  const alerts=[];
+  if(battle.currentTurn==='my'&&battle.cp.my<=1)alerts.push('CP is limited; preserve 1 CP when a critical stratagem window is expected.');
+  if(battle.vp.gap<0)alerts.push('You are currently behind on VP; prioritize actions that create or deny scoring opportunities when legal.');
+  if(battle.activeSecondaries.my.length<2&&battle.phase==='Command')alerts.push('Your Tactical hand is below two active cards; check the Command phase replenishment state.');
+  if(battle.reserves.my.length)alerts.push(String(battle.reserves.my.length)+' friendly unit(s) remain in Reserves.');
+  if(top?.recommendationExplanation?.nearTie)alerts.push('Top recommendation is a close call; verify the measured battlefield facts before committing.');
+  return {
+    version:'tactical-advisor-v2',status:base.status,battleState:battle,
+    decisionContext:{phase:battle.phase,round:battle.round,currentTurn:battle.currentTurn,vpGap:battle.vp.gap,cp:battle.cp.my,objectiveCount:battle.objectives.my,activeSecondaryCount:battle.activeSecondaries.my.length,reserveCount:battle.reserves.my.length},
+    recommendations,avoid:base.avoid||[],naturalTargets:base.naturalTargets||[],
+    missionDecisionContext:base.missionDecisionContext||null,attacker:base.attacker||null,
+    legality:base.legality||null,attackerActionState:base.attackerActionState||null,alerts,
+    limitations:[...(base.limitations||[]),'Battle-state context is read-only; generating advice does not mutate authoritative game state.']
+  };
+}
 function tacticalAdvisorV1(attackerEntryUid,options={}){
   const side='my',atkEntry=entry(side,attackerEntryUid)||mathRosterEntry(side);
   const missionCtx=missionDecisionContext();
