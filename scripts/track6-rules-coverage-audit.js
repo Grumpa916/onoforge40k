@@ -23,7 +23,8 @@ check('Core rules sections include attack, phases, objectives, stratagems and re
   Array.isArray(source.coreRuleSections)&&['04-making-attacks','05-attack-sequence','08-command-phase','09-movement-phase','10-shooting-phase','11-charge-phase','12-fight-phase','14-objectives','15-stratagems','20-strategic-reserves'].every(x=>source.coreRuleSections.includes(x)),
   'The manifest must identify the core rules areas required by the tournament engine.');
 check('Runtime canonical-source policy is authoritative',
-  has(/name:'40k\.app'[sS]{0,500}role:'authoritative'/),
+  html.includes("canonical:{name:'40k.app',manifest:'data/40kapp-source.json',role:'authoritative'}") &&
+  html.includes('window.ONOFORGE_SOURCE_POLICY_11E=ONOFORGE_SOURCE_POLICY_11E;'),
   'Runtime must identify 40k.app as the canonical source.');
 check('Runtime preserves supplemental-source boundaries',
   has(/role:'supplemental'/)&&has(/role:'fallback-only'/),
