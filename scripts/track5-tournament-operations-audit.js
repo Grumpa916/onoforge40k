@@ -66,6 +66,26 @@ check('No legacy 10th-edition rule contamination',
   !/Big Guns Never Tire/i.test(html),
   'Tournament operations must remain on the current rules path.');
 
+check('Tournament lifecycle has an explicit Deployment state',
+  has(/allowed=\['SETUP','DEPLOYMENT','LIVE','COMPLETED'\]/)&&has(/DEPLOYMENT:\['SETUP','LIVE'\]/),
+  'Tournament flow must distinguish setup, deployment, live battle, and completion.');
+
+check('Setup cannot jump directly to Live',
+  has(/function beginDeployment\(/)&&has(/function startBattle\(/)&&has(/if\(state\.tournamentLifecycle!=='DEPLOYMENT'\)/),
+  'Live battle must require an explicit Deployment transition.');
+
+check('Deployment initializes persistent map and reserve state',
+  has(/function beginDeployment\(/)&&has(/ensureReserveState\(\)/)&&has(/ensureDeploymentPlans\(\)/)&&has(/ensureBattlefieldUnitPositions\(\)/),
+  'Deployment must preserve reserves and battlefield/deployment map state.');
+
+check('Deployment and setup reopen transitions are auditable',
+  has(/TOURNAMENT_DEPLOYMENT_STARTED/)&&has(/TOURNAMENT_SETUP_REOPENED/),
+  'Tournament lifecycle transitions must remain visible in the action history.');
+
+check('Live transition is gated to Deployment',
+  has(/setTournamentLifecycle\('LIVE'\)/)&&has(/The tournament could not transition from Deployment to Live/),
+  'The live state must be entered only through the Deployment lifecycle.');
+
 check('Tournament result requires explicit verification before export',
   has(/function verifyTournamentResult\(/)&&has(/state\.battleResultVerified=true/)&&has(/if\(!state\.battleResultVerified\)\{alert\('Verify the tournament result before exporting it/),
   'Final result must be explicitly verified before export.');
