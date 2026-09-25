@@ -8975,6 +8975,27 @@ function tacticalAdvisorV2(attackerEntryUid,options={}){
   const recommendations=Array.isArray(base.recommendations)?base.recommendations:[];
   const top=recommendations[0]||null;
   const stratagemPressure=tacticalAdvisorStratagemPressure(battle,top);
+  const advisorStratagemPressure=Math.max(0,Math.min(1,Number(stratagemPressure?.pressure)||0));
+  const advisorPreserveCP=Math.max(0,Math.min(1,Number(stratagemPressure?.preserveCP)||0));
+  recommendations.forEach(x=>{
+    const d=x.decisionComponents||{};
+    const deny=Number(d.denyOpponentScore)||0;
+    const preserve=Number(d.preserveFriendlyUnit)||0;
+    const pressureAdjustment=
+      (advisorStratagemPressure*0.025*deny)-
+      (advisorPreserveCP*0.015*(1-preserve));
+    x.stratagemPressureAdjustment=pressureAdjustment;
+    x.priorityScore=Math.max(-1,Math.min(1,Number(x.decisionScore??x.tacticalIndexAdjusted??x.tacticalIndex)||0)+pressureAdjustment);
+  });
+  recommendations.sort((a,b)=>{
+    const scoreDiff=Number(b.priorityScore??b.decisionScore??0)-Number(a.priorityScore??a.decisionScore??0);
+    if(Math.abs(scoreDiff)>0.015)return scoreDiff;
+    const confidenceDiff=Number(b.decisionComponents?.decisionConfidence||0)-Number(a.decisionComponents?.decisionConfidence||0);
+    if(Math.abs(confidenceDiff)>0.01)return confidenceDiff;
+    const objectiveDiff=Number(b.decisionComponents?.objectiveValue||0)-Number(a.decisionComponents?.objectiveValue||0);
+    if(Math.abs(objectiveDiff)>0.01)return objectiveDiff;
+    return Number(b.expectedDamage||0)-Number(a.expectedDamage||0);
+  });
   const alerts=[];
   if(battle.currentTurn==='my'&&battle.cp.my<=1)alerts.push('CP is limited; preserve 1 CP when a critical stratagem window is expected.');
   if(battle.vp.gap<0)alerts.push('You are currently behind on VP; prioritize actions that create or deny scoring opportunities when legal.');
@@ -9468,18 +9489,6 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
       0.25*pointRiskFraction
     ));
     x.tacticalIndexAdjusted=Math.max(-1,Number(x.tacticalIndex)||0)*(1-0.20*(Number(x.exchangeExposure)||0));
-  });
-  const advisorStratagemPressure=Math.max(0,Math.min(1,Number(stratagemPressure?.pressure)||0));
-  const advisorPreserveCP=Math.max(0,Math.min(1,Number(stratagemPressure?.preserveCP)||0));
-  results.forEach(x=>{
-    const d=x.decisionComponents||{};
-    const deny=Number(d.denyOpponentScore)||0;
-    const preserve=Number(d.preserveFriendlyUnit)||0;
-    const pressureAdjustment=
-      (advisorStratagemPressure*0.025*deny)-
-      (advisorPreserveCP*0.015*(1-preserve));
-    x.stratagemPressureAdjustment=pressureAdjustment;
-    x.priorityScore=Math.max(-1,Math.min(1,Number(x.decisionScore??x.tacticalIndexAdjusted??x.tacticalIndex)||0)+pressureAdjustment);
   });
   results.sort((a,b)=>{
     const scoreDiff=Number(b.priorityScore??b.decisionScore??b.tacticalIndexAdjusted??b.tacticalIndex)-Number(a.priorityScore??a.decisionScore??a.tacticalIndexAdjusted??a.tacticalIndex);
