@@ -5462,6 +5462,7 @@ function scoreIntegrityAudit(){
   return {ok:out.length===0,issues:out};
 }
 function changeVP(side,d){
+  if(!battleMutationAllowed('VP changes'))return;
   d=Number(d)||0;ensureScoreLedger();
   const fullBefore=snapshotForUndo();
   const before=side==='my'?Number(state.myVP)||0:Number(state.oppVP)||0;
