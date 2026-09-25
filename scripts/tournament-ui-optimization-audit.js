@@ -12,6 +12,10 @@ check('Tablet battle surface preserves two-column state',has(/#battle-view \.bat
 check('Tournament command controls are touch-safe',
   has(/#battle-view \.battle-inline-controls \.btn,/) && has(/#battle-view \.battle-control-row \.btn,/) && has(/#battle-view \.bottom-action-buttons \.btn\{min-height:44px/),
   'Primary tournament command controls must have at least a 44px touch target on tablet.');
+check('Tournament phase control is context-aware',
+  has(/id="next-phase-btn"[^>]*>\$\{state\.phase==='Fight' \?/) &&
+  has(/End Turn → Opponent/) && has(/End Turn → Next Round/) && has(/Finish Battle/),
+  'The primary phase control must explicitly communicate when it ends the active player turn or battle.');
 check('Turn controls are touch-safe',has(/#battle-view \.current-turn-btn\{min-height:40px/),'Turn switching controls must remain usable on a tablet.');
 check('Battle command rail remains available',has(/#battle-view \.battle-bottom-actions\{[^}]*position:sticky/),'High-frequency battle commands must remain accessible without scrolling back through the page.');
 check('Responsive tablet breakpoint is explicit',has(/@media \(min-width:701px\) and \(max-width:1100px\)/),'Intermediate tablet widths must receive an explicit layout profile.');
