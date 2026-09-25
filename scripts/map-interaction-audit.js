@@ -23,9 +23,11 @@ check('Touch/click placement converts to 60x44 coordinates',
   has(/getBoundingClientRect\(\)/) &&
   has(/\*60/) &&
   has(/\*44/) &&
-  has(/Math\.round\(x\*10\)\/10/) &&
-  has(/Math\.round\(y\*10\)\/10/),
-  'Map input must translate screen coordinates into the verified 60x44 inch system at 0.1 inch resolution.');
+  (
+    (has(/Math\.round\(x\*10\)\/10/) && has(/Math\.round\(y\*10\)\/10/)) ||
+    /function setBattlefieldUnitPosition[\s\S]{0,1400}Math\.round\(Number\(x\)\*10\)\/10[\s\S]{0,300}Math\.round\(Number\(y\)\*10\)\/10/.test(html)
+  ),
+  'Map input must translate screen coordinates into the verified 60x44 inch system at 0.1 inch resolution, either at input mapping or in the authoritative setter.');
 
 check('Placement remains manual and bounded',
   /function setBattlefieldUnitPosition[\s\S]{0,2200}source:'manual'/.test(html) &&
