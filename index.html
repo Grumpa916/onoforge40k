@@ -4853,7 +4853,7 @@ function setTournamentLifecycle(next){
  const allowed=['SETUP','DEPLOYMENT','LIVE','COMPLETED'];
  if(!allowed.includes(next))return false;
  const current=ensureTournamentLifecycle();
- const transitions={SETUP:['DEPLOYMENT','LIVE'],DEPLOYMENT:['SETUP','LIVE'],LIVE:['COMPLETED'],COMPLETED:['SETUP','LIVE']};
+ const transitions={SETUP:['DEPLOYMENT'],DEPLOYMENT:['SETUP','LIVE'],LIVE:['COMPLETED'],COMPLETED:['SETUP']};
  if(current!==next&&!transitions[current].includes(next))return false;
  state.tournamentLifecycle=next;
  return true;
