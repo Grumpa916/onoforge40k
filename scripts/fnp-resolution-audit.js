@@ -14,7 +14,7 @@ const mixedEnd=html.indexOf("function tacticalPreRollResolveMixedFnp",mixedStart
 const mixed= mixedStart>=0&&mixedEnd>mixedStart?html.slice(mixedStart,mixedEnd):'';
 
 check('FNP resolver exists',start>=0&&end>start,'Physical FNP resolution must have a dedicated resolver.');
-check('FNP uses count entry, not individual die results',/field==='mixedFnp'.test(entry)&&/mode:'count'/.test(entry),'FNP only needs the count of wounds ignored.');
+check('FNP uses count entry, not individual die results',/field==='mixedFnp'/.test(entry)&&/mode:'count'/.test(entry),'FNP only needs the count of wounds ignored.');
 check('FNP input is bounded by pending damage',/n<0\|\|n>pending/.test(fnp),'Ignored wounds cannot exceed wounds awaiting FNP.');
 check('FNP reduces only unignored damage',/pending-n/.test(fnp)&&/applied=Math\.min\(before/.test(fnp),'Only wounds not ignored by FNP are applied.');
 check('FNP updates individual model state',/m\.woundsRemaining=Math\.max\(0,before-applied)/.test(fnp)&&/m\.alive=m\.woundsRemaining>0/.test(fnp),'FNP resolution must update the allocated model.');
