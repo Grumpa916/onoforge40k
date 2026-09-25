@@ -4929,7 +4929,6 @@ function tournamentSetupChecklistHtml(){
 }
 
 function resetTournamentToSetup(){
-  if(!battleMutationAllowed('battle reset'))return false;
   const before=snapshotForUndo();
   if(!setTournamentLifecycle('SETUP')){alert('The tournament cannot be reset from the current lifecycle state.');return false;}
   state.page='setup';
