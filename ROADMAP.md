@@ -226,11 +226,15 @@ Current layers completed: explicit v2 battle-state context (round/phase, VP/CP, 
 
 Remaining Track 4 layers: deeper stratagem consequence analysis, recommendation prioritization refinement, and final v2 regression/deployment completion.
 
-### Track 5 — Tournament Operations
+### Track 5 — Tournament Operations 🔵
 Clock + player turns + game timing + setup + scoring + end-game report.
 
-### Track 6 — Rules Completeness
+Parallel progress: 🟢 game/turn timing, pause/resume, persistence-safe timer snapshots, battle completion timing, and end-game report foundations are now covered by `scripts/track5-tournament-operations-audit.js`. Remaining work: tournament lifecycle/setup workflow, result verification/lock, export, and final tournament operations regression.
+
+### Track 6 — Rules Completeness 🔵
 Systematic 11th-edition validation across units, weapons, abilities, missions, secondaries, and stratagems.
+
+Parallel progress: 🟢 rules-data provenance/version audit and tournament rules-data pinning foundation. Active battle state now carries a rules-data pin containing the 40k.app revision and Event Companion version used at battle start. Completion gate: `scripts/track6-rules-data-integrity-audit.js`. Remaining work: systematic unit/weapon/ability/stratagem coverage and rules interaction audit.
 
 **Database Currency & Integrity initiative:** maintain versioned, provenance-backed rules data with automated completeness, reference, edition, and currency gates.
 
@@ -265,7 +269,7 @@ Tablet-first dashboard, touch optimization, minimal data entry, fast phase trans
 - Manual turn override preserves scoring and CP integrity — 🟢 complete
 - Track 3 Tournament Mission System — 🟢 complete
 - Track 3 mission catalogue/scoring integrity gate — 🟢 complete
-- Current execution: Track 4 Tactical Advisor v2 — 🔵 active
+- Current execution: Track 4 Tactical Advisor v2 🔵 (with Track 5/6 parallel integrity work active)v2 — 🔵 active
 - Track 4 battle-state context layer — 🟢 complete
 - Track 4 stratagem consequence analysis — 🟢 complete
 - Track 4 v2 deployment regression gate — 🟢 added
