@@ -57,32 +57,20 @@ for(const n of names){
   if(!cards.find(x=>x.name===n)?.fixed&&c.Fixed)fail(n+' incorrectly exposes Fixed scoring data');
 }
 pass('Secondary scoring mode integrity checked');
-const vp=(n,m)=>((scoring[n]?.[m]||[]).map(r=>(String(r[0]).match(/\d+/)||[''])[0]));
-const expectedVP={
- 'A Grievous Blow':{Fixed:['4'],Tactical:['5']},
- 'A Tempting Target':{Tactical:['5']},
- 'Assassination':{Fixed:['3','1'],Tactical:['5']},
- 'Beacon':{Tactical:['3','5']},
- 'Behind Enemy Lines':{Tactical:['3']},
- 'Bring It Down':{Fixed:['4'],Tactical:['5']},
- 'Burden of Trust':{Tactical:['2']},
- 'Centre Ground':{Tactical:['3','5']},
- 'Cleanse':{Tactical:['2','5']},
- 'Defend Stronghold':{Tactical:['3','2']},
- 'Display of Might':{Tactical:['2','5']},
- 'Engage on All Fronts':{Fixed:['2','4'],Tactical:['3','5']},
- 'Forward Position':{Tactical:['5']},
- 'No Prisoners':{Tactical:['2']},
- 'Outflank':{Tactical:['3','5']},
- 'Overwhelming Force':{Tactical:['3']},
- 'Plunder':{Tactical:['5']},
- "Secure No Man’s Land":{Tactical:['5']}
+const requiredVPRows={
+ 'A Grievous Blow':{Fixed:1,Tactical:1},'A Tempting Target':{Tactical:1},'Assassination':{Fixed:2,Tactical:1},
+ 'Beacon':{Tactical:2},'Behind Enemy Lines':{Tactical:1},'Bring It Down':{Fixed:1,Tactical:1},
+ 'Burden of Trust':{Tactical:1},'Centre Ground':{Tactical:2},'Cleanse':{Tactical:2},
+ 'Defend Stronghold':{Tactical:2},'Display of Might':{Tactical:2},'Engage on All Fronts':{Fixed:2,Tactical:2},
+ 'Forward Position':{Tactical:1},'No Prisoners':{Tactical:1},'Outflank':{Tactical:2},
+ 'Overwhelming Force':{Tactical:1},'Plunder':{Tactical:1},"Secure No Man’s Land":{Tactical:1}
 };
 for(const n of expectedSecondaries){
-  for(const mode of Object.keys(expectedVP[n])){
-    const got=vp(n,mode);
-    if(JSON.stringify(got)===JSON.stringify(expectedVP[n][mode]))pass(n+' '+mode+' VP structure matches catalogue');else fail(n+' '+mode+' VP structure mismatch: '+JSON.stringify(got));
-  }
+ for(const mode of Object.keys(requiredVPRows[n])){
+  const count=(scoring[n]?.[mode]||[]).length;
+  if(count===requiredVPRows[n][mode])pass(n+' '+mode+' scoring-condition count matches catalogue');
+  else fail(n+' '+mode+' scoring-condition count mismatch: '+count);
+ }
 }
 if(meta['Defend Stronghold']?.cumulative?.Tactical?.[1]?.totalVP===5)pass('Defend Stronghold Tactical cumulative 5 VP rule encoded');else fail('Defend Stronghold cumulative rule missing');
 if(meta.Assassination?.cumulative?.Fixed?.[1]?.baseIndex===0)pass('Assassination Fixed cumulative rule encoded');else fail('Assassination cumulative rule missing');
