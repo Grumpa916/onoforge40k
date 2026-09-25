@@ -101,6 +101,9 @@ jobs:
       - name: Run Track 3 mission catalogue and scoring audit
         shell: bash
         run: node scripts/track3-mission-catalogue-audit.js
+      - name: Run Army Builder Bodyguard and naming audit
+        shell: bash
+        run: node scripts/army-builder-bodyguard-naming-audit.js
 
       - name: Run Track 4 Tactical Advisor v2 battle-state audit
         shell: bash
