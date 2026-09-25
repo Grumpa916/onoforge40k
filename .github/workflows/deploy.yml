@@ -182,8 +182,8 @@ jobs:
               busy=true;
               try{
                 const r=(typeof window.getTacticalAdvisorResult==='function'
-                  ?window.getTacticalAdvisorResult(a.uid,{samples:4000})
-                  :window.tacticalAdvisorV1(a.uid,{samples:4000}))||{};
+                  ?window.getTacticalAdvisorV2Result(a.uid,{samples:4000})
+                  :window.tacticalAdvisorV2(a.uid,{samples:4000}))||{};
                 const targets=extractTargets(r).slice(0,3);
                 const top=targets[0]||{};
                 const dc=top.decisionComponents||{};
