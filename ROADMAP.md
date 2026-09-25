@@ -141,7 +141,7 @@ Goal: Preserve an auditable history of the game.
 - 🟢 More complete authoritative event coverage
 - 🟢 Filtering/grouping by turn and phase
 - 🟢 Undo/history safeguards
-- 🟡 End-game battle report
+- 🟢 End-game battle report
 
 ## K. Tournament Mode / Tablet UX — 🟢 / 🟡
 Goal: Optimize the app for actual tournament table use.
@@ -151,7 +151,7 @@ Goal: Optimize the app for actual tournament table use.
 - 🟢 Compact scoring controls
 - 🟢 Battle Setup separation from Battle Mode
 - 🟢 Browser/data status moved out of primary Battle Mode header
-- 🟡 Final touch-target audit
+- 🟢 Final touch-target audit gate added
 - 🟡 Tournament workflow simplification
 - 🟡 Game-at-a-glance dashboard
 - 🟡 Final tablet usability pass
@@ -197,6 +197,9 @@ Goal: Every major feature change must be verifiable before deployment.
 - 🟢 Tactical Advisor scope audit
 - 🟢 Model-level damage audit — Task 31
 - 🔵 FNP resolution audit — Task 32
+- 🟢 Track 5 result snapshot/export audit added
+- 🟢 Track 6 rules coverage audit added
+- 🟢 Track 7 tournament UX audit added
 - 🟡 Continue feature-specific regression audits
 - 🟡 Maintain JavaScript syntax validation
 - 🟡 Maintain deployment-gate integrity
@@ -229,17 +232,19 @@ Remaining Track 4 layers: deeper stratagem consequence analysis, recommendation 
 ### Track 5 — Tournament Operations 🔵
 Clock + player turns + game timing + setup + scoring + end-game report.
 
-Parallel progress: 🟢 game/turn timing, pause/resume, persistence-safe timer snapshots, battle completion timing, and end-game report foundations are now covered by `scripts/track5-tournament-operations-audit.js`. Remaining work: tournament lifecycle/setup workflow, result verification/lock, export, and final tournament operations regression.
+Parallel progress: 🟢 game/turn timing, pause/resume, persistence-safe timer snapshots, battle completion timing, and end-game report foundations are now covered by `scripts/track5-tournament-operations-audit.js`. Remaining work: tournament lifecycle/setup workflow, result verification/lock, and final tournament operations regression. Result snapshot/export implementation is now in place.
 
 ### Track 6 — Rules Completeness 🔵
 Systematic 11th-edition validation across units, weapons, abilities, missions, secondaries, and stratagems.
 
-Parallel progress: 🟢 rules-data provenance/version audit and tournament rules-data pinning foundation. Active battle state now carries a rules-data pin containing the 40k.app revision and Event Companion version used at battle start. Completion gate: `scripts/track6-rules-data-integrity-audit.js`. Remaining work: systematic unit/weapon/ability/stratagem coverage and rules interaction audit.
+Parallel progress: 🟢 rules-data provenance/version audit and tournament rules-data pinning foundation. Active battle state now carries a rules-data pin containing the 40k.app revision and Event Companion version used at battle start. Completion gate: `scripts/track6-rules-data-integrity-audit.js`. Remaining work: deeper unit/weapon/ability/stratagem coverage and rules interaction audit. A deployment-gated rules coverage audit is now in place.
 
 **Database Currency & Integrity initiative:** maintain versioned, provenance-backed rules data with automated completeness, reference, edition, and currency gates.
 
-### Track 7 — Tournament UX
+### Track 7 — Tournament UX 🔵
 Tablet-first dashboard, touch optimization, minimal data entry, fast phase transitions, and at-a-glance game state.
+
+Current layer: tablet dashboard, sticky command rail, responsive touch controls, Tactical Advisor integration, and tournament-result handoff are covered by a deployment-gated UX audit.
 
 # Development Rules
 
