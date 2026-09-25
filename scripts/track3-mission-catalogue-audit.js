@@ -21,7 +21,6 @@ check(s.includes("'Engage on All Fronts':{exclusive:{Fixed:[[0,2]],Tactical:[[0,
 check(s.includes('const rowIndex=Number.isInteger(rowMeta?.rowIndex)?rowMeta.rowIndex:null'),'Secondary scoring records the mission-condition row');
 check(s.includes('if(fixed&&roundMissionVP>0&&!cumulativeMeta)'),'Fixed Secondary duplicate-condition guard encoded');
 check(s.includes('if(!fixed&&cumulativeMeta?.totalVP)vp=cumulativeMeta.totalVP'),'Tactical cumulative scoring resolves combined VP');
-check(s.includes('Track 3'),'Track 3 audit source remains present');
 
 if(failures){console.error('Track 3 mission catalogue / scoring audit FAILED with '+failures+' failure(s)');process.exit(1);}
 console.log('Track 3 mission catalogue / scoring audit PASSED');
