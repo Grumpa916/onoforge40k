@@ -9,7 +9,7 @@ check('Terrain measurement overlay function exists',has(/function terrainMeasure
 check('Measurement layer consumes verified terrain geometry',has(/model\?\.verified/)&&has(/model\.terrainGeometry/),'Measurements must be blocked when Event Companion geometry is not verified.');
 check('Measurements use 60 x 44 coordinate system',has(/pct\(x,60\)/)&&has(/pct\(44-y,44\)/),'Terrain measurements must share the authoritative battlefield coordinate system.');
 check('Terrain footprint dimensions are derived from polygon bounds',has(/maxX-minX/)&&has(/maxY-minY/),'Displayed footprint dimensions must be derived from the verified geometry rather than hard-coded guesses.');
-check('Terrain placement offsets are displayed',has(/minX/)&&has(/minY/)&&has(/L \'\+fmt\(minX\)/)&&has(/B \'\+fmt\(minY\)/),'Players need simple left/bottom edge-reference measurements for physical terrain placement.');
+check('Nearest board-edge distance is displayed',has(/edgeDistances=\[\['LEFT',minX\],\['RIGHT',60-maxX\],\['BOTTOM',minY\],\['TOP',44-maxY\]\]/)&&has(/nearestEdgeDistance/)&&has(/from \'\+nearestEdgeName\+\' edge/),'Players need the nearest physical board-edge distance for terrain placement.');
 check('Setup map is enlarged for terrain planning',has(/\.terrain-measurement-map\{min-height:clamp\(/),'Terrain placement deserves a larger tablet-first map surface.');
 check('Measurement overlay is setup-only',has(/\(setup\?terrainMeasurementOverlayHtml\(model,pct\):''\)/),'Measurement annotations must not contaminate live battlefield state views.');
 check('Measurement view is explicitly reference-only',has(/Reference only — no deployment state is changed/),'Terrain planning measurements must not mutate authoritative deployment state.');
