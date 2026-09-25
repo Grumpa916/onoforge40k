@@ -74,6 +74,10 @@ check('Lifecycle transition table forbids SETUP to LIVE bypass',
   has(/transitions=\\{SETUP:\['DEPLOYMENT'\\],DEPLOYMENT:\['SETUP','LIVE'\\],LIVE:\['COMPLETED'\\],COMPLETED:\['SETUP'\\]\\}/),
   'The lifecycle state machine itself must prevent bypassing Deployment.');
 
+check('Tournament reset returns through Setup',
+  has(/function resetTournamentToSetup\(/)&&has(/setTournamentLifecycle\('SETUP'\)/)&&has(/state\.page='setup'/),
+  'Reset must return the tournament to Setup instead of bypassing Deployment.');
+
 check('Setup cannot jump directly to Live',
   has(/function beginDeployment\(/)&&has(/function startBattle\(/)&&has(/if\(state\.tournamentLifecycle!=='DEPLOYMENT'\)/),
   'Live battle must require an explicit Deployment transition.');
