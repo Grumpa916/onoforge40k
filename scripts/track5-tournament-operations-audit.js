@@ -50,6 +50,18 @@ check('Immutable tournament result snapshot exists',
 check('Tournament result export is available',
   has(/function exportTournamentResult\(/)&&has(/Export Tournament Result/),
   'A completed tournament battle must provide a portable result export.');
+check('Tournament setup readiness gate exists',
+  has(/function tournamentSetupValidation\(/)&&has(/function tournamentSetupChecklistHtml\(/),
+  'Battle Setup must expose an explicit readiness check before Live state.');
+check('Start battle is blocked when setup is incomplete',
+  has(/const setupCheck=tournamentSetupValidation\(\)/)&&has(/if\(!setupCheck\.ready\)\{alert\('Tournament setup is incomplete/),
+  'Incomplete setup must not silently transition into a live battle.');
+check('Setup readiness covers rosters mission battlefield and turn order',
+  has(/missing\.push\('My roster'\)/)&&has(/missing\.push\('Opponent roster'\)/)&&has(/missing\.push\('Primary mission'\)/)&&has(/missing\.push\('Battlefield layout'\)/)&&has(/missing\.push\('First-turn selection'\)/),
+  'Core tournament setup prerequisites must be explicit.');
+check('Fixed secondary setup requires two selections',
+  has(/state\.secondaryMy==='fixed'&&secState\('my'\)\.length!==2/)&&has(/state\.secondaryOpp==='fixed'&&secState\('opp'\)\.length!==2/),
+  'Fixed secondary setup must be complete before Live state.');
 check('No legacy 10th-edition rule contamination',
   !/Big Guns Never Tire/i.test(html),
   'Tournament operations must remain on the current rules path.');
