@@ -47,6 +47,10 @@ jobs:
         shell: bash
         run: node scripts/map-interaction-audit.js
 
+      - name: Run Task 24 objective control refinement audit
+        shell: bash
+        run: node scripts/objective-control-refinement-audit.js
+
       - name: Render Tactical Advisor decision surface
         shell: bash
         run: |
