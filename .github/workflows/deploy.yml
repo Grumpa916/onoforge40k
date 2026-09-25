@@ -67,6 +67,10 @@ jobs:
         shell: bash
         run: node scripts/tactical-advisor-scope-audit.js
 
+      - name: Run Task 31 model-level damage resolution audit
+        shell: bash
+        run: node scripts/model-level-damage-audit.js
+
       - name: Render Tactical Advisor decision surface
         shell: bash
         run: |
