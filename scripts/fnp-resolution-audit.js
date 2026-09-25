@@ -9,9 +9,9 @@ const fnp=start>=0&&end>start?html.slice(start,end):'';
 const entryStart=html.lastIndexOf("if(field==='mixedFnp')",720000);
 const entryEnd=html.indexOf("return null;",entryStart);
 const entry=entryStart>=0&&entryEnd>entryStart?html.slice(entryStart,entryEnd):'';
-const mixedStart=html.lastIndexOf("if(vs.fixedDamage||!s.plan.variableDamage)",720000);
-const mixedEnd=html.indexOf("function tacticalPreRollResolveMixedFnp",mixedStart);
-const mixed= mixedStart>=0&&mixedEnd>mixedStart?html.slice(mixedStart,mixedEnd):'';
+const mixedStart=html.indexOf('function tacticalPreRollResolveMixedVariableDamage');
+const mixedEnd=html.indexOf('function tacticalPreRollResolveMixedVariableDevastating',mixedStart);
+const mixed=mixedStart>=0&&mixedEnd>mixedStart?html.slice(mixedStart,mixedEnd):'';
 
 check('FNP resolver exists',start>=0&&end>start,'Physical FNP resolution must have a dedicated resolver.');
 check('FNP uses count entry, not individual die results',entry.includes("field==='mixedFnp'")&&entry.includes("mode:'count'"),'FNP only needs the count of wounds ignored.');
