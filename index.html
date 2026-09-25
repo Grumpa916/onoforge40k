@@ -8931,7 +8931,7 @@ function tacticalAdvisorStratagemPressure(battle,top){
     (phaseGroups[category]??=[]).push(name);
   });
   const categories=Object.keys(phaseGroups).filter(k=>phaseGroups[k].length);
-  const cpHeadroom=Math.max(0,cp-(affordable.length?Math.min(...affordable.map(s=>Math.max(0,Number(s.cp)||0)):cp));
+  const cpHeadroom=Math.max(0,cp-(affordable.length?Math.min(...affordable.map(s=>Math.max(0,Number(s.cp)||0))):cp));
   const immediateOptions=affordable.filter(s=>String(s.phase||'Any Phase')===topPhase||String(s.phase||'Any Phase')==='Any Phase').map(s=>({name:s.name,cp:Number(s.cp)||0,phase:s.phase||'Any Phase',summary:s.summary||'',category:Object.keys(phaseGroups).find(k=>(phaseGroups[k]||[]).includes(String(s.name||'')))||'general'}));
   const topScore=Number(top?.decisionScore)||0;
   const confidence=Number(top?.decisionComponents?.decisionConfidence)||0;
