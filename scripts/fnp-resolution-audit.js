@@ -1,0 +1,26 @@
+const fs=require('fs');
+const path=require('path');
+const html=fs.readFileSync(path.resolve(__dirname,'..','index.html'),'utf8');
+const checks=[];
+const check=(name,pass,detail='')=>checks.push({name,pass:!!pass,detail});
+const start=html.indexOf('function tacticalPreRollResolveMixedFnp');
+const end=html.indexOf('function tacticalPreRollResolveMixedVariableDamage',start);
+const fnp=start>=0&&end>start?html.slice(start,end):'';
+const entryStart=html.lastIndexOf("if(field==='mixedFnp')",720000);
+const entryEnd=html.indexOf("return null;",entryStart);
+const entry=entryStart>=0&&entryEnd>entryStart?html.slice(entryStart,entryEnd):'';
+const mixedStart=html.lastIndexOf("if(vs.fixedDamage||!s.plan.variableDamage)",720000);
+const mixedEnd=html.indexOf("function tacticalPreRollResolveMixedFnp",mixedStart);
+const mixed= mixedStart>=0&&mixedEnd>mixedStart?html.slice(mixedStart,mixedEnd):'';
+
+check('FNP resolver exists',start>=0&&end>start,'Physical FNP resolution must have a dedicated resolver.');
+check('FNP uses count entry, not individual die results',/field==='mixedFnp'.test(entry)&&/mode:'count'/.test(entry),'FNP only needs the count of wounds ignored.');
+check('FNP input is bounded by pending damage',/n<0\|\|n>pending/.test(fnp),'Ignored wounds cannot exceed wounds awaiting FNP.');
+check('FNP reduces only unignored damage',/pending-n/.test(fnp)&&/applied=Math\.min\(before/.test(fnp),'Only wounds not ignored by FNP are applied.');
+check('FNP updates individual model state',/m\.woundsRemaining=Math\.max\(0,before-applied)/.test(fnp)&&/m\.alive=m\.woundsRemaining>0/.test(fnp),'FNP resolution must update the allocated model.');
+check('FNP records physical resolution',/fnpResults\.push\(\{damage:pending,ignored:n,applied\}\)/.test(fnp),'FNP results must be retained for review and logging.');
+check('FNP resumes the correct resolution phase',/vs\.kind==='devastating'/.test(fnp)&&/vs\.index\+\+/.test(fnp)&&/mixedVariableSave/.test(fnp),'After FNP, resolution must continue with the correct normal/devastating path.');
+check('Fixed damage also routes through FNP',/if\(engineFnp\(m\)\)/.test(mixed)&&/s\.stage='mixedFnp'/.test(mixed),'FNP must apply to fixed-damage attacks as well as variable damage.');
+const failures=checks.filter(x=>!x.pass);
+console.log(JSON.stringify({audit:'Task 32 Feel No Pain resolution integrity',checks:checks.length,passed:checks.length-failures.length,failed:failures.length,failures},null,2));
+if(failures.length)process.exit(1);
