@@ -8813,7 +8813,14 @@ function tacticalAdvisorBattleStateContext(){
     primary:mission.primary,secondary:mission.secondary,objectives:mission.objectives,
     battlefield:mission.battlefield,reserves:{my:reserved('my'),opp:reserved('opp')},
     positions:{my:positioned('my'),opp:positioned('opp')},
-    activeSecondaries:{my:activeSecondary('my'),opp:activeSecondary('opp')}
+    activeSecondaries:{my:activeSecondary('my'),opp:activeSecondary('opp')},
+    stratagems:{
+      myPhaseAvailable:(Array.isArray(state.stratagemsMy)?state.stratagemsMy:[]).filter(s=>s&&((String(s.phase||'Any Phase')==='Any Phase')||String(s.phase||'')===String(state.phase||'Command'))).map(s=>({name:s.name,cp:Number(s.cp)||0,phase:s.phase||'Any Phase'})),
+      myUsedThisPhase:Array.isArray(state.stratagemUsesMy)?state.stratagemUsesMy.filter(x=>x&&Number(x.round)===Number(state.round)&&String(x.phase)===String(state.phase)&&String(x.playerTurn||'my')==='my').map(x=>({name:x.name,cp:Number(x.cp)||0})):[],
+      myRecent:Array.isArray(state.stratagemUsesMy)?state.stratagemUsesMy.slice(-5).map(x=>({name:x?.name,cp:Number(x?.cp)||0,round:Number(x?.round)||0,phase:x?.phase||''})):[],
+      oppRecent:Array.isArray(state.stratagemUsesOpp)?state.stratagemUsesOpp.slice(-5).map(x=>({name:x?.name,cp:Number(x?.cp)||0,round:Number(x?.round)||0,phase:x?.phase||''})):[],
+      myMaxCurrentCP:Number(state.myCP)||0
+    }
   };
 }
 function tacticalAdvisorV2(attackerEntryUid,options={}){
@@ -8826,10 +8833,12 @@ function tacticalAdvisorV2(attackerEntryUid,options={}){
   if(battle.vp.gap<0)alerts.push('You are currently behind on VP; prioritize actions that create or deny scoring opportunities when legal.');
   if(battle.activeSecondaries.my.length<2&&battle.phase==='Command')alerts.push('Your Tactical hand is below two active cards; check the Command phase replenishment state.');
   if(battle.reserves.my.length)alerts.push(String(battle.reserves.my.length)+' friendly unit(s) remain in Reserves.');
+  const minPhaseCP=battle.stratagems.myPhaseAvailable.reduce((m,s)=>Math.min(m,Number(s.cp)||99),99);
+  if(battle.cp.my<minPhaseCP&&Number.isFinite(minPhaseCP)&&minPhaseCP<99)alerts.push('Current-phase stratagem options include costs above your available CP.');
   if(top?.recommendationExplanation?.nearTie)alerts.push('Top recommendation is a close call; verify the measured battlefield facts before committing.');
   return {
     version:'tactical-advisor-v2',status:base.status,battleState:battle,
-    decisionContext:{phase:battle.phase,round:battle.round,currentTurn:battle.currentTurn,vpGap:battle.vp.gap,cp:battle.cp.my,objectiveCount:battle.objectives.my,activeSecondaryCount:battle.activeSecondaries.my.length,reserveCount:battle.reserves.my.length},
+    decisionContext:{phase:battle.phase,round:battle.round,currentTurn:battle.currentTurn,vpGap:battle.vp.gap,cp:battle.cp.my,objectiveCount:battle.objectives.my,activeSecondaryCount:battle.activeSecondaries.my.length,reserveCount:battle.reserves.my.length,phaseStratagemCount:battle.stratagems.myPhaseAvailable.length,phaseStratagemsUsed:battle.stratagems.myUsedThisPhase.length},
     recommendations,avoid:base.avoid||[],naturalTargets:base.naturalTargets||[],
     missionDecisionContext:base.missionDecisionContext||null,attacker:base.attacker||null,
     legality:base.legality||null,attackerActionState:base.attackerActionState||null,alerts,
