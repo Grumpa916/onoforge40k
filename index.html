@@ -9471,7 +9471,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
   });
   const advisorStratagemPressure=Math.max(0,Math.min(1,Number(stratagemPressure?.pressure)||0));
   const advisorPreserveCP=Math.max(0,Math.min(1,Number(stratagemPressure?.preserveCP)||0));
-  eligibleResults.forEach((x,i)=>{
+  results.forEach(x=>{
     const d=x.decisionComponents||{};
     const deny=Number(d.denyOpponentScore)||0;
     const preserve=Number(d.preserveFriendlyUnit)||0;
