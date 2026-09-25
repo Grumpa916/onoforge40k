@@ -70,6 +70,10 @@ check('Tournament lifecycle has an explicit Deployment state',
   has(/allowed=\['SETUP','DEPLOYMENT','LIVE','COMPLETED'\]/)&&has(/DEPLOYMENT:\['SETUP','LIVE'\]/),
   'Tournament flow must distinguish setup, deployment, live battle, and completion.');
 
+check('Lifecycle transition table forbids SETUP to LIVE bypass',
+  has(/transitions=\\{SETUP:\['DEPLOYMENT'\\],DEPLOYMENT:\['SETUP','LIVE'\\],LIVE:\['COMPLETED'\\],COMPLETED:\['SETUP'\\]\\}/),
+  'The lifecycle state machine itself must prevent bypassing Deployment.');
+
 check('Setup cannot jump directly to Live',
   has(/function beginDeployment\(/)&&has(/function startBattle\(/)&&has(/if\(state\.tournamentLifecycle!=='DEPLOYMENT'\)/),
   'Live battle must require an explicit Deployment transition.');
