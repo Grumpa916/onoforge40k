@@ -35,7 +35,7 @@ check('Placement remains manual and bounded',
   'Map placement must never infer position and must reject coordinates outside the table.');
 
 check('Placement changes remain undoable and auditable',
-  /function setBattlefieldUnitPosition[\s\S]{0,2400}snapshotForUndo\(\)[\s\S]{0,2400}event\(source==='deployment'\?'UNIT_DEPLOYED':'UNIT_BATTLEFIELD_POSITION_CHANGED'/.test(html),
+  /function setBattlefieldUnitPosition[\s\S]{0,2400}snapshotForUndo\(\)[\s\S]{0,2400}event\(source==='deployment'\?'UNIT_DEPLOYED':source==='reserve'\?'UNIT_DEPLOYED_FROM_RESERVE':'UNIT_BATTLEFIELD_POSITION_CHANGED'/.test(html),
   'Map placement must preserve the existing undo/action-log contract.');
 
 check('Map renders verified deployment and territory geometry',
