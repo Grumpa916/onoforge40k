@@ -1292,6 +1292,10 @@ function primaryScoringIsPer(row){
   const text=String(row?.[2]||'').toLowerCase();
   return /\bper\b|\bfor each\b/.test(text);
 }
+function objectiveCountsForSide(side){
+  const player=side==='opp'?'opp':'my';
+  return Object.keys(state.objectives||{}).map(objectiveStateRecord).filter(o=>o.owner===player);
+}
 function primaryObjectiveConditionText(row){
   return String(row?.[2]||'').trim().toLowerCase();
 }
