@@ -49,17 +49,17 @@ Goal: Make the selected battlefield a functional game-state layer.
 - 🟡 Final tablet/touch optimization
 - 🟡 Comprehensive map regression coverage
 
-## D. Objectives & Objective Control — 🟢 / 🔵
+## D. Objectives & Objective Control — 🟢 / 🟡
 Goal: Maintain objective control as authoritative battle state.
 - 🟢 Objective control tracking by turn
 - 🟢 Objective ownership/state tracking
 - 🟢 Model/unit presence used for control
 - 🟢 Objective state connected to battle state
-- 🟡 Complete objective → scoring pipeline
-- 🟡 Primary scoring derived from objective state where appropriate
-- 🔵 End-of-turn scoring automation — Track 1 active
+- 🟢 Complete objective → scoring pipeline for implemented Primary scoring conditions
+- 🟢 Primary scoring derived from objective state where appropriate
+- 🟢 End-of-turn scoring automation — Track 1
 - 🟡 Mission-specific objective rules
-- 🟡 Objective history/audit presentation
+- 🟢 Objective history/audit presentation
 
 ## E. Mission & Scoring — 🟢 / 🔵
 Goal: Make VP/CP and mission scoring tournament reliable.
@@ -74,7 +74,7 @@ Goal: Make VP/CP and mission scoring tournament reliable.
 - 🟡 End-game scoring summary
 - 🟡 Full scoring regression suite
 
-## F. Combat Resolution / Physical Dice — 🔵
+## F. Combat Resolution / Physical Dice — 🟢 / 🟡
 Goal: Make physical-dice entry the authoritative battle-resolution workflow.
 - 🟢 Count-first dice architecture
 - 🟢 Physical dice authority
@@ -82,12 +82,12 @@ Goal: Make physical-dice entry the authoritative battle-resolution workflow.
 - 🟢 Precision resolution path
 - 🟢 Mixed save groups
 - 🟢 Model-level damage allocation
-- 🔵 Feel No Pain integrity work — Task 32
-- 🟡 Variable damage edge cases
-- 🟡 Devastating Wounds edge cases
-- 🟡 Attached-character/precision edge cases
-- 🟡 Full 11th-edition weapon/ability resolution coverage
-- 🟡 Comprehensive combat regression suite
+- 🟢 Feel No Pain integrity work — Task 32
+- 🟢 Variable damage edge cases
+- 🟢 Devastating Wounds edge cases
+- 🟢 Attached-character/precision edge cases
+- 🟡 Full 11th-edition weapon/ability resolution coverage — Track 6
+- 🟢 Comprehensive physical combat regression suite
 Architectural rule: the physical-dice path must never generate random dice. Mathhammer simulation remains a separate simulation system.
 
 ## G. Tactical Advisor — 🟢 / 🟡
@@ -123,7 +123,7 @@ Goal: Make the app follow the tournament game state cleanly.
 - 🟢 Turn progression foundation
 - 🟢 Scoring during appropriate phases
 - 🟢 Unit damage/state tracking
-- 🟡 Turn-transition safeguards
+- 🟢 Turn-transition safeguards
 - 🟡 Game clock
 - 🟡 Player-turn timing
 - 🟡 Pause/resume timing
@@ -136,9 +136,9 @@ Goal: Preserve an auditable history of the game.
 - 🟢 Attack-resolution events
 - 🟢 Stratagem/event foundation
 - 🟢 Bounded log storage
-- 🟡 More complete event coverage
-- 🟡 Filtering/grouping by turn and phase
-- 🟡 Undo/history safeguards
+- 🟢 More complete authoritative event coverage
+- 🟢 Filtering/grouping by turn and phase
+- 🟢 Undo/history safeguards
 - 🟡 End-game battle report
 
 ## K. Tournament Mode / Tablet UX — 🟢 / 🟡
@@ -201,12 +201,15 @@ Goal: Every major feature change must be verifiable before deployment.
 
 # Major Product Completion Tracks
 
-### Track 1 — Authoritative Game State 🔵
+### Track 1 — Authoritative Game State 🟢
 Objective control → scoring → VP/CP → turn/phase → action log.
 
-Current layer: objective state → authoritative end-of-turn primary scoring → VP/CP integrity → turn/phase/action-log integrity.
+Completed: objective-state scoring linkage, end-of-turn scoring, VP/CP integrity, turn/phase safeguards, authoritative event coverage, action-log filtering, undo/history safeguards, and forward-transition CP preservation. Completion gate: `scripts/track1-completion-audit.js`.
 
-### Track 2 — Complete Physical Combat Resolution
+### Track 2 — Complete Physical Combat Resolution 🟢
+Dice → hits → wounds → saves → allocation → damage → FNP → casualties → logging.
+
+Completed: physical-dice authority, mixed-save allocation, Precision, variable Damage, Devastating Wounds, FNP, model-level casualties, per-step resolution history, and combat regression gate. Completion gate: `scripts/track2-combat-regression-audit.js`.
 Dice → hits → wounds → saves → allocation → damage → FNP → casualties → logging.
 
 ### Track 3 — Tournament Mission System
@@ -246,16 +249,15 @@ Tablet-first dashboard, touch optimization, minimal data entry, fast phase trans
 
 - Task 31 — 🟢 Complete
 - Task 32 — 🟢 FNP resolution integrity audit
-- Track 1 — 🔵 Authoritative Game State
-- Track 1 first layer — 🔵 End-of-turn primary scoring automation
-- Current main: b90157afe315bd0fc4dc2867235d263aa4124d63
-- Latest main deployment gate: 🟢 GitHub Pages deployment run 960
-- Track 1 regression audit: scripts/track1-end-turn-scoring-audit.js
-- Track 1 scoring → VP/CP integrity — 🟢 Complete
-- Track 1 turn/phase → action-log integrity — 🔵 Active
-- Track 1 action-log round/phase filtering — 🟢 Implemented
-- Track 1 regression audit: scripts/track1-end-turn-scoring-audit.js, scripts/track1-scoring-vp-cp-audit.js, scripts/track1-turn-phase-action-log-audit.js
-- Current main: bd36975b444c9150d5a29e298485df1cf83476cd
-- Latest main deployment gate: 🟡 Pending deployment of Track 1 turn/phase and action-log filter work
+- Track 1 — 🟢 Authoritative Game State complete
+- Track 1 regression gates — 🟢 complete
+- Track 2 — 🟢 Complete Physical Combat Resolution complete
+- Track 2 regression gate — 🟢 complete
+- Forward turn/round transitions preserve authoritative CP state — 🟢 complete
+- Manual turn override preserves scoring and CP integrity — 🟢 complete
+- Current execution: Track 3 Tournament Mission System
+- Track 1 audits: scripts/track1-end-turn-scoring-audit.js, scripts/track1-scoring-vp-cp-audit.js, scripts/track1-turn-phase-action-log-audit.js, scripts/track1-completion-audit.js
+- Track 2 audits: scripts/model-level-damage-audit.js, scripts/fnp-resolution-audit.js, scripts/track2-combat-regression-audit.js
+- Deployment workflow gates both completed tracks before GitHub Pages publication
 
-Next planning checkpoint: complete the turn/phase → action-log integrity layer, then continue authoritative action coverage and objective → scoring refinement.
+Next planning checkpoint: continue Track 3 mission/scoring completeness and then Track 4 Tactical Advisor v2.
