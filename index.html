@@ -4745,8 +4745,46 @@ function battleEndSummaryHtml(){
  const pmy=Number(state.primaryMyScoredVP)||0,popp=Number(state.primaryOppScoredVP)||0;
  const smy=secondaryTotalScoredVP('my'),sopp=secondaryTotalScoredVP('opp');
  const winner=my===opp?'Draw':(my>opp?state.myName:state.oppName);
- return '<div class="card battle-end-summary"><div class="split"><div><h3 style="margin:0">Battle Report</h3><div class="muted">Final scoring breakdown</div></div><span class="pill">'+esc(winner)+'</span></div><div class="grid3" style="margin-top:10px"><div class="status"><b>'+esc(state.myName)+'</b><div class="big">'+my+' VP</div><div class="tiny">Primary '+pmy+' • Secondary '+smy+' • Battle Ready '+(state.battleReadyMy?10:0)+'</div></div><div class="status"><b>'+esc(state.oppName)+'</b><div class="big">'+opp+' VP</div><div class="tiny">Primary '+popp+' • Secondary '+sopp+' • Battle Ready '+(state.battleReadyOpp?10:0)+'</div></div><div class="status"><b>Battle State</b><div class="big">Round '+Math.max(1,Number(state.round)||1)+'</div><div class="tiny">'+(state.round>=5?'Five-round battle completed':'Battle ended early')+' • '+(Array.isArray(state.events)?state.events.length:0)+' logged events</div></div></div><div class="tiny" style="margin-top:9px">Primary maximum 45 VP; Secondary maximum 45 VP with up to 15 VP per battle round. Fixed Secondary Missions are additionally capped at 20 VP per card.</div></div>';
+ return '<div class="card battle-end-summary"><div class="split"><div><h3 style="margin:0">Battle Report</h3><div class="muted">Final scoring breakdown</div></div><span class="pill">'+esc(winner)+'</span></div><div class="grid3" style="margin-top:10px"><div class="status"><b>'+esc(state.myName)+'</b><div class="big">'+my+' VP</div><div class="tiny">Primary '+pmy+' • Secondary '+smy+' • Battle Ready '+(state.battleReadyMy?10:0)+'</div></div><div class="status"><b>'+esc(state.oppName)+'</b><div class="big">'+opp+' VP</div><div class="tiny">Primary '+popp+' • Secondary '+sopp+' • Battle Ready '+(state.battleReadyOpp?10:0)+'</div></div><div class="status"><b>Battle State</b><div class="big">Round '+Math.max(1,Number(state.round)||1)+'</div><div class="tiny">'+(state.round>=5?'Five-round battle completed':'Battle ended early')+' • '+(Array.isArray(state.events)?state.events.length:0)+' logged events</div></div></div><div class="tiny" style="margin-top:9px">Primary maximum 45 VP; Secondary maximum 45 VP with up to 15 VP per battle round. Fixed Secondary Missions are additionally capped at 20 VP per card.</div><div style="margin-top:10px"><button type="button" class="btn primary" onclick="exportTournamentResult();return false;">Export Tournament Result</button></div></div>';
 }
+function tournamentResultSnapshot(){
+ const my=scoreTotalForSide('my'),opp=scoreTotalForSide('opp');
+ const t=ensureGameTimer();
+ return {
+  schema:'onoforge40k.tournament-result.v1',
+  app:'OnoForge 40K',
+  recordedAt:new Date().toISOString(),
+  battleId:state.battleId||state.id||null,
+  myName:state.myName,oppName:state.oppName,
+  myVP:my,oppVP:opp,
+  primaryMyVP:Number(state.primaryMyScoredVP)||0,
+  primaryOppVP:Number(state.primaryOppScoredVP)||0,
+  secondaryMyVP:secondaryTotalScoredVP('my'),
+  secondaryOppVP:secondaryTotalScoredVP('opp'),
+  battleReadyMy:!!state.battleReadyMy,battleReadyOpp:!!state.battleReadyOpp,
+  round:Math.max(1,Number(state.round)||1),
+  firstTurn:state.firstTurn||null,
+  currentTurn:state.currentTurn||null,
+  phase:state.phase||null,
+  gameElapsedMs:Number(t.elapsedMs)||0,
+  turnMyMs:Number(t.turnMyMs)||0,
+  turnOppMs:Number(t.turnOppMs)||0,
+  rulesDataPin:state.rulesDataPin?JSON.parse(JSON.stringify(state.rulesDataPin)):null,
+  eventCount:Array.isArray(state.events)?state.events.length:0
+ };
+}
+function exportTournamentResult(){
+ try{
+  if(!state.battleEnded||!state.battleResult){alert('Finish the battle before exporting the tournament result.');return;}
+  const payload=JSON.stringify(state.battleResult,null,2);
+  const blob=new Blob([payload],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  const stamp=String(state.battleResult.recordedAt||new Date().toISOString()).slice(0,10);
+  a.download='onoforge40k-tournament-result-'+stamp+'.json';a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+ }catch(e){alert('Tournament result export failed: '+e.message)}
+}
+
 function endBattle(){
  const before=snapshotForUndo();
  if(state.battleEnded)return;
@@ -4754,6 +4792,7 @@ function endBattle(){
  const t=ensureGameTimer();
  if(t.running){t.elapsedMs=gameTimerElapsed();t.running=false;t.paused=false;t.finishedAt=Date.now();}
  if(gameTimerInterval){clearInterval(gameTimerInterval);gameTimerInterval=null;}
+ state.battleResult=tournamentResultSnapshot();
  state.battleEnded=true;
  event('BATTLE_ENDED',{side:'my',unit:'Battle',action:'Battle marked complete',round:Math.max(1,Number(state.round)||1)},before);
  save();render();
@@ -4768,6 +4807,7 @@ function startBattle(){
   state.round=1;
   state.battleRoundComplete=false;
   state.battleEnded=false;
+  state.battleResult=null;
   state.phase='Command';
   state.primaryScoringRound=1;
   state.primaryMyScoredVP=0;
