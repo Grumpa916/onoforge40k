@@ -4657,6 +4657,7 @@ function setup(){
  ${objectiveLayoutHtml()}
  ${reserveDeclarationSectionHtml('my')}
  ${reserveDeclarationSectionHtml('opp')}
+ ${tournamentSetupChecklistHtml()}
  <div class="setup-section"><h3>Battle Options</h3><div class="grid2">
    <div class="field compact-battle-menu"><label>My Army Battle Ready</label><select style="width:160px!important;max-width:160px!important;min-width:0!important" onchange="state.battleReadyMy=this.value==='yes';save();render()"><option value="no" ${!state.battleReadyMy?'selected':''}>No</option><option value="yes" ${state.battleReadyMy?'selected':''}>Yes — +10 VP</option></select></div>
    <div class="field compact-battle-menu"><label>Opponent Army Battle Ready</label><select style="width:160px!important;max-width:160px!important;min-width:0!important" onchange="state.battleReadyOpp=this.value==='yes';save();render()"><option value="no" ${!state.battleReadyOpp?'selected':''}>No</option><option value="yes" ${state.battleReadyOpp?'selected':''}>Yes — +10 VP</option></select></div>
@@ -4887,7 +4888,25 @@ function endBattle(){
  event('BATTLE_ENDED',{side:'my',unit:'Battle',action:'Battle marked complete',round:Math.max(1,Number(state.round)||1)},before);
  save();render();
 }
+function tournamentSetupValidation(){
+ const missing=[];
+ if(!Array.isArray(state.my)||!state.my.length)missing.push('My roster');
+ if(!Array.isArray(state.opp)||!state.opp.length)missing.push('Opponent roster');
+ if(!state.objectiveMapMissionKey&&!objectiveMissionKey())missing.push('Primary mission');
+ if(!state.objectiveMapLayout)missing.push('Battlefield layout');
+ if(state.firstTurn!=='my'&&state.firstTurn!=='opp')missing.push('First-turn selection');
+ if(state.secondaryMy==='fixed'&&secState('my').length!==2)missing.push('My Fixed secondary selections (2)');
+ if(state.secondaryOpp==='fixed'&&secState('opp').length!==2)missing.push('Opponent Fixed secondary selections (2)');
+ return {ready:missing.length===0,missing};
+}
+function tournamentSetupChecklistHtml(){
+ const v=tournamentSetupValidation();
+ return '<div class="setup-section"><h3>Tournament Setup Check</h3><div class="'+(v.ready?'ok':'warn')+'"><b>'+(v.ready?'Ready to start the tournament battle':'Setup incomplete')+'</b>'+(v.ready?'<div class="tiny" style="margin-top:4px">Roster, mission, battlefield, first turn, and required Fixed secondary selections are present.</div>':'<div class="tiny" style="margin-top:4px">Complete: '+v.missing.map(esc).join(' • ')+'</div>')+'</div></div>';
+}
+
 function startBattle(){
+  const setupCheck=tournamentSetupValidation();
+  if(!setupCheck.ready){alert('Tournament setup is incomplete:\n\n• '+setupCheck.missing.join('\n• '));return false;}
   const before=snapshotForUndo();
   // Pin the rules-data revision for the lifetime of this tournament battle.
   // Loading an existing battle preserves its prior pin rather than silently adopting a newer deployed dataset.
