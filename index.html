@@ -4673,7 +4673,7 @@ function setup(){
  <div class="setup-panel"><h3>${esc(state.oppName)}</h3><div class="field"><label>Mission Type</label><select onchange="setSecondaryMode('opp',this.value)"><option value="fixed" ${state.secondaryOpp==='fixed'?'selected':''}>Fixed</option><option value="tactical" ${state.secondaryOpp==='tactical'?'selected':''}>Tactical</option></select></div>
  ${state.secondaryOpp==='fixed'?`<div class="secondary-grid">${SECONDARY_CARDS.filter(c=>c.fixed).map(c=>`<label class="secondary-card ${secState('opp').includes(c.name)?'selected':''}"><input type="checkbox" ${secState('opp').includes(c.name)?'checked':''} onchange="toggleFixedSecondary('opp','${esc(c.name)}')"><b>${esc(c.name)}</b><span>${esc(c.type)}</span></label>`).join('')}</div><div class="muted">Selected: ${secState('opp').length} / 2 active</div>`:``}</div>
  </div></div>
- <button class="btn primary" onclick="startBattle()">Start / Reset Battle</button></div>`
+ <div class="row" style="margin-top:10px"><button class="btn" type="button" onclick="returnToTournamentSetup()" ${state.tournamentLifecycle==='DEPLOYMENT'?'':'disabled'}>Back to Setup</button><button class="btn primary" type="button" onclick="beginDeployment()">Begin Deployment</button><button class="btn primary" type="button" onclick="startBattle()" ${state.tournamentLifecycle==='DEPLOYMENT'?'':'disabled'}>Start Battle</button> </div></div>`
 }
 
 let gameTimerInterval=null;
@@ -4928,9 +4928,43 @@ function tournamentSetupChecklistHtml(){
  return '<div class="setup-section"><h3>Tournament Setup Check</h3><div class="'+(v.ready?'ok':'warn')+'"><b>'+(v.ready?'Ready to start the tournament battle':'Setup incomplete')+'</b>'+(v.ready?'<div class="tiny" style="margin-top:4px">Roster, mission, battlefield, first turn, and required Fixed secondary selections are present.</div>':'<div class="tiny" style="margin-top:4px">Complete: '+v.missing.map(esc).join(' • ')+'</div>')+'</div></div>';
 }
 
+function beginDeployment(){
+  const setupCheck=tournamentSetupValidation();
+  if(!setupCheck.ready){alert('Tournament setup is incomplete:\n\n• '+setupCheck.missing.join('\n• '));return false;}
+  const before=snapshotForUndo();
+  if(!setTournamentLifecycle('DEPLOYMENT')){alert('The tournament cannot enter Deployment from the current lifecycle state.');return false;}
+  ensureReserveState();
+  ensureDeploymentPlanState();
+  ensureBattlefieldUnitPositions();
+  event('TOURNAMENT_DEPLOYMENT_STARTED',{
+    side:'my',
+    unit:'Battle',
+    action:'Tournament deployment phase started',
+    round:Math.max(1,Number(state.round)||1)
+  },before);
+  save();render();
+  return true;
+}
+function returnToTournamentSetup(){
+  if(state.tournamentLifecycle!=='DEPLOYMENT')return false;
+  const before=snapshotForUndo();
+  if(!setTournamentLifecycle('SETUP'))return false;
+  event('TOURNAMENT_SETUP_REOPENED',{
+    side:'my',
+    unit:'Battle',
+    action:'Tournament setup reopened before live battle',
+    round:Math.max(1,Number(state.round)||1)
+  },before);
+  save();render();
+  return true;
+}
 function startBattle(){
   const setupCheck=tournamentSetupValidation();
   if(!setupCheck.ready){alert('Tournament setup is incomplete:\n\n• '+setupCheck.missing.join('\n• '));return false;}
+  if(state.tournamentLifecycle!=='DEPLOYMENT'){
+    alert('Begin Deployment before starting the live battle.');
+    return false;
+  }
   const before=snapshotForUndo();
   // Pin the rules-data revision for the lifetime of this tournament battle.
   // Loading an existing battle preserves its prior pin rather than silently adopting a newer deployed dataset.
@@ -4944,7 +4978,7 @@ function startBattle(){
   state.battleResultVerified=false;
   state.battleResultVerifiedAt=null;
   state.battleResult=null;
-  setTournamentLifecycle('LIVE');
+  if(!setTournamentLifecycle('LIVE')){alert('The tournament could not transition from Deployment to Live.');return false;}
   state.phase='Command';
   state.primaryScoringRound=1;
   state.primaryMyScoredVP=0;
