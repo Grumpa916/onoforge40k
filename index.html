@@ -9221,10 +9221,10 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
       confidence:{label:confidenceLabel,value:confidenceValue},
       whatCouldChange:changes.length?changes:['Re-check if range, line of sight, engagement, or objective state changes.'],
       missionImpact:{
-        objective:primaryTargetImpact.objective,
-        status:primaryTargetImpact.status,
-        denyOpponentPrimary:primaryTargetImpact.denyScoringValue,
-        ownPrimaryOpportunity:primaryTargetImpact.ownScoringValue
+        objective:x.exchangeComponents?.primaryTargetImpact?.objective||'unknown',
+        status:x.exchangeComponents?.primaryTargetImpact?.status||'unknown',
+        denyOpponentPrimary:Number(x.exchangeComponents?.primaryTargetImpact?.denyScoringValue)||0,
+        ownPrimaryOpportunity:Number(x.exchangeComponents?.primaryTargetImpact?.ownScoringValue)||0
       }
     };
   });
