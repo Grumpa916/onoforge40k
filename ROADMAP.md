@@ -218,6 +218,8 @@ Clock + player turns + game timing + setup + scoring + end-game report.
 ### Track 6 — Rules Completeness
 Systematic 11th-edition validation across units, weapons, abilities, missions, secondaries, and stratagems.
 
+**Database Currency & Integrity initiative:** maintain versioned, provenance-backed rules data with automated completeness, reference, edition, and currency gates.
+
 ### Track 7 — Tournament UX
 Tablet-first dashboard, touch optimization, minimal data entry, fast phase transitions, and at-a-glance game state.
 
@@ -235,6 +237,7 @@ Tablet-first dashboard, touch optimization, minimal data entry, fast phase trans
 10. When a numbered task is completed, update this roadmap if the feature-level status changed.
 11. Before starting a new numbered task, identify which roadmap feature/track it advances.
 12. Do not invent a numbered task when the existing roadmap or feature work provides a more appropriate next action.
+13. Database/rules-data changes must be versioned, provenance-backed, audited, and deployment-gated; active tournament state must remain pinned to its rules-data version.
 
 # Current Execution State
 
