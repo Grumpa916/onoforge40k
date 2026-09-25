@@ -64,9 +64,9 @@
 
 .battle-actions .btn{min-width:130px;font-weight:800}.battle-actions{display:flex;gap:10px;justify-content:center}.secondary-battle-card{margin-bottom:14px}.model-roster-list{display:grid;gap:5px;margin-top:8px;padding:7px;background:#0b1420;border:1px solid #29445b;border-radius:8px}.model-roster-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:6px 7px;background:#101b28;border:1px solid #263b50;border-radius:6px}.model-roster-row.destroyed{opacity:.5}.model-roster-name{font-size:10px;font-weight:700}.model-roster-weapons{margin-top:2px;font-size:9px;color:#8fa7bb;line-height:1.3}.model-roster-wounds{font-size:9px;color:#c8d8e7;margin-top:2px}.model-roster-actions{display:flex;gap:3px;flex-wrap:wrap;justify-content:flex-end}.model-roster-actions .btn{padding:3px 6px;font-size:9px;min-height:24px}.model-roster-title{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#8fc8ff;font-weight:800;margin-bottom:4px}@media(max-width:700px){.model-roster-row{grid-template-columns:1fr}.model-roster-actions{justify-content:flex-start}}
 .battle-log{min-width:0}.battle-layout{align-items:start}.battle-side{min-width:0}.battle-side>.card{margin-bottom:14px}
-.battle-bottom-actions{margin-top:16px;display:flex;align-items:center;justify-content:space-between;gap:16px;border:1px solid var(--line)}.battle-control-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;flex:1}.battle-control-row .btn{width:100%}
+.battle-bottom-actions{margin-top:16px;display:flex;align-items:center;justify-content:space-between;gap:16px;border:1px solid var(--line);position:sticky;bottom:10px;z-index:30;background:#111722;padding:10px;border-radius:10px}.battle-control-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;flex:1}.battle-control-row .btn{width:100%;min-height:44px}
 .bottom-action-title h3{margin:0 0 3px}
-.bottom-action-buttons{display:flex;gap:10px;flex-wrap:wrap}.battle-inline-controls{margin:12px 0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}.battle-inline-controls .btn{width:100%;white-space:nowrap}
+.bottom-action-buttons{display:flex;gap:10px;flex-wrap:wrap}.bottom-action-buttons .btn{min-height:44px}.battle-inline-controls{margin:12px 0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}.battle-inline-controls .btn{width:100%;white-space:nowrap}
 @media(max-width:700px){.battle-bottom-actions{flex-direction:column;align-items:stretch}.bottom-action-buttons{display:grid;grid-template-columns:1fr 1fr}.bottom-action-buttons .btn{width:100%}.battle-control-row{grid-template-columns:1fr 1fr}.battle-inline-controls{grid-template-columns:1fr 1fr}.battle-inline-controls .btn{white-space:normal}}
 
 .math-hero{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:14px}
@@ -792,6 +792,7 @@ function ensureBattlefieldUnitPositions(){
 }
 function battlefieldUnitPosition(side,uid,mode='battle'){if(isUnitReserved(side,uid))return null;if(mode==='setup')return side==='my'?deploymentPlanPosition(uid):null;const raw=ensureBattlefieldUnitPositions()[String(uid)];if(!raw||raw.side!==(side==='opp'?'opp':'my'))return null;const x=Math.round(Number(raw.x)*10)/10,y=Math.round(Number(raw.y)*10)/10;if(!Number.isFinite(x)||!Number.isFinite(y)||x<0||x>60||y<0||y>44)return null;return {x,y,side:raw.side,source:raw.source||'manual'};}
 function setBattlefieldUnitPosition(side,uid,x,y,source='manual'){
+  if(state.page==='battle'&&!battleMutationAllowed('battlefield position changes'))return false;
   const nextSide=side==='opp'?'opp':'my',id=String(uid||'');
   const nx=Math.round(Number(x)*10)/10,ny=Math.round(Number(y)*10)/10;
   if(!id||!Number.isFinite(nx)||!Number.isFinite(ny)||nx<0||nx>60||ny<0||ny>44)return false;
@@ -802,6 +803,7 @@ function setBattlefieldUnitPosition(side,uid,x,y,source='manual'){
   save();render();return true;
 }
 function clearBattlefieldUnitPosition(uid){
+  if(state.page==='battle'&&!battleMutationAllowed('battlefield position changes'))return;
   const id=String(uid||'');
   if(!id||!Object.prototype.hasOwnProperty.call(ensureBattlefieldUnitPositions(),id))return;
   const before=snapshotForUndo();
@@ -2193,7 +2195,7 @@ function stratagemsUI(){
 }
 const ONOFORGE_RULES_DATA_PIN={schema:'onoforge.rules-data-pin.v1',unitSource:'40k.app',unitRevision:925,unitRevisionDate:'2026-08-11',eventCompanion:'Warhammer Event Companion',eventCompanionVersion:'1.2',eventCompanionRevision:'1.2'};
 let state={
-  savedArmyLists:[],
+  savedArmyLists:[],tournamentLifecycle:'SETUP',battleResultLocked:false,
   stratagemsMy:[], stratagemsOpp:[], stratagemsOpen:false,primaryMissionsOpen:false,secondaryMissionsOpen:false,page:'builder',myName:'My Army',oppName:'Opponent Army',faction:'Tyranids',detachment:'Invasion Fleet',detachmentSelections:['Invasion Fleet'],oppFaction:'Ultramarines',oppDetachment:'Gladius Task Force',oppDetachmentSelections:['Gladius Task Force'],limit:2000,my:[],opp:[],searchMy:'',searchOpp:'',configure:null,attacker:'norn',weapon:'Rupture Cannon',target:'marine',round:1,phase:'Command',myVP:0,oppVP:0,myCP:0,oppCP:0,phaseCP:{},battleReadyMy:false,battleReadyOpp:false,secondaryMy:'tactical',secondaryOpp:'tactical',secondaryMyCards:[],secondaryOppCards:[],secondaryMyDeck:[],secondaryOppDeck:[],secondaryMyDeckInitialized:false,secondaryOppDeckInitialized:false,secondaryMyDiscard:[],secondaryOppDiscard:[],newOrdersCompletedMy:false,newOrdersCompletedOpp:false,secondaryMyScored:[],secondaryOppScored:[],secondaryMyScoredVP:{},secondaryOppScoredVP:{},secondaryMyScoredVPByRound:{},secondaryOppScoredVPByRound:{},secondaryMyScoredRound:{},secondaryOppScoredRound:{},secondaryNewOrdersUsedMy:false,secondaryNewOrdersUsedOpp:false,secondaryPersonalPlans:{},secondaryPlanEdit:'',secondaryDetailSide:'',secondaryDetailName:'',gameReferencePersonal:{},rulesDataPin:null,myForceDisposition:'',oppForceDisposition:'',attackerSide:'my',firstTurn:'my',currentTurn:'my',objectives:{},objectiveMapLayout:'A',objectiveMapMissionKey:'',objectiveControlHistory:{},objectiveControlSources:{},objectiveMeta:{},deploymentTrackingSide:'my',battlefieldUnitPositions:{},deploymentMapPlacement:null,battlefieldMapPlacement:null,reserveDeclarations:{my:{},opp:{}},events:[],gameAssistantChecks:{},gameAssistantNotes:'',personalArmyNotes:'',lists:[],activeRosterId:'',activeOpponentRosterId:'',dataStatus:'40k.app canonical manifest • embedded catalogue bootstrap fallback • BSData supplemental',source:'40k.app',revision:'925',cloud:{email:'',userId:'',status:'Not connected',lastSync:'',error:''},cloudBattles:[],rulesLog:[],mathRules:{},gameTimer:{elapsedMs:0,running:false,paused:false,startedAt:0,pausedAt:0,finishedAt:0,turnMyMs:0,turnOppMs:0,turnStartedGameMs:0,turnPaused:false},cloudPasswordRecovery:false,localSavedAt:''};
 
 const GAME_REFERENCE_PHASES={Command:[],Movement:[],Shooting:[],Charge:[],Fight:[],End:[]};
@@ -2892,6 +2894,7 @@ function removeSecondaryRoundVP(side,name,round=null){
   if(state[roundMapKey])delete state[roundMapKey][name];
 }
 function scoreSecondary(side,name,vpInput,rowMeta=null){
+ if(!battleMutationAllowed('secondary scoring'))return;
  const active=secState(side);if(!active.includes(name))return;
  let vp=Number(vpInput);if(!Number.isFinite(vp))vp=0;vp=Math.floor(vp);if(vp<1){alert('Enter at least 1 VP to score.');return;}
  const card=secondaryByName(name);const mode=side==='my'?state.secondaryMy:state.secondaryOpp;
@@ -4773,6 +4776,27 @@ function tournamentResultSnapshot(){
   eventCount:Array.isArray(state.events)?state.events.length:0
  };
 }
+function ensureTournamentLifecycle(){
+ const allowed=['SETUP','DEPLOYMENT','LIVE','COMPLETED'];
+ if(!allowed.includes(state.tournamentLifecycle))state.tournamentLifecycle=state.battleEnded?'COMPLETED':(state.page==='battle'?'LIVE':state.page==='setup'?'DEPLOYMENT':'SETUP');
+ return state.tournamentLifecycle;
+}
+function setTournamentLifecycle(next){
+ const allowed=['SETUP','DEPLOYMENT','LIVE','COMPLETED'];
+ if(!allowed.includes(next))return false;
+ const current=ensureTournamentLifecycle();
+ const transitions={SETUP:['DEPLOYMENT','LIVE'],DEPLOYMENT:['SETUP','LIVE'],LIVE:['COMPLETED'],COMPLETED:['SETUP','LIVE']};
+ if(current!==next&&!transitions[current].includes(next))return false;
+ state.tournamentLifecycle=next;
+ return true;
+}
+function battleMutationAllowed(action='battle update'){
+ if(state.battleEnded||state.battleResultLocked){
+   alert('Battle is complete. '+action+' is locked; start a new battle to make changes.');
+   return false;
+ }
+ return true;
+}
 function exportTournamentResult(){
  try{
   if(!state.battleEnded||!state.battleResult){alert('Finish the battle before exporting the tournament result.');return;}
@@ -4793,6 +4817,8 @@ function endBattle(){
  if(t.running){t.elapsedMs=gameTimerElapsed();t.running=false;t.paused=false;t.finishedAt=Date.now();}
  if(gameTimerInterval){clearInterval(gameTimerInterval);gameTimerInterval=null;}
  state.battleResult=tournamentResultSnapshot();
+ state.battleResultLocked=true;
+ setTournamentLifecycle('COMPLETED');
  state.battleEnded=true;
  event('BATTLE_ENDED',{side:'my',unit:'Battle',action:'Battle marked complete',round:Math.max(1,Number(state.round)||1)},before);
  save();render();
@@ -4807,7 +4833,9 @@ function startBattle(){
   state.round=1;
   state.battleRoundComplete=false;
   state.battleEnded=false;
+  state.battleResultLocked=false;
   state.battleResult=null;
+  setTournamentLifecycle('LIVE');
   state.phase='Command';
   state.primaryScoringRound=1;
   state.primaryMyScoredVP=0;
@@ -4892,7 +4920,7 @@ function startBattle(){
     });
   }
 
-state.myCP=1;state.oppCP=1;state.phaseCP={};state.battleFirstTurn=state.firstTurn==='opp'?'opp':'my';state.stratagemUsesMy=[];state.stratagemUsesOpp=[];resetStratagemPhaseUses();state.newOrdersCompletedMy=false;state.newOrdersCompletedOpp=false;state.tactical={version:TACTICAL_STATE_VERSION,pairs:{},unitUse:{},unitMovement:{},unitActions:{}};if(!forceDisposition('my')&&availableForceDispositions('my').length)state.myForceDisposition=availableForceDispositions('my')[0];if(!forceDisposition('opp')&&availableForceDispositions('opp').length)state.oppForceDisposition=availableForceDispositions('opp')[0];state.page='battle';state.phase='Command';state.currentTurn=state.firstTurn==='opp'?'opp':'my';ensureReserveState();ensureBattlefieldUnitPositions();Object.values(ensureBattlefieldUnitPositions()).forEach(p=>{if(p&&typeof p==='object')p.round=1;});delete state.battlefieldMapPlacement;delete state.deploymentMapPlacement;state.gameTimer.turnMyMs=0;state.gameTimer.turnOppMs=0;state.gameTimer.turnStartedGameMs=gameTimerElapsed();state.gameTimer.turnPaused=false;state.manualVPMy=0;state.manualVPOpp=0;state.myVP=state.battleReadyMy?10:0;state.oppVP=state.battleReadyOpp?10:0;state.events=[];state.objectives={};state.objectiveTurnStartOwners={};if(Array.isArray(state.stratagemsMy))state.stratagemsMy.forEach(s=>{if(s)s.used=false});
+state.myCP=1;state.oppCP=1;state.phaseCP={};state.battleFirstTurn=state.firstTurn==='opp'?'opp':'my';state.stratagemUsesMy=[];state.stratagemUsesOpp=[];resetStratagemPhaseUses();state.newOrdersCompletedMy=false;state.newOrdersCompletedOpp=false;state.tactical={version:TACTICAL_STATE_VERSION,pairs:{},unitUse:{},unitMovement:{},unitActions:{}};if(!forceDisposition('my')&&availableForceDispositions('my').length)state.myForceDisposition=availableForceDispositions('my')[0];if(!forceDisposition('opp')&&availableForceDispositions('opp').length)state.oppForceDisposition=availableForceDispositions('opp')[0];state.page='battle';setTournamentLifecycle('LIVE');state.phase='Command';state.currentTurn=state.firstTurn==='opp'?'opp':'my';ensureReserveState();ensureBattlefieldUnitPositions();Object.values(ensureBattlefieldUnitPositions()).forEach(p=>{if(p&&typeof p==='object')p.round=1;});delete state.battlefieldMapPlacement;delete state.deploymentMapPlacement;state.gameTimer.turnMyMs=0;state.gameTimer.turnOppMs=0;state.gameTimer.turnStartedGameMs=gameTimerElapsed();state.gameTimer.turnPaused=false;state.manualVPMy=0;state.manualVPOpp=0;state.myVP=state.battleReadyMy?10:0;state.oppVP=state.battleReadyOpp?10:0;state.events=[];state.objectives={};state.objectiveTurnStartOwners={};if(Array.isArray(state.stratagemsMy))state.stratagemsMy.forEach(s=>{if(s)s.used=false});
 if(Array.isArray(state.stratagemsOpp))state.stratagemsOpp.forEach(s=>{if(s)s.used=false});
 state.secondaryMyDiscard=[];state.secondaryOppDiscard=[];state.secondaryTacticalDrawKeys={};state.secondaryMyScored=[];state.secondaryOppScored=[];state.secondaryMyScoredVP={};state.secondaryOppScoredVP={};state.secondaryMyScoredVPByRound={};state.secondaryOppScoredVPByRound={};state.secondaryMyScoredRound={};state.secondaryOppScoredRound={};state.secondaryMyDeck=[];state.secondaryOppDeck=[];state.secondaryMyDeckInitialized=false;state.secondaryOppDeckInitialized=false;state.secondaryMyCards=[];state.secondaryOppCards=[];state.secondaryTacticalDrawKeys={};if(state.secondaryMy==='tactical'){initTacticalDeck('my');drawTactical('my',2,false)}if(state.secondaryOpp==='tactical'){initTacticalDeck('opp');drawTactical('opp',2,false)};state.my.forEach(e=>{const u=get(e.unitId),roster=ensureModelRoster(e,u);e.game={entryId:e.uid,models:e.models,wounds:e.models*get(e.unitId).wounds,status:'Alive',battleshocked:false,modelRoster:roster.map(m=>({...m,alive:true,woundsRemaining:Number(u.wounds)||1}))};});
 state.opp.forEach(e=>{const u=get(e.unitId),roster=ensureModelRoster(e,u);e.game={entryId:e.uid,models:e.models,wounds:e.models*get(e.unitId).wounds,status:'Alive',battleshocked:false,modelRoster:roster.map(m=>({...m,alive:true,woundsRemaining:Number(u.wounds)||1}))};});event('GAME_STARTED',{unit:'Game',action:'Start / Reset Battle',round:state.round,phase:state.phase,attacker:state.attackerSide,defender:state.attackerSide==='my'?'opp':'my',firstTurn:state.firstTurn,secondaryMy:state.secondaryMy,secondaryOpp:state.secondaryOpp,battleReadyMy:state.battleReadyMy,battleReadyOpp:state.battleReadyOpp,myStartingVP:state.myVP,oppStartingVP:state.oppVP,myDetachment:state.detachmentSelections,oppDetachment:state.oppDetachmentSelections,myDetachmentDP:detachmentDP('my'),oppDetachmentDP:detachmentDP('opp'),myForceDisposition:forceDisposition('my'),oppForceDisposition:forceDisposition('opp'),myPrimaryMission:primaryMission('my'),oppPrimaryMission:primaryMission('opp')},before);save();render()}
@@ -6056,9 +6084,10 @@ function restorePhaseCP(round,turn,phase){
    state.phaseCP[key]={my:Math.max(0,Number(state.myCP)||0),opp:Math.max(0,Number(state.oppCP)||0)};
  }
 }
-function changeCP(side,d){d=Number(d)||0;const fullBefore=snapshotForUndo();const before=side==='my'?Number(state.myCP)||0:Number(state.oppCP)||0;const after=Math.max(0,before+d);const delta=after-before;if(side==='my')state.myCP=after;else state.oppCP=after;rememberPhaseCP();event('CP_CHANGED',{side,unit:side==='my'?'My CP':'Opponent CP',action:'CP '+(delta>0?'+':'')+delta,before,after,delta},fullBefore);save();render()}
+function changeCP(side,d){if(!battleMutationAllowed('CP changes'))return;d=Number(d)||0;const fullBefore=snapshotForUndo();const before=side==='my'?Number(state.myCP)||0:Number(state.oppCP)||0;const after=Math.max(0,before+d);const delta=after-before;if(side==='my')state.myCP=after;else state.oppCP=after;rememberPhaseCP();event('CP_CHANGED',{side,unit:side==='my'?'My CP':'Opponent CP',action:'CP '+(delta>0?'+':'')+delta,before,after,delta},fullBefore);save();render()}
 function autoScorePrimaryEndOfTurn(side){ const player=side==='opp'?'opp':'my'; const mission=primaryMission(player); if(!mission)return []; const rows=primaryScoringRowsForRound(mission); const scored=[]; rows.forEach((row,index)=>{ const timing=String(row?.[0]||'').toLowerCase(); if(!/end of turn/.test(timing))return; const evidence=primaryScoringEvidence(player,index,mission); if(!evidence.eligible)return; scorePrimaryItem(player,index,mission); scored.push({index,scoringItem:String(row?.[2]||''),vp:Number(evidence.allowedVP)||0}); }); return scored; }
 function advancePhase(){
+  if(!battleMutationAllowed('phase changes'))return;
   const before=snapshotForUndo();
   const phases=['Command','Movement','Shooting','Charge','Fight'];
   const current=String(state.phase||'Command');
