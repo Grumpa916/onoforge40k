@@ -2225,7 +2225,7 @@ function stratagemsUI(){
 }
 const ONOFORGE_RULES_DATA_PIN={schema:'onoforge.rules-data-pin.v1',unitSource:'40k.app',unitRevision:925,unitRevisionDate:'2026-08-11',eventCompanion:'Warhammer Event Companion',eventCompanionVersion:'1.2',eventCompanionRevision:'1.2'};
 let state={
-  savedArmyLists:[],tournamentLifecycle:'SETUP',battleResultLocked:false,
+  savedArmyLists:[],tournamentLifecycle:'SETUP',battleResultLocked:false,battleResultVerified:false,battleResultVerifiedAt:null,
   stratagemsMy:[], stratagemsOpp:[], stratagemsOpen:false,primaryMissionsOpen:false,secondaryMissionsOpen:false,page:'builder',myName:'My Army',oppName:'Opponent Army',faction:'Tyranids',detachment:'Invasion Fleet',detachmentSelections:['Invasion Fleet'],oppFaction:'Ultramarines',oppDetachment:'Gladius Task Force',oppDetachmentSelections:['Gladius Task Force'],limit:2000,my:[],opp:[],searchMy:'',searchOpp:'',configure:null,attacker:'norn',weapon:'Rupture Cannon',target:'marine',round:1,phase:'Command',myVP:0,oppVP:0,myCP:0,oppCP:0,phaseCP:{},battleReadyMy:false,battleReadyOpp:false,secondaryMy:'tactical',secondaryOpp:'tactical',secondaryMyCards:[],secondaryOppCards:[],secondaryMyDeck:[],secondaryOppDeck:[],secondaryMyDeckInitialized:false,secondaryOppDeckInitialized:false,secondaryMyDiscard:[],secondaryOppDiscard:[],newOrdersCompletedMy:false,newOrdersCompletedOpp:false,secondaryMyScored:[],secondaryOppScored:[],secondaryMyScoredVP:{},secondaryOppScoredVP:{},secondaryMyScoredVPByRound:{},secondaryOppScoredVPByRound:{},secondaryMyScoredRound:{},secondaryOppScoredRound:{},secondaryNewOrdersUsedMy:false,secondaryNewOrdersUsedOpp:false,secondaryPersonalPlans:{},secondaryPlanEdit:'',secondaryDetailSide:'',secondaryDetailName:'',gameReferencePersonal:{},rulesDataPin:null,myForceDisposition:'',oppForceDisposition:'',attackerSide:'my',firstTurn:'my',currentTurn:'my',objectives:{},objectiveMapLayout:'A',objectiveMapMissionKey:'',objectiveControlHistory:{},objectiveControlSources:{},objectiveMeta:{},deploymentTrackingSide:'my',battlefieldUnitPositions:{},deploymentMapPlacement:null,battlefieldMapPlacement:null,reserveDeclarations:{my:{},opp:{}},events:[],gameAssistantChecks:{},gameAssistantNotes:'',personalArmyNotes:'',lists:[],activeRosterId:'',activeOpponentRosterId:'',dataStatus:'40k.app canonical manifest • embedded catalogue bootstrap fallback • BSData supplemental',source:'40k.app',revision:'925',cloud:{email:'',userId:'',status:'Not connected',lastSync:'',error:''},cloudBattles:[],rulesLog:[],mathRules:{},gameTimer:{elapsedMs:0,running:false,paused:false,startedAt:0,pausedAt:0,finishedAt:0,turnMyMs:0,turnOppMs:0,turnStartedGameMs:0,turnPaused:false},cloudPasswordRecovery:false,localSavedAt:''};
 
 const GAME_REFERENCE_PHASES={Command:[],Movement:[],Shooting:[],Charge:[],Fight:[],End:[]};
@@ -4806,7 +4806,10 @@ function battleEndSummaryHtml(){
  const pmy=Number(state.primaryMyScoredVP)||0,popp=Number(state.primaryOppScoredVP)||0;
  const smy=secondaryTotalScoredVP('my'),sopp=secondaryTotalScoredVP('opp');
  const winner=my===opp?'Draw':(my>opp?state.myName:state.oppName);
- return '<div class="card battle-end-summary"><div class="split"><div><h3 style="margin:0">Battle Report</h3><div class="muted">Final scoring breakdown</div></div><span class="pill">'+esc(winner)+'</span></div><div class="grid3" style="margin-top:10px"><div class="status"><b>'+esc(state.myName)+'</b><div class="big">'+my+' VP</div><div class="tiny">Primary '+pmy+' • Secondary '+smy+' • Battle Ready '+(state.battleReadyMy?10:0)+'</div></div><div class="status"><b>'+esc(state.oppName)+'</b><div class="big">'+opp+' VP</div><div class="tiny">Primary '+popp+' • Secondary '+sopp+' • Battle Ready '+(state.battleReadyOpp?10:0)+'</div></div><div class="status"><b>Battle State</b><div class="big">Round '+Math.max(1,Number(state.round)||1)+'</div><div class="tiny">'+(state.round>=5?'Five-round battle completed':'Battle ended early')+' • '+(Array.isArray(state.events)?state.events.length:0)+' logged events • Result locked</div><div class="tiny" style="margin-top:4px">Mission '+esc(state.objectiveMapMissionKey||objectiveMissionKey()||'—')+' • Layout '+esc(state.objectiveMapLayout||'—')+' • Reserves remaining: '+(reserveUnitsForSide('my').length+reserveUnitsForSide('opp').length)+'</div></div></div><div class="tiny" style="margin-top:9px">Primary maximum 45 VP; Secondary maximum 45 VP with up to 15 VP per battle round. Fixed Secondary Missions are additionally capped at 20 VP per card.</div><div style="margin-top:10px"><button type="button" class="btn primary" onclick="exportTournamentResult();return false;">Export Tournament Result</button></div></div>';
+ const verified=!!state.battleResultVerified;
+ const verification=verified?'<div class="status ok" style="margin-top:10px"><b>Result Verified</b><div class="tiny">Locked result matches authoritative battle state.</div></div>':'<div class="status warn" style="margin-top:10px"><b>Result Awaiting Verification</b><div class="tiny">Review the final score and verify it before exporting the tournament result.</div></div>';
+ const verifyButton=verified?'':'<button type="button" class="btn primary" onclick="verifyTournamentResult();return false;">Verify &amp; Lock Result</button>';
+ return '<div class="card battle-end-summary"><div class="split"><div><h3 style="margin:0">Battle Report</h3><div class="muted">Final scoring breakdown</div></div><span class="pill">'+esc(winner)+'</span></div><div class="grid3" style="margin-top:10px"><div class="status"><b>'+esc(state.myName)+'</b><div class="big">'+my+' VP</div><div class="tiny">Primary '+pmy+' • Secondary '+smy+' • Battle Ready '+(state.battleReadyMy?10:0)+'</div></div><div class="status"><b>'+esc(state.oppName)+'</b><div class="big">'+opp+' VP</div><div class="tiny">Primary '+popp+' • Secondary '+sopp+' • Battle Ready '+(state.battleReadyOpp?10:0)+'</div></div><div class="status"><b>Battle State</b><div class="big">Round '+Math.max(1,Number(state.round)||1)+'</div><div class="tiny">'+(state.round>=5?'Five-round battle completed':'Battle ended early')+' • '+(Array.isArray(state.events)?state.events.length:0)+' logged events • Result locked</div><div class="tiny" style="margin-top:4px">Mission '+esc(state.objectiveMapMissionKey||objectiveMissionKey()||'—')+' • Layout '+esc(state.objectiveMapLayout||'—')+' • Reserves remaining: '+(reserveUnitsForSide('my').length+reserveUnitsForSide('opp').length)+'</div></div></div><div class="tiny" style="margin-top:9px">Primary maximum 45 VP; Secondary maximum 45 VP with up to 15 VP per battle round. Fixed Secondary Missions are additionally capped at 20 VP per card.</div><div style="margin-top:10px">'+verification+'<div style="margin-top:10px">'+verifyButton+' <button type="button" class="btn" onclick="exportTournamentResult();return false;" '+(verified?'':'disabled')+'>Export Tournament Result</button></div></div></div>';
 }
 function tournamentResultSnapshot(){
  const my=scoreTotalForSide('my'),opp=scoreTotalForSide('opp');
@@ -4862,9 +4865,28 @@ function battleMutationAllowed(action='battle update'){
  }
  return true;
 }
+function tournamentResultIntegrityCheck(){
+ if(!state.battleEnded||!state.battleResult)return {ok:false,reason:'No completed tournament result exists.'};
+ const r=state.battleResult;
+ const expected={myVP:scoreTotalForSide('my'),oppVP:scoreTotalForSide('opp'),round:Math.max(1,Number(state.round)||1),missionKey:state.objectiveMapMissionKey||objectiveMissionKey()||null,battlefieldLayout:state.objectiveMapLayout||null};
+ const mismatches=Object.keys(expected).filter(k=>String(r[k]??'')!==String(expected[k]??''));
+ return {ok:mismatches.length===0,mismatches};
+}
+function verifyTournamentResult(){
+ if(!state.battleEnded||!state.battleResult){alert('Finish the battle before verifying the tournament result.');return false;}
+ if(!state.battleResultLocked){alert('The tournament result is not locked.');return false;}
+ const check=tournamentResultIntegrityCheck();
+ if(!check.ok){alert('Result verification failed. Authoritative state differs from the locked result in: '+check.mismatches.join(', '));return false;}
+ state.battleResultVerified=true;
+ state.battleResultVerifiedAt=new Date().toISOString();
+ event('TOURNAMENT_RESULT_VERIFIED',{side:'my',unit:'Battle',action:'Tournament result verified against locked authoritative state',round:Math.max(1,Number(state.round)||1)});
+ save();render();
+ return true;
+}
 function exportTournamentResult(){
  try{
   if(!state.battleEnded||!state.battleResult){alert('Finish the battle before exporting the tournament result.');return;}
+  if(!state.battleResultVerified){alert('Verify the tournament result before exporting it.');return;}
   const payload=JSON.stringify(state.battleResult,null,2);
   const blob=new Blob([payload],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
@@ -4883,6 +4905,8 @@ function endBattle(){
  if(gameTimerInterval){clearInterval(gameTimerInterval);gameTimerInterval=null;}
  state.battleResult=tournamentResultSnapshot();
  state.battleResultLocked=true;
+ state.battleResultVerified=false;
+ state.battleResultVerifiedAt=null;
  setTournamentLifecycle('COMPLETED');
  state.battleEnded=true;
  event('BATTLE_ENDED',{side:'my',unit:'Battle',action:'Battle marked complete',round:Math.max(1,Number(state.round)||1)},before);
@@ -4917,6 +4941,8 @@ function startBattle(){
   state.battleRoundComplete=false;
   state.battleEnded=false;
   state.battleResultLocked=false;
+  state.battleResultVerified=false;
+  state.battleResultVerifiedAt=null;
   state.battleResult=null;
   setTournamentLifecycle('LIVE');
   state.phase='Command';
