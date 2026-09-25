@@ -9,6 +9,9 @@ check('Bodyguard candidate path uses reverse lookup',html.includes('const allowe
 check('Bodyguard attach validates against reverse lookup',html.includes("!leaderNamesForBodyguard(bu).includes(lu.name)"));
 check('Detached eligible Leader retains Bodyguard action',html.includes("const addBodyguardButton=isLeader&&!attachedBodyguard&&bodyguardNamesForLeader(u).length"));
 check('Leader detach clears reciprocal link by stable UID comparison',html.includes("filter(id=>String(id)!==String(leaderUid))"));
+check('Supabase CDN dependency is pinned',html.includes("SUPABASE_SCRIPT_URL='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.1/dist/umd/supabase.min.js'"));
+check('Supabase loader uses anonymous CORS',html.includes("s.crossOrigin='anonymous'"));
+check('Known Supabase script errors do not trigger false app error banner',html.includes("ev.target&&ev.target.tagName==='SCRIPT'&&ev.target.src===SUPABASE_SCRIPT_URL"));
 check('Leader detach clears every stale Bodyguard reverse reference',html.includes("Remove every stale reverse reference")&&html.includes("(state[side]||[]).forEach(e=>{")&&html.includes("e.leaderUids=e.leaderUids.filter(id=>String(id)!==String(leaderUid))"));
 check('Leader lookup tolerates stable UID type differences',html.includes("String(e.attachedTo)===String(leaderUid)"));
 check('Leader attach scrubs stale reverse references',html.includes("Before attaching, scrub any stale reverse references")&&html.includes("String(e.uid)===String(body.uid)"));
