@@ -2329,6 +2329,22 @@ const SECONDARY_SCORING={
 };
 
 
+const SECONDARY_RULE_META={
+ 'A Grievous Blow':{whenDrawn:'If there are no enemy units with a starting strength of 13+ on the battlefield, you can discard this card and draw one new Secondary Mission card.'},
+ 'A Tempting Target':{whenDrawn:'Your opponent selects one objective (excluding home objectives) within No Man’s Land to be your tempting target.'},
+ 'Assassination':{cumulative:{Fixed:{1:{baseIndex:0,additive:true}}}},
+ 'Beacon':{whenDrawn:'Select one friendly unit on the battlefield or embarked within a TRANSPORT on the battlefield to be your beacon unit.'},
+ 'Behind Enemy Lines':{whenDrawn:'If it is the first battle round, you can draw one new Secondary Mission card and shuffle this card back into your Secondary Mission deck.'},
+ 'Bring It Down':{whenDrawn:'If there are no enemy models with a W of 10 or more on the battlefield, you can discard this card and draw one new Secondary Mission card.'},
+ 'Burden of Trust':{whenDrawn:'For each objective, you can select one friendly unit on the battlefield to guard that objective until the start of your next turn.'},
+ 'Cleanse':{whenDrawn:'If the Plunder Secondary Mission is active for you, you can draw one new Secondary Mission card and shuffle this card back into your Secondary Mission deck.'},
+ 'Defend Stronghold':{whenDrawn:'If it is the first battle round, draw one new Secondary Mission card and shuffle this card back into your Secondary Mission deck.',availableFromRound:2,cumulative:{Tactical:{1:{baseIndex:0,totalVP:5}}}},
+ 'Engage on All Fronts':{exclusive:{Fixed:[[0,2]],Tactical:[[0,1]]}},
+ 'Forward Position':{whenDrawn:'If it is the first battle round, you can draw one new Secondary Mission card and shuffle this card back into your Secondary Mission deck.'},
+ 'Plunder':{whenDrawn:'If the Cleanse Secondary Mission is active for you, you can draw one new Secondary Mission card and shuffle this card back into your Secondary Mission deck.'}
+};
+const SECONDARY_RULES_SOURCE={edition:'11th',missionDeck:'Chapter Approved 2026-27',eventCompanion:'Warhammer Event Companion v1.0',verified:'2026-09-25',sourceUrl:'https://assets.warhammer-community.com/eng_12-06_warhammer40000_event_companion-s3bfb5f9s1-ivswuij3fo.pdf'};
+
 function gameAssistantHtml(){
  const phase=state.phase||'Command';
  const player=state.currentTurn==='opp'?state.oppName:state.myName;
@@ -2610,9 +2626,10 @@ function secondaryScoreRow(side,name,index){
  const row=data?.[modeKey]?.[index];
  if(!row)return;
  const fallback=Number(String(row[0]).match(/\d+/)?.[0]||0);
- const amount=fallback;
+ const meta=SECONDARY_RULE_META[name]?.cumulative?.[modeKey]?.[index];
+ const amount=meta?.totalVP||fallback;
  const endOfBattle=/end of battle/i.test(String(row[1]||''));
- scoreSecondary(side,name,amount,{endOfBattle});
+ scoreSecondary(side,name,amount,{endOfBattle,rowIndex:index});
 }
 function secondaryScoringRowsHtml(side,name,data,modeKey){
  const items=data?.[modeKey]||[];
@@ -2878,8 +2895,17 @@ function scoreSecondary(side,name,vpInput,rowMeta=null){
  let vp=Number(vpInput);if(!Number.isFinite(vp))vp=0;vp=Math.floor(vp);if(vp<1){alert('Enter at least 1 VP to score.');return;}
  const card=secondaryByName(name);const mode=side==='my'?state.secondaryMy:state.secondaryOpp;
  const fixed=mode==='fixed';
+ const rowIndex=Number.isInteger(rowMeta?.rowIndex)?rowMeta.rowIndex:null;
  const endOfBattleRow=!!rowMeta?.endOfBattle;
  if(endOfBattleRow&&!state.battleEnded){alert('This scoring condition can only be recorded after the battle ends.');return;}
+ const round=Math.max(1,Number(state.round)||1);
+ const roundMissionVP=Number((side==='my'?state.secondaryMyScoredVPByRound:state.secondaryOppScoredVPByRound)?.[String(round)]?.[name])||0;
+ const cumulativeMeta=SECONDARY_RULE_META[name]?.cumulative?.[fixed?'Fixed':'Tactical']?.[rowIndex];
+ if(fixed&&roundMissionVP>0&&!cumulativeMeta){
+   alert('This Fixed Secondary Mission has already scored this round. Choose the applicable scoring result once for this turn.');
+   return;
+ }
+ if(!fixed&&cumulativeMeta?.totalVP)vp=cumulativeMeta.totalVP;
  const max=fixed?20:(Number.isFinite(Number(card.maxVP))?Number(card.maxVP):null);
  const fullBefore=snapshotForUndo();
  const before=side==='my'?Number(state.myVP)||0:Number(state.oppVP)||0;
