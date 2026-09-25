@@ -8449,7 +8449,7 @@ function tacticalObjectiveAdvisorHtml(side){
   const cards=recs.map(o=>{
     const location=[o.type,o.territory,o.deploymentZone==='none'?'':o.deploymentZone].filter(Boolean).join(' • ');
     const control=o.owner==='my'?'Mine':o.owner==='opp'?'Enemy':o.owner==='contested'?'Contested':'Uncontrolled';
-    const transition=o.transition&&o.transition!=='held'&&o.transition!=='uncontrolled?' • '+o.changeLabel:'';
+    const transition=o.transition&&o.transition!=='held'&&o.transition!=='uncontrolled'?' • '+o.changeLabel:'';
     const primary=o.primaryVP>0?' • up to '+o.primaryVP+' VP':(o.primaryImpact?.conditionCount?' • Primary condition':'');
     return '<div class="status" style="margin-top:5px"><div class="split"><div><b>'+esc(o.name)+'</b><div class="tiny">'+esc(control)+' • '+esc(location)+esc(transition)+esc(primary)+'</div></div><span class="pill">'+esc(o.action)+'</span></div><div class="tiny" style="margin-top:4px">'+esc(o.reason)+'</div></div>';
   }).join('');
