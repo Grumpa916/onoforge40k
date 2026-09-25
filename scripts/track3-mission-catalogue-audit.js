@@ -29,13 +29,14 @@ function extractConst(name){
   throw new Error(name+' object end not found');
 }
 
-let cards,scoring,primary,missions,meta;
+let cards,scoring,primary,missions,meta,source;
 try{
   cards=extractConst('SECONDARY_CARDS');
   scoring=extractConst('SECONDARY_SCORING');
   primary=extractConst('PRIMARY_SCORING');
   missions=extractConst('PRIMARY_MISSIONS');
   meta=extractConst('SECONDARY_RULE_META');
+  source=extractConst('SECONDARY_RULES_SOURCE');
 }catch(e){fail(e.message);process.exit(1);}
 
 const expectedSecondaries=['A Grievous Blow','A Tempting Target','Assassination','Beacon','Behind Enemy Lines','Bring It Down','Burden of Trust','Centre Ground','Cleanse','Defend Stronghold','Display of Might','Engage on All Fronts','Forward Position','No Prisoners','Outflank','Overwhelming Force','Plunder',"Secure No Man’s Land"];
@@ -90,7 +91,7 @@ const primaryNames=new Set(Object.values(missions).flatMap(x=>Object.values(x)))
 const primaryMissing=[...primaryNames].filter(n=>!primary[n]);
 const primaryOrphans=Object.keys(primary).filter(n=>!primaryNames.has(n));
 if(primaryNames.size===25&&!primaryMissing.length&&!primaryOrphans.length)pass('All 25 Force-Disposition Primary Mission combinations have scoring data');else{if(primaryNames.size!==25)fail('Primary mission matrix does not resolve to 25 combinations');if(primaryMissing.length)fail('Primary scoring missing: '+primaryMissing.join(', '));if(primaryOrphans.length)fail('Primary scoring orphan entries: '+primaryOrphans.join(', '));}
-if(/11th/.test(String(SECONDARY_RULES_SOURCE?.edition||'')))pass('Secondary rules source is pinned to 11th edition');else fail('Secondary rules source pin missing');
-if(/Chapter Approved 2026-27/.test(String(SECONDARY_RULES_SOURCE?.missionDeck||'')))pass('Secondary mission data is pinned to Chapter Approved 2026-27');else fail('Mission deck source pin missing');
+if(/11th/.test(String(source?.edition||'')))pass('Secondary rules source is pinned to 11th edition');else fail('Secondary rules source pin missing');
+if(/Chapter Approved 2026-27/.test(String(source?.missionDeck||'')))pass('Secondary mission data is pinned to Chapter Approved 2026-27');else fail('Mission deck source pin missing');
 if(failures){console.error('Track 3 catalogue audit FAILED with '+failures+' failure(s)');process.exit(1);}
 console.log('Track 3 mission catalogue / scoring audit PASSED');
