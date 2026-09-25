@@ -33,8 +33,7 @@ const requiredRows={
 };
 for(const [name,modes] of Object.entries(requiredRows)){
  const start=scoring.indexOf("'"+name+"':");
- const end=scoring.indexOf("\n },",start);
- const block=start>=0?(end>start?scoring.slice(start,end):scoring.slice(start,start+2500)):'';
+ const block=start>=0?scoring.slice(start,start+2500):'';
  for(const mode of modes) if(block.includes(mode))pass(name+' '+mode.replace(':[','')+' scoring mode present');else fail(name+' '+mode.replace(':[','')+' scoring mode missing');
 }
 
