@@ -70,6 +70,8 @@ check('Legacy recovery cannot implicitly promote Battle page to Live',
   has("if(!allowed.includes(state.tournamentLifecycle))state.tournamentLifecycle=state.battleEnded?'COMPLETED':'SETUP';"),
   'Recovered legacy state must require an explicit Deployment transition.');
 
+check('Live battle requires complete actual deployment',has('function tournamentDeploymentValidation()')&&has('const deploymentCheck=tournamentDeploymentValidation();')&&has("if(!deploymentCheck.ready){alert('Deployment is incomplete:"),'Start Battle must require actual deployment accounting before entering Live.');
+check('Deployment readiness does not count planning ghosts as actual placement',has("deploymentReadyMy:Object.values(ensureBattlefieldUnitPositions()).some(p=>p&&p.side==='my')")&&has("deploymentReadyOpp:Object.values(ensureBattlefieldUnitPositions()).some(p=>p&&p.side==='opp')"),'Saved deployment plans must remain distinct from actual battlefield positions.');
 check('Tournament result captures both deployment sides and audit state',
   has(/deploymentReadyMy:/)&&has(/deploymentReadyOpp:/)&&has(/deploymentState:\{/)&&has(/positions:JSON\.parse\(JSON\.stringify\(ensureBattlefieldUnitPositions\(\)\)\)/),
   'The final tournament record must preserve deployment and reserve context.');
