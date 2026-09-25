@@ -262,6 +262,10 @@ jobs:
           print("Rendered Tactical Advisor decision surface into deploy artifact")
           PY
 
+      - name: Run runtime internal symbol audit
+        shell: bash
+        run: node scripts/runtime-internal-symbol-audit.js
+
       - name: Validate JavaScript syntax
         shell: bash
         run: |
