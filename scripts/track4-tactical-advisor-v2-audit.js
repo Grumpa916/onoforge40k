@@ -17,7 +17,7 @@ check('V2 preserves existing recommendation engine',has(/const base=tacticalAdvi
 check('V2 exposes decision context',has(/decisionContext:\{phase:battle\.phase/),'V2 must expose concise game-time context.');
 check('V2 surfaces state alerts',has(/const alerts=\[\]/)&&has(/alerts,\n    limitations:/),'V2 must surface actionable state warnings without mutating state.');
 check('Advisor is explicitly read-only',has(/Battle-state context is read-only; generating advice does not mutate authoritative game state/),'Advisor generation must not alter authoritative game state.');
-check('V2 result is cached by state-aware advisor cache',has(/function getTacticalAdvisorV2Result\(/)&&has(/key='v2'\+/),'V2 rendering must reuse the existing state-invalidating cache architecture.');
+check('V2 result is cached by state-aware advisor cache',has(/function getTacticalAdvisorV2Result\(/)&&has(/key='v2\|'/),'V2 rendering must reuse the existing state-invalidating cache architecture.');
 check('V2 decision surface is deployed',has(/id="onoforge-advisor-render"/),'Deployment must expose a dedicated advisor render surface.');
 check('No legacy Big Guns rule',!has(/Big Guns Never Tire/i),'11th-edition-only integrity must remain intact.');
 const failures=checks.filter(x=>!x.pass);
