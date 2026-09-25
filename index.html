@@ -10235,11 +10235,15 @@ function eventCompanionMapRegressionAudit(){
     if(pages.has(Number(x?.page)))issues.push('Duplicate layout page '+x.page); pages.add(Number(x?.page));
     if(!['A','B','C'].includes(x?.layout))issues.push('Invalid layout '+key);
   });
-  const expectedPages=index.flatMap(x=>x.pages||[]);
+  const expectedPages=index.flatMap(x=>Array.isArray(x)?(x[3]||[]):(x.pages||[]));
+  const expectedMissions=[...new Set(index.flatMap(x=>Array.isArray(x)?x.slice(0,2):(x.missions||[])))];
+  const primaryBlock=String(PRIMARY_SCORING||'');
+  const missingPrimaryMissions=expectedMissions.filter(m=>!primaryBlock.includes('"'+m+'":')&&!primaryBlock.includes("'"+m+"':")&&!primaryBlock.includes(m+":"));
   if(layouts.length!==45)issues.push('Expected 45 layout records; found '+layouts.length);
   if(index.length!==15)issues.push('Expected 15 mission pairs; found '+index.length);
   if(new Set(expectedPages).size!==45)issues.push('Mission layout index does not expose 45 unique pages');
-  return {ok:issues.length===0,layoutCount:layouts.length,missionPairCount:index.length,uniquePages:pages.size,verifiedCount:layouts.filter(x=>x?.verified===true).length,issues};
+  if(missingPrimaryMissions.length)issues.push('Primary scoring catalogue missing: '+missingPrimaryMissions.join(', '));
+  return {ok:issues.length===0,layoutCount:layouts.length,missionPairCount:index.length,uniquePages:pages.size,expectedMissionCount:expectedMissions.length,missingPrimaryMissions,verifiedCount:layouts.filter(x=>x?.verified===true).length,issues};
 }
 function eventCompanionGeometryAuditHtml(){
   const audit=validateEventCompanionGeometry();
