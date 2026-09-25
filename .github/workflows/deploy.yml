@@ -94,6 +94,10 @@ jobs:
         shell: bash
         run: node scripts/track2-combat-regression-audit.js
 
+      - name: Run Track 3 mission system regression audit
+        shell: bash
+        run: node scripts/track3-mission-system-audit.js
+
       - name: Run deployment planning and live battlefield map integrity audit
         shell: bash
         run: node scripts/deployment-map-integrity-audit.js
