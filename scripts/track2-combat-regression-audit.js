@@ -48,7 +48,7 @@ for(const [re,label] of diceGuards)re.test(s)?ok(label):fail(label+' missing');
  [/tacticalPreRollLegalSaveOrder\(/,'legal allocation ordering'],
  [/precisionTargetState/,'Precision target state'],
  [/precisionHistory/,'Precision resolution history'],
- [/mixedVariablePushHistory/,'variable-resolution undo history'],
+ [/tacticalPreRollMixedVariablePushHistory/,'variable-resolution undo history'],
  [/damageRolls\.push\(/,'recorded physical damage results'],
  [/fnpResults\.push\(/,'recorded FNP results']
 ].forEach(([re,label])=>re.test(s)?ok(label):fail(label+' missing'));
