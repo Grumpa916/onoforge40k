@@ -1323,8 +1323,7 @@ function missionDecisionContext(){
     primary:{my:primaryMy,opp:primaryOpp,myRemaining:45-primaryMy,oppRemaining:45-primaryOpp,myRound:myRoundPrimary,oppRound:oppRoundPrimary,myRoundRemaining:Math.max(0,15-myRoundPrimary),oppRoundRemaining:Math.max(0,15-oppRoundPrimary)},
     secondary:{my:secondaryMy,opp:secondaryOpp,myRemaining:45-secondaryMy,oppRemaining:45-secondaryOpp,myRound:myRoundSecondary,oppRound:oppRoundSecondary,myRoundRemaining:Math.max(0,15-myRoundSecondary),oppRoundRemaining:Math.max(0,15-oppRoundSecondary)},
     objectives:{my:myObjectives,opp:oppObjectives,summary:objectiveSummary.current,tactical:objectiveTacticalSummary()},
-    battlefield
-  };
+    battlefield,\n    battlefieldGeometry:objectiveBattlefieldGeometry()\n  };
 }
 function scorePrimaryItem(side,index,mission,amountOverride){
   syncPrimaryScoringRound();
@@ -5143,6 +5142,42 @@ function objectiveControlSourceHtml(name,current){
   }).join(''):'<div class="tiny">No independent units available for '+esc(label)+'.</div>';
   return '<details style="margin-top:5px"><summary style="cursor:pointer;color:#9ecbff;font-size:10px">OC contributors: <b>'+checkedCount+'</b> <span class="tiny">optional</span></summary><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;margin-top:5px">'+options+'</div><div class="tiny" style="margin-top:5px">Select only units whose models are being credited toward this objective’s control. This does not infer control from unit presence.</div></details>';
 }
+function objectiveBattlefieldGeometry(){
+  const layoutInfo=ensureObjectiveLayoutForMission();
+  const layout=state.objectiveMapLayout||'A';
+  const missionKey=state.objectiveMapMissionKey||objectiveMissionKey();
+  const source=ONOFORGE_EVENT_COMPANION?.terrain||null;
+  const sourcePages=ONOFORGE_EVENT_COMPANION?.layoutIndex||null;
+  const objectiveNames=Object.keys(state.objectives||{});
+  return {
+    version:'geometry.v1',
+    verified:false,
+    status:'Objective positions not yet verified from the Event Companion layout artwork',
+    table:{widthInches:60,depthInches:44},
+    layout,
+    missionKey,
+    page:layoutInfo?objectiveLayoutPage():null,
+    source:{
+      title:ONOFORGE_EVENT_COMPANION?.source?.title||'Warhammer Event Companion',
+      version:ONOFORGE_EVENT_COMPANION?.source?.version||'1.1',
+      layoutPage:source?.layoutKeyPage||8,
+      layoutIndex:sourcePages||null
+    },
+    terrain:source?{
+      battlefield:source.battlefield||'44 x 60 inches',
+      recommendedAreas:source.recommendedTerrainAreas||[],
+      featureTypes:source.featureTypes||[]
+    }:null,
+    objectives:objectiveNames.map(name=>({
+      name,
+      type:objectiveType(name),
+      territory:objectiveTerritory(name),
+      deploymentZone:objectiveDeploymentZone(name),
+      position:null,
+      positionVerified:false
+    }))
+  };
+}
 function objectiveStateRecord(name){
   const owner=['my','opp','contested','none'].includes(state.objectives?.[name])?state.objectives[name]:'none';
   const startOwner=objectiveTurnStartOwner(name);
@@ -6009,7 +6044,7 @@ function tacticalPairState(attackerUid,targetUid){
       deploymentZone:objectiveMeta.deploymentZone,changedThisTurn:objectiveMeta.changedThisTurn,
       mapLayout:objectiveMeta.mapLayout,mapPage:objectiveMeta.mapLayoutPage
     }:null,
-    battlefieldLayout:{layout:state.objectiveMapLayout||'A',missionKey:state.objectiveMapMissionKey||objectiveMissionKey(),page:layoutInfo?objectiveLayoutPage():null},
+    battlefieldLayout:{layout:state.objectiveMapLayout||'A',missionKey:state.objectiveMapMissionKey||objectiveMissionKey(),page:layoutInfo?objectiveLayoutPage():null},\n    battlefieldGeometry:objectiveBattlefieldGeometry(),
     notes:raw.notes==null?'':String(raw.notes)};
 }
 function setTacticalPairField(attackerUid,targetUid,field,value){
@@ -7864,7 +7899,7 @@ function tacticalBattleState(){
   const layoutInfo=ensureObjectiveLayoutForMission();
   return {version:TACTICAL_STATE_VERSION,round:Math.max(1,Number(state.round)||1),phase:state.phase||'Command',turn:state.currentTurn==='opp'?'opp':'my',
     vp:{my:Number(state.myVP)||0,opp:Number(state.oppVP)||0},cp:{my:Number(state.myCP)||0,opp:Number(state.oppCP)||0},
-    battlefield:{mapLayout:state.objectiveMapLayout||'A',mapMissionKey:state.objectiveMapMissionKey||objectiveMissionKey(),mapPage:layoutInfo?objectiveLayoutPage():null},
+    battlefield:{mapLayout:state.objectiveMapLayout||'A',mapMissionKey:state.objectiveMapMissionKey||objectiveMissionKey(),mapPage:layoutInfo?objectiveLayoutPage():null},\n    battlefieldGeometry:objectiveBattlefieldGeometry(),
     objectives,units:{my:(state.my||[]).map(e=>tacticalUnitState('my',e)).filter(Boolean),opp:(state.opp||[]).map(e=>tacticalUnitState('opp',e)).filter(Boolean)},
     recentEvents:(state.events||[]).slice(0,20).map(e=>({kind:e.kind,round:e.round,phase:e.phase,playerTurn:e.playerTurn,payload:e.payload||{}}))};
 }
