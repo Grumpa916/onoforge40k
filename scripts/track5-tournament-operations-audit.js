@@ -73,6 +73,9 @@ check('Legacy recovery cannot implicitly promote Battle page to Live',
 check('Deployment coordinates are checked against verified deployment zones',
   has(/function pointInsideDeploymentZone\(/)&&has(/function tournamentDeploymentZoneForSide\(/)&&has(/function tournamentDeploymentZoneStatus\(/)&&has(/outside deployment zone/),
   'When verified Event Companion geometry is available, actual deployment positions must be checked against the correct physical deployment zone.');
+check('Deployment is blocked when verified geometry is unavailable',
+  has(/const geometry=objectiveBattlefieldGeometry\(\)/)&&has(/Verified Event Companion deployment geometry is unavailable/)&&has(/if\(!geometry\.verified\)/),
+  'Tournament deployment must not silently proceed when the authoritative Event Companion geometry cannot be verified.');
 check('Live battle requires complete actual deployment',has('function tournamentDeploymentValidation()')&&has('const deploymentCheck=tournamentDeploymentValidation();')&&has("if(!deploymentCheck.ready){alert('Deployment is incomplete:"),'Start Battle must require actual deployment accounting before entering Live.');
 check('Deployment readiness does not count planning ghosts as actual placement',has("deploymentReadyMy:Object.values(ensureBattlefieldUnitPositions()).some(p=>p&&p.side==='my')")&&has("deploymentReadyOpp:Object.values(ensureBattlefieldUnitPositions()).some(p=>p&&p.side==='opp')"),'Saved deployment plans must remain distinct from actual battlefield positions.');
 check('Tournament result captures both deployment sides and audit state',
@@ -116,6 +119,9 @@ check('Tournament result requires explicit verification before export',
 check('Result verification compares locked snapshot to authoritative state',
   has(/function tournamentResultIntegrityCheck\(/)&&has(/const mismatches=Object\.keys\(expected\)/),
   'Verification must detect divergence between the locked result and authoritative state.');
+check('Result verification requires the Completed lifecycle',
+  has(/tournamentLifecycle:'COMPLETED'/)&&has(/state\.tournamentLifecycle/),
+  'A locked tournament result must remain associated with the Completed lifecycle.');
 check('Verification is logged',
   has(/event\('TOURNAMENT_RESULT_VERIFIED'/),
   'Tournament result verification must remain auditable.');

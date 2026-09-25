@@ -12,6 +12,7 @@ check('VP and CP mutations are locked after completion',has("if(!battleMutationA
 check('Phase and round mutations are locked after completion',has("if(!battleMutationAllowed('phase changes'))return;")&&has("if(!battleMutationAllowed('round changes'))return;"),'Final tournament results must remain stable after completion.');
 check('Secondary scoring is locked after completion',has("if(!battleMutationAllowed('secondary scoring'))return;"),'Scoring controls must respect the completed result lock.');
 check('Completed result retains deployment audit fields',has('deploymentReadyMy:')&&has('deploymentReadyOpp:')&&has('deploymentState:{'),'Result locking must preserve the deployment context captured at battle completion.');
+check('Completed result retains explicit lifecycle state',has("tournamentLifecycle:'COMPLETED'")&&has('tournamentResultIntegrityCheck'),'Result locking must preserve the Completed lifecycle as part of authoritative verification.');
 check('Tournament result export remains read-only',has('JSON.stringify(state.battleResult,null,2)')&&has('if(!state.battleEnded||!state.battleResult)'), 'Result export must consume the captured snapshot rather than recomputing mutable state.');
 const failures=checks.filter(x=>!x.pass);
 console.log(JSON.stringify({audit:'Track 5 result locking and lifecycle audit',checks:checks.length,passed:checks.length-failures.length,failed:failures.length,failures},null,2));

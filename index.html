@@ -4873,7 +4873,7 @@ function tournamentResultIntegrityCheck(){
  const r=state.battleResult;
  const reserveState=ensureReserveState();
  const positions=ensureBattlefieldUnitPositions();
- const expected={myVP:scoreTotalForSide('my'),oppVP:scoreTotalForSide('opp'),round:Math.max(1,Number(state.round)||1),missionKey:state.objectiveMapMissionKey||objectiveMissionKey()||null,battlefieldLayout:state.objectiveMapLayout||null,deploymentReadyMy:Object.values(positions).some(p=>p&&p.side==='my'),deploymentReadyOpp:Object.values(positions).some(p=>p&&p.side==='opp'),reservesDeclaredMy:Object.keys(reserveState.my||{}).length,reservesDeclaredOpp:Object.keys(reserveState.opp||{}).length};
+ const expected={tournamentLifecycle:'COMPLETED',myVP:scoreTotalForSide('my'),oppVP:scoreTotalForSide('opp'),round:Math.max(1,Number(state.round)||1),missionKey:state.objectiveMapMissionKey||objectiveMissionKey()||null,battlefieldLayout:state.objectiveMapLayout||null,deploymentReadyMy:Object.values(positions).some(p=>p&&p.side==='my'),deploymentReadyOpp:Object.values(positions).some(p=>p&&p.side==='opp'),reservesDeclaredMy:Object.keys(reserveState.my||{}).length,reservesDeclaredOpp:Object.keys(reserveState.opp||{}).length};
  const mismatches=Object.keys(expected).filter(k=>String(r[k]??'')!==String(expected[k]??''));
  return {ok:mismatches.length===0,mismatches};
 }
@@ -4976,6 +4976,8 @@ function tournamentDeploymentZoneStatus(side,position){
 function tournamentDeploymentValidation(){
   const positions=ensureBattlefieldUnitPositions(), reserves=ensureReserveState();
   const missing=[];
+  const geometry=objectiveBattlefieldGeometry();
+  if(!geometry.verified)missing.push('Verified Event Companion deployment geometry is unavailable');
   for(const side of ['my','opp']){
     const list=Array.isArray(side==='my'?state.my:state.opp)?(side==='my'?state.my:state.opp):[];
     for(const entry of list.filter(e=>e&&!e.attachedTo)){
@@ -4987,7 +4989,11 @@ function tournamentDeploymentValidation(){
         continue;
       }
       const zone=tournamentDeploymentZoneStatus(side,p);
-      if(zone.verified&&zone.inside===false){
+      if(!zone.verified){
+        missing.push((side==='my'?state.myName:state.oppName)+': verified deployment zone unavailable');
+        continue;
+      }
+      if(zone.inside===false){
         missing.push((side==='my'?state.myName:state.oppName)+': '+(unitDisplayName(side,entry)||get(entry.unitId)?.name||entry.name||entry.unitId||'Unit')+' — outside deployment zone');
       }
     }
