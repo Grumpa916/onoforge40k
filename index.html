@@ -3604,22 +3604,27 @@ function bodyguardCandidatesForLeader(side,leaderUid){
 }
 function attachLeader(side,leaderUid,bodyguardUid){
   const fullBefore=snapshotForUndo();
-  const leader=entry(side,leaderUid),body=entry(side,bodyguardUid);if(!leader||!body)return;
-  const lu=get(leader.unitId),bu=get(body.unitId);if(!isLeaderUnit(lu)||!leaderNamesForBodyguard(bu).includes(lu.name))return;
+  const leader=entry(side,leaderUid),body=entry(side,bodyguardUid);if(!leader||!body)return false;
+  const lu=get(leader.unitId),bu=get(body.unitId);
+  if(!isLeaderUnit(lu)||!leaderNamesForBodyguard(bu).includes(lu.name))return false;
   const oldBody=leaderBodyguard(side,leaderUid);
   const current=bodyguardLeaders(side,bodyguardUid);
-  const already=current.some(x=>x.uid===leaderUid);if(already)return;
-  const specialCatoPair=bu?.name==='Victrix Honour Guard' && lu?.name==='Cato Sicarius' && current.some(x=>get(x.unitId)?.name==='Marneus Calgar in Armour of Antilochus');
-  if(current.length && !specialCatoPair)return;
-  if(oldBody){
-    oldBody.leaderUids=(Array.isArray(oldBody.leaderUids)?oldBody.leaderUids:[]).filter(id=>id!==leaderUid);
+  if(current.some(x=>x.uid===leaderUid))return false;
+  const specialCatoPair=bu?.name==='Victrix Honour Guard'&&lu?.name==='Cato Sicarius'&&current.some(x=>get(x.unitId)?.name==='Marneus Calgar in Armour of Antilochus');
+  if(current.length&&!specialCatoPair)return false;
+  if(oldBody&&oldBody.uid!==body.uid){
+    oldBody.leaderUids=(Array.isArray(oldBody.leaderUids)?oldBody.leaderUids:[]).filter(id=>String(id)!==String(leaderUid));
     syncBodyguardLeaderFields(oldBody);
   }
-  body.leaderUids=Array.isArray(body.leaderUids)?body.leaderUids.slice():[];
-  body.leaderUids.push(leader.uid);syncBodyguardLeaderFields(body);
-  leader.attachedTo=body.uid;leader.attachedRole='leader';
-  event('LEADER_ATTACHED',{side,leaderUid,bodyguardUid,leader:lu.name,bodyguard:bu.name,action:'Leader attached to Bodyguard'});
-  save();state.leaderAttachmentModal=null;state.bodyguardAttachmentModal=null;render();
+  body.leaderUids=Array.isArray(body.leaderUids)?body.leaderUids.filter(id=>entry(side,id)): [];
+  if(!body.leaderUids.some(id=>String(id)===String(leader.uid)))body.leaderUids.push(leader.uid);
+  syncBodyguardLeaderFields(body);
+  leader.attachedTo=body.uid;
+  leader.attachedRole='leader';
+  // Rebuild the reciprocal link immediately so UI/save/load cannot observe a half-attached pair.
+  if(!Array.isArray(body.leaderUids)||!body.leaderUids.some(id=>String(id)===String(leader.uid)))return false;
+  event('LEADER_ATTACHED',{side,leaderUid,bodyguardUid,leader:lu.name,bodyguard:bu.name,action:'Leader attached to Bodyguard'},fullBefore);
+  save();state.leaderAttachmentModal=null;state.bodyguardAttachmentModal=null;render();return true;
 }
 function detachLeader(side,leaderUid){
   const fullBefore=snapshotForUndo();
