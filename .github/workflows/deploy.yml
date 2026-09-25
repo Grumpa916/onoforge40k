@@ -71,6 +71,10 @@ jobs:
         shell: bash
         run: node scripts/model-level-damage-audit.js
 
+      - name: Run Task 32 FNP resolution integrity audit
+        shell: bash
+        run: node scripts/fnp-resolution-audit.js
+
       - name: Render Tactical Advisor decision surface
         shell: bash
         run: |
