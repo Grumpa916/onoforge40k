@@ -3589,7 +3589,7 @@ function bodyguardNamesForLeader(u){
   if(!u)return [];
   return LEADER_ATTACHMENTS_11E[u.name]||[];
 }
-function leaderBodyguard(side,leaderUid){return (state[side]||[]).find(e=>e.attachedTo===leaderUid&&(e.attachedRole==='leader'||(!e.attachedRole&&isLeaderUnit(get(e.unitId)))))||null}
+function leaderBodyguard(side,leaderUid){return (state[side]||[]).find(e=>String(e.attachedTo)===String(leaderUid)&&(e.attachedRole==='leader'||(!e.attachedRole&&isLeaderUnit(get(e.unitId)))))||null}
 function bodyguardLeader(side,bodyguardUid){return bodyguardLeaders(side,bodyguardUid)[0]||null}
 function bodyguardCandidatesForLeader(side,leaderUid){
   const leader=entry(side,leaderUid);if(!leader)return [];
@@ -3612,10 +3612,17 @@ function attachLeader(side,leaderUid,bodyguardUid){
   if(current.some(x=>x.uid===leaderUid))return false;
   const specialCatoPair=bu?.name==='Victrix Honour Guard'&&lu?.name==='Cato Sicarius'&&current.some(x=>get(x.unitId)?.name==='Marneus Calgar in Armour of Antilochus');
   if(current.length&&!specialCatoPair)return false;
-  if(oldBody&&oldBody.uid!==body.uid){
+  if(oldBody&&String(oldBody.uid)!==String(body.uid)){
     oldBody.leaderUids=(Array.isArray(oldBody.leaderUids)?oldBody.leaderUids:[]).filter(id=>String(id)!==String(leaderUid));
     syncBodyguardLeaderFields(oldBody);
   }
+  // Before attaching, scrub any stale reverse references to this Leader from every Bodyguard.
+  (state[side]||[]).forEach(e=>{
+    if(String(e.uid)===String(body.uid)||!Array.isArray(e.leaderUids))return;
+    const before=e.leaderUids.length;
+    e.leaderUids=e.leaderUids.filter(id=>String(id)!==String(leaderUid));
+    if(e.leaderUids.length!==before)syncBodyguardLeaderFields(e);
+  });
   body.leaderUids=Array.isArray(body.leaderUids)?body.leaderUids.filter(id=>entry(side,id)): [];
   if(!body.leaderUids.some(id=>String(id)===String(leader.uid)))body.leaderUids.push(leader.uid);
   syncBodyguardLeaderFields(body);
@@ -3631,10 +3638,14 @@ function detachLeader(side,leaderUid){
   const leader=entry(side,leaderUid);if(!leader)return;
   const body=leaderBodyguard(side,leaderUid),lu=get(leader.unitId),bu=body?get(body.unitId):null;
   delete leader.attachedTo;delete leader.attachedRole;
-  if(body){
-    body.leaderUids=(Array.isArray(body.leaderUids)?body.leaderUids:[]).filter(id=>String(id)!==String(leaderUid));
-    syncBodyguardLeaderFields(body);
-  }
+  // Remove every stale reverse reference, not only the Bodyguard named by the Leader.
+  // This repairs legacy/corrupted attachment state during the normal detach action.
+  (state[side]||[]).forEach(e=>{
+    if(!Array.isArray(e.leaderUids))return;
+    const before=e.leaderUids.length;
+    e.leaderUids=e.leaderUids.filter(id=>String(id)!==String(leaderUid));
+    if(e.leaderUids.length!==before)syncBodyguardLeaderFields(e);
+  });
   event('LEADER_DETACHED',{side,leaderUid,bodyguardUid:body?.uid||null,leader:lu?.name||'Leader',bodyguard:bu?.name||'',action:'Leader detached from Bodyguard'});
   save();state.leaderAttachmentModal=null;state.bodyguardAttachmentModal=null;render();
 }
