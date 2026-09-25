@@ -9966,13 +9966,62 @@ function exportEventCompanionGeometryTemplate(){
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='onoforge-event-companion-geometry-import.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500);
 }
+function importEventCompanionGeometry(input){
+  const file=input?.files?.[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const incoming=JSON.parse(reader.result);
+      if(incoming?.schema!=='onoforge40k.event-companion-geometry-import.v1') throw new Error('Unsupported geometry import schema');
+      const base=ONOFORGE_EVENT_COMPANION;
+      const baseLayouts=Array.isArray(base?.layoutGeometry?.layouts)?base.layoutGeometry.layouts:[];
+      const incomingLayouts=Array.isArray(incoming?.layouts)?incoming.layouts:[];
+      if(!base||!base.layoutGeometry||baseLayouts.length!==45) throw new Error('Current Event Companion geometry dataset is unavailable or incomplete');
+      if(!incomingLayouts.length) throw new Error('Import contains no layout records');
+      const baseMap=new Map(baseLayouts.map(x=>[String(x.missionKey)+'|'+String(x.layout)+'|'+String(x.page),x]));
+      const seen=new Set();
+      const errors=[];
+      const updates=[];
+      incomingLayouts.forEach((raw,i)=>{
+        const check=validateEventCompanionGeometryRecord(raw);
+        const key=String(raw?.missionKey)+'|'+String(raw?.layout)+'|'+String(raw?.page);
+        if(seen.has(key))errors.push('Duplicate import record: '+key);
+        seen.add(key);
+        const target=baseMap.get(key);
+        if(!target)errors.push('No matching Event Companion layout for import record '+(i+1)+': '+key);
+        if(raw?.verified===true&&!check.ok)errors.push('Verified import record '+key+' failed validation: '+check.issues.join('; '));
+        if(raw?.verified===true&&(!raw.objectivePositions||!Object.keys(raw.objectivePositions).length))errors.push('Verified import record '+key+' has no objective positions');
+        if(check.ok&&target)updates.push({target,raw});
+      });
+      if(errors.length)throw new Error(errors.slice(0,8).join('\n')+(errors.length>8?'\n…'+(errors.length-8)+' more errors':''));
+      const merged=JSON.parse(JSON.stringify(base));
+      const mergedMap=new Map(merged.layoutGeometry.layouts.map(x=>[String(x.missionKey)+'|'+String(x.layout)+'|'+String(x.page),x]));
+      updates.forEach(({raw})=>{
+        const target=mergedMap.get(String(raw.missionKey)+'|'+String(raw.layout)+'|'+String(raw.page));
+        target.verified=raw.verified===true;
+        target.objectivePositions=raw.objectivePositions&&Object.keys(raw.objectivePositions).length?raw.objectivePositions:null;
+        target.deploymentZones=raw.deploymentZones&&Object.keys(raw.deploymentZones).length?raw.deploymentZones:null;
+        target.terrainGeometry=raw.terrainGeometry&&Object.keys(raw.terrainGeometry).length?raw.terrainGeometry:null;
+      });
+      merged.layoutGeometry.status=merged.layoutGeometry.layouts.some(x=>x.verified===true)?'partially-verified':'unverified';
+      ONOFORGE_EVENT_COMPANION=merged;
+      window.__ONOFORGE_EVENT_COMPANION_IMPORTED__=true;
+      save();
+      render();
+      alert('Geometry import accepted: '+updates.length+' matching layout records merged. Only records marked verified and passing validation can drive gameplay.');
+    }catch(e){alert('Geometry import rejected:\n'+e.message)}
+    input.value='';
+  };
+  reader.readAsText(file);
+}
 function eventCompanionGeometryVerificationConsoleHtml(){
   const layouts=Array.isArray(ONOFORGE_EVENT_COMPANION?.layoutGeometry?.layouts)?ONOFORGE_EVENT_COMPANION.layoutGeometry.layouts:[];
   const verified=layouts.filter(x=>x?.verified===true).length;
   const recordChecks=layouts.map(x=>({entry:x,check:validateEventCompanionGeometryRecord(x)}));
   const malformedVerified=recordChecks.filter(x=>x.entry?.verified===true&&!x.check.ok).length;
   return '<div class="card" style="margin-top:12px"><div class="split"><div><h3 style="margin:0">Geometry Verification Console</h3><div class="muted" style="margin-top:4px">Verification is intentionally separate from mission selection and objective control. Only exact Event Companion measurements may be promoted into gameplay geometry.</div></div><span class="pill">'+verified+'/'+layouts.length+' source layouts verified</span></div>'+
-    '<div class="status" style="margin-top:10px">'+(malformedVerified?'⚠ '+malformedVerified+' verified records fail record-level validation':'All verified records pass record-level validation')+'</div>'+'<div style="margin-top:10px"><button class="btn" onclick="exportEventCompanionGeometryTemplate()">Export Geometry Import Template</button></div>'+'<div class="unit" style="margin-top:10px"><strong>Verification gate</strong><div class="tiny" style="margin-top:4px">A layout must identify its mission pair and A/B/C layout, use the 60″ × 44″ battlefield coordinate system, contain validated objective coordinates, and explicitly define deployment/territory geometry before it can drive the tactical map.</div></div>'+
+    '<div class="status" style="margin-top:10px">'+(malformedVerified?'⚠ '+malformedVerified+' verified records fail record-level validation':'All verified records pass record-level validation')+'</div>'+'<div style="margin-top:10px"><button class="btn" onclick="exportEventCompanionGeometryTemplate()">Export Geometry Import Template</button></div>'+'<div style="margin-top:8px"><label class="btn" style="display:inline-block;cursor:pointer">Import Verified Geometry<input type="file" accept="application/json,.json" onchange="importEventCompanionGeometry(this)" style="display:none"></label></div>'+'<div class="unit" style="margin-top:10px"><strong>Verification gate</strong><div class="tiny" style="margin-top:4px">A layout must identify its mission pair and A/B/C layout, use the 60″ × 44″ battlefield coordinate system, contain validated objective coordinates, and explicitly define deployment/territory geometry before it can drive the tactical map.</div></div>'+
     '<div class="unit"><strong>Current safety behavior</strong><div class="tiny" style="margin-top:4px">Unverified layouts do not render inferred deployment zones, territory, terrain, objective positions, or distance calculations. The app will not substitute “my side / opponent side” or table fractions.</div></div>'+
     '<div class="unit"><strong>Next verification input</strong><div class="tiny" style="margin-top:4px">When the official Event Companion artwork is available, record exact measurements for one layout at a time. Keep the source page number attached to every geometry record. Do not estimate from screenshots or generic battlefield proportions.</div></div>'+
     '<div class="tiny" style="margin-top:10px">Recommended order: Layout A → Layout B → Layout C for each mission pair, then run the structural audit before enabling objective-control distance/scoring dependencies.</div></div>';
