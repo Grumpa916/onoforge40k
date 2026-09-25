@@ -13,12 +13,14 @@ check('Battle-state context includes secondary state',has(/activeSecondaries:\{m
 check('Battle-state context includes reserves',has(/reserves:\{my:reserved\('my'\)/),'Advisor must account for declared reserves.');
 check('Battle-state context includes stratagem availability and history',has(/stratagems:\{[\s\S]*myPhaseAvailable:/)&&has(/myUsedThisPhase:/)&&has(/myRecent:/),'Advisor must account for current-phase stratagem options and recent usage.');
 check('V2 decision context includes stratagem pressure',has(/phaseStratagemCount:battle\.stratagems\.myPhaseAvailable\.length/)&&has(/phaseStratagemsUsed:battle\.stratagems\.myUsedThisPhase\.length/),'V2 must expose CP/stratagem consequence context.');
+check('V2 computes stratagem consequence pressure',has(/function tacticalAdvisorStratagemPressure\(/)&&has(/stratagemPressure=tacticalAdvisorStratagemPressure\(battle,top\)/),'V2 must connect recommendations to affordable phase-legal stratagem options.');
 check('Battle-state context includes battlefield positions',has(/positions:\{my:positioned\('my'\)/),'Advisor must consume known live battlefield positions.');
 check('Unknown positions are not invented',has(/known:Number\.isFinite\(Number\(p\?\.x\)\)&&Number\.isFinite\(Number\(p\?\.y\)\)/),'Unknown position data must remain unknown.');
 check('V2 preserves existing recommendation engine',has(/const base=tacticalAdvisorV1\(attackerEntryUid,options\)/),'V2 must layer battle-state context over the established rules-aware engine.');
 check('V2 exposes decision context',has(/decisionContext:\{phase:battle\.phase/),'V2 must expose concise game-time context.');
 check('V2 surfaces state alerts',has(/const alerts=\[\]/)&&has(/alerts,\n    limitations:/),'V2 must surface actionable state warnings without mutating state.');
 check('Advisor is explicitly read-only',has(/Battle-state context is read-only; generating advice does not mutate authoritative game state/),'Advisor generation must not alter authoritative game state.');
+check('Stratagem analysis does not invent effects',has(/does not invent untracked effects/)&&has(/stored summary/),'Stratagem consequence analysis must remain bounded by loaded stratagem data.');
 check('V2 result is cached by state-aware advisor cache',has(/function getTacticalAdvisorV2Result\(/)&&has(/key='v2\|'/),'V2 rendering must reuse the existing state-invalidating cache architecture.');
 check('V2 decision surface is deployed',has(/id="onoforge-advisor-render"/),'Deployment must expose a dedicated advisor render surface.');
 check('No legacy Big Guns rule',!has(/Big Guns Never Tire/i),'11th-edition-only integrity must remain intact.');
