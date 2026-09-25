@@ -8,6 +8,8 @@ check('Saved state persists tournament lifecycle',html.includes('JSON.stringify(
 check('Saved state persists completed result and lock',html.includes('state.battleResultLocked')&&html.includes('state.battleResult'));
 check('Rules pin survives persistence',html.includes('safeState')&&html.includes('rulesDataPin'));
 check('Completed battle timer is finalized before snapshot',html.includes('finalizeCurrentTurnTime()')&&html.includes('state.battleResult=tournamentResultSnapshot()'));
+check('Deployment lifecycle persists through saved state',html.includes('tournamentLifecycle')&&html.includes('DEPLOYMENT')&&html.includes('TOURNAMENT_DEPLOYMENT_STARTED'));
+check('Deployment result context persists in saved result',html.includes('deploymentReadyMy:')&&html.includes('deploymentReadyOpp:')&&html.includes('deploymentState:'));
 check('Starting a new battle explicitly resets completion state',html.includes('state.battleEnded=false;')&&html.includes('state.battleResultLocked=false;')&&html.includes('state.battleResult=null;'));
 const failures=checks.filter(x=>!x.pass);
 console.log(JSON.stringify({audit:'Track 5 tournament recovery audit',checks,failures},null,2));
