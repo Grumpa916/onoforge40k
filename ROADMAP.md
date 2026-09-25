@@ -105,7 +105,7 @@ Goal: Provide context-aware battlefield decisions without corrupting game state.
 - 🟢 Reserve and battlefield-position context
 - 🟢 CP/stratagem consequence integration
 - 🟢 Expanded recommendation explanations
-- 🔵 Tactical Advisor v2 feature pass
+- 🟢 Tactical Advisor v2 feature pass
 
 ## H. Stratagems / Command Points — 🟡
 Goal: Track CP and stratagem usage as authoritative battle history.
@@ -223,12 +223,12 @@ Primary missions + secondary missions + objective scoring + end-game scoring.
 
 Completed: Tactical/Fixed secondary state machine, Command-phase replenishment, New Orders, end-of-turn Tactical discard-for-CP, secondary scoring caps, end-game report, mission-specific scoring integrity, and full primary/secondary catalogue validation. Completion gates: `scripts/track3-mission-system-audit.js` and `scripts/track3-mission-catalogue-audit.js`.
 
-### Track 4 — Tactical Advisor v2 🔵
+### Track 4 — Tactical Advisor v2 🟢
 Battle state + objectives + mission + CP + combat state → contextual recommendations.
 
 Current layers completed: explicit v2 battle-state context (round/phase, VP/CP, objectives, active secondaries, reserves, and known battlefield positions), CP/stratagem availability and recent-use context, read-only state integration, v2 decision-surface activation, and deployment regression gate `scripts/track4-tactical-advisor-v2-audit.js`.
 
-Remaining Track 4 layers: recommendation prioritization refinement and final v2 regression/deployment completion. Stratagem consequence analysis is complete.
+Completed: recommendation prioritization refinement, final recommendation explanation ordering/near-tie refresh, stratagem consequence analysis, read-only battle-state integration, and independent regression/deployment gates. Completion gates: `scripts/track4-tactical-advisor-v2-audit.js` and `scripts/track4-prioritization-refinement-audit.js`.
 
 ### Track 5 — Tournament Operations 🔵
 Clock + player turns + game timing + setup + scoring + end-game report.
@@ -275,17 +275,17 @@ Current layer: tablet dashboard, sticky command rail, responsive touch controls,
 - Manual turn override preserves scoring and CP integrity — 🟢 complete
 - Track 3 Tournament Mission System — 🟢 complete
 - Track 3 mission catalogue/scoring integrity gate — 🟢 complete
-- Current execution: Track 4 Tactical Advisor v2 🔵 (with Track 5/6 parallel integrity work active)
+- Current execution: Track 5 Tournament Operations 🔵 (with Track 6/7 parallel integrity work active)
 - Track 4 battle-state context layer — 🟢 complete
 - Track 4 stratagem consequence analysis — 🟢 complete
-- Track 4 recommendation prioritization refinement — 🟢 implementation + deployment audit added
-- Track 4 v2 deployment regression gate — 🟢 added
+- Track 4 recommendation prioritization refinement — 🟢 complete
+- Track 4 v2 deployment regression gate — 🟢 complete
 - Track 3 audit: scripts/track3-mission-system-audit.js
 - Track 1 audits: scripts/track1-end-turn-scoring-audit.js, scripts/track1-scoring-vp-cp-audit.js, scripts/track1-turn-phase-action-log-audit.js, scripts/track1-completion-audit.js
 - Track 2 audits: scripts/model-level-damage-audit.js, scripts/fnp-resolution-audit.js, scripts/track2-combat-regression-audit.js
 - Deployment workflow gates both completed tracks before GitHub Pages publication
 
-Next planning checkpoint: begin Track 4 Tactical Advisor v2.
+Next planning checkpoint: continue Track 5 Tournament Operations.
 
 ### Batch-First Development Workflow
 - 🟢 Local/pre-push batch preflight: `scripts/preflight-batch.js`
