@@ -1323,7 +1323,9 @@ function missionDecisionContext(){
     primary:{my:primaryMy,opp:primaryOpp,myRemaining:45-primaryMy,oppRemaining:45-primaryOpp,myRound:myRoundPrimary,oppRound:oppRoundPrimary,myRoundRemaining:Math.max(0,15-myRoundPrimary),oppRoundRemaining:Math.max(0,15-oppRoundPrimary)},
     secondary:{my:secondaryMy,opp:secondaryOpp,myRemaining:45-secondaryMy,oppRemaining:45-secondaryOpp,myRound:myRoundSecondary,oppRound:oppRoundSecondary,myRoundRemaining:Math.max(0,15-myRoundSecondary),oppRoundRemaining:Math.max(0,15-oppRoundSecondary)},
     objectives:{my:myObjectives,opp:oppObjectives,summary:objectiveSummary.current,tactical:objectiveTacticalSummary()},
-    battlefield,\n    battlefieldGeometry:objectiveBattlefieldGeometry()\n  };
+    battlefield,
+    battlefieldGeometry:objectiveBattlefieldGeometry()
+  };
 }
 function scorePrimaryItem(side,index,mission,amountOverride){
   syncPrimaryScoringRound();
@@ -6044,7 +6046,8 @@ function tacticalPairState(attackerUid,targetUid){
       deploymentZone:objectiveMeta.deploymentZone,changedThisTurn:objectiveMeta.changedThisTurn,
       mapLayout:objectiveMeta.mapLayout,mapPage:objectiveMeta.mapLayoutPage
     }:null,
-    battlefieldLayout:{layout:state.objectiveMapLayout||'A',missionKey:state.objectiveMapMissionKey||objectiveMissionKey(),page:layoutInfo?objectiveLayoutPage():null},\n    battlefieldGeometry:objectiveBattlefieldGeometry(),
+    battlefieldLayout:{layout:state.objectiveMapLayout||'A',missionKey:state.objectiveMapMissionKey||objectiveMissionKey(),page:layoutInfo?objectiveLayoutPage():null},
+    battlefieldGeometry:objectiveBattlefieldGeometry(),
     notes:raw.notes==null?'':String(raw.notes)};
 }
 function setTacticalPairField(attackerUid,targetUid,field,value){
@@ -7899,7 +7902,8 @@ function tacticalBattleState(){
   const layoutInfo=ensureObjectiveLayoutForMission();
   return {version:TACTICAL_STATE_VERSION,round:Math.max(1,Number(state.round)||1),phase:state.phase||'Command',turn:state.currentTurn==='opp'?'opp':'my',
     vp:{my:Number(state.myVP)||0,opp:Number(state.oppVP)||0},cp:{my:Number(state.myCP)||0,opp:Number(state.oppCP)||0},
-    battlefield:{mapLayout:state.objectiveMapLayout||'A',mapMissionKey:state.objectiveMapMissionKey||objectiveMissionKey(),mapPage:layoutInfo?objectiveLayoutPage():null},\n    battlefieldGeometry:objectiveBattlefieldGeometry(),
+    battlefield:{mapLayout:state.objectiveMapLayout||'A',mapMissionKey:state.objectiveMapMissionKey||objectiveMissionKey(),mapPage:layoutInfo?objectiveLayoutPage():null},
+    battlefieldGeometry:objectiveBattlefieldGeometry(),
     objectives,units:{my:(state.my||[]).map(e=>tacticalUnitState('my',e)).filter(Boolean),opp:(state.opp||[]).map(e=>tacticalUnitState('opp',e)).filter(Boolean)},
     recentEvents:(state.events||[]).slice(0,20).map(e=>({kind:e.kind,round:e.round,phase:e.phase,playerTurn:e.playerTurn,payload:e.payload||{}}))};
 }
