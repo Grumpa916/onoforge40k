@@ -106,6 +106,14 @@ jobs:
         shell: bash
         run: node scripts/track4-tactical-advisor-v2-audit.js
 
+      - name: Run Track 5 Tournament Operations integrity audit
+        shell: bash
+        run: node scripts/track5-tournament-operations-audit.js
+
+      - name: Run Track 6 Rules Data Integrity audit
+        shell: bash
+        run: node scripts/track6-rules-data-integrity-audit.js
+
       - name: Run deployment planning and live battlefield map integrity audit
         shell: bash
         run: node scripts/deployment-map-integrity-audit.js
