@@ -58,6 +58,10 @@ jobs:
       - name: Run Task 26 tournament UI optimization audit
         shell: bash
         run: node scripts/tournament-ui-optimization-audit.js
+      
+      - name: Run Task 28 dice entry architecture audit
+        shell: bash
+        run: node scripts/dice-entry-architecture-audit.js
 
       - name: Render Tactical Advisor decision surface
         shell: bash
