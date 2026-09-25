@@ -10436,7 +10436,42 @@ function eventCompanionGeometryAuditHtml(){
 function dataPage(){return `<div class="card"><h2>Data Sources</h2><div class="status">${esc(state.dataStatus)} • ${esc(state.revision)}</div>${weaponDataIntegrityAuditHtml()}${eventCompanionGeometryAuditHtml()}${eventCompanionGeometryVerificationConsoleHtml()}<p class="muted">The standalone prototype keeps source data separate from saved rosters and personal notes.</p><div class="card" style="margin-top:12px"><h3 style="margin-top:0">Reference Sources</h3><div class="unit"><strong>40k.app</strong><div class="muted">Primary structured source • Revision ${esc(String(ONOFORGE_40KAPP_SOURCE?.source?.revision||'925'))}</div></div><div class="unit"><strong>Warhammer Event Companion v1.2</strong><div class="muted">Official event procedures, CP/VP limits, missions, terrain and base-size reference • v1.2</div></div><div class="unit"><strong>MathHammer</strong><div class="muted">11th Edition combat calculator • v2.1.17 (Sep 18, 2026) • unit and weapon-profile reference</div><div class="tiny" style="margin-top:4px">Candidate supplemental source for weapon-profile enrichment and Mathhammer validation. Verify against authoritative 40K sources before treating values as canonical.</div></div></div><label class="btn">Import JSON<input type="file" accept=".json,application/json" style="display:none" onchange="importJSON(this)"></label><button class="btn" onclick="exportJSON()">Export Catalogue</button><div class="card"><h3>Normalized Catalogue</h3>${DEMO.map(u=>`<div class="unit"><strong>${esc(u.name)}</strong><div class="muted">${u.faction} • ${u.points} pts • ${u.weapons.length} weapons • ${u.abilities.length} abilities</div></div>`).join('')}</div></div>`}
 function importJSON(inp){const f=inp.files?.[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const raw=JSON.parse(rd.result);const arr=Array.isArray(raw)?raw:(raw.units||raw.catalogue?.units||[]);if(!arr.length)throw new Error('No normalized units found');DEMO.splice(0,DEMO.length,...arr);state.source=f.name;state.revision='imported';state.dataStatus='Imported normalized catalogue';save();render()}catch(e){alert('Import failed: '+e.message)}};rd.readAsText(f)}
 function exportJSON(){const blob=new Blob([JSON.stringify({schema:'battleforge.11e.v57',source:state.source,revision:state.revision,units:DEMO},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='battleforge-v46-catalogue.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
-function logPage(){return `<div class="card"><div class="split"><h2>Action Log</h2><button class="btn danger" onclick="undoLastAction()">↶ Undo Last</button></div><div class="action-log-list">${state.events.length?state.events.map((e,i)=>actionLogLine(e,i)).join(''):'<div class="empty">No events yet.</div>'}</div></div>`}
+function actionLogFiltersHtml(){
+  const events=Array.isArray(state.events)?state.events:[];
+  const rounds=[...new Set(events.map(e=>Math.max(1,Number(e?.round)||1)))].sort((a,b)=>a-b);
+  const phases=['Command','Movement','Shooting','Charge','Fight'];
+  const roundFilter=state.actionLogRoundFilter||'all';
+  const phaseFilter=state.actionLogPhaseFilter||'all';
+  return '<div class="action-log-filters" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">'+
+    '<label class="field"><span>Round</span><select onchange="setActionLogFilter(\'round\',this.value)"><option value="all" '+(roundFilter==='all'?'selected':'')+'>All rounds</option>'+
+    rounds.map(r=>'<option value="'+r+'" '+(String(roundFilter)===String(r)?'selected':'')+'>Round '+r+'</option>').join('')+
+    '</select></label>'+
+    '<label class="field"><span>Phase</span><select onchange="setActionLogFilter(\'phase\',this.value)"><option value="all" '+(phaseFilter==='all'?'selected':'')+'>All phases</option>'+
+    phases.map(p=>'<option value="'+p+'" '+(phaseFilter===p?'selected':'')+'>'+p+'</option>').join('')+
+    '</select></label></div>';
+}
+function filteredActionLogEvents(){
+  const events=Array.isArray(state.events)?state.events:[];
+  const rf=state.actionLogRoundFilter||'all';
+  const pf=state.actionLogPhaseFilter||'all';
+  return events.filter(e=>{
+    const round=Math.max(1,Number(e?.round)||1);
+    const phase=String(e?.phase||'');
+    return (rf==='all'||String(round)===String(rf)) && (pf==='all'||phase===pf);
+  });
+}
+function setActionLogFilter(kind,value){
+  if(kind==='round')state.actionLogRoundFilter=value||'all';
+  if(kind==='phase')state.actionLogPhaseFilter=value||'all';
+  save();render();
+}
+window.setActionLogFilter=setActionLogFilter;
+function logPage(){
+  const events=filteredActionLogEvents();
+  return '<div class="card"><div class="split"><div><h2 style="margin:0">Action Log</h2><div class="muted" style="margin-top:3px">'+events.length+' of '+(Array.isArray(state.events)?state.events.length:0)+' events shown</div></div><button class="btn danger" onclick="undoLastAction()">↶ Undo Last</button></div>'+
+    actionLogFiltersHtml()+
+    '<div class="action-log-list" style="margin-top:10px">'+(events.length?events.map((e,i)=>actionLogLine(e,i)).join(''):'<div class="empty">No events match the current filters.</div>')+'</div></div>';
+}
 
 function resetAllSecondaryMissions(side){
   const before=snapshotForUndo();
