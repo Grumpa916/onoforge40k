@@ -688,7 +688,7 @@ body{overflow-x:hidden}
 @media (min-width:701px){#battle-view #onoforge-advisor-render .ta-grid{grid-template-columns:repeat(8,minmax(0,1fr));gap:5px}#battle-view #onoforge-advisor-render .ta-metric{padding:6px}#battle-view #onoforge-advisor-render .ta-metric b{font-size:14px}}
 </style>
 </head><body><div id="app"></div><script>
-window.addEventListener('error',function(ev){var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var msg=String(ev.error?.message||ev.message||'Unknown error');a.innerHTML='<span class="error-title">OnoForge error</span><div class="error-detail">'+msg.replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</div><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});window.addEventListener('unhandledrejection',function(ev){var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var reason=ev.reason?.message||ev.reason||'Unhandled promise rejection';a.innerHTML='<span class="error-title">OnoForge error</span><div class="error-detail">'+String(reason).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</div><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});
+window.addEventListener('error',function(ev){if(ev.target&&ev.target.tagName==='SCRIPT'&&ev.target.src===SUPABASE_SCRIPT_URL)return;var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var msg=String(ev.error?.message||ev.message||'Unknown error');a.innerHTML='<span class="error-title">OnoForge error</span><div class="error-detail">'+msg.replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</div><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});window.addEventListener('unhandledrejection',function(ev){var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var reason=ev.reason?.message||ev.reason||'Unhandled promise rejection';a.innerHTML='<span class="error-title">OnoForge error</span><div class="error-detail">'+String(reason).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</div><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});
 
 window.__ONOFORGE_DETACHMENTS = window.__ONOFORGE_DETACHMENTS || {}; function detachmentCatalog(){return window.__ONOFORGE_DETACHMENTS;}
 'use strict';
@@ -10231,7 +10231,7 @@ function resolveAttack(){
 function rules(){return `<div class="card"><h2>Rules Engine</h2><p class="muted">v46 uses one shared rules-aware combat engine for Mathhammer and Battle Mode. It supports the modeled 11th-edition attack sequence, modifiers, criticals, saves, FNP, non-spillover damage allocation and Monte Carlo simulation. Community data/rules coverage remains versioned and should be verified against authoritative rules.</p><div class="grid"><div><h3>Resolution Stages</h3>${['Attacks','Hit Rolls','Critical Hits','Wound Rolls','Critical Wounds','Saving Throws','Invulnerable Save','Damage','Damage Allocation','Game State Event'].map((x,i)=>`<div class="unit"><b>${i+1}. ${x}</b></div>`).join('')}</div><div><h3>Supported Effect Detectors</h3>${['Lethal Hits','Sustained Hits X','Devastating Wounds','Torrent','Blast X','Rapid Fire X','Heavy','Melta X','Twin-linked','Precision','Ignores Cover','Anti-X (detected)'].map(x=>`<span class="pill">${x}</span>`).join('')}</div></div><div class="status">Rule provenance: ${esc(state.source)} • ${esc(state.revision)}</div></div>`}
 
 const CLOUD_CONFIG_KEY='onoforge-supabase-config-v1';
-const SUPABASE_SCRIPT_URL='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+const SUPABASE_SCRIPT_URL='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.1/dist/umd/supabase.min.js';
 let supabaseClient=null;
 let supabaseAuthListenerBound=false;
 let supabaseLoadPromise=null;
@@ -10267,6 +10267,7 @@ function loadSupabaseLibrary(){
     const s=document.createElement('script');
     s.src=SUPABASE_SCRIPT_URL;
     s.async=true;
+    s.crossOrigin='anonymous';
     s.onload=()=>resolve(!!window.supabase?.createClient);
     s.onerror=()=>resolve(false);
     document.head.appendChild(s);
