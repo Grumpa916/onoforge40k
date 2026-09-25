@@ -9209,7 +9209,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     if(unknowns.length)changes.push('Confirm '+unknowns.join(', ')+' before committing.');
     if(Number(d.simulationConfidence||0)<0.55)changes.push('More simulation sampling could change a close result.');
     if(d.objectiveContext?.status==='unknown')changes.push('Objective ownership/context is not confirmed.');
-    if(pairDecisionCtx?.terrainContext?.verified && (pairDecisionCtx.terrainContext.terrainIntersections||[]).length)changes.push('Terrain intersects the measured unit-to-target path; line of sight remains a rules/tabletop determination.');
+    if((d.contextSignals||[]).some(s=>s.name==='terrain_geometry'&&s.known&&Array.isArray(s.value)&&s.value.length))changes.push('Terrain intersects the measured unit-to-target path; line of sight remains a rules/tabletop determination.');
     x.recommendationExplanation={
       rank:i+1,
       nearTie:margin<=nearTieThreshold,
