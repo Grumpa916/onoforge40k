@@ -39,9 +39,10 @@ check('Objective control is stateful',
 
 check('Objective changes feed primary scoring candidates',
   has(/recordPrimaryScoringCandidates\(/) &&
-  /recordPrimaryScoringCandidates\([^)]*my/.test(html) &&
-  /recordPrimaryScoringCandidates\([^)]*opp/.test(html),
-  'Both sides must checkpoint scoring candidates.');
+  has(/recordPrimaryScoringCandidates\(scoringSide,/) &&
+  has(/recordPrimaryScoringCandidates\(endingTurn,/) &&
+  has(/recordPrimaryScoringCandidates\(before,/),
+  'Objective-control and turn-boundary checkpoints must route through the side-aware scoring candidate function.');
 
 check('Primary scoring candidate uses geometry evidence',
   has(/primaryScoringEvidence\(/) &&
