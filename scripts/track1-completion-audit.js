@@ -40,7 +40,10 @@ if(/state\.currentTurn=next;\s*restorePhaseCP\(state\.round,next,state\.phase\)/
   fail('manual turn still restores stale CP snapshot');
 else ok('manual turn carries persistent CP state');
 
-if(/state\.round=nextRoundNumber;[\s\S]{0,500}restorePhaseCP\(state\.round,nextTurn,'Command'\)/.test(s))
+const nextRoundStart=s.indexOf('function nextRound(){');
+const nextRoundEnd=s.indexOf('function previousRound(){',nextRoundStart);
+const nextRoundBlock=nextRoundStart>=0&&nextRoundEnd>nextRoundStart?s.slice(nextRoundStart,nextRoundEnd):'';
+if(/restorePhaseCP\(state\.round,nextTurn,'Command'\)/.test(nextRoundBlock))
   fail('forward next-round transition restores stale CP');
 else ok('forward next-round transition carries persistent CP');
 
