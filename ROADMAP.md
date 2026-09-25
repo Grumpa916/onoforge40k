@@ -253,8 +253,9 @@ Tablet-first dashboard, touch optimization, minimal data entry, fast phase trans
 - Track 1 regression audit: scripts/track1-end-turn-scoring-audit.js
 - Track 1 scoring → VP/CP integrity — 🟢 Complete
 - Track 1 turn/phase → action-log integrity — 🔵 Active
+- Track 1 action-log round/phase filtering — 🟢 Implemented
 - Track 1 regression audit: scripts/track1-end-turn-scoring-audit.js, scripts/track1-scoring-vp-cp-audit.js, scripts/track1-turn-phase-action-log-audit.js
-- Current main: db92f7a45d4628a8524ce8f149c07a39c2590d79
-- Latest main deployment gate: 🟡 Pending deployment of turn/phase audit
+- Current main: bd36975b444c9150d5a29e298485df1cf83476cd
+- Latest main deployment gate: 🟡 Pending deployment of Track 1 turn/phase and action-log filter work
 
 Next planning checkpoint: complete the turn/phase → action-log integrity layer, then continue authoritative action coverage and objective → scoring refinement.
