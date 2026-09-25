@@ -1369,6 +1369,26 @@ function primaryScorePreviewLabel(side,index,mission,amountOverride){
   if(!p.eligible)return p.reason;
   return 'Preview: +'+p.allowedVP+' VP'+(p.objectiveBased?' • '+p.objectiveCount+' qualifying objective'+(p.objectiveCount===1?'':'s'):'');
 }
+function primaryObjectiveScoringCandidates(side,mission){
+  const player=side==='opp'?'opp':'my';
+  const rows=primaryScoringRowsForRound(mission);
+  const scoredKey=player==='my'?'primaryScoringByRoundMy':'primaryScoringByRoundOpp';
+  const roundKey=String(Math.max(1,Number(state.round)||1));
+  const scored=Array.isArray(state[scoredKey]?.[roundKey])?state[scoredKey][roundKey]:[];
+  return rows.map((row,index)=>{
+    if(scored.includes(index))return null;
+    const evidence=primaryScoringEvidence(player,index,mission);
+    return evidence.eligible?{index,row,evidence}:null;
+  }).filter(Boolean);
+}
+function primaryObjectiveScoringCandidateSummary(side,mission){
+  const candidates=primaryObjectiveScoringCandidates(side,mission);
+  return candidates.map(c=>({
+    index:c.index,scoringItem:String(c.row?.[2]||''),timing:String(c.row?.[0]||''),
+    vp:c.evidence.allowedVP,objectiveCount:c.evidence.objectiveCount||0,
+    qualifyingObjectives:c.evidence.qualifyingObjectives||[],geometryVerified:!!c.evidence.geometryVerified
+  }));
+}
 function ensurePrimaryObjectiveScoreSnapshots(){
   if(!state.primaryObjectiveScoreSnapshots||typeof state.primaryObjectiveScoreSnapshots!=='object')state.primaryObjectiveScoreSnapshots={};
   return state.primaryObjectiveScoreSnapshots;
@@ -1622,9 +1642,10 @@ function primaryMissionDetailsHtml(mission,side){
       const amount=primaryScoringObjectiveCount(side,r)!==null
         ? Math.max(0,Math.min(effectiveMax,Number(amounts[i]??suggestedAmount)))
         : Math.min(maxAmount||5,Number(amounts[i])||suggestedAmount);
+      const previewLabel=done?'':primaryScorePreviewLabel(side,i,mission,amount);
       return '<div class="primary-approved-score-row primary-score-click-target'+(done?' scored':'')+'" data-primary-score="1" data-primary-side="'+side+'" data-primary-index="'+i+'" data-primary-mission="'+esc(mission)+'" title="'+(done?'Click to remove this scoring condition':'Click to score this condition')+'">'+
         '<div class="primary-approved-icon">'+(done?'✓':(i===0?'⚑':i===1?'⌂':'◆'))+'</div>'+
-        '<div class="primary-approved-copy"><strong>'+esc(r[2])+'</strong><span>Score '+esc(r[1])+(per?' × '+amount:'')+(done?' • Scored '+actual+' VP':'')+'</span></div>'+
+        '<div class="primary-approved-copy"><strong>'+esc(r[2])+'</strong><span>Score '+esc(r[1])+(per?' × '+amount:'')+(done?' • Scored '+actual+' VP':'')+'</span>'+(previewLabel?'<span class="tiny" style="color:'+(previewLabel.startsWith('Preview:')?'#aee2bf':'#d99a9a')+'">'+esc(previewLabel)+'</span>':'')+'</div>'+
         (per&&!done?'<div class="primary-score-quantity primary-count-stepper"><button type="button" class="btn" data-primary-amount-step="-1" data-primary-side="'+side+'" data-primary-index="'+i+'" data-primary-mission="'+esc(mission)+'">−</button><output>'+amount+'/'+(primaryScoringObjectiveCount(side,r)!==null?effectiveMax:(maxAmount||5))+'</output>'+(primaryScoringObjectiveCount(side,r)!==null?primaryScoringObjectiveLinkHtml(side,r,done,actual,i):(maxAmount?'<span class="tiny primary-count-max">Max '+maxAmount+' scoring</span>':'<span class="tiny primary-count-max">Objective count not required</span>'))+'<button type="button" class="btn" data-primary-amount-step="1" data-primary-side="'+side+'" data-primary-index="'+i+'" data-primary-mission="'+esc(mission)+'">+</button></div>':(done?'<div class="primary-approved-control"><output>'+actual+' VP</output>'+primaryScoringObjectiveLinkHtml(side,r,done,actual,i)+'</div>':''))+
       '</div>';
     }).join('')+'</div>'+
@@ -5589,13 +5610,26 @@ function setObjectiveControl(name,owner){
   ensureObjectiveTurnSnapshot();
   recordObjectiveTurnState();
   const scoringAfter=objectivePrimaryScoringImpact(scoringSide,key);
+  const mission=primaryMission(scoringSide);
+  const candidatesAfter=mission?primaryObjectiveScoringCandidateSummary(scoringSide,mission):[];
   event('OBJECTIVE_CHANGED',{
     name:key,unit:'Objective '+key,action:'Control → '+next,owner:next,previous,after:next,
     round:Math.max(1,Number(state.round)||1),phase:String(state.phase||'Command'),
     playerTurn:scoringSide,
     scoringImpactBefore:scoringBefore,
-    scoringImpactAfter:scoringAfter
+    scoringImpactAfter:scoringAfter,
+    primaryScoringCandidates:candidatesAfter
   },fullBefore);
+  if(candidatesAfter.length){
+    event('PRIMARY_SCORING_CANDIDATE',{
+      side:scoringSide,unit:'Primary Mission',
+      action:'Objective control created '+candidatesAfter.length+' scoring candidate'+(candidatesAfter.length===1?'':'s'),
+      mission,
+      round:Math.max(1,Number(state.round)||1),
+      objective:key,
+      candidates:candidatesAfter
+    });
+  }
   save();
   render();
 }
