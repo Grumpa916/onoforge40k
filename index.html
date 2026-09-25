@@ -4944,6 +4944,35 @@ function resetTournamentToSetup(){
   save();render();
   return true;
 }
+function pointInsideDeploymentZone(x,y,zone){
+  const nx=Number(x),ny=Number(y);
+  if(!Number.isFinite(nx)||!Number.isFinite(ny)||!zone)return false;
+  if([zone.x,zone.y,zone.width,zone.height].every(v=>Number.isFinite(Number(v)))){
+    return nx>=Number(zone.x)&&nx<=Number(zone.x)+Number(zone.width)&&ny>=Number(zone.y)&&ny<=Number(zone.y)+Number(zone.height);
+  }
+  const points=Array.isArray(zone.points)?zone.points:[];
+  if(points.length<3||!points.every(p=>Number.isFinite(Number(p?.x))&&Number.isFinite(Number(p?.y))))return false;
+  let inside=false;
+  for(let i=0,j=points.length-1;i<points.length;j=i++){
+    const xi=Number(points[i].x),yi=Number(points[i].y),xj=Number(points[j].x),yj=Number(points[j].y);
+    const intersects=((yi>ny)!==(yj>ny))&&(nx<(xj-xi)*(ny-yi)/((yj-yi)||Number.EPSILON)+xi);
+    if(intersects)inside=!inside;
+  }
+  return inside;
+}
+function tournamentDeploymentZoneForSide(side){
+  const geometry=objectiveBattlefieldGeometry();
+  if(!geometry.verified)return null;
+  const zones=geometry.source?.geometryEntry?.deploymentZones;
+  if(!zones)return null;
+  const physicalKey=side===state.attackerSide?'attackerDeployment':'defenderDeployment';
+  return zones[physicalKey]||null;
+}
+function tournamentDeploymentZoneStatus(side,position){
+  const zone=tournamentDeploymentZoneForSide(side);
+  if(!zone)return {verified:false,inside:null};
+  return {verified:true,inside:pointInsideDeploymentZone(position?.x,position?.y,zone)};
+}
 function tournamentDeploymentValidation(){
   const positions=ensureBattlefieldUnitPositions(), reserves=ensureReserveState();
   const missing=[];
@@ -4953,7 +4982,14 @@ function tournamentDeploymentValidation(){
       const id=String(entry.uid);
       if(reserves[side]?.[id]===true)continue;
       const p=positions[id];
-      if(!p||p.side!==side||!Number.isFinite(Number(p.x))||!Number.isFinite(Number(p.y)))missing.push((side==='my'?state.myName:state.oppName)+': '+(unitDisplayName(side,entry)||get(entry.unitId)?.name||entry.name||entry.unitId||'Unit'));
+      if(!p||p.side!==side||!Number.isFinite(Number(p.x))||!Number.isFinite(Number(p.y))){
+        missing.push((side==='my'?state.myName:state.oppName)+': '+(unitDisplayName(side,entry)||get(entry.unitId)?.name||entry.name||entry.unitId||'Unit')+' — position not recorded');
+        continue;
+      }
+      const zone=tournamentDeploymentZoneStatus(side,p);
+      if(zone.verified&&zone.inside===false){
+        missing.push((side==='my'?state.myName:state.oppName)+': '+(unitDisplayName(side,entry)||get(entry.unitId)?.name||entry.name||entry.unitId||'Unit')+' — outside deployment zone');
+      }
     }
   }
   return {ready:missing.length===0,missing};
