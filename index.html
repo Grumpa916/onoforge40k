@@ -3553,7 +3553,11 @@ function supportBodyguardAttachmentModal(){
     (candidates.length?'<div class="leader-candidate-list">'+candidates.map(e=>'<button class="leader-candidate" type="button" onclick="attachSupport(\''+side+'\',\''+supportUid+'\',\''+e.uid+'\')"><span><strong>'+esc(unitDisplayName(side,e))+'</strong><small>'+esc(get(e.unitId)?.faction||'')+' • '+pts(e)+' pts</small></span><span class="pill">Attach</span></button>').join('')+'</div>':'<div class="empty">No eligible unattached Bodyguard units are currently in this army.</div>')+
     '</div></div>';
 }
-function leaderNamesForBodyguard(u){return LEADER_ATTACHMENTS_11E[u?.name]||[]}
+function leaderNamesForBodyguard(u){
+  const bodyguardName=String(u?.name||'');
+  if(!bodyguardName)return [];
+  return Object.entries(LEADER_ATTACHMENTS_11E).filter(([,bodyguards])=>Array.isArray(bodyguards)&&bodyguards.includes(bodyguardName)).map(([leaderName])=>leaderName);
+}
 function isLeaderUnit(u){return !!u&&Object.prototype.hasOwnProperty.call(LEADER_ATTACHMENTS_11E,u.name)}
 function bodyguardLeaders(side,bodyguardUid){
   const body=entry(side,bodyguardUid);if(!body)return [];
@@ -4274,7 +4278,13 @@ function changeMyFaction(value){
   render();
 }
 
-function alphaLabel(n){let s='';n=Math.max(1,Number(n)||1);while(n>0){n--;s=String.fromCharCode(65+(n%26))+s;n=Math.floor(n/26)}return s;}
+function alphaLabel(n){
+  const greek=['α','β','γ','δ','ε','ζ','η','θ','ι','κ','λ','μ','ν','ξ','ο','π','ρ','σ','τ','υ','φ','χ','ψ','ω'];
+  n=Math.max(1,Math.floor(Number(n)||1));
+  let s='';
+  while(n>0){n--;s=greek[n%greek.length]+s;n=Math.floor(n/greek.length)}
+  return s;
+}
 function unitDisplayName(side,e){const arr=Array.isArray(state[side])?state[side]:[],same=arr.filter(x=>x.unitId===e.unitId),u=get(e.unitId);if(same.length<=1)return u?.name||e.unitId;const idx=Math.max(0,same.findIndex(x=>x.uid===e.uid));return (u?.name||e.unitId)+' '+alphaLabel(idx+1);}
 function rosterCreatedLabel(value){if(!value)return '';const d=new Date(value);if(Number.isNaN(d.getTime()))return '';return d.toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});}
 function savedRosterDisplayName(x){const stamp=rosterCreatedLabel(x?.created);return (x?.name||'Unnamed Roster')+(stamp?' • '+stamp:'');}
