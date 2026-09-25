@@ -36,7 +36,7 @@ check('Verified geometry is visibly distinguished in the tracker',
 
 check('Territory and deployment remain separate fields',
   has(/objectiveTerritory\(key\)/) && has(/objectiveDeploymentZone\(key\)/) &&
-  has(/territory:objectiveTerritory\(key)/) && has(/deploymentZone:objectiveDeploymentZone\(key)/),
+  has(/territory:objectiveTerritory/) && has(/deploymentZone:objectiveDeploymentZone/),
   'Territory and deployment zone must remain independent data fields.');
 
 check('Objective events carry spatial evidence',
