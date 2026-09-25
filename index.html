@@ -2909,7 +2909,6 @@ function scoreSecondary(side,name,vpInput,rowMeta=null){
  const max=fixed?20:(Number.isFinite(Number(card.maxVP))?Number(card.maxVP):null);
  const fullBefore=snapshotForUndo();
  const before=side==='my'?Number(state.myVP)||0:Number(state.oppVP)||0;
- const round=Math.max(1,Number(state.round)||1);
  const roundTotalBefore=secondaryRoundScoredVP(side,round);
  const totalBefore=Number(secondaryTotalScoredVP(side)||0);
  const missionBefore=fixed?Math.max(0,Number((side==='my'?state.secondaryMyScoredVP:state.secondaryOppScoredVP)?.[name])||0):0;
