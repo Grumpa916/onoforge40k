@@ -4823,9 +4823,11 @@ function tournamentResultSnapshot(){
   missionKey:state.objectiveMapMissionKey||objectiveMissionKey()||null,
   battlefieldLayout:state.objectiveMapLayout||null,
   mapPage:objectiveLayoutPage(),
-  deploymentReadyMy:Object.keys(ensureBattlefieldUnitPositions()).length>0||Object.keys(deploymentPlanForCurrentMap()).length>0,
+  deploymentReadyMy:Object.keys(ensureBattlefieldUnitPositions().my||{}).length>0||Object.keys(deploymentPlanForCurrentMap()).length>0,
+  deploymentReadyOpp:Object.keys(ensureBattlefieldUnitPositions().opp||{}).length>0,
   reservesDeclaredMy:Object.keys(ensureReserveState().my||{}).length,
   reservesDeclaredOpp:Object.keys(ensureReserveState().opp||{}).length,
+  deploymentState:{mapPage:objectiveLayoutPage(),positions:JSON.parse(JSON.stringify(ensureBattlefieldUnitPositions())),plan:JSON.parse(JSON.stringify(deploymentPlanForCurrentMap())),reserves:JSON.parse(JSON.stringify(ensureReserveState()))},
   myName:state.myName,oppName:state.oppName,
   myVP:my,oppVP:opp,
   primaryMyVP:Number(state.primaryMyScoredVP)||0,
@@ -4846,7 +4848,7 @@ function tournamentResultSnapshot(){
 }
 function ensureTournamentLifecycle(){
  const allowed=['SETUP','DEPLOYMENT','LIVE','COMPLETED'];
- if(!allowed.includes(state.tournamentLifecycle))state.tournamentLifecycle=state.battleEnded?'COMPLETED':(state.page==='battle'?'LIVE':state.page==='setup'?'DEPLOYMENT':'SETUP');
+ if(!allowed.includes(state.tournamentLifecycle))state.tournamentLifecycle=state.battleEnded?'COMPLETED':'SETUP';
  return state.tournamentLifecycle;
 }
 function setTournamentLifecycle(next){
@@ -4868,7 +4870,9 @@ function battleMutationAllowed(action='battle update'){
 function tournamentResultIntegrityCheck(){
  if(!state.battleEnded||!state.battleResult)return {ok:false,reason:'No completed tournament result exists.'};
  const r=state.battleResult;
- const expected={myVP:scoreTotalForSide('my'),oppVP:scoreTotalForSide('opp'),round:Math.max(1,Number(state.round)||1),missionKey:state.objectiveMapMissionKey||objectiveMissionKey()||null,battlefieldLayout:state.objectiveMapLayout||null};
+ const reserveState=ensureReserveState();
+ const positions=ensureBattlefieldUnitPositions();
+ const expected={myVP:scoreTotalForSide('my'),oppVP:scoreTotalForSide('opp'),round:Math.max(1,Number(state.round)||1),missionKey:state.objectiveMapMissionKey||objectiveMissionKey()||null,battlefieldLayout:state.objectiveMapLayout||null,deploymentReadyMy:Object.keys(positions.my||{}).length>0||Object.keys(deploymentPlanForCurrentMap()).length>0,deploymentReadyOpp:Object.keys(positions.opp||{}).length>0,reservesDeclaredMy:Object.keys(reserveState.my||{}).length,reservesDeclaredOpp:Object.keys(reserveState.opp||{}).length};
  const mismatches=Object.keys(expected).filter(k=>String(r[k]??'')!==String(expected[k]??''));
  return {ok:mismatches.length===0,mismatches};
 }
