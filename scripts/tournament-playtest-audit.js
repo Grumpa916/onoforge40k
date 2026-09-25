@@ -52,7 +52,7 @@ check('Primary scoring candidate uses geometry evidence',
 check('Primary VP preview respects caps',
   has(/function primaryScorePreviewSummary\(/) &&
   has(/roundRemaining=primaryRoundCapRemaining/) &&
-  has(/45-(Number\(state\[/),
+  has(/45-\(Number\(state\[/),
   'Projected scoring must respect round and game caps.');
 
 check('Battlefield positions are explicit/manual',
