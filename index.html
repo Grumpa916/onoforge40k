@@ -9469,8 +9469,20 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     ));
     x.tacticalIndexAdjusted=Math.max(-1,Number(x.tacticalIndex)||0)*(1-0.20*(Number(x.exchangeExposure)||0));
   });
+  const advisorStratagemPressure=Math.max(0,Math.min(1,Number(stratagemPressure?.pressure)||0));
+  const advisorPreserveCP=Math.max(0,Math.min(1,Number(stratagemPressure?.preserveCP)||0));
+  eligibleResults.forEach((x,i)=>{
+    const d=x.decisionComponents||{};
+    const deny=Number(d.denyOpponentScore)||0;
+    const preserve=Number(d.preserveFriendlyUnit)||0;
+    const pressureAdjustment=
+      (advisorStratagemPressure*0.025*deny)-
+      (advisorPreserveCP*0.015*(1-preserve));
+    x.stratagemPressureAdjustment=pressureAdjustment;
+    x.priorityScore=Math.max(-1,Math.min(1,Number(x.decisionScore??x.tacticalIndexAdjusted??x.tacticalIndex)||0)+pressureAdjustment);
+  });
   results.sort((a,b)=>{
-    const scoreDiff=Number(b.decisionScore??b.tacticalIndexAdjusted??b.tacticalIndex)-Number(a.decisionScore??a.tacticalIndexAdjusted??a.tacticalIndex);
+    const scoreDiff=Number(b.priorityScore??b.decisionScore??b.tacticalIndexAdjusted??b.tacticalIndex)-Number(a.priorityScore??a.decisionScore??a.tacticalIndexAdjusted??a.tacticalIndex);
     if(Math.abs(scoreDiff)>0.01)return scoreDiff;
     const confidenceDiff=Number(b.decisionComponents?.decisionConfidence||0)-Number(a.decisionComponents?.decisionConfidence||0);
     if(Math.abs(confidenceDiff)>0.01)return confidenceDiff;
