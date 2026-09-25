@@ -109,6 +109,9 @@ jobs:
       - name: Run Track 5 Tournament Operations integrity audit
         shell: bash
         run: node scripts/track5-tournament-operations-audit.js
+      - name: Run Track 5 lifecycle and result lock audit
+        shell: bash
+        run: node scripts/track5-result-lock-audit.js
 
       - name: Run Track 6 Rules Data Integrity audit
         shell: bash
