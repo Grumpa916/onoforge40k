@@ -773,7 +773,6 @@ function deployReserveByMap(side,uid,x,y){
   if(!setBattlefieldUnitPosition(side,uid,x,y,'reserve'))return false;
   delete ensureReserveState()[s][id];
   const p=ensureBattlefieldUnitPositions()[id];
-  if(p)event('UNIT_DEPLOYED_FROM_RESERVE',{unit:id,side:s,action:'Unit deployed from reserve',x:p.x,y:p.y,round:Math.max(1,Number(state.round)||1),phase:String(state.phase||'Command')});
   delete state.battlefieldMapPlacement;
   save();render();return true;
 }
