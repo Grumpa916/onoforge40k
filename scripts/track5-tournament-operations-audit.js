@@ -81,7 +81,7 @@ check('Tournament lifecycle has an explicit Deployment state',
   'Tournament flow must distinguish setup, deployment, live battle, and completion.');
 
 check('Lifecycle transition table forbids SETUP to LIVE bypass',
-  has(/transitions=\\{SETUP:\['DEPLOYMENT'\\],DEPLOYMENT:\['SETUP','LIVE'\\],LIVE:\['COMPLETED'\\],COMPLETED:\['SETUP'\\]\\}/),
+  has(/transitions=\{SETUP:\['DEPLOYMENT'\],DEPLOYMENT:\['SETUP','LIVE'\],LIVE:\['COMPLETED'\],COMPLETED:\['SETUP'\]\}/),
   'The lifecycle state machine itself must prevent bypassing Deployment.');
 
 check('Tournament reset returns through Setup',
