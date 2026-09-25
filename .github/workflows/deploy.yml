@@ -90,6 +90,9 @@ jobs:
       - name: Run live deployment tracking and drag-map integrity audit
         shell: bash
         run: node scripts/live-deployment-map-audit.js
+      - name: Run reserve declaration and live-map integrity audit
+        shell: bash
+        run: node scripts/reserve-map-integrity-audit.js
 
       - name: Render Tactical Advisor decision surface
         shell: bash
