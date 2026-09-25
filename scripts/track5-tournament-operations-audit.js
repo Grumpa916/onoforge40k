@@ -42,7 +42,7 @@ check('Final report includes both players and scoring components',
   has(/Primary .*Secondary .*Battle Ready/)&&has(/state.myName/)&&has(/state.oppName/),
   'Final report must expose both sides and the major scoring components.');
 check('End-game event is logged',
-  has(/event('BATTLE_ENDED'/),
+  has(/event\('BATTLE_ENDED'/),
   'Battle completion must remain auditable in the action history.');
 check('No legacy 10th-edition rule contamination',
   !/Big Guns Never Tire/i.test(html),
