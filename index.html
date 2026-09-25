@@ -8823,11 +8823,54 @@ function tacticalAdvisorBattleStateContext(){
     }
   };
 }
+function tacticalAdvisorStratagemPressure(battle,top){
+  const available=Array.isArray(battle?.stratagems?.myPhaseAvailable)?battle.stratagems.myPhaseAvailable:[];
+  const used=Array.isArray(battle?.stratagems?.myUsedThisPhase)?battle.stratagems.myUsedThisPhase:[];
+  const cp=Math.max(0,Number(battle?.cp?.my)||0);
+  const topPhase=String(battle?.phase||'Command');
+  const affordable=available.filter(s=>Number(s.cp)||0<=cp);
+  const affordableNames=affordable.map(s=>String(s.name||'')).filter(Boolean);
+  const phaseGroups={};
+  affordable.forEach(s=>{
+    const name=String(s.name||'');
+    const summary=String(s.summary||'').toLowerCase();
+    let category='general';
+    if(/save|defen[cs]|durab|ward|damage reduction|feel no pain/.test(summary))category='defensive';
+    else if(/attack|combat|hit|wound|lethal|output|shoot|fight|damage/.test(summary))category='offensive';
+    else if(/move|advance|fall back|charge|position|redeploy|reserve|teleport/.test(summary))category='mobility';
+    else if(/objective|score|control|mission|battle tactic/.test(summary))category='scoring';
+    else if(/command point|cp|re-roll|roll/.test(summary))category='resource';
+    (phaseGroups[category]??=[]).push(name);
+  });
+  const categories=Object.keys(phaseGroups).filter(k=>phaseGroups[k].length);
+  const cpHeadroom=Math.max(0,cp-(affordable.length?Math.min(...affordable.map(s=>Math.max(0,Number(s.cp)||0)):cp));
+  const immediateOptions=affordable.filter(s=>String(s.phase||'Any Phase')===topPhase||String(s.phase||'Any Phase')==='Any Phase').map(s=>({name:s.name,cp:Number(s.cp)||0,phase:s.phase||'Any Phase',summary:s.summary||'',category:Object.keys(phaseGroups).find(k=>(phaseGroups[k]||[]).includes(String(s.name||'')))||'general'}));
+  const topScore=Number(top?.decisionScore)||0;
+  const confidence=Number(top?.decisionComponents?.decisionConfidence)||0;
+  const pressure=immediateOptions.length?Math.max(0,Math.min(1,
+    (immediateOptions.some(s=>s.category==='offensive'&&topScore>=0.55)?0.35:0)+
+    (immediateOptions.some(s=>s.category==='defensive'&&confidence<0.65)?0.25:0)+
+    (immediateOptions.some(s=>s.category==='scoring'&&Number(top?.decisionComponents?.objectiveValue||0)>=0.5)?0.30:0)+
+    (cp<=1?0.10:0)
+  )):0;
+  return {
+    phase:topPhase,currentCP:cp,cpHeadroom,
+    availableCount:available.length,affordableCount:affordable.length,
+    usedThisPhaseCount:used.length,affordableNames,
+    categories,options:immediateOptions,pressure,
+    preserveCP:cp<=1||pressure>=0.65,
+    interaction:pressure>=0.65?'A current-phase stratagem window may materially change the value of this action.':
+      pressure>=0.30?'A current-phase stratagem may improve or protect the exchange; keep CP available until the key decision is resolved.':
+      'No tracked affordable current-phase stratagem creates a strong immediate interaction with this recommendation.',
+    limitations:['Stratagem consequence analysis uses the currently loaded, phase-legal stratagem catalogue and its stored summary; it does not invent untracked effects or assume a stratagem target is eligible.']
+  };
+}
 function tacticalAdvisorV2(attackerEntryUid,options={}){
   const base=tacticalAdvisorV1(attackerEntryUid,options);
   const battle=tacticalAdvisorBattleStateContext();
   const recommendations=Array.isArray(base.recommendations)?base.recommendations:[];
   const top=recommendations[0]||null;
+  const stratagemPressure=tacticalAdvisorStratagemPressure(battle,top);
   const alerts=[];
   if(battle.currentTurn==='my'&&battle.cp.my<=1)alerts.push('CP is limited; preserve 1 CP when a critical stratagem window is expected.');
   if(battle.vp.gap<0)alerts.push('You are currently behind on VP; prioritize actions that create or deny scoring opportunities when legal.');
@@ -8838,8 +8881,8 @@ function tacticalAdvisorV2(attackerEntryUid,options={}){
   if(top?.recommendationExplanation?.nearTie)alerts.push('Top recommendation is a close call; verify the measured battlefield facts before committing.');
   return {
     version:'tactical-advisor-v2',status:base.status,battleState:battle,
-    decisionContext:{phase:battle.phase,round:battle.round,currentTurn:battle.currentTurn,vpGap:battle.vp.gap,cp:battle.cp.my,objectiveCount:battle.objectives.my,activeSecondaryCount:battle.activeSecondaries.my.length,reserveCount:battle.reserves.my.length,phaseStratagemCount:battle.stratagems.myPhaseAvailable.length,phaseStratagemsUsed:battle.stratagems.myUsedThisPhase.length},
-    recommendations,avoid:base.avoid||[],naturalTargets:base.naturalTargets||[],
+    decisionContext:{phase:battle.phase,round:battle.round,currentTurn:battle.currentTurn,vpGap:battle.vp.gap,cp:battle.cp.my,objectiveCount:battle.objectives.my,activeSecondaryCount:battle.activeSecondaries.my.length,reserveCount:battle.reserves.my.length,phaseStratagemCount:battle.stratagems.myPhaseAvailable.length,phaseStratagemsUsed:battle.stratagems.myUsedThisPhase.length,stratagemPressure:stratagemPressure.pressure,preserveCP:stratagemPressure.preserveCP},
+    recommendations,avoid:base.avoid||[],naturalTargets:base.naturalTargets||[],stratagemPressure,
     missionDecisionContext:base.missionDecisionContext||null,attacker:base.attacker||null,
     legality:base.legality||null,attackerActionState:base.attackerActionState||null,alerts,
     limitations:[...(base.limitations||[]),'Battle-state context is read-only; generating advice does not mutate authoritative game state.']
