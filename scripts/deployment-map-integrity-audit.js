@@ -5,7 +5,7 @@ check('Setup map uses live Deployment Tracking mode',/objectiveMapRendererHtml\(
 check('Battle map is rendered in Battle Mode',/objectiveMapRendererHtml\("battle"\)/.test(html));
 check('Deployment strategy has independent storage',/state\.deploymentPlans/.test(html)&&/deploymentPlanForCurrentMap/.test(html));
 check('Deployment tracking supports both armies',/data-deployment-side/.test(html)&&/option value="my"/.test(html)&&/option value="opp"/.test(html));
-check('Live map includes both armies',/const all=\[\.\.\.\(Array\.isArray\(state\.my\)/.test(html)&&/const units=mode==='setup'\?all\.filter/.test(html));
+check('Live map includes both armies',/const all=\[\.\.\.\(Array\.isArray\(state\.my\)/.test(html)&&/units=mode==='setup'\?all\.filter/.test(html));
 check('Deployment plans are keyed by mission and layout',/return mission\+'\\|'.concat?/.test(html)||/return mission\+'\\|'.*layout/.test(html));
 check('Deployment plan coordinates are normalized to 0.1 inch',/setDeploymentPlanPosition\(uid,x,y\)/.test(html)&&/Math\.round\(Number\(x\)\*10\)\/10/.test(html));
 check('Live battlefield coordinates are normalized to 0.1 inch',/function setBattlefieldUnitPosition[\s\S]*?Math\.round\(Number\(x\)\*10\)\/10/.test(html));
