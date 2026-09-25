@@ -128,7 +128,7 @@
 
 .action-line{display:grid;grid-template-columns:90px 82px 34px 78px minmax(120px,1.1fr) minmax(180px,1.5fr) minmax(120px,1fr) auto;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid #263244;font-size:12px;min-width:0}.action-line>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.action-turn{font-weight:800;color:#7fc8ff}.action-phase{font-weight:800;color:#dbe7f4}.action-round,.action-time{color:#8996a7}.action-unit{font-weight:700;color:#f0f4f8}.action-action{color:#cdd7e3}.action-result{color:#7fc8ff}.action-undo{padding:5px 8px;font-size:11px}.scoring-log-list{display:flex;flex-direction:column}.scoring-line{display:grid;grid-template-columns:1.2fr .8fr .45fr .9fr .7fr 1.4fr 1.8fr 1.6fr;gap:8px;align-items:center;border-top:1px solid #273142;padding:8px 0;font-size:11px}.scoring-source{color:#8eb7df;font-weight:800}.scoring-line .action-result{color:#b9c7d8}@media(max-width:850px){.scoring-line{grid-template-columns:1fr 1fr}.scoring-line>*{min-width:0}}.action-log-list{overflow-x:auto}@media(max-width:900px){.action-line{grid-template-columns:78px 70px 30px 72px minmax(100px,1fr) minmax(150px,1.4fr) minmax(100px,1fr) auto}}@media(max-width:650px){.action-line{grid-template-columns:72px 60px 28px 65px minmax(90px,1fr) minmax(130px,1.4fr);}.action-result{grid-column:5/7}.action-undo{grid-column:7}.action-time{display:none}}
 
-.battle-main>.battle-log{width:100%;margin-top:12px}
+.battle-main>.battle-log{width:100%;margin-top:12px}.model-roster-list{margin-top:7px;border:1px solid #29435c;border-radius:9px;background:#0d1722;overflow:hidden}.model-roster-list>summary{list-style:none;cursor:pointer;padding:7px 9px;color:#bfe7ff;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em}.model-roster-list>summary::-webkit-details-marker{display:none}.model-roster-list>summary::before{content:'▶';display:inline-block;margin-right:6px;font-size:9px}.model-roster-list[open]>summary::before{content:'▼'}.model-roster-body{padding:0 6px 6px}.model-roster-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;padding:6px 5px;border-top:1px solid #263244;min-height:34px}.model-roster-row.destroyed{opacity:.58}.model-roster-name{font-weight:800;font-size:11px;color:#eef4fb}.model-roster-wounds{font-size:10px;color:#9eb0c3;margin-top:2px}.model-roster-actions{display:flex;gap:4px;align-items:center}.model-roster-actions .btn{font-size:10px;line-height:1;min-height:24px;padding:3px 6px}.model-roster-title{display:none}.game-unit-name{min-width:0}.game-unit-controls{display:flex;align-items:center;gap:5px;flex-wrap:wrap}.game-unit-controls .game-unit-stats{margin-right:auto}.game-status-actions,.game-modifier-actions{margin-top:0!important}.model-roster-list{grid-column:1/-1}@media(max-width:700px){.model-roster-row{grid-template-columns:minmax(0,1fr) auto}.model-roster-actions .btn{min-height:28px}}
 
 .army-state-grid{display:flex;flex-direction:column;gap:12px}
 
@@ -5090,16 +5090,21 @@ function syncModelRosterBattleState(e,u){
 function modelRosterHtml(side,e,u){
   if(!modelRosterRule(u))return '';
   const roster=ensureModelRoster(e,u);
-  return '<div class="model-roster-list"><div class="model-roster-title">Model-level casualties</div>'+
+  const max=Math.max(1,Number(u.wounds)||1);
+  const aliveCount=roster.filter(m=>m.alive!==false).length;
+  const totalCount=roster.length;
+  const damagedCount=roster.filter(m=>m.alive!==false&&Number(m.woundsRemaining)<max).length;
+  const destroyedCount=totalCount-aliveCount;
+  const summary='Models ('+aliveCount+'/'+totalCount+')'+(damagedCount?' • '+damagedCount+' damaged':'')+(destroyedCount?' • '+destroyedCount+' dead':'');
+  return '<details class="model-roster-list"><summary>'+esc(summary)+'</summary><div class="model-roster-body">'+
     roster.map(m=>{
-      const alive=m.alive!==false,max=Math.max(1,Number(u.wounds)||1),remaining=Math.max(0,Math.min(max,Number(m.woundsRemaining)==null?max:Number(m.woundsRemaining)));
+      const alive=m.alive!==false,remaining=Math.max(0,Math.min(max,Number(m.woundsRemaining)==null?max:Number(m.woundsRemaining)));
       m.woundsRemaining=remaining;
-      const weapons=(Array.isArray(m.weapons)?m.weapons:[]).join(' • ')||'Standard weapons';
-      const woundText=alive?(max>1?remaining+'/'+max+' wounds remaining':'Alive'):'Destroyed';
-      const woundButtons=alive&&max>1?'<button class="btn" type="button" onclick="changeModelWounds(\''+side+'\',\''+e.uid+'\',\''+m.id+'\',-1);return false;">W−</button><button class="btn" type="button" onclick="changeModelWounds(\''+side+'\',\''+e.uid+'\',\''+m.id+'\',1);return false;">W+</button>':'';
-      const stateButton=alive?'<button class="btn danger" type="button" onclick="setModelDestroyed(\''+side+'\',\''+e.uid+'\',\''+m.id+'\');return false;">Dead</button>':'<button class="btn" type="button" onclick="restoreModel(\''+side+'\',\''+e.uid+'\',\''+m.id+'\');return false;">Restore</button>';
-      return '<div class="model-roster-row '+(alive?'':'destroyed')+'"><div><div class="model-roster-name">'+esc(m.role||('Model '+m.index))+'</div><div class="model-roster-weapons">'+esc(weapons)+'</div><div class="model-roster-wounds">'+woundText+'</div></div><div class="model-roster-actions">'+woundButtons+stateButton+'</div></div>';
-    }).join('')+'</div>';
+      const woundText=alive?(max>1?remaining+'/'+max+' W':'Alive'):'Destroyed';
+      const woundButtons=alive&&max>1?'<button class="btn" type="button" onclick="changeModelWounds(\\''+side+'\\',\\''+e.uid+'\\',\\''+m.id+'\\',-1);return false;">W−</button><button class="btn" type="button" onclick="changeModelWounds(\\''+side+'\\',\\''+e.uid+'\\',\\''+m.id+'\\',1);return false;">W+</button>':'';
+      const stateButton=alive?'<button class="btn danger" type="button" onclick="setModelDestroyed(\\''+side+'\\',\\''+e.uid+'\\',\\''+m.id+'\\');return false;">Dead</button>':'<button class="btn" type="button" onclick="restoreModel(\\''+side+'\\',\\''+e.uid+'\\',\\''+m.id+'\\');return false;">Restore</button>';
+      return '<div class="model-roster-row '+(alive?'':'destroyed')+'"><div><div class="model-roster-name">'+esc(m.role||('Model '+m.index))+'</div><div class="model-roster-wounds">'+woundText+'</div></div><div class="model-roster-actions">'+woundButtons+stateButton+'</div></div>';
+    }).join('')+'</div></details>';
 }
 function setModelDestroyed(side,id,modelId){
   const fullBefore=snapshotForUndo(),e=entry(side,id);if(!e)return;
