@@ -31,6 +31,10 @@ jobs:
         shell: bash
         run: node scripts/catalogue-audit.js
 
+      - name: Run objective and scoring regression audit
+        shell: bash
+        run: node scripts/objective-scoring-audit.js
+
       - name: Render Tactical Advisor decision surface
         shell: bash
         run: |
