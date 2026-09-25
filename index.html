@@ -4928,6 +4928,15 @@ function tournamentSetupChecklistHtml(){
  return '<div class="setup-section"><h3>Tournament Setup Check</h3><div class="'+(v.ready?'ok':'warn')+'"><b>'+(v.ready?'Ready to start the tournament battle':'Setup incomplete')+'</b>'+(v.ready?'<div class="tiny" style="margin-top:4px">Roster, mission, battlefield, first turn, and required Fixed secondary selections are present.</div>':'<div class="tiny" style="margin-top:4px">Complete: '+v.missing.map(esc).join(' • ')+'</div>')+'</div></div>';
 }
 
+function resetTournamentToSetup(){
+  if(!battleMutationAllowed('battle reset'))return false;
+  const before=snapshotForUndo();
+  if(!setTournamentLifecycle('SETUP')){alert('The tournament cannot be reset from the current lifecycle state.');return false;}
+  state.page='setup';
+  event('TOURNAMENT_SETUP_RESET',{side:'my',unit:'Battle',action:'Return tournament battle to setup before deployment'},before);
+  save();render();
+  return true;
+}
 function beginDeployment(){
   const setupCheck=tournamentSetupValidation();
   if(!setupCheck.ready){alert('Tournament setup is incomplete:\n\n• '+setupCheck.missing.join('\n• '));return false;}
@@ -5265,7 +5274,7 @@ ${state.battleEnded?battleEndSummaryHtml():''}
   <button type="button" class="btn" id="next-phase-btn" onclick="window.advancePhase();return false;">${state.phase==='Fight' ? (state.currentTurn==='my' ? 'End Turn → Opponent' : (state.round>=MAX_ROUND ? 'Finish Battle' : 'End Turn → Next Round')) : 'Next Phase →'}</button>
   <button type="button" class="btn" id="prev-round-btn" onclick="window.previousRound();return false;">Previous Round</button>
   <button type="button" class="btn" id="next-round-btn" onclick="window.nextRound();return false;" ${state.round>=MAX_ROUND?'disabled':''}>Next Round</button>
-  <button type="button" class="btn" onclick="endBattle();return false;"  ${state.battleEnded?'disabled':''}>End Battle</button><button type="button" class="btn danger" onclick="startBattle();return false;">Start / Reset Battle</button>
+  <button type="button" class="btn" onclick="endBattle();return false;"  ${state.battleEnded?'disabled':''}>End Battle</button><button type="button" class="btn danger" onclick="resetTournamentToSetup();return false;">Start / Reset Battle</button>
 </div>
  <div class="tabs"><button class="active">Current State</button><button onclick="openMyListFromBattle()">My List</button><button onclick="openOpponentListFromBattle()">Opponent List</button><button onclick="state.page='log';state.builderView='full';render()">Full Action Log</button><button onclick="state.page='scorelog';render()">Scoring Log</button></div>
 ${primaryMissionPanel('battle')}
