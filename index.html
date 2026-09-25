@@ -1310,13 +1310,20 @@ function missionDecisionContext(){
   const myRoundPrimary=primaryRoundScoredVP('my'),oppRoundPrimary=primaryRoundScoredVP('opp');
   const myRoundSecondary=secondaryRoundScoredVP('my',round),oppRoundSecondary=secondaryRoundScoredVP('opp',round);
   const objectiveSummary=objectiveStateSummary();
+  const layoutInfo=ensureObjectiveLayoutForMission();
+  const battlefield={
+    mapLayout:state.objectiveMapLayout||'A',
+    missionKey:state.objectiveMapMissionKey||objectiveMissionKey(),
+    mapPage:layoutInfo?objectiveLayoutPage():null
+  };
   const myObjectives=objectiveSummary.current.filter(o=>o.owner==='my').length;
   const oppObjectives=objectiveSummary.current.filter(o=>o.owner==='opp').length;
   return {
     round,turn:state.currentTurn||'my',score:{my,opp,gap:my-opp},
     primary:{my:primaryMy,opp:primaryOpp,myRemaining:45-primaryMy,oppRemaining:45-primaryOpp,myRound:myRoundPrimary,oppRound:oppRoundPrimary,myRoundRemaining:Math.max(0,15-myRoundPrimary),oppRoundRemaining:Math.max(0,15-oppRoundPrimary)},
     secondary:{my:secondaryMy,opp:secondaryOpp,myRemaining:45-secondaryMy,oppRemaining:45-secondaryOpp,myRound:myRoundSecondary,oppRound:oppRoundSecondary,myRoundRemaining:Math.max(0,15-myRoundSecondary),oppRoundRemaining:Math.max(0,15-oppRoundSecondary)},
-    objectives:{my:myObjectives,opp:oppObjectives,summary:objectiveSummary.current,tactical:objectiveTacticalSummary()}
+    objectives:{my:myObjectives,opp:oppObjectives,summary:objectiveSummary.current,tactical:objectiveTacticalSummary()},
+    battlefield
   };
 }
 function scorePrimaryItem(side,index,mission,amountOverride){
@@ -5989,11 +5996,20 @@ function tacticalPairState(attackerUid,targetUid){
   const raw=t.pairs[key]&&typeof t.pairs[key]==='object'?t.pairs[key]:{};
   const exact=Number.isFinite(Number(raw.distanceInches))?Math.max(0,Number(raw.distanceInches)):null;
   const distanceBand=['unknown','<6','6-12','12-18','18-24','24+'].includes(raw.distanceBand)?raw.distanceBand:tacticalDistanceBandFromInches(exact);
+  const objectiveName=raw.objective==null?'':String(raw.objective);
+  const objectiveMeta=objectiveName?objectiveStateRecord(objectiveName):null;
+  const layoutInfo=ensureObjectiveLayoutForMission();
   return {key,attackerUid:attackerUid||null,targetUid:targetUid||null,
     distanceInches:exact,distanceBand,
     los:['yes','no','unknown'].includes(raw.los)?raw.los:'unknown',
     engagement:['engaged','notEngaged','unknown'].includes(raw.engagement)?raw.engagement:'unknown',
-    objective:raw.objective==null?'':String(raw.objective),
+    objective:objectiveName,
+    objectiveContext:objectiveMeta?{
+      owner:objectiveMeta.owner,type:objectiveMeta.type,territory:objectiveMeta.territory,
+      deploymentZone:objectiveMeta.deploymentZone,changedThisTurn:objectiveMeta.changedThisTurn,
+      mapLayout:objectiveMeta.mapLayout,mapPage:objectiveMeta.mapLayoutPage
+    }:null,
+    battlefieldLayout:{layout:state.objectiveMapLayout||'A',missionKey:state.objectiveMapMissionKey||objectiveMissionKey(),page:layoutInfo?objectiveLayoutPage():null},
     notes:raw.notes==null?'':String(raw.notes)};
 }
 function setTacticalPairField(attackerUid,targetUid,field,value){
