@@ -216,9 +216,9 @@
   "supplementalSources": [
     {
       "name": "Warhammer Event Companion",
-      "version": "1.1",
-      "file": "data/warhammer-event-companion-v1.1.json",
-      "sourceDocument": "Warhammer Event Companion Version 1.1",
+      "version": "1.2",
+      "file": "data/warhammer-event-companion-v1.2.json",
+      "sourceDocument": "Warhammer Event Companion Version 1.2",
       "pages": 93,
       "baseSizeGuideLastUpdated": "June 2026",
       "purpose": "Event procedures, CP/VP limits, Secondary Mission timing, Primary Mission layout pairings, FAQs, terrain footprints, and selected base-size reference."
