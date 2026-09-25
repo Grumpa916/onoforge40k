@@ -5230,13 +5230,27 @@ function objectiveStateRecord(name){
     startOwner,changedThisTurn:owner!==startOwner,changeType:objectiveControlChangeType(name),
     changeLabel:objectiveControlChangeLabel(name),controlSourceIds:objectiveControlSourceIds(name),
     mapLayout:state.objectiveMapLayout||'A',mapLayoutPage:layoutInfo?objectiveLayoutPage():null,
-    mapMissionKey:state.objectiveMapMissionKey||objectiveMissionKey()
+    mapMissionKey:state.objectiveMapMissionKey||objectiveMissionKey(),
+    battlefieldPosition:objectivePositionFor(name)
   };
 }
 function objectiveTacticalSummary(){
   const list=Object.keys(state.objectives||{}).map(objectiveStateRecord);
   const side=state.currentTurn==='opp'?'opp':'my',enemy=side==='my'?'opp':'my';
-  return {side,controlled:list.filter(o=>o.owner===side),contested:list.filter(o=>o.owner==='contested'),enemyControlled:list.filter(o=>o.owner===enemy),enemyTerritory:list.filter(o=>o.territory===enemy),enemyDeployment:list.filter(o=>o.deploymentZone===enemy),central:list.filter(o=>o.type==='central'),controlSources:list.filter(o=>o.owner===side).map(o=>({objective:o.name,sourceIds:o.controlSourceIds||[]}))};
+  return {
+    side,
+    controlled:list.filter(o=>o.owner===side),
+    contested:list.filter(o=>o.owner==='contested'),
+    enemyControlled:list.filter(o=>o.owner===enemy),
+    enemyTerritory:list.filter(o=>o.territory===enemy),
+    enemyDeployment:list.filter(o=>o.deploymentZone===enemy),
+    central:list.filter(o=>o.type==='central'),
+    controlSources:list.filter(o=>o.owner===side).map(o=>({objective:o.name,sourceIds:o.controlSourceIds||[]})),
+    battlefield:{
+      geometryVerified:objectiveBattlefieldGeometry().verified,
+      objectives:list.map(o=>({name:o.name,owner:o.owner,territory:o.territory,deploymentZone:o.deploymentZone,position:o.battlefieldPosition||null}))
+    }
+  };
 }
 function objectiveTerritoryLabel(territory){
   return ({my:'My Territory',opp:'Opponent Territory',nml:"No Man's Land"})[territory]||"No Man's Land";
