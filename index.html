@@ -2805,6 +2805,28 @@ function useTacticalNewOrders(side,name){
   event('SECONDARY_NEW_ORDERS',{side:player,unit:target,action:'New Orders — discard and draw one Secondary Mission',secondary:target,cpSpent:1},before);
   rememberPhaseCP();save();render();
 }
+function openTacticalNewOrders(side){
+  const player=side==='opp'?'opp':'my';
+  if(state.currentTurn!==player||String(state.phase)!=='Command'||tacticalNewOrdersUsed(player))return;
+  const active=secState(player),deck=secDeck(player);
+  if(!active.length||!deck.length)return;
+  const holder=document.createElement('div');
+  holder.innerHTML='<div class="modal-backdrop" style="position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:14px"><div class="card" style="max-width:620px;width:100%;padding:16px"><div class="split"><div><h3 style="margin:0">New Orders</h3><div class="muted" style="margin-top:4px">Spend 1 CP to discard one active Tactical Secondary and draw one replacement.</div></div><button type="button" class="btn" id="new-orders-cancel">Cancel</button></div><div style="display:grid;gap:7px;margin-top:12px">'+active.map((n,i)=>'<label class="card" style="margin:0;padding:10px;display:flex;gap:9px;align-items:center;cursor:pointer"><input type="radio" name="new-orders-target" value="'+esc(n)+'" '+(i===0?'checked':'')+'><span><b>'+esc(n)+'</b><span class="muted" style="display:block;font-size:11px">'+esc(secondaryByName(n).type||'Secondary Mission')+'</span></span></label>').join('')+'</div><button type="button" class="btn primary" id="new-orders-confirm" style="margin-top:12px;width:100%">Spend 1 CP & Draw Replacement</button></div></div>';
+  document.body.appendChild(holder);
+  holder.querySelector('#new-orders-cancel').onclick=()=>holder.remove();
+  holder.querySelector('#new-orders-confirm').onclick=()=>{const target=holder.querySelector('input[name="new-orders-target"]:checked')?.value;if(target)useTacticalNewOrders(player,target);holder.remove();};
+}
+function openTacticalDiscardModal(side){
+  const player=side==='opp'?'opp':'my';
+  if(state.currentTurn!==player||String(state.phase)!=='Fight'||(player==='my'?state.secondaryMy:state.secondaryOpp)!=='tactical')return;
+  const active=secState(player);
+  if(!active.length)return;
+  const holder=document.createElement('div');
+  holder.innerHTML='<div class="modal-backdrop" style="position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:14px"><div class="card" style="max-width:620px;width:100%;padding:16px"><div class="split"><div><h3 style="margin:0">Discard Tactical Secondaries</h3><div class="muted" style="margin-top:4px">Discard one or more active cards at the end of your turn. Gain 1 CP.</div></div><button type="button" class="btn" id="tac-discard-cancel">Cancel</button></div><div style="display:grid;gap:7px;margin-top:12px">'+active.map(n=>'<label class="card" style="margin:0;padding:10px;display:flex;gap:9px;align-items:center;cursor:pointer"><input type="checkbox" value="'+esc(n)+'"><span><b>'+esc(n)+'</b><span class="muted" style="display:block;font-size:11px">'+esc(secondaryByName(n).type||'Secondary Mission')+'</span></span></label>').join('')+'</div><button type="button" class="btn primary" id="tac-discard-confirm" style="margin-top:12px;width:100%">Discard Selected & Gain 1 CP</button></div></div>';
+  document.body.appendChild(holder);
+  holder.querySelector('#tac-discard-cancel').onclick=()=>holder.remove();
+  holder.querySelector('#tac-discard-confirm').onclick=()=>{const names=[...holder.querySelectorAll('input[type=checkbox]:checked')].map(x=>x.value);if(names.length)discardTacticalForCP(player,names);holder.remove();};
+}
 function discardTacticalForCP(side,names){
   const player=side==='opp'?'opp':'my';
   if(state.currentTurn!==player||String(state.phase)!=='Fight'||(player==='my'?state.secondaryMy:state.secondaryOpp)!=='tactical')return;
