@@ -9493,7 +9493,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
   const eligibleResults=results.filter(x=>x.recommendationEligible!==false);
   const avoidTargets=results.filter(x=>x.recommendationEligible===false||Number(x.avoidScore||0)>=0.55).sort((a,b)=>Number(b.avoidScore||0)-Number(a.avoidScore||0)).slice(0,3);
   const naturalTargets=eligibleResults.filter(x=>Number(x.naturalTargetScore||0)>=0.50).sort((a,b)=>Number(b.naturalTargetScore||0)-Number(a.naturalTargetScore||0)).slice(0,3);
-  const nearTieThreshold=0.01;
+  const nearTieThreshold=0.015;
   eligibleResults.forEach((x,i)=>{
     const next=eligibleResults[i+1];
     const margin=next?Math.max(0,Number(x.decisionScore||0)-Number(next.decisionScore||0)):1;
