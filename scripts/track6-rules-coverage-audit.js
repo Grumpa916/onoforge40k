@@ -5,10 +5,14 @@ const fs=require('fs');
 const html=fs.readFileSync('index.html','utf8');
 const source=JSON.parse(fs.readFileSync('data/40kapp-source.json','utf8'));
 const companion=JSON.parse(fs.readFileSync('data/warhammer-event-companion-v1.2.json','utf8'));
+const matrix=JSON.parse(fs.readFileSync('data/rules-coverage-matrix.json','utf8'));
 const checks=[];
 const check=(name,pass,detail)=>checks.push({name,pass:!!pass,detail});
 const has=re=>re.test(html);
 
+check('Coverage matrix has complete source/runtime/audit ownership',
+  matrix?.edition==='11th'&&matrix?.canonicalSource==='40k.app'&&Array.isArray(matrix?.coverage)&&matrix.coverage.length>=10&&matrix.coverage.every(x=>x?.area&&x?.source&&x?.runtime&&x?.audit),
+  'Every tracked rules area must identify its source, runtime consumer, and regression audit.');
 check('40k.app manifest declares all core rules data domains',
   Array.isArray(source.dataDomains)&&['datasheets','unitProfiles','weapons','abilities','wargear','unitComposition','leaderAttachments','points','armyRules','detachments','enhancements','stratagems','coreRules','missions'].every(x=>source.dataDomains.includes(x)),
   'The provenance manifest must cover every major rules-data domain the application can consume.');
