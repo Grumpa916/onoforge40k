@@ -5102,8 +5102,8 @@ function modelRosterHtml(side,e,u){
       const alive=m.alive!==false,remaining=Math.max(0,Math.min(max,Number(m.woundsRemaining)==null?max:Number(m.woundsRemaining)));
       m.woundsRemaining=remaining;
       const woundText=alive?(max>1?remaining+'/'+max+' W':'Alive'):'Destroyed';
-      const woundButtons=alive&&max>1?'<button class="btn" type="button" onclick="changeModelWounds(\\''+side+'\\',\\''+e.uid+'\\',\\''+m.id+'\\',-1);return false;">W−</button><button class="btn" type="button" onclick="changeModelWounds(\\''+side+'\\',\\''+e.uid+'\\',\\''+m.id+'\\',1);return false;">W+</button>':'';
-      const stateButton=alive?'<button class="btn danger" type="button" onclick="setModelDestroyed(\\''+side+'\\',\\''+e.uid+'\\',\\''+m.id+'\\');return false;">Dead</button>':'<button class="btn" type="button" onclick="restoreModel(\\''+side+'\\',\\''+e.uid+'\\',\\''+m.id+'\\');return false;">Restore</button>';
+      const woundButtons=alive&&max>1?'<button class="btn" type="button" onclick="changeModelWounds(\''+side+'\',\''+e.uid+'\',\''+m.id+'\',-1);return false;">W−</button><button class="btn" type="button" onclick="changeModelWounds(\''+side+'\',\''+e.uid+'\',\''+m.id+'\',1);return false;">W+</button>':'';
+      const stateButton=alive?'<button class="btn danger" type="button" onclick="setModelDestroyed(\''+side+'\',\''+e.uid+'\',\''+m.id+'\');return false;">Dead</button>':'<button class="btn" type="button" onclick="restoreModel(\''+side+'\',\''+e.uid+'\',\''+m.id+'\');return false;">Restore</button>';
       return '<div class="model-roster-row '+(alive?'':'destroyed')+'"><div><div class="model-roster-name">'+esc(m.role||('Model '+m.index))+'</div><div class="model-roster-wounds">'+woundText+'</div></div><div class="model-roster-actions">'+woundButtons+stateButton+'</div></div>';
     }).join('')+'</div></details>';
 }
