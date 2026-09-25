@@ -783,6 +783,17 @@ function battlefieldTerrainPathIntersections(a,b){
   }
   return Array.from(hits);
 }
+function battlefieldPositionEditorHtml(){
+  const units=[...(Array.isArray(state.my)?state.my:[]).filter(e=>e&&!e.attachedTo).map(e=>({side:'my',entry:e})),...(Array.isArray(state.opp)?state.opp:[]).filter(e=>e&&!e.attachedTo).map(e=>({side:'opp',entry:e}))];
+  if(!units.length)return '';
+  const rows=units.map(({side,entry})=>{
+    const p=battlefieldUnitPosition(side,entry.uid)||{x:'',y:''};
+    const name=unitDisplayName(side,entry)||get(entry.unitId)?.name||entry.name||entry.unitId||'Unit';
+    const nearest=Object.keys(state.objectives||{}).map(name=>({name,distance:objectiveDistanceFromUnit(side,entry.uid,name)})).filter(x=>x.distance!==null).sort((a,b)=>a.distance-b.distance)[0];
+    return '<div class="unit" style="display:grid;grid-template-columns:minmax(0,1fr) 72px 72px auto;gap:5px;align-items:center"><div><strong>'+esc(name)+'</strong><div class="tiny">'+(nearest?'Nearest objective: '+esc(nearest.name)+' • '+nearest.distance.toFixed(1)+'″':'No objective distance available')+'</div></div><input inputmode="decimal" type="number" min="0" max="60" step="0.1" value="'+esc(String(p.x))+'" placeholder="X" data-battlefield-x="'+esc(side)+'" data-battlefield-uid="'+esc(entry.uid)+'"><input inputmode="decimal" type="number" min="0" max="44" step="0.1" value="'+esc(String(p.y))+'" placeholder="Y" data-battlefield-y="'+esc(side)+'" data-battlefield-uid="'+esc(entry.uid)+'"><button type="button" class="btn" data-battlefield-save="'+esc(side)+'" data-battlefield-uid="'+esc(entry.uid)+'">Set</button></div>';
+  }).join('');
+  return '<details class="card" style="margin-top:10px"><summary style="cursor:pointer;color:#9ecbff"><strong>Battlefield unit positions</strong><span class="tiny"> • manual tabletop coordinates only</span></summary><div class="tiny" style="margin-top:7px">Origin is the bottom-left of the 60″ × 44″ battlefield. Positions are never inferred.</div>'+rows+'</details>';
+}
 function objectiveMapUnitNodesHtml(model,pct){
   if(!model.verified)return '';
   const units=[...(Array.isArray(state.my)?state.my:[]).map(e=>({side:'my',entry:e})),...(Array.isArray(state.opp)?state.opp:[]).map(e=>({side:'opp',entry:e}))];
@@ -824,7 +835,7 @@ function objectiveMapRendererHtml(){
   const pending='<div class="status" style="margin-top:8px"><b>Map geometry pending verification.</b><div class="tiny" style="margin-top:4px">No deployment zone, territory, terrain, or objective position is inferred from the 60 × 44 table boundary. The Event Companion geometry must be verified first.</div></div>';
   return '<div class="card objective-map-renderer"><div class="split"><div><h3 style="margin:0">Battlefield Map</h3><div class="muted">'+esc(model.missionKey)+' • Layout '+esc(model.layout)+' • Event Companion p.'+esc(String(model.page||'—'))+'</div></div><span class="pill">'+status+'</span></div>'+
     '<div class="objective-map-canvas" role="img" aria-label="60 by 44 inch battlefield map">'+(model.verified?regions+objectiveNodes+unitNodes:'<div class="objective-map-placeholder">Verified Event Companion geometry required</div>')+'</div>'+
-    '<div class="tiny" style="margin-top:6px">60 × 44 inches • Deployment zones and territory are rendered only from verified Event Companion geometry.</div>'+(!model.verified?pending:'')+'</div>';
+    '<div class="tiny" style="margin-top:6px">60 × 44 inches • Deployment zones and territory are rendered only from verified Event Companion geometry.</div>'+(!model.verified?pending:'')+'</div>'+battlefieldPositionEditorHtml();
 }
 function objectiveLayoutHtml(){const info=ensureObjectiveLayoutForMission();if(!info)return '';const layout=state.objectiveMapLayout||'A';const page=objectiveLayoutPage();const buttons=['A','B','C'].map(letter=>'<button type="button" class="btn objective-layout-btn '+(layout===letter?'active':'')+'" aria-pressed="'+(layout===letter?'true':'false')+'" onclick="setObjectiveMapLayout(\''+letter+'\');return false;">Layout '+letter+'</button>').join('');return '<div class="objective-layout-panel"><div class="split"><div><strong>Recommended Battlefield Layout</strong><div class="tiny">'+esc(info.missions[0])+' ↔ '+esc(info.missions[1])+' • Layout '+layout+'</div></div><span class="pill">Event Companion p.'+page+'</span></div><div class="objective-layout-buttons">'+buttons+'<a class="btn" href="'+WARHAMMER_EVENT_COMPANION_PDF+'#page='+page+'" target="_blank" rel="noopener">Open Map</a></div><details class="objective-layout-preview"><summary>Preview selected layout</summary><iframe title="Warhammer Event Companion layout '+layout+'" src="'+WARHAMMER_EVENT_COMPANION_PDF+'#page='+page+'" loading="lazy"></iframe></details></div>'+objectiveMapRendererHtml();}
 const CURRENT_11E_DATA_SOURCES={
@@ -1376,7 +1387,11 @@ function primaryScoringEvidence(side,index,mission,amountOverride){
   if(!row)return {eligible:false,reason:'Scoring item not available this round.',side:player,mission,index};
   const condition=primaryObjectiveConditionStatus(player,row);
   const per=primaryScoringIsPer(row);
-  const objectiveBased=/\bper\s+objective\b/i.test(String(row?.[2]||''));
+  const scoringText=String(row?.[2]||'').toLowerCase();
+  const objectiveBased=/\bper\s+objective\b/i.test(scoringText);
+  const requiresSpatialGeometry=/\b(?:territory|deployment zone)\b/.test(scoringText);
+  const geometryState=objectiveBattlefieldGeometry();
+  const geometryVerified=!!geometryState.verified;
   const suggestedAmount=primaryScoringObjectiveAmount(player,row);
   const requestedRaw=Number(amountOverride??suggestedAmount);
   const requestedAmount=per
@@ -1387,6 +1402,12 @@ function primaryScoringEvidence(side,index,mission,amountOverride){
     ? primaryObjectiveQualifyingList(player,row).map(o=>({name:o.name,owner:o.owner,type:o.type,territory:o.territory,deploymentZone:o.deploymentZone}))
     : [];
   const conditionMet=condition?!!condition.met:true;
+  if(requiresSpatialGeometry&&!geometryVerified)return {
+    eligible:false,reason:'Verified Event Companion geometry is required for territory/deployment-zone scoring.',side:player,mission,index,
+    scoringItem:String(row[2]||''),timing:String(row[0]||''),condition,
+    requiresSpatialGeometry,geometryVerified:false,geometrySource:geometryState.source?.geometryStatus||'unverified',
+    qualifyingObjectives:qualifying
+  };
   if(condition&&!conditionMet)return {
     eligible:false,reason:'Objective control condition is not met.',side:player,mission,index,
     scoringItem:String(row[2]||''),timing:String(row[0]||''),condition,
@@ -1410,8 +1431,9 @@ function primaryScoringEvidence(side,index,mission,amountOverride){
     conditionMet,per,objectiveBased,baseVP,requestedAmount,amount,objectiveCount,objectiveCap,
     requestedVP,allowedVP,roundTotal,gameTotal,roundRemaining,gameRemaining,
     qualifyingObjectives:qualifying,
-    geometryVerified:objectiveBattlefieldGeometry().verified,
-    geometrySource:objectiveBattlefieldGeometry().source?.geometryStatus||'unverified',
+    geometryVerified,
+    requiresSpatialGeometry,
+    geometrySource:geometryState.source?.geometryStatus||'unverified',
     mapLayout:state.objectiveMapLayout||'A',mapPage:objectiveLayoutPage()
   };
 }
@@ -1422,6 +1444,24 @@ function primaryScorePreviewLabel(side,index,mission,amountOverride){
   const p=primaryScorePreview(side,index,mission,amountOverride);
   if(!p.eligible)return p.reason;
   return 'Preview: +'+p.allowedVP+' VP'+(p.objectiveBased?' • '+p.objectiveCount+' qualifying objective'+(p.objectiveCount===1?'':'s'):'');
+}
+function primaryScorePreviewSummary(side,mission){
+  const player=side==='opp'?'opp':'my';
+  const rows=primaryScoringRowsForRound(mission);
+  let roundRemaining=primaryRoundCapRemaining(player);
+  let gameRemaining=Math.max(0,45-(Number(state[player==='my'?'primaryMyScoredVP':'primaryOppScoredVP'])||0));
+  let projected=0,candidates=0;
+  const details=[];
+  rows.forEach((row,index)=>{
+    if(roundRemaining<=0||gameRemaining<=0)return;
+    const evidence=primaryScoringEvidence(player,index,mission);
+    if(!evidence.eligible)return;
+    const allowed=Math.min(Number(evidence.allowedVP)||0,roundRemaining,gameRemaining);
+    if(allowed<=0)return;
+    projected+=allowed;roundRemaining-=allowed;gameRemaining-=allowed;candidates++;
+    details.push({index,scoringItem:String(row?.[2]||''),vp:allowed,objectiveCount:evidence.objectiveCount||0});
+  });
+  return {projectedVP:projected,candidateCount:candidates,roundRemaining,gameRemaining,details};
 }
 function primaryObjectiveScoringCandidates(side,mission){
   const player=side==='opp'?'opp':'my';
@@ -1434,6 +1474,14 @@ function primaryObjectiveScoringCandidates(side,mission){
     const evidence=primaryScoringEvidence(player,index,mission);
     return evidence.eligible?{index,row,evidence}:null;
   }).filter(Boolean);
+}
+function recordPrimaryScoringCandidates(side,trigger){
+  const player=side==='opp'?'opp':'my';
+  const mission=primaryMission(player);
+  if(!mission)return [];
+  const candidates=primaryObjectiveScoringCandidateSummary(player,mission);
+  if(candidates.length)event('PRIMARY_SCORING_CANDIDATE',{side:player,unit:'Primary Mission',action:'Primary scoring candidate checkpoint',mission,round:Math.max(1,Number(state.round)||1),trigger:String(trigger||'state-change'),candidates});
+  return candidates;
 }
 function primaryObjectiveScoringCandidateSummary(side,mission){
   const candidates=primaryObjectiveScoringCandidates(side,mission);
@@ -1688,6 +1736,7 @@ function primaryMissionDetailsHtml(mission,side){
   return '<div class="primary-mission-inline-details">'+
     (disposition?'<div class="primary-disposition">'+esc(disposition)+' vs '+esc(opponentDisposition)+'</div>':'')+
     '<div class="primary-scoring-round">Round '+Math.max(1,Number(state.round)||1)+' scoring</div>'+
+    '<div class="status" style="margin:7px 0">Projected primary this round: <b>'+primaryScorePreviewSummary(side,mission).projectedVP+' VP</b> across '+primaryScorePreviewSummary(side,mission).candidateCount+' eligible scoring item'+(primaryScorePreviewSummary(side,mission).candidateCount===1?'':'s')+'.</div>'+
     '<div class="primary-detail-list">'+rows.map((r,i)=>{
       const per=primaryScoringIsPer(r),maxAmount=primaryScoringMax(r),done=scored.includes(i);
       const actual=done?Number(values[i])||0:0;
@@ -4726,7 +4775,13 @@ function scoringResultText(e){
  const p=e?.payload||{};
  if(e.kind==='VP_CHANGED')return `VP ${p.before??0} → ${p.after??0} (${p.delta>0?'+':''}${p.delta??0})`;
  if(e.kind==='CP_CHANGED')return `CP ${p.before??0} → ${p.after??0} (${p.delta>0?'+':''}${p.delta??0})`;
- if(e.kind==='PRIMARY_SCORED')return `Primary VP ${p.before??0} → ${p.after??0} (${p.delta>0?'+':''}${p.delta??0})`;
+ if(e.kind==='PRIMARY_SCORED'){
+   const ev=p.scoringEvidence||{},snap=ev.objectiveSnapshot||{};
+   const spatial=ev.geometryVerified?'verified geometry':ev.requiresSpatialGeometry?'spatial geometry required':'metadata-only';
+   const objectivePart=ev.objectiveBased?(` • ${ev.finalAmount??ev.amount??1} qualifying objective`):'';
+   const snapshotPart=snap.qualifyingCount!=null?(` • snapshot ${snap.qualifyingCount}`):'';
+   return `Primary VP ${p.before??0} → ${p.after??0} (${p.delta>0?'+':''}${p.delta??0})${objectivePart}${snapshotPart} • ${spatial}`;
+ }
  if(e.kind==='PRIMARY_SCORE_RESET')return `Primary VP reset to 0 (${p.delta>0?'+':''}${p.delta??0})`;
  if(e.kind==='SECONDARY_SCORED')return `VP ${p.before??0} → ${p.after??0} (${p.delta>0?'+':''}${p.delta??0})`;
  if(e.kind==='SECONDARY_SCORE_RESET')return `VP ${p.beforeVP??0} → ${p.afterVP??0} (${p.delta>0?'+':''}${p.delta??0})`;
@@ -5049,6 +5104,7 @@ function setCurrentTurn(side){
   restorePhaseCP(state.round,next,state.phase);
   resetStratagemPhaseUses();
   state.battleRoundComplete=false;
+  recordPrimaryScoringCandidates(before,'manual-turn-boundary');
   ensureObjectiveTurnSnapshot();
   ensureTacticalTurnDraw(next);
   event('TURN_CHANGED',{
@@ -5471,7 +5527,7 @@ function objectiveBattlefieldGeometry(){
     page:layoutInfo?objectiveLayoutPage():null,
     source:{
       title:ONOFORGE_EVENT_COMPANION?.source?.title||'Warhammer Event Companion',
-      version:ONOFORGE_EVENT_COMPANION?.source?.version||'1.1',
+      version:ONOFORGE_EVENT_COMPANION?.source?.version||'1.2',
       layoutPage:source?.layoutKeyPage||8,
       layoutIndex:sourcePages||null,
       geometryStatus:geometrySource?.status||'unverified',
@@ -5686,16 +5742,7 @@ function setObjectiveControl(name,owner){
     scoringImpactAfter:scoringAfter,
     primaryScoringCandidates:candidatesAfter
   },fullBefore);
-  if(candidatesAfter.length){
-    event('PRIMARY_SCORING_CANDIDATE',{
-      side:scoringSide,unit:'Primary Mission',
-      action:'Objective control created '+candidatesAfter.length+' scoring candidate'+(candidatesAfter.length===1?'':'s'),
-      mission,
-      round:Math.max(1,Number(state.round)||1),
-      objective:key,
-      candidates:candidatesAfter
-    });
-  }
+  if(candidatesAfter.length)recordPrimaryScoringCandidates(scoringSide,'objective-control:'+key);
   save();
   render();
 }
@@ -5827,6 +5874,7 @@ function advancePhase(){
       rememberPhaseCP();
       resetStratagemPhaseUses();
       state.battleRoundComplete=false;
+      recordPrimaryScoringCandidates(endingTurn,'round-end');
       ensureObjectiveTurnSnapshot();
       recordObjectiveTurnState();
       switchTurnClock(firstTurn);
@@ -5847,6 +5895,7 @@ function advancePhase(){
     rememberPhaseCP();
     resetStratagemPhaseUses();
     state.battleRoundComplete=false;
+    recordPrimaryScoringCandidates(endingTurn,'turn-end');
     ensureObjectiveTurnSnapshot();
     recordObjectiveTurnState();
     switchTurnClock(otherTurn);
@@ -6410,16 +6459,24 @@ function tacticalDistanceBandFromInches(value){
   if(d<24)return '18-24';
   return '24+';
 }
+function battlefieldTerrainContextBetweenUnits(attackerSide,attackerUid,targetSide,targetUid){
+  const geometry=objectiveBattlefieldGeometry();
+  const a=battlefieldUnitPosition(attackerSide,attackerUid),b=battlefieldUnitPosition(targetSide,targetUid);
+  if(!geometry.verified||!a||!b)return {verified:false,distanceInches:null,terrainIntersections:[],losInference:'blocked'};
+  return {verified:true,distanceInches:battlefieldDistanceBetween(a,b),terrainIntersections:battlefieldTerrainPathIntersections(a,b),losInference:'not-inferred'};
+}
 function tacticalPairState(attackerUid,targetUid){
   const t=ensureTacticalState(),key=tacticalPairKey(attackerUid,targetUid);
   const raw=t.pairs[key]&&typeof t.pairs[key]==='object'?t.pairs[key]:{};
   const exact=Number.isFinite(Number(raw.distanceInches))?Math.max(0,Number(raw.distanceInches)):null;
-  const distanceBand=['unknown','<6','6-12','12-18','18-24','24+'].includes(raw.distanceBand)?raw.distanceBand:tacticalDistanceBandFromInches(exact);
+  const geometryContext=battlefieldTerrainContextBetweenUnits('my',attackerUid,'opp',targetUid);
+  const resolvedDistance=exact!==null?exact:geometryContext.distanceInches;
+  const distanceBand=['unknown','<6','6-12','12-18','18-24','24+'].includes(raw.distanceBand)?raw.distanceBand:tacticalDistanceBandFromInches(resolvedDistance);
   const objectiveName=raw.objective==null?'':String(raw.objective);
   const objectiveMeta=objectiveName?objectiveStateRecord(objectiveName):null;
   const layoutInfo=ensureObjectiveLayoutForMission();
   return {key,attackerUid:attackerUid||null,targetUid:targetUid||null,
-    distanceInches:exact,distanceBand,
+    distanceInches:resolvedDistance,distanceBand,
     los:['yes','no','unknown'].includes(raw.los)?raw.los:'unknown',
     engagement:['engaged','notEngaged','unknown'].includes(raw.engagement)?raw.engagement:'unknown',
     objective:objectiveName,
@@ -6430,6 +6487,7 @@ function tacticalPairState(attackerUid,targetUid){
     }:null,
     battlefieldLayout:{layout:state.objectiveMapLayout||'A',missionKey:state.objectiveMapMissionKey||objectiveMissionKey(),page:layoutInfo?objectiveLayoutPage():null},
     battlefieldGeometry:objectiveBattlefieldGeometry(),
+    terrainContext:geometryContext,
     notes:raw.notes==null?'':String(raw.notes)};
 }
 function setTacticalPairField(attackerUid,targetUid,field,value){
@@ -8947,6 +9005,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
       contextSignals.push({name:'line_of_sight',known:pairDecisionCtx?.los==='yes'||pairDecisionCtx?.los==='no',value:pairDecisionCtx?.los||'unknown'});
     }
     contextSignals.push({name:'engagement',known:pairDecisionCtx?.engagement==='engaged'||pairDecisionCtx?.engagement==='notEngaged',value:pairDecisionCtx?.engagement||'unknown'});
+    if(pairDecisionCtx?.terrainContext?.verified)contextSignals.push({name:'terrain_geometry',known:true,value:pairDecisionCtx.terrainContext.terrainIntersections||[]});
     const knownContextSignals=contextSignals.filter(s=>s.known).length;
     const contextConfidence=contextSignals.length
       ? 0.45+0.55*(knownContextSignals/contextSignals.length)
@@ -9050,6 +9109,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     if(unknowns.length)changes.push('Confirm '+unknowns.join(', ')+' before committing.');
     if(Number(d.simulationConfidence||0)<0.55)changes.push('More simulation sampling could change a close result.');
     if(d.objectiveContext?.status==='unknown')changes.push('Objective ownership/context is not confirmed.');
+    if(pairDecisionCtx?.terrainContext?.verified && (pairDecisionCtx.terrainContext.terrainIntersections||[]).length)changes.push('Terrain intersects the measured unit-to-target path; line of sight remains a rules/tabletop determination.');
     x.recommendationExplanation={
       rank:i+1,
       nearTie:margin<=nearTieThreshold,
@@ -10229,6 +10289,20 @@ function eventCompanionGeometryVerificationConsoleHtml(){
     '<div class="unit"><strong>Next verification input</strong><div class="tiny" style="margin-top:4px">When the official Event Companion artwork is available, record exact measurements for one layout at a time. Keep the source page number attached to every geometry record. Do not estimate from screenshots or generic battlefield proportions.</div></div>'+
     '<div class="tiny" style="margin-top:10px">Recommended order: Layout A → Layout B → Layout C for each mission pair, then run the structural audit before enabling objective-control distance/scoring dependencies.</div></div>';
 }
+function primaryScoringCatalogueAudit(){
+  const expected=Array.isArray(ONOFORGE_EVENT_COMPANION?.layoutIndex)?[...new Set(ONOFORGE_EVENT_COMPANION.layoutIndex.flatMap(x=>Array.isArray(x)?x.slice(0,2):(x?.missions||[])))]:[];
+  const catalogue=PRIMARY_SCORING&&typeof PRIMARY_SCORING==='object'?PRIMARY_SCORING:{};
+  const missing=expected.filter(m=>!Object.prototype.hasOwnProperty.call(catalogue,m));
+  const malformed=[];
+  Object.entries(catalogue).forEach(([mission,rows])=>{
+    if(!Array.isArray(rows))return malformed.push(mission+' is not an array');
+    rows.forEach((row,i)=>{
+      if(!Array.isArray(row)||row.length<3)malformed.push(mission+' row '+i+' malformed');
+      else if(!String(row[0]||'').trim()||!String(row[1]||'').trim()||!String(row[2]||'').trim())malformed.push(mission+' row '+i+' incomplete');
+    });
+  });
+  return {ok:missing.length===0&&malformed.length===0,expectedMissionCount:expected.length,missing,malformed};
+}
 function eventCompanionMapRegressionAudit(){
   const layouts=Array.isArray(ONOFORGE_EVENT_COMPANION?.layoutGeometry?.layouts)?ONOFORGE_EVENT_COMPANION.layoutGeometry.layouts:[];
   const index=Array.isArray(ONOFORGE_EVENT_COMPANION?.layoutIndex)?ONOFORGE_EVENT_COMPANION.layoutIndex:[];
@@ -10247,7 +10321,9 @@ function eventCompanionMapRegressionAudit(){
   if(index.length!==15)issues.push('Expected 15 mission pairs; found '+index.length);
   if(new Set(expectedPages).size!==45)issues.push('Mission layout index does not expose 45 unique pages');
   if(missingPrimaryMissions.length)issues.push('Primary scoring catalogue missing: '+missingPrimaryMissions.join(', '));
-  return {ok:issues.length===0,layoutCount:layouts.length,missionPairCount:index.length,uniquePages:pages.size,expectedMissionCount:expectedMissions.length,missingPrimaryMissions,verifiedCount:layouts.filter(x=>x?.verified===true).length,issues};
+  const scoringAudit=primaryScoringCatalogueAudit();
+  if(!scoringAudit.ok)issues.push('Primary scoring catalogue audit failed');
+  return {ok:issues.length===0&&scoringAudit.ok,layoutCount:layouts.length,missionPairCount:index.length,uniquePages:pages.size,expectedMissionCount:expectedMissions.length,missingPrimaryMissions,verifiedCount:layouts.filter(x=>x?.verified===true).length,issues};
 }
 function eventCompanionGeometryAuditHtml(){
   const audit=validateEventCompanionGeometry();
@@ -10264,7 +10340,7 @@ function eventCompanionGeometryAuditHtml(){
     '<div class="tiny" style="margin-top:8px">Coordinate system: origin bottom-left • 60″ × 44″ • objective, deployment-zone, territory and terrain geometry remain blocked until verified.</div>'+
     '<details style="margin-top:10px"><summary style="cursor:pointer;color:#9ecbff">Show layout verification queue</summary><div style="margin-top:8px">'+rows+(layouts.length>15?'<div class="tiny">Showing first 15 of '+layouts.length+' layouts.</div>':'')+'</div></details></div>';
 }
-function dataPage(){return `<div class="card"><h2>Data Sources</h2><div class="status">${esc(state.dataStatus)} • ${esc(state.revision)}</div>${weaponDataIntegrityAuditHtml()}${eventCompanionGeometryAuditHtml()}${eventCompanionGeometryVerificationConsoleHtml()}<p class="muted">The standalone prototype keeps source data separate from saved rosters and personal notes.</p><div class="card" style="margin-top:12px"><h3 style="margin-top:0">Reference Sources</h3><div class="unit"><strong>40k.app</strong><div class="muted">Primary structured source • Revision ${esc(String(ONOFORGE_40KAPP_SOURCE?.source?.revision||'925'))}</div></div><div class="unit"><strong>Warhammer Event Companion v1.1</strong><div class="muted">Event procedures, CP/VP limits, missions, terrain and base-size reference</div></div><div class="unit"><strong>MathHammer</strong><div class="muted">11th Edition combat calculator • v2.1.17 (Sep 18, 2026) • unit and weapon-profile reference</div><div class="tiny" style="margin-top:4px">Candidate supplemental source for weapon-profile enrichment and Mathhammer validation. Verify against authoritative 40K sources before treating values as canonical.</div></div></div><label class="btn">Import JSON<input type="file" accept=".json,application/json" style="display:none" onchange="importJSON(this)"></label><button class="btn" onclick="exportJSON()">Export Catalogue</button><div class="card"><h3>Normalized Catalogue</h3>${DEMO.map(u=>`<div class="unit"><strong>${esc(u.name)}</strong><div class="muted">${u.faction} • ${u.points} pts • ${u.weapons.length} weapons • ${u.abilities.length} abilities</div></div>`).join('')}</div></div>`}
+function dataPage(){return `<div class="card"><h2>Data Sources</h2><div class="status">${esc(state.dataStatus)} • ${esc(state.revision)}</div>${weaponDataIntegrityAuditHtml()}${eventCompanionGeometryAuditHtml()}${eventCompanionGeometryVerificationConsoleHtml()}<p class="muted">The standalone prototype keeps source data separate from saved rosters and personal notes.</p><div class="card" style="margin-top:12px"><h3 style="margin-top:0">Reference Sources</h3><div class="unit"><strong>40k.app</strong><div class="muted">Primary structured source • Revision ${esc(String(ONOFORGE_40KAPP_SOURCE?.source?.revision||'925'))}</div></div><div class="unit"><strong>Warhammer Event Companion v1.2</strong><div class="muted">Official event procedures, CP/VP limits, missions, terrain and base-size reference • v1.2</div></div><div class="unit"><strong>MathHammer</strong><div class="muted">11th Edition combat calculator • v2.1.17 (Sep 18, 2026) • unit and weapon-profile reference</div><div class="tiny" style="margin-top:4px">Candidate supplemental source for weapon-profile enrichment and Mathhammer validation. Verify against authoritative 40K sources before treating values as canonical.</div></div></div><label class="btn">Import JSON<input type="file" accept=".json,application/json" style="display:none" onchange="importJSON(this)"></label><button class="btn" onclick="exportJSON()">Export Catalogue</button><div class="card"><h3>Normalized Catalogue</h3>${DEMO.map(u=>`<div class="unit"><strong>${esc(u.name)}</strong><div class="muted">${u.faction} • ${u.points} pts • ${u.weapons.length} weapons • ${u.abilities.length} abilities</div></div>`).join('')}</div></div>`}
 function importJSON(inp){const f=inp.files?.[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const raw=JSON.parse(rd.result);const arr=Array.isArray(raw)?raw:(raw.units||raw.catalogue?.units||[]);if(!arr.length)throw new Error('No normalized units found');DEMO.splice(0,DEMO.length,...arr);state.source=f.name;state.revision='imported';state.dataStatus='Imported normalized catalogue';save();render()}catch(e){alert('Import failed: '+e.message)}};rd.readAsText(f)}
 function exportJSON(){const blob=new Blob([JSON.stringify({schema:'battleforge.11e.v57',source:state.source,revision:state.revision,units:DEMO},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='battleforge-v46-catalogue.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
 function logPage(){return `<div class="card"><div class="split"><h2>Action Log</h2><button class="btn danger" onclick="undoLastAction()">↶ Undo Last</button></div><div class="action-log-list">${state.events.length?state.events.map((e,i)=>actionLogLine(e,i)).join(''):'<div class="empty">No events yet.</div>'}</div></div>`}
@@ -10306,7 +10382,7 @@ async function load40kAppSourceManifest(){
   render();
 }async function loadEventCompanionData(){
   try{
-    const r=await fetch('./data/warhammer-event-companion-v1.1.json',{cache:'no-store'});
+    const r=await fetch('./data/warhammer-event-companion-v1.2.json',{cache:'no-store'});
     if(!r.ok)throw new Error('Event Companion HTTP '+r.status);
     ONOFORGE_EVENT_COMPANION=await r.json();
   }catch(e){
@@ -10343,6 +10419,17 @@ document.addEventListener('change',function(ev){
     ev.preventDefault();
     ev.stopPropagation();
     toggleObjectiveControlUnit(oc.dataset.objectiveOcName,oc.dataset.objectiveOcEntry,oc.checked);
+  }
+});
+document.addEventListener('click',function(ev){
+  const bp=ev.target.closest('[data-battlefield-save]');
+  if(bp){
+    ev.preventDefault();ev.stopPropagation();
+    const side=bp.dataset.battlefieldSave,uid=bp.dataset.battlefieldUid;
+    const x=document.querySelector('[data-battlefield-x="'+side+'"][data-battlefield-uid="'+uid+'"]')?.value;
+    const y=document.querySelector('[data-battlefield-y="'+side+'"][data-battlefield-uid="'+uid+'"]')?.value;
+    setBattlefieldUnitPosition(side,uid,x,y);
+    return;
   }
 });
 document.addEventListener('click',function(ev){
