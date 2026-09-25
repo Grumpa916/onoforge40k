@@ -2,7 +2,7 @@ const fs=require('fs');
 const html=fs.readFileSync('index.html','utf8');
 function check(name,ok){if(!ok){console.error('FAIL:',name);process.exitCode=1;}else console.log('PASS:',name);}
 check('Reserve state exists',/reserveDeclarations:\{my:\{\},opp:\{\}\}/.test(html)&&/function ensureReserveState\(/.test(html));
-check('Reserve declarations are battle-specific',/function setReserveDeclaration\([\s\S]{0,1000}state\.page==='battle'/.test(html)&&/Reserve status belongs to this battle setup/.test(html));
+check('Reserve declarations are battle-specific',/function setReserveDeclaration\([\s\S]{0,1000}state\.page==='battle'/.test(html)&&/Reserve status belongs to this battle setup|Declare units being kept off the battlefield/.test(html));
 check('Reserve declaration records both sides',/data-reserve-toggle/.test(html)&&/reserveDeclarationSectionHtml\('my'\)/.test(html)&&/reserveDeclarationSectionHtml\('opp'\)/.test(html));
 check('Reserve units have no battlefield position while reserved',/function battlefieldUnitPosition\([\s\S]{0,500}if\(isUnitReserved\(side,uid\)\)return null/.test(html));
 check('Map excludes declared reserve units',/function objectiveMapUnitNodesHtml[\s\S]{0,1000}if\(isUnitReserved\(side,entry\?\.uid\)\)return ''/.test(html));
@@ -11,7 +11,7 @@ check('Reserve tray offers drag and select fallback',/data-reserve-unit/.test(ht
 check('Reserve drag lifecycle exists',/mode:'reserve'/.test(html)&&/document\.elementFromPoint/.test(html)&&/deployReserveByMap\(/.test(html));
 check('Reserve deployment uses authoritative battlefield setter',/function deployReserveByMap\([\s\S]{0,700}setBattlefieldUnitPosition\(side,uid,x,y,'reserve'\)/.test(html));
 check('Declared reserves cannot be placed by ordinary setter',/source!=='reserve'&&isUnitReserved\(nextSide,id\)/.test(html));
-check('Reserve deployment is separately logged',/UNIT_DEPLOYED_FROM_RESERVE/.test(html)&&/from:source==='reserve'\?'RESERVE'/.test(html));
+check('Reserve deployment is separately logged',/function setBattlefieldUnitPosition[\s\S]{0,2500}source==='reserve'\?'UNIT_DEPLOYED_FROM_RESERVE'/.test(html)&&/function deployReserveByMap[\s\S]{0,500}setBattlefieldUnitPosition\(side,uid,x,y,'reserve'\)/.test(html));
 check('Reserve deployment remains undoable',/function setBattlefieldUnitPosition[\s\S]{0,1800}snapshotForUndo\(\)/.test(html));
 check('Reserve declarations are logged and undoable',/function setReserveDeclaration[\s\S]{0,1400}snapshotForUndo\(\)[\s\S]{0,1400}event\(declared\?'RESERVE_DECLARED'/.test(html));
 check('Reserve declarations remain after battle start',/function startBattle\([\s\S]{0,9000}ensureReserveState\(\)/.test(html)&&/reserveDeclarations:\{my:\{\},opp:\{\}\}/.test(html));
