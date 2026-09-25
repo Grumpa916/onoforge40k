@@ -5500,6 +5500,16 @@ function validateEventCompanionGeometryRecord(entry){
   }
   return {ok:issues.length===0,issues};
 }
+function resolveEventCompanionObjectivePosition(geometryEntry,name){
+  const positions=geometryEntry?.objectivePositions&&typeof geometryEntry.objectivePositions==='object'?geometryEntry.objectivePositions:{};
+  if(positions[name])return positions[name];
+  const meta=ensureObjectiveMeta()[String(name||'')]||{};
+  if(meta.type==='home'&&['my','opp'].includes(meta.homeSide)){
+    const physicalHome=meta.homeSide===state.attackerSide?'Attacker Home':'Defender Home';
+    return positions[physicalHome]||null;
+  }
+  return positions[name]||null;
+}
 function objectivePositionFor(name){
   const geometry=objectiveBattlefieldGeometry();
   return geometry.verified?geometry.objectives.find(o=>o.name===name)?.position||null:null;
@@ -5543,7 +5553,7 @@ function objectiveBattlefieldGeometry(){
       type:objectiveType(name),
       territory:objectiveMetadataTerritory(name),
       deploymentZone:objectiveMetadataDeploymentZone(name),
-      position:geometryEntry?.objectivePositions?.[name]||null,
+      position:resolveEventCompanionObjectivePosition(geometryEntry,name),
       positionVerified:verified
     }))
   };
