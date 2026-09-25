@@ -83,6 +83,10 @@ jobs:
         shell: bash
         run: node scripts/track1-scoring-vp-cp-audit.js
 
+      - name: Run Track 1 turn phase action-log integrity audit
+        shell: bash
+        run: node scripts/track1-turn-phase-action-log-audit.js
+
       - name: Run deployment planning and live battlefield map integrity audit
         shell: bash
         run: node scripts/deployment-map-integrity-audit.js
