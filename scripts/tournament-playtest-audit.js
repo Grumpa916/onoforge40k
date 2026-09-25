@@ -57,8 +57,8 @@ check('Primary VP preview respects caps',
   'Projected scoring must respect round and game caps.');
 
 check('Battlefield positions are explicit/manual',
-  has(/function setBattlefieldUnitPosition\(/) &&
-  has(/source:'manual'/) &&
+  has(/function setBattlefieldUnitPosition\(side,uid,x,y,source='manual'\)/) &&
+  has(/source='manual'/) &&
   has(/x<0\|\|x>60\|\|y<0\|\|y>44/),
   'Unit positions must be manually recorded and bounded to 60x44.');
 
@@ -73,7 +73,7 @@ check('Terrain is measured without inventing LOS',
   'Terrain intersections may be measured, but LOS remains a tabletop determination.');
 
 check('Battlefield position changes are auditable and undoable',
-  /function setBattlefieldUnitPosition[\s\S]{0,2500}snapshotForUndo\(\)[\s\S]{0,2500}event\('UNIT_BATTLEFIELD_POSITION_CHANGED'/.test(html),
+  /function setBattlefieldUnitPosition[\s\S]{0,2500}snapshotForUndo\(\)[\s\S]{0,2500}event\(source==='deployment'\?'UNIT_DEPLOYED':'UNIT_BATTLEFIELD_POSITION_CHANGED'/.test(html),
   'Position changes must create an undo snapshot and action-log event.');
 
 check('Map layout changes are auditable and persisted',
