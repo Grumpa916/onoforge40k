@@ -39,6 +39,10 @@ jobs:
         shell: bash
         run: node scripts/tournament-regression-audit.js
 
+      - name: Run Step 22 tournament playtest integration audit
+        shell: bash
+        run: node scripts/tournament-playtest-audit.js
+
       - name: Render Tactical Advisor decision surface
         shell: bash
         run: |
