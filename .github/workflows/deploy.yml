@@ -51,6 +51,10 @@ jobs:
         shell: bash
         run: node scripts/objective-control-refinement-audit.js
 
+      - name: Run Task 25 Tactical Advisor integration audit
+        shell: bash
+        run: node scripts/tactical-advisor-integration-audit.js
+
       - name: Render Tactical Advisor decision surface
         shell: bash
         run: |
