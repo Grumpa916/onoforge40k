@@ -38,7 +38,7 @@ check('Active mission geometry is verified',
   Array.isArray(companion?.layoutGeometry?.layouts)&&companion.layoutGeometry.layouts.length===45&&companion.layoutGeometry.layouts.every(x=>x?.verified===true),
   'The active Event Companion geometry dataset must retain all 45 verified layouts.');
 check('Rules-data version is represented in source state',
-  /rulesDataVersion|rulesDataRevision|dataRevision|sourceRevision/.test(html),
+  /rulesDataPin|rulesDataVersion|rulesDataRevision|dataRevision|sourceRevision/.test(html),
   'Active state must have a path toward pinning tournament state to the rules-data revision.');
 
 const failures=checks.filter(x=>!x.pass);
