@@ -35,6 +35,10 @@ jobs:
         shell: bash
         run: node scripts/objective-scoring-audit.js
 
+      - name: Run Step 20 tournament regression audit
+        shell: bash
+        run: node scripts/tournament-regression-audit.js
+
       - name: Render Tactical Advisor decision surface
         shell: bash
         run: |
