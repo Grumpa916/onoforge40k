@@ -70,6 +70,9 @@ check('Legacy recovery cannot implicitly promote Battle page to Live',
   has("if(!allowed.includes(state.tournamentLifecycle))state.tournamentLifecycle=state.battleEnded?'COMPLETED':'SETUP';"),
   'Recovered legacy state must require an explicit Deployment transition.');
 
+check('Deployment coordinates are checked against verified deployment zones',
+  has(/function pointInsideDeploymentZone\(/)&&has(/function tournamentDeploymentZoneForSide\(/)&&has(/function tournamentDeploymentZoneStatus\(/)&&has(/outside deployment zone/),
+  'When verified Event Companion geometry is available, actual deployment positions must be checked against the correct physical deployment zone.');
 check('Live battle requires complete actual deployment',has('function tournamentDeploymentValidation()')&&has('const deploymentCheck=tournamentDeploymentValidation();')&&has("if(!deploymentCheck.ready){alert('Deployment is incomplete:"),'Start Battle must require actual deployment accounting before entering Live.');
 check('Deployment readiness does not count planning ghosts as actual placement',has("deploymentReadyMy:Object.values(ensureBattlefieldUnitPositions()).some(p=>p&&p.side==='my')")&&has("deploymentReadyOpp:Object.values(ensureBattlefieldUnitPositions()).some(p=>p&&p.side==='opp')"),'Saved deployment plans must remain distinct from actual battlefield positions.');
 check('Tournament result captures both deployment sides and audit state',
