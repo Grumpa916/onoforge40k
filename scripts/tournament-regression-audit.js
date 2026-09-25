@@ -86,7 +86,7 @@ for(const g of layouts){
 }
 report.geometry.defects=geometryDefects;
 
-const missionKeys=new Set(Array.isArray(data.layoutIndex)?data.layoutIndex.map(x=>x?.missionKey):[]);
+const missionKeys=new Set(Array.isArray(data.layoutIndex)?data.layoutIndex.map(x=>Array.isArray(x)?String(x[0])+'|'+String(x[1]):String(x?.missionKey||'')):[]);
 report.missions={pairs:data.layoutIndex?.length||0,uniqueMissionKeys:missionKeys.size};
 if((data.layoutIndex||[]).length!==15) failures.push({code:'MISSION_PAIR_COUNT',expected:15,actual:data.layoutIndex?.length||0});
 if(missionKeys.size!==15) failures.push({code:'MISSION_KEY_COUNT',expected:15,actual:missionKeys.size});
