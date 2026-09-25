@@ -134,6 +134,9 @@ jobs:
       - name: Run Track 7 tournament UX audit
         shell: bash
         run: node scripts/track7-tournament-ux-audit.js
+      - name: Run terrain measurement map audit
+        shell: bash
+        run: node scripts/terrain-measurement-map-audit.js
 
       - name: Run deployment planning and live battlefield map integrity audit
         shell: bash
