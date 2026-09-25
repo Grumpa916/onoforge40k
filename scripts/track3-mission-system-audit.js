@@ -24,7 +24,7 @@ const ok=m=>console.log('PASS:',m);
  [/state\.oppCP-=1/,'Opponent New Orders CP spend'],
  [/state\[cardsKey\]=secState\(player\)\.filter\(n=>!selected\.includes\(n\)\)/,'Tactical discard removes selected cards'],
  [/cpGained:1/,'Tactical discard CP audit event'],
- [/scoreSecondary\(side,name,amount,\{endOfBattle\}\)/,'condition-level secondary scoring'],
+ [/\/scoreSecondary\\\(side,name,amount,\\\{endOfBattle(?:,rowIndex:index)?\\\}\\\)\/,'condition-level secondary scoring'/],
  [/roundAllowance=Math\.max\(0,15-roundTotalBefore\)/,'secondary round cap'],
  [/Math\.max\(0,45-totalBefore\)/,'secondary game cap'],
  [/fixed\?20/,'fixed secondary per-card cap'],
