@@ -51,7 +51,10 @@ check('Map renders verified terrain geometry',
 
 check('Attacker/Defender map labels are role-aware',
   has(/state\.attackerSide==='opp'/) &&
-  has(/Attacker Home/) === false,
+  has(/attackerDeployment/) &&
+  has(/defenderDeployment/) &&
+  has(/attackerTerritory/) &&
+  has(/defenderTerritory/),
   'Rendered map labels must resolve physical Attacker/Defender regions to the current army roles.');
 
 check('No-manual-LOS inference guard remains visible',
