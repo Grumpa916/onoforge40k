@@ -10,7 +10,7 @@ const region=(startMarker,endMarker)=>{
   return a>=0&&b>a?html.slice(a,b):'';
 };
 const mixed=region('function tacticalPreRollApplyMixedSaveRolls','function tacticalPreRollResolutionPlan');
-const apply=region('function tacticalPreRollApplyResolution','function tacticalPreRollResolutionState');
+const apply=region('function tacticalPreRollApplyResolution','function tacticalPreRollResolutionModal');
 
 check('Model-level mixed resolution surface exists',
   mixed.includes('function tacticalPreRollApplyMixedSaveRolls') &&
