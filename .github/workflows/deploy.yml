@@ -105,6 +105,9 @@ jobs:
       - name: Run Track 4 Tactical Advisor v2 battle-state audit
         shell: bash
         run: node scripts/track4-tactical-advisor-v2-audit.js
+      - name: Run Track 4 prioritization refinement audit
+        shell: bash
+        run: node scripts/track4-prioritization-refinement-audit.js
 
       - name: Run Track 5 Tournament Operations integrity audit
         shell: bash
