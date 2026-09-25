@@ -9,6 +9,9 @@ check('Bodyguard candidate path uses reverse lookup',html.includes('const allowe
 check('Bodyguard attach validates against reverse lookup',html.includes("!leaderNamesForBodyguard(bu).includes(lu.name)"));
 check('Detached eligible Leader retains Bodyguard action',html.includes("const addBodyguardButton=isLeader&&!attachedBodyguard&&bodyguardNamesForLeader(u).length"));
 check('Leader detach clears reciprocal link by stable UID comparison',html.includes("filter(id=>String(id)!==String(leaderUid))"));
+check('Leader detach clears every stale Bodyguard reverse reference',html.includes("Remove every stale reverse reference")&&html.includes("(state[side]||[]).forEach(e=>{")&&html.includes("e.leaderUids=e.leaderUids.filter(id=>String(id)!==String(leaderUid))"));
+check('Leader lookup tolerates stable UID type differences',html.includes("String(e.attachedTo)===String(leaderUid)"));
+check('Leader attach scrubs stale reverse references',html.includes("Before attaching, scrub any stale reverse references")&&html.includes("String(e.uid)===String(body.uid)"));
 check('Greek duplicate labels are defined',html.includes("const greek=['α','β','γ'"));
 check('Unit display uses Greek labels',html.includes("unitDisplayName(side,e)")&&html.includes("alphaLabel(idx+1)"));
 check('Greek labels support repeated groups beyond omega',html.includes("n=Math.floor(n/greek.length)"));
