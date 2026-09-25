@@ -1758,6 +1758,7 @@ function scorePrimaryItem(side,index,mission,amountOverride){
 }
 
 function primaryScoreAdjust(side,index,mission,direction){
+  if(!battleMutationAllowed('primary scoring changes'))return;
   const rows=primaryScoringRowsForRound(mission);
   if(!rows[index])return;
   const byRoundKey=side==='my'?'primaryScoringByRoundMy':'primaryScoringByRoundOpp';
@@ -2031,6 +2032,7 @@ function stratagemCP(s){
  return Number.isFinite(n)&&n>=0?n:0;
 }
 function useStratagemByName(displaySide,name){
+ if(!battleMutationAllowed('stratagem changes'))return;
   ensureStratagemState();
   // The button's panel identifies which army owns the stratagem. Do not
   // substitute the active turn here: stratagem state and CP are tracked
@@ -4651,6 +4653,7 @@ function finalizeCurrentTurnTime(){
   t.turnStartedGameMs=now;
 }
 function toggleTurnPause(){
+  if(!battleMutationAllowed('timer changes'))return;
   const t=ensureGameTimer();
   if(t.finishedAt)return;
   if(t.turnPaused){
@@ -6166,6 +6169,7 @@ function advancePhase(){
   save();render();
 }
 function previousPhase(){
+  if(!battleMutationAllowed('phase changes'))return;
   const before=snapshotForUndo();
   const phases=['Command','Movement','Shooting','Charge','Fight'];
   const current=String(state.phase||'Command');
@@ -6242,6 +6246,7 @@ function previousPhase(){
   save();render();
 }
 function nextRound(){
+ if(!battleMutationAllowed('round changes'))return;
  const before=snapshotForUndo();
  const current=Number(state.round);
  if((Number.isFinite(current)?current:1)>=MAX_ROUND){return}
@@ -6271,6 +6276,7 @@ function nextRound(){
  render();
 }
 function previousRound(){
+ if(!battleMutationAllowed('round changes'))return;
  const current=Number(state.round);
  if(!Number.isFinite(current)||current<=1){return}
  const before=snapshotForUndo();
