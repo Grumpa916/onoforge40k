@@ -49,7 +49,7 @@ Goal: Make the selected battlefield a functional game-state layer.
 - 🟡 Final tablet/touch optimization
 - 🟡 Comprehensive map regression coverage
 
-## D. Objectives & Objective Control — 🟢 / 🟡
+## D. Objectives & Objective Control — 🟢 / 🔵
 Goal: Maintain objective control as authoritative battle state.
 - 🟢 Objective control tracking by turn
 - 🟢 Objective ownership/state tracking
@@ -57,11 +57,11 @@ Goal: Maintain objective control as authoritative battle state.
 - 🟢 Objective state connected to battle state
 - 🟡 Complete objective → scoring pipeline
 - 🟡 Primary scoring derived from objective state where appropriate
-- 🟡 End-of-turn scoring automation
+- 🔵 End-of-turn scoring automation — Track 1 active
 - 🟡 Mission-specific objective rules
 - 🟡 Objective history/audit presentation
 
-## E. Mission & Scoring — 🟢 / 🟡
+## E. Mission & Scoring — 🟢 / 🔵
 Goal: Make VP/CP and mission scoring tournament reliable.
 - 🟢 Primary score tracking
 - 🟢 VP increment/decrement controls
@@ -198,8 +198,10 @@ Goal: Every major feature change must be verifiable before deployment.
 
 # Major Product Completion Tracks
 
-### Track 1 — Authoritative Game State
+### Track 1 — Authoritative Game State 🔵
 Objective control → scoring → VP/CP → turn/phase → action log.
+
+Current layer: objective state → authoritative end-of-turn primary scoring → scoring/action log.
 
 ### Track 2 — Complete Physical Combat Resolution
 Dice → hits → wounds → saves → allocation → damage → FNP → casualties → logging.
@@ -237,10 +239,10 @@ Tablet-first dashboard, touch optimization, minimal data entry, fast phase trans
 # Current Execution State
 
 - Task 31 — 🟢 Complete
-- Task 32 — 🔵 FNP resolution integrity audit
-- Current main after Task 31: 81e453bcb9e2eadf7184b8fd3ec5e435766bbe99
-- Task 32 audit commits:
-  - 082f598d036a77e53448b4983dcaf0d56c935ff1
-  - ffc0aa8c554fac498de74f78b4e5013254150713
+- Task 32 — 🟢 FNP resolution integrity audit
+- Track 1 — 🔵 Authoritative Game State
+- Track 1 first layer — 🔵 End-of-turn primary scoring automation
+- Current main: 6e42b482ad6da099871ed1f3d536e56af60de8ea
+- Track 1 regression audit: scripts/track1-end-turn-scoring-audit.js
 
-Next planning checkpoint: after Task 32, review the major feature tracks before creating the next numbered implementation task.
+Next planning checkpoint: verify the Track 1 deployment gate, then continue objective scoring → VP/CP → turn/phase → action log integration.
