@@ -5000,6 +5000,7 @@ ${objectiveControlTrackerHtml()}${battleNotesHtml()}${state.currentTurn==='opp'?
 
 </div><div class="battle-state-column"><div class="army-state-grid"><div>${armyStateCard('my','My Army State')}</div><div>${armyStateCard('opp','Opponent Army State')}</div></div></div>
 <div class="battle-log card"><div class="split"><div><h3>Action Log</h3><div class="muted">Latest actions</div></div></div>${recent.length?recent.map((e,i)=>actionLogLine(e,i)).join(''):'<div class="empty">No actions yet.</div>'}</div>
+<div class="game-data-status"><div class="status">✓ Browser app loaded locally • Source: ${esc(state.source)} • ${esc(state.revision)} • 40k.app v${esc(String(ONOFORGE_40KAPP_SOURCE?.source?.revision||'925'))}</div>${dataSyncStatusHtml()}</div>
 </div>
 ${currentArmyDisplay()}
 `}
@@ -10509,7 +10510,7 @@ function render(){
   }
   app.innerHTML=`<div class="top"><div class="brand">ONOFORGE 40K</div><div class="sub">11th Edition • v336 • 40k.app v925 data source • Army-linked Mathhammer Engine</div></div>${nav()}<main class="wrap">
   
-<div class="status">✓ Browser app loaded locally • Source: ${esc(state.source)} • ${esc(state.revision)} • 40k.app v${esc(String(ONOFORGE_40KAPP_SOURCE?.source?.revision||'925'))}</div>${dataSyncStatusHtml()}<div style="height:12px"></div><div id="onoforge-advisor-render"></div>${state.page==='battle'?'<div id="battle-view">'+pages.battle()+'</div>':(pages[state.page]||builder)()}${'<div id="secondary-plan-modal-root">'+secondaryPlanEditorModal()+'</div>'}</main></div>`;
+${state.page!=='battle'?'<div class="status">✓ Browser app loaded locally • Source: '+esc(state.source)+' • '+esc(state.revision)+' • 40k.app v'+esc(String(ONOFORGE_40KAPP_SOURCE?.source?.revision||'925'))+'</div>'+dataSyncStatusHtml()+'<div style="height:12px"></div>':''}<div id="onoforge-advisor-render"></div>${state.page==='battle'?'<div id="battle-view">'+pages.battle()+'</div>':(pages[state.page]||builder)()}${'<div id="secondary-plan-modal-root">'+secondaryPlanEditorModal()+'</div>'}</main></div>`;
   ensureLiveGameTimerDisplay();
 }
 
