@@ -66,6 +66,16 @@ check('No legacy 10th-edition rule contamination',
   !/Big Guns Never Tire/i.test(html),
   'Tournament operations must remain on the current rules path.');
 
+check('Tournament result requires explicit verification before export',
+  has(/function verifyTournamentResult\(/)&&has(/state\.battleResultVerified=true/)&&has(/if\(!state\.battleResultVerified\)\{alert\('Verify the tournament result before exporting it/),
+  'Final result must be explicitly verified before export.');
+check('Result verification compares locked snapshot to authoritative state',
+  has(/function tournamentResultIntegrityCheck\(/)&&has(/const mismatches=Object\.keys\(expected\)/),
+  'Verification must detect divergence between the locked result and authoritative state.');
+check('Verification is logged',
+  has(/event\('TOURNAMENT_RESULT_VERIFIED'/),
+  'Tournament result verification must remain auditable.');
+
 const failures=checks.filter(x=>!x.pass);
 console.log(JSON.stringify({
   audit:'Track 5 Tournament Operations integrity audit',
