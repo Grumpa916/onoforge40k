@@ -116,6 +116,9 @@ jobs:
       - name: Run Track 6 rules coverage audit
         shell: bash
         run: node scripts/track6-rules-coverage-audit.js
+      - name: Run Track 7 tournament UX audit
+        shell: bash
+        run: node scripts/track7-tournament-ux-audit.js
 
       - name: Run deployment planning and live battlefield map integrity audit
         shell: bash
