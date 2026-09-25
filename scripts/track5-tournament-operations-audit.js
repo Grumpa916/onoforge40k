@@ -67,7 +67,7 @@ check('No legacy 10th-edition rule contamination',
   'Tournament operations must remain on the current rules path.');
 
 check('Legacy recovery cannot implicitly promote Battle page to Live',
-  has(/if\\(!allowed\.includes\(state\.tournamentLifecycle\)\)state\.tournamentLifecycle=state\.battleEnded\?'COMPLETED':'SETUP';/),
+  has("if(!allowed.includes(state.tournamentLifecycle))state.tournamentLifecycle=state.battleEnded?'COMPLETED':'SETUP';"),
   'Recovered legacy state must require an explicit Deployment transition.');
 
 check('Tournament result captures both deployment sides and audit state',
