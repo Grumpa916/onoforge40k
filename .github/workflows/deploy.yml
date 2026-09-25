@@ -79,6 +79,10 @@ jobs:
         shell: bash
         run: node scripts/track1-end-turn-scoring-audit.js
 
+      - name: Run Track 1 scoring VP CP integrity audit
+        shell: bash
+        run: node scripts/track1-scoring-vp-cp-audit.js
+
       - name: Render Tactical Advisor decision surface
         shell: bash
         run: |
