@@ -68,11 +68,12 @@ Goal: Make VP/CP and mission scoring tournament reliable.
 - 🟢 CP tracking
 - 🟢 Scoring log foundation
 - 🟡 Primary mission-specific scoring rules
-- 🟡 Secondary mission workflow
-- 🟡 Secondary draw/select/discard/replace states
-- 🟡 Secondary scoring/progress tracking
-- 🟡 End-game scoring summary
-- 🟡 Full scoring regression suite
+- 🟢 Secondary mission workflow foundation
+- 🟢 Secondary Fixed/Tactical selection, draw, discard, replace, and replenish states
+- 🟢 Secondary scoring/progress tracking with round/game caps
+- 🟢 End-game scoring summary
+- 🟢 Track 3 mission-system regression gate
+- 🟡 Mission-specific scoring completeness across all loaded mission cards
 
 ## F. Combat Resolution / Physical Dice — 🟢 / 🟡
 Goal: Make physical-dice entry the authoritative battle-resolution workflow.
@@ -212,8 +213,12 @@ Dice → hits → wounds → saves → allocation → damage → FNP → casualt
 Completed: physical-dice authority, mixed-save allocation, Precision, variable Damage, Devastating Wounds, FNP, model-level casualties, per-step resolution history, and combat regression gate. Completion gate: `scripts/track2-combat-regression-audit.js`.
 Dice → hits → wounds → saves → allocation → damage → FNP → casualties → logging.
 
-### Track 3 — Tournament Mission System
+### Track 3 — Tournament Mission System 🔵
 Primary missions + secondary missions + objective scoring + end-game scoring.
+
+Current layer: Tactical/FIxed secondary state machine, Command-phase replenishment, New Orders, end-of-turn Tactical discard-for-CP, secondary scoring caps, and end-game report. Completion gate: `scripts/track3-mission-system-audit.js`.
+
+Remaining: mission-specific scoring completeness and source/data validation across the full primary/secondary catalogue.
 
 ### Track 4 — Tactical Advisor v2
 Battle state + objectives + mission + CP + combat state → contextual recommendations.
@@ -255,7 +260,8 @@ Tablet-first dashboard, touch optimization, minimal data entry, fast phase trans
 - Track 2 regression gate — 🟢 complete
 - Forward turn/round transitions preserve authoritative CP state — 🟢 complete
 - Manual turn override preserves scoring and CP integrity — 🟢 complete
-- Current execution: Track 3 Tournament Mission System
+- Current execution: Track 3 Tournament Mission System — 🔵 active
+- Track 3 audit: scripts/track3-mission-system-audit.js
 - Track 1 audits: scripts/track1-end-turn-scoring-audit.js, scripts/track1-scoring-vp-cp-audit.js, scripts/track1-turn-phase-action-log-audit.js, scripts/track1-completion-audit.js
 - Track 2 audits: scripts/model-level-damage-audit.js, scripts/fnp-resolution-audit.js, scripts/track2-combat-regression-audit.js
 - Deployment workflow gates both completed tracks before GitHub Pages publication
