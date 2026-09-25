@@ -12,7 +12,7 @@ const html=fs.readFileSync('index.html','utf8');
 const checks=[];
 const check=(name,pass,detail)=>checks.push({name,pass:!!pass,detail});
 
-const has=(re)=>re.test(html);
+const has=(re)=>typeof re==='string'?html.includes(re):re.test(html);
 
 check('Authoritative game timer state exists',
   has(/state.gameTimer/)&&has(/function ensureGameTimer\(/),
