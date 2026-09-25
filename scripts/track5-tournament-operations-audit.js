@@ -104,6 +104,9 @@ check('Live transition is gated to Deployment',
   has(/setTournamentLifecycle\('LIVE'\)/)&&has(/The tournament could not transition from Deployment to Live/),
   'The live state must be entered only through the Deployment lifecycle.');
 
+check('Completed lifecycle is captured in the locked result',
+  has(/setTournamentLifecycle\('COMPLETED'\)/)&&has(/state\.battleResult=tournamentResultSnapshot\(\)/)&&has(/state\.battleResultLocked=true/),
+  'The result snapshot must be created only after the lifecycle reaches Completed.');
 check('Tournament result requires explicit verification before export',
   has(/function verifyTournamentResult\(/)&&has(/state\.battleResultVerified=true/)&&has(/if\(!state\.battleResultVerified\)\{alert\('Verify the tournament result before exporting it/),
   'Final result must be explicitly verified before export.');
