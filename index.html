@@ -5345,12 +5345,43 @@ function objectiveBattlefieldGeometry(){
     }))
   };
 }
+function objectiveSpatialClassification(name){
+  const geometry=objectiveBattlefieldGeometry();
+  const position=geometry.objectives.find(o=>o.name===name)?.position||null;
+  if(!geometry.verified||!position)return {verified:false,territory:objectiveTerritory(name),deploymentZone:objectiveDeploymentZone(name),source:'objective-metadata'};
+  const regions=geometry.source.geometryEntry?.deploymentZones||{};
+  const pointInRegion=(p,r)=>{
+    if(!r||typeof r!=='object')return false;
+    if(Number.isFinite(Number(r.x))&&Number.isFinite(Number(r.y))&&Number.isFinite(Number(r.width))&&Number.isFinite(Number(r.height)))
+      return p.x>=Number(r.x)&&p.x<=Number(r.x)+Number(r.width)&&p.y>=Number(r.y)&&p.y<=Number(r.y)+Number(r.height);
+    if(Array.isArray(r.points)&&r.points.length>=3){
+      let inside=false;
+      for(let i=0,j=r.points.length-1;i<r.points.length;j=i++){
+        const xi=Number(r.points[i].x),yi=Number(r.points[i].y),xj=Number(r.points[j].x),yj=Number(r.points[j].y);
+        const hit=((yi>p.y)!==(yj>p.y))&&(p.x<(xj-xi)*(p.y-yi)/(yj-yi)+xi);
+        if(hit)inside=!inside;
+      }
+      return inside;
+    }
+    return false;
+  };
+  const matches=Object.entries(regions).filter(([key,r])=>pointInRegion(position,r)).map(([key])=>String(key));
+  const deployment=matches.find(k=>/deploy|home/i.test(k))||'none';
+  const territory=matches.find(k=>/myterritory|my.?territory|oppt?erritory|opponentterritory/i.test(k))||matches.find(k=>/territory/i.test(k))||null;
+  let normalizedTerritory='nml';
+  if(territory){
+    normalizedTerritory=/^my/i.test(territory)?'my':/^opp/i.test(territory)?'opp':'nml';
+  }else if(deployment==='my'||/my.*deploy/i.test(deployment))normalizedTerritory='my';
+  else if(deployment==='opp'||/opp.*deploy/i.test(deployment))normalizedTerritory='opp';
+  return {verified:true,territory:normalizedTerritory,deploymentZone:/^my/i.test(deployment)?'my':/^opp/i.test(deployment)?'opp':'none',matchedRegions:matches,source:'event-companion-geometry'};
+}
 function objectiveStateRecord(name){
   const owner=['my','opp','contested','none'].includes(state.objectives?.[name])?state.objectives[name]:'none';
   const startOwner=objectiveTurnStartOwner(name);
   const layoutInfo=ensureObjectiveLayoutForMission();
+  const spatial=objectiveSpatialClassification(name);
   return {
-    name,owner,type:objectiveType(name),territory:objectiveTerritory(name),deploymentZone:objectiveDeploymentZone(name),
+    name,owner,type:objectiveType(name),territory:spatial.territory,deploymentZone:spatial.deploymentZone,spatialVerified:spatial.verified,spatialSource:spatial.source,
     startOwner,changedThisTurn:owner!==startOwner,changeType:objectiveControlChangeType(name),
     changeLabel:objectiveControlChangeLabel(name),controlSourceIds:objectiveControlSourceIds(name),
     mapLayout:state.objectiveMapLayout||'A',mapLayoutPage:layoutInfo?objectiveLayoutPage():null,
