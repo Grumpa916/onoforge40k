@@ -608,7 +608,7 @@ body{overflow-x:hidden}
 }
 
 <style>
-.objective-map-renderer{margin-top:10px}.objective-map-canvas{position:relative;width:100%;aspect-ratio:60/44;margin-top:10px;border:1px solid #3a5068;border-radius:10px;overflow:hidden;background:linear-gradient(90deg,rgba(80,120,160,.08) 1px,transparent 1px),linear-gradient(rgba(80,120,160,.08) 1px,transparent 1px);background-size:10% 10%;background-color:#0c1722}.objective-map-canvas:before{content:'MY SIDE';position:absolute;left:0;top:0;bottom:0;width:25%;display:flex;align-items:center;justify-content:center;color:#6f9fc9;font-size:10px;letter-spacing:1px;opacity:.55;border-right:1px dashed #38506a}.objective-map-canvas:after{content:'OPPONENT SIDE';position:absolute;right:0;top:0;bottom:0;width:25%;display:flex;align-items:center;justify-content:center;color:#6f9fc9;font-size:10px;letter-spacing:1px;opacity:.55;border-left:1px dashed #38506a}.objective-map-node{position:absolute;transform:translate(-50%,-50%);min-width:24px;height:24px;padding:0 5px;border:2px solid #9ecbff;border-radius:50%;background:#172738;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;z-index:2}.objective-map-node.my{border-color:#62d39b}.objective-map-node.opp{border-color:#ff8d8d}.objective-map-node.contested{border-color:#ffd36b}.objective-map-node.none{border-color:#9ecbff}.objective-map-placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;color:#9db0c3;font-size:12px}
+.objective-map-renderer{margin-top:10px}.objective-map-canvas{position:relative;width:100%;aspect-ratio:60/44;margin-top:10px;border:1px solid #3a5068;border-radius:10px;overflow:hidden;background:linear-gradient(90deg,rgba(80,120,160,.08) 1px,transparent 1px),linear-gradient(rgba(80,120,160,.08) 1px,transparent 1px);background-size:10% 10%;background-color:#0c1722}.objective-map-canvas:before,.objective-map-canvas:after{content:none}.objective-map-region{position:absolute;z-index:0;display:flex;align-items:center;justify-content:center;text-align:center;font-size:9px;letter-spacing:.5px;color:#9db0c3;background:rgba(80,120,160,.07);border:1px dashed #38506a;pointer-events:none}.objective-map-region.deployment{background:rgba(80,120,160,.1);border-style:solid}.objective-map-region.territory{background:rgba(100,100,160,.06)}.objective-map-region-polygon{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}.objective-map-region-polygon polygon{fill:rgba(80,120,160,.08);stroke:#38506a;stroke-width:.4}.objective-map-region-polygon text{fill:#9db0c3;font-size:3px}.objective-map-node{position:absolute;transform:translate(-50%,-50%);min-width:24px;height:24px;padding:0 5px;border:2px solid #9ecbff;border-radius:50%;background:#172738;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;z-index:2}.objective-map-node.my{border-color:#62d39b}.objective-map-node.opp{border-color:#ff8d8d}.objective-map-node.contested{border-color:#ffd36b}.objective-map-node.none{border-color:#9ecbff}.objective-map-placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;color:#9db0c3;font-size:12px}
 </style></style>
 <style id="battle-layout-final-fix">
 /* v320: stable Battle Mode structure — no display:contents, no sticky Army State */
@@ -748,17 +748,33 @@ function objectiveDistanceFromUnit(side,uid,objectiveName){
 function objectiveMapRendererHtml(){
   const model=objectiveMapModel();
   const status=model.verified?'Verified geometry':'Geometry pending verification';
+  const pct=(n,max)=>Math.max(0,Math.min(100,(Number(n)/Number(max))*100));
+  const point=(p)=>p&&Number.isFinite(Number(p.x))&&Number.isFinite(Number(p.y));
+  const regionLabel=(key)=>({my:'My Deployment Zone',opp:'Opponent Deployment Zone',attacker:'Attacker Deployment Zone',defender:'Defender Deployment Zone',noMansLand:"No Man's Land",myTerritory:'My Territory',oppTerritory:'Opponent Territory'})[key]||String(key||'Region');
+  const regionClass=(key)=>String(key||'').toLowerCase().includes('deployment')?'deployment':String(key||'').toLowerCase().includes('territory')?'territory':'region';
+  const renderRegion=(key,r)=>{
+    if(!r||typeof r!=='object')return '';
+    if(Number.isFinite(Number(r.x))&&Number.isFinite(Number(r.y))&&Number.isFinite(Number(r.width))&&Number.isFinite(Number(r.height))){
+      return '<div class="objective-map-region '+regionClass(key)+'" style="left:'+pct(r.x,60)+'%;top:'+pct(44-(Number(r.y)+Number(r.height)),44)+'%;width:'+pct(r.width,60)+'%;height:'+pct(r.height,44)+'%" title="'+esc(regionLabel(key))+'">'+esc(regionLabel(key))+'</div>';
+    }
+    if(Array.isArray(r.points)&&r.points.every(point)){
+      const pts=r.points.map(p=>pct(p.x,60)+','+pct(44-Number(p.y),44)).join(' ');
+      return '<svg class="objective-map-region-polygon" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="'+esc(regionLabel(key))+'"><polygon points="'+pts+'" /><text x="50" y="50" text-anchor="middle">'+esc(regionLabel(key))+'</text></svg>';
+    }
+    return '';
+  };
+  const regions=model.verified?Object.entries(model.deploymentZones||{}).map(([k,v])=>renderRegion(k,v)).join(''):'';
   const objectiveNodes=model.objectives.map(o=>{
     const p=o.position;
-    const x=p?Math.max(0,Math.min(100,(Number(p.x)/60)*100)):null;
-    const y=p?Math.max(0,Math.min(100,100-(Number(p.y)/44)*100)):null;
+    const x=point(p)?pct(p.x,60):null;
+    const y=point(p)?pct(44-p.y,44):null;
     const ownerClass=o.owner==='my'?'my':o.owner==='opp'?'opp':o.owner==='contested'?'contested':'none';
     return '<div class="objective-map-node '+ownerClass+'" style="'+(x===null||y===null?'display:none;':'left:'+x+'%;top:'+y+'%;')+'" title="'+esc(o.name)+'">'+esc(o.name.replace(/^Central |^Expansion |^My |^Opponent /,''))+'</div>';
   }).join('');
-  const pending='<div class="status" style="margin-top:8px"><b>Map geometry pending verification.</b><div class="tiny" style="margin-top:4px">The Event Companion layout is selected, but objective, deployment-zone, and terrain coordinates are not used until verified source geometry is loaded.</div></div>';
+  const pending='<div class="status" style="margin-top:8px"><b>Map geometry pending verification.</b><div class="tiny" style="margin-top:4px">No deployment zone, territory, terrain, or objective position is inferred from the 60 × 44 table boundary. The Event Companion geometry must be verified first.</div></div>';
   return '<div class="card objective-map-renderer"><div class="split"><div><h3 style="margin:0">Battlefield Map</h3><div class="muted">'+esc(model.missionKey)+' • Layout '+esc(model.layout)+' • Event Companion p.'+esc(String(model.page||'—'))+'</div></div><span class="pill">'+status+'</span></div>'+
-    '<div class="objective-map-canvas" role="img" aria-label="60 by 44 inch battlefield map">'+(model.verified?objectiveNodes:'<div class="objective-map-placeholder">Verified Event Companion geometry required</div>')+'</div>'+
-    '<div class="tiny" style="margin-top:6px">60 × 44 inches • Territory and deployment zone are tracked independently.</div>'+(!model.verified?pending:'')+'</div>';
+    '<div class="objective-map-canvas" role="img" aria-label="60 by 44 inch battlefield map">'+(model.verified?regions+objectiveNodes:'<div class="objective-map-placeholder">Verified Event Companion geometry required</div>')+'</div>'+
+    '<div class="tiny" style="margin-top:6px">60 × 44 inches • Deployment zones and territory are rendered only from verified Event Companion geometry.</div>'+(!model.verified?pending:'')+'</div>';
 }
 function objectiveLayoutHtml(){const info=ensureObjectiveLayoutForMission();if(!info)return '';const layout=state.objectiveMapLayout||'A';const page=objectiveLayoutPage();const buttons=['A','B','C'].map(letter=>'<button type="button" class="btn objective-layout-btn '+(layout===letter?'active':'')+'" aria-pressed="'+(layout===letter?'true':'false')+'" onclick="setObjectiveMapLayout(\''+letter+'\');return false;">Layout '+letter+'</button>').join('');return '<div class="objective-layout-panel"><div class="split"><div><strong>Recommended Battlefield Layout</strong><div class="tiny">'+esc(info.missions[0])+' ↔ '+esc(info.missions[1])+' • Layout '+layout+'</div></div><span class="pill">Event Companion p.'+page+'</span></div><div class="objective-layout-buttons">'+buttons+'<a class="btn" href="'+WARHAMMER_EVENT_COMPANION_PDF+'#page='+page+'" target="_blank" rel="noopener">Open Map</a></div><details class="objective-layout-preview"><summary>Preview selected layout</summary><iframe title="Warhammer Event Companion layout '+layout+'" src="'+WARHAMMER_EVENT_COMPANION_PDF+'#page='+page+'" loading="lazy"></iframe></details></div>'+objectiveMapRendererHtml();}
 const CURRENT_11E_DATA_SOURCES={
