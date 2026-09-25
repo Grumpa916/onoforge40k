@@ -204,7 +204,7 @@ Goal: Every major feature change must be verifiable before deployment.
 ### Track 1 — Authoritative Game State 🔵
 Objective control → scoring → VP/CP → turn/phase → action log.
 
-Current layer: objective state → authoritative end-of-turn primary scoring → scoring/action log.
+Current layer: objective state → authoritative end-of-turn primary scoring → VP/CP integrity → turn/phase/action-log integrity.
 
 ### Track 2 — Complete Physical Combat Resolution
 Dice → hits → wounds → saves → allocation → damage → FNP → casualties → logging.
@@ -251,6 +251,10 @@ Tablet-first dashboard, touch optimization, minimal data entry, fast phase trans
 - Current main: b90157afe315bd0fc4dc2867235d263aa4124d63
 - Latest main deployment gate: 🟢 GitHub Pages deployment run 960
 - Track 1 regression audit: scripts/track1-end-turn-scoring-audit.js
-- Track 1 next layer: 🔵 Scoring → VP/CP state integrity
+- Track 1 scoring → VP/CP integrity — 🟢 Complete
+- Track 1 turn/phase → action-log integrity — 🔵 Active
+- Track 1 regression audit: scripts/track1-end-turn-scoring-audit.js, scripts/track1-scoring-vp-cp-audit.js, scripts/track1-turn-phase-action-log-audit.js
+- Current main: db92f7a45d4628a8524ce8f149c07a39c2590d79
+- Latest main deployment gate: 🟡 Pending deployment of turn/phase audit
 
-Next planning checkpoint: complete the scoring → VP/CP integrity layer, then continue turn/phase → action log integration.
+Next planning checkpoint: complete the turn/phase → action-log integrity layer, then continue authoritative action coverage and objective → scoring refinement.
