@@ -1315,6 +1315,60 @@ function primaryScoringEffectiveMax(side,row){
   if(objectiveCount===null)return explicit||5;
   return Math.max(0,Math.min(explicit||objectiveCount,objectiveCount));
 }
+function primaryScoringEvidence(side,index,mission,amountOverride){
+  const player=side==='opp'?'opp':'my';
+  const rows=primaryScoringRowsForRound(mission);
+  const row=rows[index]||null;
+  if(!row)return {eligible:false,reason:'Scoring item not available this round.',side:player,mission,index};
+  const condition=primaryObjectiveConditionStatus(player,row);
+  const per=primaryScoringIsPer(row);
+  const objectiveBased=/\bper\s+objective\b/i.test(String(row?.[2]||''));
+  const suggestedAmount=primaryScoringObjectiveAmount(player,row);
+  const requestedRaw=Number(amountOverride??suggestedAmount);
+  const requestedAmount=per
+    ? Math.max(objectiveBased?0:1,Math.min(50,Math.floor(Number.isFinite(requestedRaw)?requestedRaw:suggestedAmount)))
+    : 1;
+  const objectiveCount=primaryScoringObjectiveCount(player,row);
+  const qualifying=objectiveBased
+    ? primaryObjectiveQualifyingList(player,row).map(o=>({name:o.name,owner:o.owner,type:o.type,territory:o.territory,deploymentZone:o.deploymentZone}))
+    : [];
+  const conditionMet=condition?!!condition.met:true;
+  if(condition&&!conditionMet)return {
+    eligible:false,reason:'Objective control condition is not met.',side:player,mission,index,
+    scoringItem:String(row[2]||''),timing:String(row[0]||''),condition,
+    qualifyingObjectives:qualifying,geometryVerified:objectiveBattlefieldGeometry().verified
+  };
+  const objectiveCap=objectiveBased
+    ? Math.min(primaryScoringMax(row)||Math.max(0,objectiveCount||0),Math.max(0,objectiveCount||0))
+    : primaryScoringMax(row)||50;
+  const amount=per?Math.min(requestedAmount,objectiveCap):1;
+  const baseVP=primaryScoringVP(row[1]);
+  const requestedVP=baseVP*amount;
+  const roundTotal=primaryRoundScoredVP(player);
+  const gameTotal=Math.max(0,Math.min(45,Number(state[player==='my'?'primaryMyScoredVP':'primaryOppScoredVP'])||0));
+  const roundRemaining=Math.max(0,15-roundTotal);
+  const gameRemaining=Math.max(0,45-gameTotal);
+  const allowedVP=Math.min(requestedVP,roundRemaining,gameRemaining);
+  return {
+    eligible:allowedVP>0 && (!objectiveBased || objectiveCap>0),
+    reason:allowedVP>0?'Eligible to score this item.':gameRemaining<=0?'Primary game cap reached.':roundRemaining<=0?'Primary round cap reached.':'No qualifying objectives.',
+    side:player,mission,index,scoringItem:String(row[2]||''),timing:String(row[0]||''),condition,
+    conditionMet,per,objectiveBased,baseVP,requestedAmount,amount,objectiveCount,objectiveCap,
+    requestedVP,allowedVP,roundTotal,gameTotal,roundRemaining,gameRemaining,
+    qualifyingObjectives:qualifying,
+    geometryVerified:objectiveBattlefieldGeometry().verified,
+    geometrySource:objectiveBattlefieldGeometry().source?.geometryStatus||'unverified',
+    mapLayout:state.objectiveMapLayout||'A',mapPage:objectiveLayoutPage()
+  };
+}
+function primaryScorePreview(side,index,mission,amountOverride){
+  return primaryScoringEvidence(side,index,mission,amountOverride);
+}
+function primaryScorePreviewLabel(side,index,mission,amountOverride){
+  const p=primaryScorePreview(side,index,mission,amountOverride);
+  if(!p.eligible)return p.reason;
+  return 'Preview: +'+p.allowedVP+' VP'+(p.objectiveBased?' • '+p.objectiveCount+' qualifying objective'+(p.objectiveCount===1?'':'s'):'');
+}
 function ensurePrimaryObjectiveScoreSnapshots(){
   if(!state.primaryObjectiveScoreSnapshots||typeof state.primaryObjectiveScoreSnapshots!=='object')state.primaryObjectiveScoreSnapshots={};
   return state.primaryObjectiveScoreSnapshots;
@@ -1451,6 +1505,8 @@ function scorePrimaryItem(side,index,mission,amountOverride){
     state[listKey]=state[byRoundKey][roundKey];
     event('PRIMARY_UNSCORED',{side,unit:side==='my'?'Primary Mission':'Opponent Primary Mission',action:'Primary scoring condition removed -'+Math.abs(delta)+' VP',before,after,delta,mission,round,scoringItem:row[2],scoringTiming:row[0]},fullBefore);
   }else{
+    const evidence=primaryScoringEvidence(side,index,mission,amountOverride);
+    if(!evidence.eligible){alert(evidence.reason);return;}
     const per=primaryScoringIsPer(row);
     const suggestedAmount=primaryScoringObjectiveAmount(side,row);
     const objectiveBased=/\bper\s+objective\b/i.test(String(row?.[2]||''));
@@ -1516,7 +1572,7 @@ function scorePrimaryItem(side,index,mission,amountOverride){
     state[valueKey][roundKey][index]=allowedVP;
     state[amountKey][roundKey][index]=amount;
     state[listKey]=state[byRoundKey][roundKey];
-    event('PRIMARY_SCORED',{side,unit:side==='my'?'Primary Mission':'Opponent Primary Mission',action:'Primary scored '+(delta>=0?'+':'')+delta+' VP',before,after,delta,mission,round,scoringItem:row[2],scoringTiming:row[0],amount,roundCap:15,roundTotal:replacementRoundBase+allowedVP},fullBefore);
+    event('PRIMARY_SCORED',{side,unit:side==='my'?'Primary Mission':'Opponent Primary Mission',action:'Primary scored '+(delta>=0?'+':'')+delta+' VP',before,after,delta,mission,round,scoringItem:row[2],scoringTiming:row[0],amount,roundCap:15,roundTotal:replacementRoundBase+allowedVP,scoringEvidence:{...evidence,finalAllowedVP:allowedVP,finalAmount:amount,objectiveSnapshot:objectiveSnapshot||null}},fullBefore);
   }
   save();
   render();
@@ -5166,17 +5222,33 @@ function objectiveRole(name){
 }
 function objectiveType(name){return objectiveRole(name);}
 function objectiveHomeSide(name){return ensureObjectiveMeta()[String(name||'')]?.homeSide||null;}
-function objectiveTerritory(name){
+function objectiveMetadataTerritory(name){
   const meta=ensureObjectiveMeta()[String(name||'')]||{};
   if(['my','opp','nml'].includes(meta.territory))return meta.territory;
   if(meta.type==='home'&&['my','opp'].includes(meta.homeSide))return meta.homeSide;
   return 'nml';
 }
-function objectiveDeploymentZone(name){
+function objectiveMetadataDeploymentZone(name){
   const meta=ensureObjectiveMeta()[String(name||'')]||{};
   if(['my','opp','none'].includes(meta.deploymentZone))return meta.deploymentZone;
   if(meta.type==='home'&&['my','opp'].includes(meta.homeSide))return meta.homeSide;
   return 'none';
+}
+function objectiveTerritory(name){
+  const geometry=objectiveBattlefieldGeometry();
+  if(geometry.verified){
+    const spatial=objectiveSpatialClassification(name);
+    if(spatial.verified)return spatial.territory;
+  }
+  return objectiveMetadataTerritory(name);
+}
+function objectiveDeploymentZone(name){
+  const geometry=objectiveBattlefieldGeometry();
+  if(geometry.verified){
+    const spatial=objectiveSpatialClassification(name);
+    if(spatial.verified)return spatial.deploymentZone;
+  }
+  return objectiveMetadataDeploymentZone(name);
 }
 function objectiveDeploymentZoneLabel(zone){return ({my:'My Deployment Zone',opp:'Opponent Deployment Zone',none:'No Deployment Zone'})[zone]||'No Deployment Zone';}
 function ensureObjectiveControlSources(){
@@ -5338,8 +5410,8 @@ function objectiveBattlefieldGeometry(){
     objectives:objectiveNames.map(name=>({
       name,
       type:objectiveType(name),
-      territory:objectiveTerritory(name),
-      deploymentZone:objectiveDeploymentZone(name),
+      territory:objectiveMetadataTerritory(name),
+      deploymentZone:objectiveMetadataDeploymentZone(name),
       position:geometryEntry?.objectivePositions?.[name]||null,
       positionVerified:verified
     }))
@@ -5348,7 +5420,7 @@ function objectiveBattlefieldGeometry(){
 function objectiveSpatialClassification(name){
   const geometry=objectiveBattlefieldGeometry();
   const position=geometry.objectives.find(o=>o.name===name)?.position||null;
-  if(!geometry.verified||!position)return {verified:false,territory:objectiveTerritory(name),deploymentZone:objectiveDeploymentZone(name),source:'objective-metadata'};
+  if(!geometry.verified||!position)return {verified:false,territory:objectiveMetadataTerritory(name),deploymentZone:objectiveMetadataDeploymentZone(name),source:'objective-metadata'};
   const regions=geometry.source.geometryEntry?.deploymentZones||{};
   const pointInRegion=(p,r)=>{
     if(!r||typeof r!=='object')return false;
@@ -8152,7 +8224,7 @@ function tacticalObjectiveAdvisor(side){
   const relevant=list.map(o=>{
     const text=rows.map(r=>String(r?.[2]||'')).join(' ').toLowerCase();
     const centralRule=/central objectives?/.test(text)&&o.type==='central';
-    const homeRule=/home objective|your home|home/.test(text)&&o.type==='home'&&o.homeSide===player;
+    const homeRule=/home objective|your home|home/.test(text)&&o.type==='home'&&objectiveHomeSide(o.name)===player;
     const enemyTerritoryRule=/enemy territory/.test(text)&&o.territory===enemy;
     const deploymentRule=/deployment zone/.test(text)&&o.deploymentZone===player;
     const genericObjectiveRule=/objective/.test(text);
