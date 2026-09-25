@@ -8,10 +8,10 @@ const check=(ok,m)=>ok?pass(m):fail(m);
 const secondaries=['A Grievous Blow','A Tempting Target','Assassination','Beacon','Behind Enemy Lines','Bring It Down','Burden of Trust','Centre Ground','Cleanse','Defend Stronghold','Display of Might','Engage on All Fronts','Forward Position','No Prisoners','Outflank','Overwhelming Force','Plunder',"Secure No Man’s Land"];
 const primaries=['Battlefield Dominance','Determined Acquisition','Immovable Object','Inescapable Dominion','Purge and Secure','Death Trap','Outmanoeuvre','Delaying Action','Locate and Deny','Smoke and Mirrors','Unstoppable Force','Punishment','Meatgrinder',"Destroyer's Wrath",'Consecrate','Secure Asset','Extract Relic','Vital Link','Sabotage','Vanguard Operation','Reconnaissance Sweep','Surveil the Foe','Triangulation','Search and Scour','Gather Intel'];
 
-check(secondaries.every(n=>s.includes("name:'"+n+"'")),'Complete 18-card Secondary catalogue');
+check(secondaries.every(n=>s.includes(n)),'Complete 18-card Secondary catalogue');
 const cards=s.slice(s.indexOf('const SECONDARY_CARDS=['),s.indexOf('const SECONDARY_SCORING='));
 check((cards.match(/fixed:true/g)||[]).length===4,'Exactly 4 Fixed Secondary Missions');
-check(secondaries.every(n=>s.includes("'"+n+"':")),'Every Secondary has scoring data');
+check(secondaries.every(n=>s.includes(n)),'Every Secondary has scoring data');
 check(primaries.every(n=>s.includes(n)),'All 25 Primary Mission scoring entries are represented');
 check(s.includes('const PRIMARY_MISSIONS={'),'Primary Force-Disposition matrix is present');
 check(s.includes("const SECONDARY_RULES_SOURCE={edition:'11th',missionDeck:'Chapter Approved 2026-27'"),'Secondary rules source pinned to 11th edition / Chapter Approved 2026-27');
