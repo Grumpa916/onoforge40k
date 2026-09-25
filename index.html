@@ -1764,7 +1764,7 @@ function scorePrimaryItem(side,index,mission,amountOverride){
     const after=replacementBaseVP+allowedVP;
     const delta=after-before;
     state[vpKey]=after;
-    state[overallKey]=Math.max(0,(Number(state[overallKey])||0)+delta);
+    state[overallKey]=scoreTotalForSide(side);
     state[byRoundKey][roundKey]=[...state[byRoundKey][roundKey],index];
     state[valueKey][roundKey][index]=allowedVP;
     state[amountKey][roundKey][index]=amount;
