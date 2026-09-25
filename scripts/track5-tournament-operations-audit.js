@@ -45,10 +45,10 @@ check('End-game event is logged',
   has(/event\('BATTLE_ENDED'/),
   'Battle completion must remain auditable in the action history.');
 check('Immutable tournament result snapshot exists',
-  has(/function tournamentResultSnapshot\\(/)&&has(/state\\.battleResult=tournamentResultSnapshot\\(\\)/),
+  has(/function tournamentResultSnapshot\(/)&&has(/state\.battleResult=tournamentResultSnapshot\(\)/),
   'Completed battles must preserve a result snapshot independent of later UI rendering.');
 check('Tournament result export is available',
-  has(/function exportTournamentResult\\(/)&&has(/Export Tournament Result/),
+  has(/function exportTournamentResult\(/)&&has(/Export Tournament Result/),
   'A completed tournament battle must provide a portable result export.');
 check('No legacy 10th-edition rule contamination',
   !/Big Guns Never Tire/i.test(html),
