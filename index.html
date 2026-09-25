@@ -5264,6 +5264,39 @@ function validateEventCompanionGeometry(){
   });
   return {ok:issues.length===0,issues,count:layouts.length,verifiedCount:layouts.filter(e=>e?.verified===true).length};
 }
+function validateEventCompanionGeometryRecord(entry){
+  const issues=[];
+  if(!entry||typeof entry!=='object') return {ok:false,issues:['Geometry record is not an object']};
+  if(!entry.missionKey||!entry.missionA||!entry.missionB) issues.push('Mission identity is required');
+  if(!['A','B','C'].includes(entry.layout)) issues.push('Layout must be A, B, or C');
+  if(!Number.isInteger(entry.page)||entry.page<1) issues.push('A valid Event Companion page number is required');
+  const checkPoint=(p,label)=>{
+    if(!p||!Number.isFinite(Number(p.x))||!Number.isFinite(Number(p.y))) issues.push(label+' requires numeric x/y coordinates');
+    else if(Number(p.x)<0||Number(p.x)>60||Number(p.y)<0||Number(p.y)>44) issues.push(label+' is outside the 60″ × 44″ battlefield');
+  };
+  if(entry.objectivePositions&&typeof entry.objectivePositions==='object'){
+    Object.entries(entry.objectivePositions).forEach(([name,p])=>checkPoint(p,'Objective '+name));
+  } else if(entry.verified===true) issues.push('Verified records require objectivePositions');
+  const zones=entry.deploymentZones;
+  if(entry.verified===true&&(!zones||typeof zones!=='object'||Array.isArray(zones))) issues.push('Verified records require deploymentZones');
+  const checkRegion=(r,label)=>{
+    if(!r||typeof r!=='object') return issues.push(label+' is not an object');
+    if(Number.isFinite(Number(r.x))&&Number.isFinite(Number(r.y))&&Number.isFinite(Number(r.width))&&Number.isFinite(Number(r.height))){
+      if(Number(r.x)<0||Number(r.y)<0||Number(r.x)+Number(r.width)>60||Number(r.y)+Number(r.height)>44||Number(r.width)<=0||Number(r.height)<=0) issues.push(label+' rectangle is outside the battlefield');
+      return;
+    }
+    if(Array.isArray(r.points)&&r.points.length>=3){
+      r.points.forEach((p,i)=>checkPoint(p,label+' point '+(i+1)));
+      return;
+    }
+    issues.push(label+' must use a rectangle or polygon point list');
+  };
+  if(zones&&typeof zones==='object'&&!Array.isArray(zones)) Object.entries(zones).forEach(([key,r])=>checkRegion(r,'Region '+key));
+  if(entry.terrainGeometry&&typeof entry.terrainGeometry==='object'){
+    Object.entries(entry.terrainGeometry).forEach(([key,r])=>{ if(r&&typeof r==='object'&&(r.points||Number.isFinite(Number(r.x)))) checkRegion(r,'Terrain '+key); });
+  }
+  return {ok:issues.length===0,issues};
+}
 function objectivePositionFor(name){
   const geometry=objectiveBattlefieldGeometry();
   return geometry.verified?geometry.objectives.find(o=>o.name===name)?.position||null:null;
@@ -9925,7 +9958,7 @@ function eventCompanionGeometryVerificationConsoleHtml(){
   const layouts=Array.isArray(ONOFORGE_EVENT_COMPANION?.layoutGeometry?.layouts)?ONOFORGE_EVENT_COMPANION.layoutGeometry.layouts:[];
   const verified=layouts.filter(x=>x?.verified===true).length;
   return '<div class="card" style="margin-top:12px"><div class="split"><div><h3 style="margin:0">Geometry Verification Console</h3><div class="muted" style="margin-top:4px">Verification is intentionally separate from mission selection and objective control. Only exact Event Companion measurements may be promoted into gameplay geometry.</div></div><span class="pill">'+verified+'/'+layouts.length+' source layouts verified</span></div>'+
-    '<div class="unit" style="margin-top:10px"><strong>Verification gate</strong><div class="tiny" style="margin-top:4px">A layout must identify its mission pair and A/B/C layout, use the 60″ × 44″ battlefield coordinate system, contain validated objective coordinates, and explicitly define deployment/territory geometry before it can drive the tactical map.</div></div>'+
+    '<div class="status" style="margin-top:10px">'+(malformedVerified?'⚠ '+malformedVerified+' verified records fail record-level validation':'All verified records pass record-level validation')+'</div>'+'<div class="unit" style="margin-top:10px"><strong>Verification gate</strong><div class="tiny" style="margin-top:4px">A layout must identify its mission pair and A/B/C layout, use the 60″ × 44″ battlefield coordinate system, contain validated objective coordinates, and explicitly define deployment/territory geometry before it can drive the tactical map.</div></div>'+
     '<div class="unit"><strong>Current safety behavior</strong><div class="tiny" style="margin-top:4px">Unverified layouts do not render inferred deployment zones, territory, terrain, objective positions, or distance calculations. The app will not substitute “my side / opponent side” or table fractions.</div></div>'+
     '<div class="unit"><strong>Next verification input</strong><div class="tiny" style="margin-top:4px">When the official Event Companion artwork is available, record exact measurements for one layout at a time. Keep the source page number attached to every geometry record. Do not estimate from screenshots or generic battlefield proportions.</div></div>'+
     '<div class="tiny" style="margin-top:10px">Recommended order: Layout A → Layout B → Layout C for each mission pair, then run the structural audit before enabling objective-control distance/scoring dependencies.</div></div>';
@@ -9935,6 +9968,8 @@ function eventCompanionGeometryAuditHtml(){
   const layouts=Array.isArray(ONOFORGE_EVENT_COMPANION?.layoutGeometry?.layouts)?ONOFORGE_EVENT_COMPANION.layoutGeometry.layouts:[];
   const verified=layouts.filter(x=>x?.verified===true).length;
   const pending=layouts.length-verified;
+  const recordChecks=layouts.map(x=>({entry:x,check:validateEventCompanionGeometryRecord(x)}));
+  const malformedVerified=recordChecks.filter(x=>x.entry?.verified===true&&!x.check.ok).length;
   const rows=layouts.slice(0,15).map(x=>'<div class="unit"><strong>'+esc(x.missionA+' ↔ '+x.missionB)+' • Layout '+esc(x.layout)+'</strong><div class="muted">Event Companion p.'+esc(String(x.page))+' • '+(x.verified?'Verified':'Pending geometry verification')+'</div></div>').join('');
   return '<div class="card" style="margin-top:12px"><div class="split"><div><h3 style="margin:0">Event Companion Map Geometry</h3><div class="muted" style="margin-top:4px">Machine-readable battlefield geometry is gated until it is verified against the official layout artwork.</div></div><span class="pill">'+verified+'/'+layouts.length+' verified</span></div>'+
     '<div class="status" style="margin-top:10px">'+(audit.ok?'Geometry dataset structure valid':'Geometry dataset validation requires attention')+' • '+esc(String(pending))+' layouts pending verification</div>'+
