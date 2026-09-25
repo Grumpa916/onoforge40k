@@ -9954,11 +9954,25 @@ function clearAllLocalData(){
   location.reload();
 }
 
+function exportEventCompanionGeometryTemplate(){
+  const layouts=Array.isArray(ONOFORGE_EVENT_COMPANION?.layoutGeometry?.layouts)?ONOFORGE_EVENT_COMPANION.layoutGeometry.layouts:[];
+  const payload={
+    schema:'onoforge40k.event-companion-geometry-import.v1',
+    source:ONOFORGE_EVENT_COMPANION?.source||null,
+    coordinateSystem:ONOFORGE_EVENT_COMPANION?.layoutGeometry?.coordinateSystem||{origin:'bottom-left',units:'inches',xAxis:'across 60 inch table width',yAxis:'along 44 inch table depth'},
+    instructions:'Populate exact Event Companion measurements only. Do not estimate. Keep verified=false until the record passes validation.',
+    layouts:layouts.map(x=>({missionKey:x.missionKey,missionA:x.missionA,missionB:x.missionB,layout:x.layout,page:x.page,verified:false,objectivePositions:x.objectivePositions||{},deploymentZones:x.deploymentZones||{},terrainGeometry:x.terrainGeometry||{}}))
+  };
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='onoforge-event-companion-geometry-import.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500);
+}
 function eventCompanionGeometryVerificationConsoleHtml(){
   const layouts=Array.isArray(ONOFORGE_EVENT_COMPANION?.layoutGeometry?.layouts)?ONOFORGE_EVENT_COMPANION.layoutGeometry.layouts:[];
   const verified=layouts.filter(x=>x?.verified===true).length;
+  const recordChecks=layouts.map(x=>({entry:x,check:validateEventCompanionGeometryRecord(x)}));
+  const malformedVerified=recordChecks.filter(x=>x.entry?.verified===true&&!x.check.ok).length;
   return '<div class="card" style="margin-top:12px"><div class="split"><div><h3 style="margin:0">Geometry Verification Console</h3><div class="muted" style="margin-top:4px">Verification is intentionally separate from mission selection and objective control. Only exact Event Companion measurements may be promoted into gameplay geometry.</div></div><span class="pill">'+verified+'/'+layouts.length+' source layouts verified</span></div>'+
-    '<div class="status" style="margin-top:10px">'+(malformedVerified?'⚠ '+malformedVerified+' verified records fail record-level validation':'All verified records pass record-level validation')+'</div>'+'<div class="unit" style="margin-top:10px"><strong>Verification gate</strong><div class="tiny" style="margin-top:4px">A layout must identify its mission pair and A/B/C layout, use the 60″ × 44″ battlefield coordinate system, contain validated objective coordinates, and explicitly define deployment/territory geometry before it can drive the tactical map.</div></div>'+
+    '<div class="status" style="margin-top:10px">'+(malformedVerified?'⚠ '+malformedVerified+' verified records fail record-level validation':'All verified records pass record-level validation')+'</div>'+'<div style="margin-top:10px"><button class="btn" onclick="exportEventCompanionGeometryTemplate()">Export Geometry Import Template</button></div>'+'<div class="unit" style="margin-top:10px"><strong>Verification gate</strong><div class="tiny" style="margin-top:4px">A layout must identify its mission pair and A/B/C layout, use the 60″ × 44″ battlefield coordinate system, contain validated objective coordinates, and explicitly define deployment/territory geometry before it can drive the tactical map.</div></div>'+
     '<div class="unit"><strong>Current safety behavior</strong><div class="tiny" style="margin-top:4px">Unverified layouts do not render inferred deployment zones, territory, terrain, objective positions, or distance calculations. The app will not substitute “my side / opponent side” or table fractions.</div></div>'+
     '<div class="unit"><strong>Next verification input</strong><div class="tiny" style="margin-top:4px">When the official Event Companion artwork is available, record exact measurements for one layout at a time. Keep the source page number attached to every geometry record. Do not estimate from screenshots or generic battlefield proportions.</div></div>'+
     '<div class="tiny" style="margin-top:10px">Recommended order: Layout A → Layout B → Layout C for each mission pair, then run the structural audit before enabling objective-control distance/scoring dependencies.</div></div>';
