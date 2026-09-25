@@ -7964,6 +7964,25 @@ function tacticalObjectiveValueForTarget(targetEntry,pairCtx){
   return {value:0.05*Math.min(1,oc/5),status:'negative',reason:changedThisTurn?'target-linked-to-newly-friendly-controlled-objective':'target-linked-to-friendly-controlled-objective',objective:label,owner,startOwner,changedThisTurn,oc};
 }
 
+function tacticalPrimaryTargetImpact(targetEntry,pairCtx){
+  const objective=String(pairCtx?.objective||'').trim();
+  if(!objective)return {objective:'',my:{potentialVP:0,conditionCount:0,items:[]},opp:{potentialVP:0,conditionCount:0,items:[]},ownScoringValue:0,denyScoringValue:0,status:'unknown'};
+  const myImpact=objectivePrimaryScoringImpact('my',objective);
+  const oppImpact=objectivePrimaryScoringImpact('opp',objective);
+  const owner=['my','opp','contested','none'].includes(state.objectives?.[objective])?state.objectives[objective]:'unknown';
+  const targetSide='opp';
+  const targetControls=owner===targetSide;
+  const myOpportunity=myImpact.potentialVP>0?myImpact.potentialVP:(myImpact.conditionCount>0?0.25:0);
+  const denyOpportunity=targetControls?(oppImpact.potentialVP>0?oppImpact.potentialVP:(oppImpact.conditionCount>0?0.25:0)):0;
+  return {
+    objective,owner,targetControls,
+    my:{potentialVP:myImpact.potentialVP,conditionCount:myImpact.conditionCount,items:myImpact.items},
+    opp:{potentialVP:oppImpact.potentialVP,conditionCount:oppImpact.conditionCount,items:oppImpact.items},
+    ownScoringValue:Math.min(1,myOpportunity/5),
+    denyScoringValue:Math.min(1,denyOpportunity/5),
+    status:owner==='unknown'?'unknown':targetControls?'enemy-controlled':owner==='my'?'friendly-controlled':owner==='contested'?'contested':'uncontrolled'
+  };
+}
 function tacticalAdvisorStateSnapshot(attackerEntryUid){
   const atk=entry('my',attackerEntryUid)||mathRosterEntry('my');
   const targets=(state.opp||[]).filter(e=>!e.attachedTo&&!tacticalUnitState('opp',e)?.destroyed);
@@ -8397,7 +8416,12 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     const outgoing=Math.max(0,Number(x.expectedDamage)||0);
     const objectiveControl=Math.max(0,Number(x.strategicHook?.objectiveControl)||0);
     const objectiveContext=x.strategicHook?.objective||{value:0,status:'unknown',reason:'objective-context-unavailable'};
-    const objectiveValue=Math.max(0,Math.min(1,Number(objectiveContext.value)||0));
+    const primaryTargetImpact=tacticalPrimaryTargetImpact(entry('opp',x.entryUid),pairDecisionCtx);
+    const objectiveValue=Math.max(0,Math.min(1,
+      0.70*(Number(objectiveContext.value)||0)+
+      0.15*(Number(primaryTargetImpact.ownScoringValue)||0)+
+      0.15*(Number(primaryTargetImpact.denyScoringValue)||0)
+    ));
     const efficiency=Math.max(0,Math.min(1,(Number(x.damagePerPoint)||0)*100));
     const threatSuppression=Math.min(1,incoming/Math.max(1,incoming+outgoing));
     const scoringUrgency=Math.max(0,Math.min(1,
@@ -8482,6 +8506,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     x.exchangeComponents.decisionMode=decisionMode;
     x.exchangeComponents.objectiveValue=objectiveValue;
     x.exchangeComponents.objectiveContext=objectiveContext;
+    x.exchangeComponents.primaryTargetImpact=primaryTargetImpact;
     x.exchangeComponents.efficiency=efficiency;
     x.exchangeComponents.dataConfidence=dataConfidence;
     x.exchangeComponents.simulationConfidence=simulationConfidence;
@@ -8513,7 +8538,7 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     x.confidencePenalty=confidencePenalty;
     x.decisionScore=(x.tacticalLegality?.canTarget===false)?-1:rawDecisionScore*confidencePenalty;
     x.decisionComponents={
-      lethality,threatSuppression,efficiency,objectiveValue,objectiveContext,scoringUrgency,scoreNow,denyOpponentScore,preserveFriendlyUnit,tradeValue,targetPointsAtRisk,friendlyPointsAtRisk,pointExchangeRatio,futureScoringValue,decisionMode,dataConfidence,simulationConfidence,contextConfidence,knownContextSignals,decisionConfidence,
+      lethality,threatSuppression,efficiency,objectiveValue,objectiveContext,primaryTargetImpact,scoringUrgency,scoreNow,denyOpponentScore,preserveFriendlyUnit,tradeValue,targetPointsAtRisk,friendlyPointsAtRisk,pointExchangeRatio,futureScoringValue,decisionMode,dataConfidence,simulationConfidence,contextConfidence,knownContextSignals,decisionConfidence,
       rawDecisionScore,confidencePenalty,
       weights:{lethality:0.32,threatSuppression:0.16,efficiency:0.06,objectiveValue:0.10,scoringUrgency:0.07,scoreNow:0.07,denyOpponentScore:0.06,preserveFriendlyUnit:0.04,tradeValue:0.03,futureScoringValue:0.02,dataConfidence:0.03,simulationConfidence:0.01,contextConfidence:0.03},
       interpretation:decisionMode==='LOW_CONFIDENCE'?'Confidence is limited; treat this as a candidate action and verify the underlying rules, range, and board state.':
@@ -8568,7 +8593,13 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
       expected:{damage:Number(x.expectedDamage)||0,modelsKilled:Number(x.modelsKilled)||0,wipeChance:Number(x.wipeChance)||0},
       risk:{band:x.exchangeComponents?.exposureBand||'unknown',incomingThreat:Number(x.incomingThreat)||0,pointsAtRisk:Number(x.friendlyPointsAtRisk||0),pointRiskFraction:Number(x.pointRiskFraction||0)},
       confidence:{label:confidenceLabel,value:confidenceValue},
-      whatCouldChange:changes.length?changes:['Re-check if range, line of sight, engagement, or objective state changes.']
+      whatCouldChange:changes.length?changes:['Re-check if range, line of sight, engagement, or objective state changes.'],
+      missionImpact:{
+        objective:primaryTargetImpact.objective,
+        status:primaryTargetImpact.status,
+        denyOpponentPrimary:primaryTargetImpact.denyScoringValue,
+        ownPrimaryOpportunity:primaryTargetImpact.ownScoringValue
+      }
     };
   });
   return {
