@@ -4985,7 +4985,7 @@ function battle(){const recent=state.events.slice(0,12);return `${gameTimerHtml(
 </div>
 <div class="battle-inline-controls">
   <button type="button" class="btn" id="prev-phase-btn" onclick="window.previousPhase();return false;">Previous Phase</button>
-  <button type="button" class="btn" id="next-phase-btn" onclick="window.advancePhase();return false;">Next Phase</button>
+  <button type="button" class="btn" id="next-phase-btn" onclick="window.advancePhase();return false;">${state.phase==='Fight' ? (state.currentTurn==='my' ? 'End Turn → Opponent' : (state.round>=MAX_ROUND ? 'Finish Battle' : 'End Turn → Next Round')) : 'Next Phase →'}</button>
   <button type="button" class="btn" id="prev-round-btn" onclick="window.previousRound();return false;">Previous Round</button>
   <button type="button" class="btn" id="next-round-btn" onclick="window.nextRound();return false;" ${state.round>=MAX_ROUND?'disabled':''}>Next Round</button>
   <button type="button" class="btn" onclick="endBattle();return false;"  ${state.battleEnded?'disabled':''}>End Battle</button><button type="button" class="btn danger" onclick="startBattle();return false;">Start / Reset Battle</button>
