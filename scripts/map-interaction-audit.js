@@ -30,12 +30,12 @@ check('Touch/click placement converts to 60x44 coordinates',
   'Map input must translate screen coordinates into the verified 60x44 inch system at 0.1 inch resolution, either at input mapping or in the authoritative setter.');
 
 check('Placement remains manual and bounded',
-  /function setBattlefieldUnitPosition[\s\S]{0,2200}source:'manual'/.test(html) &&
+  /function setBattlefieldUnitPosition[\s\S]{0,2200}(source='manual'|source:'manual')/.test(html) &&
   has(/x<0\|\|x>60\|\|y<0\|\|y>44/),
   'Map placement must never infer position and must reject coordinates outside the table.');
 
 check('Placement changes remain undoable and auditable',
-  /function setBattlefieldUnitPosition[\s\S]{0,2400}snapshotForUndo\(\)[\s\S]{0,2400}event\('UNIT_BATTLEFIELD_POSITION_CHANGED'/.test(html),
+  /function setBattlefieldUnitPosition[\s\S]{0,2400}snapshotForUndo\(\)[\s\S]{0,2400}event\(source==='deployment'\?'UNIT_DEPLOYED':'UNIT_BATTLEFIELD_POSITION_CHANGED'/.test(html),
   'Map placement must preserve the existing undo/action-log contract.');
 
 check('Map renders verified deployment and territory geometry',
