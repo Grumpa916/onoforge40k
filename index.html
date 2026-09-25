@@ -726,39 +726,24 @@ function objectiveLayoutInfo(){const m=[primaryMission('my'),primaryMission('opp
 function ensureObjectiveLayoutForMission(){const key=objectiveMissionKey();if(!key)return null;if(state.objectiveMapMissionKey!==key){state.objectiveMapMissionKey=key;state.objectiveMapLayout='A';}state.objectiveMapLayout=['A','B','C'].includes(state.objectiveMapLayout)?state.objectiveMapLayout:'A';return objectiveLayoutInfo();}
 function setObjectiveMapLayout(layout){const next=['A','B','C'].includes(layout)?layout:null;if(!next)return;const info=ensureObjectiveLayoutForMission();if(!info)return;const before=snapshotForUndo();const previous=state.objectiveMapLayout||'A';state.objectiveMapLayout=next;state.objectiveMapMissionKey=objectiveMissionKey();if(Object.keys(state.objectives||{}).length===0)autoSeedObjectiveStructure();event('OBJECTIVE_LAYOUT_CHANGED',{unit:'Battlefield Layout',action:'Layout '+next+' selected',previous,after:next,round:Math.max(1,Number(state.round)||1),primaryMissions:[primaryMission('my'),primaryMission('opp')],missionKey:state.objectiveMapMissionKey,page:objectiveLayoutPage()},before);save();render();}
 function objectiveLayoutPage(){const info=ensureObjectiveLayoutForMission();if(!info)return null;const i=['A','B','C'].indexOf(state.objectiveMapLayout);return info.pages[i<0?0:i];}
-function objectiveMapModel(){
-  const geometry=objectiveBattlefieldGeometry();
-  const objectives=Object.keys(state.objectives||{}).map(objectiveStateRecord);
-  return {
-    version:'map.v1',
-    layout:geometry.layout,
-    missionKey:geometry.missionKey,
-    page:geometry.page,
-    table:geometry.table,
-    verified:geometry.verified,
-    deploymentZones:geometry.verified?(geometry.source.geometryEntry?.deploymentZones||null):null,
-    terrainGeometry:geometry.verified?(geometry.source.geometryEntry?.terrainGeometry||null):null,
-    objectives:objectives.map(o=>({
-      name:o.name,owner:o.owner,type:o.type,territory:o.territory,deploymentZone:o.deploymentZone,
-      position:o.battlefieldPosition||null
-    })),
-    unitPositions:ensureBattlefieldUnitPositions()
-  };
-}
+function deploymentPlanKey(){const mission=String(state.objectiveMapMissionKey||objectiveMissionKey()||'unselected'),layout=['A','B','C'].includes(state.objectiveMapLayout)?state.objectiveMapLayout:'A';return mission+'|'+layout;}
+function ensureDeploymentPlans(){if(!state.deploymentPlans||typeof state.deploymentPlans!=='object'||Array.isArray(state.deploymentPlans))state.deploymentPlans={};return state.deploymentPlans;}
+function deploymentPlanForCurrentMap(){const raw=ensureDeploymentPlans()[deploymentPlanKey()];return raw&&raw.positions&&typeof raw.positions==='object'?raw.positions:{};}
+function deploymentPlanPosition(uid){const raw=deploymentPlanForCurrentMap()[String(uid)];if(!raw)return null;const x=Math.round(Number(raw.x)*10)/10,y=Math.round(Number(raw.y)*10)/10;if(!Number.isFinite(x)||!Number.isFinite(y)||x<0||x>60||y<0||y>44)return null;return {x,y,side:'my',source:'deployment-plan'};}
+function setDeploymentPlanPosition(uid,x,y){const id=String(uid||''),nx=Math.round(Number(x)*10)/10,ny=Math.round(Number(y)*10)/10;if(!id||!Number.isFinite(nx)||!Number.isFinite(ny)||nx<0||nx>60||ny<0||ny>44)return false;const key=deploymentPlanKey(),plans=ensureDeploymentPlans();if(!plans[key]||typeof plans[key]!=='object')plans[key]={positions:{},missionKey:String(state.objectiveMapMissionKey||objectiveMissionKey()||''),layout:state.objectiveMapLayout||'A'};if(!plans[key].positions||typeof plans[key].positions!=='object')plans[key].positions={};plans[key].positions[id]={x:nx,y:ny,side:'my',source:'deployment-plan'};save();render();return true;}
+function clearDeploymentPlanPosition(uid){const id=String(uid||''),plan=ensureDeploymentPlans()[deploymentPlanKey()];if(!id||!plan?.positions||!Object.prototype.hasOwnProperty.call(plan.positions,id))return;delete plan.positions[id];save();render();}
+function clearDeploymentPlanForCurrentMap(){const key=deploymentPlanKey(),plans=ensureDeploymentPlans();if(plans[key])delete plans[key];save();render();}
+function saveDeploymentPlan(){const id=String(state.activeRosterId||'');if(!id){alert('Save the current army list first, then save its deployment plan.');return;}const plans=ensureDeploymentPlans(),key=deploymentPlanKey();if(!plans[key])plans[key]={positions:{},missionKey:String(state.objectiveMapMissionKey||objectiveMissionKey()||''),layout:state.objectiveMapLayout||'A'};const saved=(state.savedArmyLists||[]).find(x=>String(x.id)===id),roster=(state.lists||[]).find(x=>String(x.id)===id);if(saved){saved.deploymentPlans=JSON.parse(JSON.stringify(plans));saved.updated=new Date().toISOString();cloudUpsertArmyList(saved).catch(()=>{});}if(roster)roster.deploymentPlans=JSON.parse(JSON.stringify(plans));save();render();}
+function loadDeploymentPlan(){const plan=ensureDeploymentPlans()[deploymentPlanKey()];if(!plan){alert('No saved deployment plan exists for this mission and layout.');return;}save();render();}
+function objectiveMapModel(mode='battle'){const geometry=objectiveBattlefieldGeometry(),objectives=Object.keys(state.objectives||{}).map(objectiveStateRecord);return {version:'map.v1',mode,layout:geometry.layout,missionKey:geometry.missionKey,page:geometry.page,table:geometry.table,verified:geometry.verified,deploymentZones:geometry.verified?(geometry.source.geometryEntry?.deploymentZones||null):null,terrainGeometry:geometry.verified?(geometry.source.geometryEntry?.terrainGeometry||null):null,objectives:objectives.map(o=>({name:o.name,owner:o.owner,type:o.type,territory:o.territory,deploymentZone:o.deploymentZone,position:o.battlefieldPosition||null})),unitPositions:mode==='setup'?deploymentPlanForCurrentMap():ensureBattlefieldUnitPositions()};}
 function ensureBattlefieldUnitPositions(){
   if(!state.battlefieldUnitPositions||typeof state.battlefieldUnitPositions!=='object'||Array.isArray(state.battlefieldUnitPositions))state.battlefieldUnitPositions={};
   return state.battlefieldUnitPositions;
 }
-function battlefieldUnitPosition(side,uid){
-  const raw=ensureBattlefieldUnitPositions()[String(uid)];
-  if(!raw||raw.side!==(side==='opp'?'opp':'my'))return null;
-  const x=Number(raw.x),y=Number(raw.y);
-  if(!Number.isFinite(x)||!Number.isFinite(y)||x<0||x>60||y<0||y>44)return null;
-  return {x,y,side:raw.side,source:raw.source||'manual'};
-}
+function battlefieldUnitPosition(side,uid,mode='battle'){if(mode==='setup')return side==='my'?deploymentPlanPosition(uid):null;const raw=ensureBattlefieldUnitPositions()[String(uid)];if(!raw||raw.side!==(side==='opp'?'opp':'my'))return null;const x=Math.round(Number(raw.x)*10)/10,y=Math.round(Number(raw.y)*10)/10;if(!Number.isFinite(x)||!Number.isFinite(y)||x<0||x>60||y<0||y>44)return null;return {x,y,side:raw.side,source:raw.source||'manual'};}
 function setBattlefieldUnitPosition(side,uid,x,y){
   const nextSide=side==='opp'?'opp':'my',id=String(uid||'');
-  const nx=Number(x),ny=Number(y);
+  const nx=Math.round(Number(x)*10)/10,ny=Math.round(Number(y)*10)/10;
   if(!id||!Number.isFinite(nx)||!Number.isFinite(ny)||nx<0||nx>60||ny<0||ny>44)return false;
   const before=snapshotForUndo();
   ensureBattlefieldUnitPositions()[id]={x:nx,y:ny,side:nextSide,source:'manual',round:Math.max(1,Number(state.round)||1)};
@@ -847,72 +832,12 @@ function objectiveMapPlacementPanelHtml(model){
   const selectedName=selectedEntry?unitDisplayName(selected.side,selectedEntry):'selected unit';
   return '<div class="objective-map-controls"><div class="split"><div><strong>Map Placement</strong><div class="tiny">Select a unit, then tap/click its new tabletop position on the map.</div></div><span class="pill">0.1″ coordinates</span></div><div class="objective-map-placement-row"><select class="objective-map-unit-select" aria-label="Unit to place on battlefield map"><option value="">Select unit…</option>'+options+'</select><button type="button" class="btn primary" data-map-placement-cancel '+(selected.uid?'':'disabled')+'>Cancel</button></div><div class="tiny objective-map-placement-status">'+(selected.uid?'Placement active — tap the map to set '+esc(selectedName)+' position.':'Placement inactive — no unit is selected.')+'</div></div>';
 }
-function objectiveMapUnitNodesHtml(model,pct){
-  if(!model.verified)return '';
-  const units=[...(Array.isArray(state.my)?state.my:[]).map(e=>({side:'my',entry:e})),...(Array.isArray(state.opp)?state.opp:[]).map(e=>({side:'opp',entry:e}))];
-  return units.map(({side,entry})=>{
-    const p=battlefieldUnitPosition(side,entry?.uid);
-    if(!p)return '';
-    const nearest=Object.values(state.objectives||{}).length?Object.keys(state.objectives||{}).map(name=>({name,distance:objectiveDistanceFromUnit(side,entry.uid,name)})).filter(x=>x.distance!==null).sort((a,b)=>a.distance-b.distance)[0]:null;
-    const title=unitDisplayName(side,entry)+(nearest?' • '+nearest.name+' '+nearest.distance.toFixed(1)+'″':'');
-    return '<div class="objective-map-unit '+side+'" data-map-unit="'+esc(side+'|'+entry.uid)+'" style="left:'+pct(p.x,60)+'%;top:'+pct(44-p.y,44)+'%;" title="'+esc(title)+'">'+esc((unitDisplayName(side,entry)||'Unit').slice(0,8))+'</div>';
-  }).join('');
-}
-function objectiveMapRendererHtml(){
-  const model=objectiveMapModel();
-  const status=model.verified?'Verified geometry':'Geometry pending verification';
-  const pct=(n,max)=>Math.max(0,Math.min(100,(Number(n)/Number(max))*100));
-  const point=(p)=>p&&Number.isFinite(Number(p.x))&&Number.isFinite(Number(p.y));
-  const regionLabel=(key)=>{
-    const k=String(key||'');
-    if(k==='attackerDeployment')return (state.attackerSide==='opp'?state.oppName:state.myName)+' Deployment Zone';
-    if(k==='defenderDeployment')return (state.attackerSide==='opp'?state.myName:state.oppName)+' Deployment Zone';
-    if(k==='attackerTerritory')return (state.attackerSide==='opp'?state.oppName:state.myName)+' Territory';
-    if(k==='defenderTerritory')return (state.attackerSide==='opp'?state.myName:state.oppName)+' Territory';
-    return ({my:'My Deployment Zone',opp:'Opponent Deployment Zone',noMansLand:"No Man's Land",myTerritory:'My Territory',oppTerritory:'Opponent Territory'})[k]||k.replace(/([A-Z])/g,' $1').replace(/^./,s=>s.toUpperCase());
-  };
-  const regionClass=(key)=>{const k=String(key||'').toLowerCase();return k.includes('deployment')?'deployment':k.includes('territory')?'territory':'region';};
-  const renderRegion=(key,r)=>{
-    if(!r||typeof r!=='object')return '';
-    if([r.x,r.y,r.width,r.height].every(v=>Number.isFinite(Number(v)))){
-      return '<div class="objective-map-region '+regionClass(key)+'" style="left:'+pct(r.x,60)+'%;top:'+pct(44-(Number(r.y)+Number(r.height)),44)+'%;width:'+pct(r.width,60)+'%;height:'+pct(r.height,44)+'%" title="'+esc(regionLabel(key))+'">'+esc(regionLabel(key))+'</div>';
-    }
-    if(Array.isArray(r.points)&&r.points.every(point)){
-      const pts=r.points.map(p=>pct(p.x,60)+','+pct(44-Number(p.y),44)).join(' ');
-      return '<svg class="objective-map-region-polygon '+regionClass(key)+'" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="'+esc(regionLabel(key))+'"><polygon points="'+pts+'"/><text x="50" y="50" text-anchor="middle">'+esc(regionLabel(key))+'</text></svg>';
-    }
-    return '';
-  };
-  const renderTerrain=(key,r)=>{
-    if(!r||typeof r!=='object')return '';
-    const label='Terrain '+String(key||'');
-    if([r.x,r.y,r.width,r.height].every(v=>Number.isFinite(Number(v)))){
-      return '<div class="objective-map-terrain" style="left:'+pct(r.x,60)+'%;top:'+pct(44-(Number(r.y)+Number(r.height)),44)+'%;width:'+pct(r.width,60)+'%;height:'+pct(r.height,44)+'%" title="'+esc(label)+'"></div>';
-    }
-    if(Array.isArray(r.points)&&r.points.every(point)){
-      const pts=r.points.map(p=>pct(p.x,60)+'% '+pct(44-Number(p.y),44)+'%').join(',');
-      return '<div class="objective-map-terrain-polygon" style="clip-path:polygon('+pts+')" title="'+esc(label)+'"></div>';
-    }
-    return '';
-  };
-  const regions=model.verified?Object.entries(model.deploymentZones||{}).map(([k,v])=>renderRegion(k,v)).join(''):'';
-  const terrain=model.verified?Object.entries(model.terrainGeometry||{}).map(([k,v])=>renderTerrain(k,v)).join(''):'';
-  const unitNodes=objectiveMapUnitNodesHtml(model,pct);
-  const objectiveNodes=model.objectives.map(o=>{
-    const p=o.position;
-    const x=point(p)?pct(p.x,60):null;
-    const y=point(p)?pct(44-p.y,44):null;
-    const ownerClass=o.owner==='my'?'my':o.owner==='opp'?'opp':o.owner==='contested'?'contested':'none';
-    return '<div class="objective-map-node '+ownerClass+'" data-map-objective="'+esc(o.name)+'" style="'+(x===null||y===null?'display:none;':'left:'+x+'%;top:'+y+'%;')+'" title="'+esc(o.name)+'">'+esc(o.name.replace(/^Central |^Expansion |^My |^Opponent /,''))+'</div>';
-  }).join('');
-  const pending='<div class="status" style="margin-top:8px"><b>Map geometry pending verification.</b><div class="tiny" style="margin-top:4px">No deployment zone, territory, terrain, or objective position is inferred from the 60 × 44 table boundary. The Event Companion geometry must be verified first.</div></div>';
-  return '<div class="card objective-map-renderer"><div class="split"><div><h3 style="margin:0">Battlefield Map</h3><div class="muted">'+esc(model.missionKey)+' • Layout '+esc(model.layout)+' • Event Companion p.'+esc(String(model.page||'—'))+'</div></div><span class="pill">'+status+'</span></div>'+
-    objectiveMapPlacementPanelHtml(model)+
-    '<div class="objective-map-canvas" data-objective-map-canvas role="application" aria-label="Interactive 60 by 44 inch battlefield map">'+(model.verified?regions+terrain+objectiveNodes+unitNodes:'<div class="objective-map-placeholder">Verified Event Companion geometry required</div>')+'</div>'+
-    '<div class="objective-map-legend"><span><i class="objective-map-legend-swatch terrain"></i>Terrain</span><span><i class="objective-map-legend-swatch deployment"></i>Deployment</span><span><i class="objective-map-legend-swatch territory"></i>Territory</span><span><i class="objective-map-legend-swatch objective"></i>Objective</span></div>'+
-    '<div class="tiny" style="margin-top:6px">60 × 44 inches • bottom-left origin • geometry and terrain are rendered only from verified Event Companion data. Line of sight is never inferred.</div>'+(!model.verified?pending:'')+'</div>'+battlefieldPositionEditorHtml();
-}
-function objectiveLayoutHtml(){const info=ensureObjectiveLayoutForMission();if(!info)return '';const layout=state.objectiveMapLayout||'A';const page=objectiveLayoutPage();const buttons=['A','B','C'].map(letter=>'<button type="button" class="btn objective-layout-btn '+(layout===letter?'active':'')+'" aria-pressed="'+(layout===letter?'true':'false')+'" onclick="setObjectiveMapLayout(\''+letter+'\');return false;">Layout '+letter+'</button>').join('');return '<div class="objective-layout-panel"><div class="split"><div><strong>Recommended Battlefield Layout</strong><div class="tiny">'+esc(info.missions[0])+' ↔ '+esc(info.missions[1])+' • Layout '+layout+'</div></div><span class="pill">Event Companion p.'+page+'</span></div><div class="objective-layout-buttons">'+buttons+'<a class="btn" href="'+WARHAMMER_EVENT_COMPANION_PDF+'#page='+page+'" target="_blank" rel="noopener">Open Map</a></div><details class="objective-layout-preview"><summary>Preview selected layout</summary><iframe title="Warhammer Event Companion layout '+layout+'" src="'+WARHAMMER_EVENT_COMPANION_PDF+'#page='+page+'" loading="lazy"></iframe></details></div>'+objectiveMapRendererHtml();}
+function objectiveMapUnitNodesHtml(model,pct,mode='battle'){if(!model.verified)return '';const all=[...(Array.isArray(state.my)?state.my:[]).map(e=>({side:'my',entry:e})),...(Array.isArray(state.opp)?state.opp:[]).map(e=>({side:'opp',entry:e}))],units=mode==='setup'?all.filter(x=>x.side==='my'):all;return units.map(({side,entry})=>{const p=battlefieldUnitPosition(side,entry?.uid,mode);if(!p)return '';const nearest=mode==='setup'?null:(Object.values(state.objectives||{}).length?Object.keys(state.objectives||{}).map(name=>({name,distance:objectiveDistanceFromUnit(side,entry.uid,name)})).filter(x=>x.distance!==null).sort((a,b)=>a.distance-b.distance)[0]:null),title=unitDisplayName(side,entry)+(nearest?' • '+nearest.name+' '+nearest.distance.toFixed(1)+'″':'');return '<div class="objective-map-unit '+side+'" data-map-unit="'+esc(side+'|'+entry.uid)+'" style="left:'+pct(p.x,60)+'%;top:'+pct(44-p.y,44)+'%;" title="'+esc(title)+'">'+esc((unitDisplayName(side,entry)||'Unit').slice(0,8))+'</div>';}).join('');}
+function objectiveMapRendererHtml(mode='battle'){const model=objectiveMapModel(mode),status=model.verified?'Verified geometry':'Geometry pending verification',pct=(n,max)=>Math.max(0,Math.min(100,(Number(n)/Number(max))*100)),point=p=>p&&Number.isFinite(Number(p.x))&&Number.isFinite(Number(p.y));const regionLabel=key=>{const k=String(key||'');if(k==='attackerDeployment')return (state.attackerSide==='opp'?state.oppName:state.myName)+' Deployment Zone';if(k==='defenderDeployment')return (state.attackerSide==='opp'?state.myName:state.oppName)+' Deployment Zone';if(k==='attackerTerritory')return (state.attackerSide==='opp'?state.oppName:state.myName)+' Territory';if(k==='defenderTerritory')return (state.attackerSide==='opp'?state.myName:state.oppName)+' Territory';return ({my:'My Deployment Zone',opp:'Opponent Deployment Zone',noMansLand:"No Man's Land",myTerritory:'My Territory',oppTerritory:'Opponent Territory'})[k]||k.replace(/([A-Z])/g,' $1').replace(/^./,s=>s.toUpperCase());};const regionClass=key=>{const k=String(key||'').toLowerCase();return k.includes('deployment')?'deployment':k.includes('territory')?'territory':'region';};const renderRegion=(key,r)=>{if(!r||typeof r!=='object')return '';if([r.x,r.y,r.width,r.height].every(v=>Number.isFinite(Number(v))))return '<div class="objective-map-region '+regionClass(key)+'" style="left:'+pct(r.x,60)+'%;top:'+pct(44-(Number(r.y)+Number(r.height)),44)+'%;width:'+pct(r.width,60)+'%;height:'+pct(r.height,44)+'%" title="'+esc(regionLabel(key))+'">'+esc(regionLabel(key))+'</div>';if(Array.isArray(r.points)&&r.points.every(point)){const pts=r.points.map(p=>pct(p.x,60)+','+pct(44-p.y,44)).join(' ');return '<svg class="objective-map-region-polygon '+regionClass(key)+'" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="'+esc(regionLabel(key))+'"><polygon points="'+pts+'"/><text x="50" y="50" text-anchor="middle">'+esc(regionLabel(key))+'</text></svg>';}return '';};const renderTerrain=(key,r)=>{if(!r||typeof r!=='object')return '';const label='Terrain '+String(key||'');if([r.x,r.y,r.width,r.height].every(v=>Number.isFinite(Number(v))))return '<div class="objective-map-terrain" style="left:'+pct(r.x,60)+'%;top:'+pct(44-(Number(r.y)+Number(r.height)),44)+'%;width:'+pct(r.width,60)+'%;height:'+pct(r.height,44)+'%" title="'+esc(label)+'"></div>';if(Array.isArray(r.points)&&r.points.every(point)){const pts=r.points.map(p=>pct(p.x,60)+'% '+pct(44-Number(p.y),44)+'%').join(',');return '<div class="objective-map-terrain-polygon" style="clip-path:polygon('+pts+')" title="'+esc(label)+'"></div>';}return '';};const regions=model.verified?Object.entries(model.deploymentZones||{}).map(([k,v])=>renderRegion(k,v)).join(''):'';const terrain=model.verified?Object.entries(model.terrainGeometry||{}).map(([k,v])=>renderTerrain(k,v)).join(''):'';const unitNodes=objectiveMapUnitNodesHtml(model,pct,mode),objectiveNodes=model.objectives.map(o=>{const p=o.position,x=point(p)?pct(p.x,60):null,y=point(p)?pct(44-p.y,44):null,ownerClass=o.owner==='my'?'my':o.owner==='opp'?'opp':o.owner==='contested'?'contested':'none';return '<div class="objective-map-node '+ownerClass+'" data-map-objective="'+esc(o.name)+'" style="'+(x===null||y===null?'display:none;':'left:'+x+'%;top:'+y+'%;')+'" title="'+esc(o.name)+'">'+esc(o.name.replace(/^Central |^Expansion |^My |^Opponent /,''))+'</div>';}).join(''),pending='<div class="status" style="margin-top:8px"><b>Map geometry pending verification.</b><div class="tiny" style="margin-top:4px">No deployment zone, territory, terrain, or objective position is inferred from the 60 × 44 table boundary. The Event Companion geometry must be verified first.</div></div>',setup=mode==='setup',title=setup?'Deployment Plan':'Battlefield Map',subtitle=setup?'Plan your opening deployment for your army. This plan is separate from live battle positions.':'Live battlefield positions • both armies • manual tabletop coordinates',controls=setup?deploymentPlanMapControlsHtml(model):objectiveMapPlacementPanelHtml(model),editor=setup?deploymentPlanPositionEditorHtml():battlefieldPositionEditorHtml();return '<div class="card objective-map-renderer"><div class="split"><div><h3 style="margin:0">'+title+'</h3><div class="muted">'+subtitle+' • '+esc(model.missionKey)+' • Layout '+esc(model.layout)+' • Event Companion p.'+esc(String(model.page||'—'))+'</div></div><span class="pill">'+status+'</span></div>'+controls+'<div class="objective-map-canvas" data-objective-map-canvas data-objective-map-mode="'+esc(mode)+'" role="application" aria-label="'+esc(title)+' 60 by 44 inch battlefield map">'+(model.verified?regions+terrain+objectiveNodes+unitNodes:'<div class="objective-map-placeholder">Verified Event Companion geometry required</div>')+'</div><div class="objective-map-legend"><span><i class="objective-map-legend-swatch terrain"></i>Terrain</span><span><i class="objective-map-legend-swatch deployment"></i>Deployment</span><span><i class="objective-map-legend-swatch territory"></i>Territory</span><span><i class="objective-map-legend-swatch objective"></i>Objective</span></div><div class="tiny" style="margin-top:6px">60 × 44 inches • bottom-left origin • geometry and terrain are rendered only from verified Event Companion data. Line of sight is never inferred.</div>'+(!model.verified?pending:'')+'</div>'+editor;}
+function deploymentPlanMapControlsHtml(model){if(!model.verified)return '';const units=(Array.isArray(state.my)?state.my:[]).filter(e=>e&&!e.attachedTo),selected=state.deploymentMapPlacement||{},plan=deploymentPlanForCurrentMap(),count=Object.keys(plan).length,options=units.map(entry=>{const name=unitDisplayName('my',entry)||get(entry.unitId)?.name||entry.name||entry.unitId||'Unit';return '<option value="'+esc(entry.uid)+'" '+(String(selected.uid)===String(entry.uid)?'selected':'')+'>'+esc(name)+'</option>';}).join('');return '<div class="objective-map-controls"><div class="split"><div><strong>Deployment Planning</strong><div class="tiny">Only your army can be placed here. Select a unit, then tap/click its intended starting position.</div></div><span class="pill">'+count+' planned position'+(count===1?'':'s')+'</span></div><div class="objective-map-placement-row"><select class="objective-map-unit-select" data-map-mode="setup" aria-label="My unit to place in deployment plan"><option value="">Select your unit…</option>'+options+'</select><button type="button" class="btn primary" data-deployment-save-plan>Save Plan</button><button type="button" class="btn" data-deployment-load-plan>Load Saved</button><button type="button" class="btn danger" data-deployment-clear-plan>Clear Plan</button><button type="button" class="btn" data-deployment-placement-cancel '+(selected.uid?'':'disabled')+'>Cancel</button></div><div class="tiny" style="margin-top:6px">Plan key: '+esc(deploymentPlanKey())+' • Save the army list first so the deployment plan travels with it.</div></div>';}
+function deploymentPlanPositionEditorHtml(){const units=(Array.isArray(state.my)?state.my:[]).filter(e=>e&&!e.attachedTo);if(!units.length)return '';const rows=units.map(entry=>{const p=deploymentPlanPosition(entry.uid)||{x:'',y:''},name=unitDisplayName('my',entry)||get(entry.unitId)?.name||entry.name||entry.unitId||'Unit',clear=p.x!==''&&p.y!==''?'<button type="button" class="btn" data-deployment-clear="'+esc(entry.uid)+'">Clear</button>':'';return '<div class="unit battlefield-position-row"><div><strong>'+esc(name)+'</strong><div class="tiny">Planned starting position</div></div><input inputmode="decimal" type="number" min="0" max="60" step="0.1" value="'+esc(String(p.x))+'" placeholder="X" data-deployment-x="'+esc(entry.uid)+'"><input inputmode="decimal" type="number" min="0" max="44" step="0.1" value="'+esc(String(p.y))+'" placeholder="Y" data-deployment-y="'+esc(entry.uid)+'"><button type="button" class="btn" data-deployment-save="'+esc(entry.uid)+'">Set</button>'+clear+'</div>';}).join('');return '<details class="card" style="margin-top:10px"><summary style="cursor:pointer;color:#9ecbff"><strong>Deployment plan coordinates</strong><span class="tiny"> • 0.1″ tabletop coordinates</span></summary><div class="tiny" style="margin-top:7px">These are planned positions only. Starting a battle copies the current plan into the live battlefield map; later movement does not change the saved plan.</div>'+rows+'</details>';}
+function objectiveMapPlacementPanelHtml(model){const units=[...(Array.isArray(state.my)?state.my:[]).filter(e=>e&&!e.attachedTo).map(e=>({side:'my',entry:e})),...(Array.isArray(state.opp)?state.opp:[]).filter(e=>e&&!e.attachedTo).map(e=>({side:'opp',entry:e}))];if(!model.verified||!units.length)return '';const selected=state.battlefieldMapPlacement||{},options=units.map(({side,entry})=>{const name=unitDisplayName(side,entry)||get(entry.unitId)?.name||entry.name||entry.unitId||'Unit',selectedNow=selected.side===side&&String(selected.uid)===String(entry.uid);return '<option value="'+esc(side+'|'+entry.uid)+'" '+(selectedNow?'selected':'')+'>'+esc((side==='my'?'My: ':'Opponent: ')+name)+'</option>';}).join(''),selectedEntry=selected.uid?units.find(x=>x.side===selected.side&&String(x.entry.uid)===String(selected.uid))?.entry:null,selectedName=selectedEntry?unitDisplayName(selected.side,selectedEntry):'selected unit';return '<div class="objective-map-controls"><div class="split"><div><strong>Map Placement</strong><div class="tiny">Select a unit, then tap/click its new tabletop position on the map.</div></div><span class="pill">0.1″ coordinates</span></div><div class="objective-map-placement-row"><select class="objective-map-unit-select" aria-label="Unit to place on battlefield map"><option value="">Select unit…</option>'+options+'</select><button type="button" class="btn primary" data-map-placement-cancel '+(selected.uid?'':'disabled')+'>Cancel</button></div><div class="tiny objective-map-placement-status">'+(selected.uid?'Placement active — tap the map to set '+esc(selectedName)+' position.':'Placement inactive — no unit is selected.')+'</div></div>';}
+function objectiveLayoutHtml(){const info=ensureObjectiveLayoutForMission();if(!info)return '';const layout=state.objectiveMapLayout||'A';const page=objectiveLayoutPage();const buttons=['A','B','C'].map(letter=>'<button type="button" class="btn objective-layout-btn '+(layout===letter?'active':'')+'" aria-pressed="'+(layout===letter?'true':'false')+'" onclick="setObjectiveMapLayout(\''+letter+'\');return false;">Layout '+letter+'</button>').join('');return '<div class="objective-layout-panel"><div class="split"><div><strong>Recommended Battlefield Layout</strong><div class="tiny">'+esc(info.missions[0])+' ↔ '+esc(info.missions[1])+' • Layout '+layout+'</div></div><span class="pill">Event Companion p.'+page+'</span></div><div class="objective-layout-buttons">'+buttons+'<a class="btn" href="'+WARHAMMER_EVENT_COMPANION_PDF+'#page='+page+'" target="_blank" rel="noopener">Open Map</a></div><details class="objective-layout-preview"><summary>Preview selected layout</summary><iframe title="Warhammer Event Companion layout '+layout+'" src="'+WARHAMMER_EVENT_COMPANION_PDF+'#page='+page+'" loading="lazy"></iframe></details></div>'+objectiveMapRendererHtml('setup');}
 const CURRENT_11E_DATA_SOURCES={
   Tyranids:'https://raw.githubusercontent.com/BSData/wh40k-11e/main/Tyranids.json',
   Ultramarines:'https://raw.githubusercontent.com/BSData/wh40k-11e/main/Imperium%20-%20Ultramarines.json'
@@ -1143,6 +1068,7 @@ function saveCurrentArmyList(){
     units:JSON.parse(JSON.stringify(state.my||[])),
     secondaryPlans:JSON.parse(JSON.stringify(ensureSecondaryPersonalPlans())),
     personalNotes:String(state.personalArmyNotes||''),
+    deploymentPlans:JSON.parse(JSON.stringify(ensureDeploymentPlans())),
     created:new Date().toISOString(),
     updated:new Date().toISOString()
   };
@@ -1157,7 +1083,7 @@ function loadSavedArmyList(id){
   if(!list)return;
   state.myName=list.name||'My Army';
   state.faction=list.faction||'';
-  state.my=JSON.parse(JSON.stringify(list.units||[]));
+  state.my=JSON.parse(JSON.stringify(list.units||[]));state.deploymentPlans=JSON.parse(JSON.stringify(list.deploymentPlans||{}));
   state.secondaryPersonalPlans=JSON.parse(JSON.stringify(list.secondaryPlans||defaultSecondaryPersonalPlans()));ensureSecondaryPersonalPlans();state.personalArmyNotes=String(list.personalNotes||'');state.gameReferencePersonal={phases:{Command:[],Movement:[],Shooting:[],Charge:[],Fight:[],End:[]},quick:[],primary:[],custom:''};
   state.detachmentSelections=list.detachment?[list.detachment]:[];
   state.detachment=list.detachment||'';
@@ -4440,7 +4366,7 @@ function saveList(){
  const created=new Date().toISOString();
 
  // Keep the existing roster record for Battle Setup compatibility.
- const x={id,name,faction:state.faction,detachment:state.detachment,detachmentSelections:Array.isArray(state.detachmentSelections)?[...state.detachmentSelections]:[],detachmentDP:detachmentDP('my'),limit:state.limit,entries:units,secondaryPlans:JSON.parse(JSON.stringify(ensureSecondaryPersonalPlans())),gameReferencePersonal:JSON.parse(JSON.stringify(ensureGameReferencePersonal())),created};
+ const x={id,name,faction:state.faction,detachment:state.detachment,detachmentSelections:Array.isArray(state.detachmentSelections)?[...state.detachmentSelections]:[],detachmentDP:detachmentDP('my'),limit:state.limit,entries:units,secondaryPlans:JSON.parse(JSON.stringify(ensureSecondaryPersonalPlans())),gameReferencePersonal:JSON.parse(JSON.stringify(ensureGameReferencePersonal())),deploymentPlans:JSON.parse(JSON.stringify(ensureDeploymentPlans())),created};
  if(!Array.isArray(state.lists))state.lists=[];
  state.lists.push(x);
  state.activeRosterId=id;
@@ -4455,6 +4381,7 @@ function saveList(){
    units,
    secondaryPlans:JSON.parse(JSON.stringify(ensureSecondaryPersonalPlans())),
    gameReferencePersonal:JSON.parse(JSON.stringify(ensureGameReferencePersonal())),
+   deploymentPlans:JSON.parse(JSON.stringify(ensureDeploymentPlans())),
    created
  });
 
@@ -4475,7 +4402,7 @@ function saveList(){
 }
 function loadSavedList(id){
  const x=state.lists.find(v=>v.id===id);if(!x)return;
- state.activeRosterId=x.id;state.myName=x.name||'My Army';state.faction=x.faction||state.faction;state.detachmentSelections=Array.isArray(x.detachmentSelections)?[...x.detachmentSelections]:[];state.detachment=x.detachment||state.detachmentSelections[0]||'';state.limit=Number(x.limit)||2000;state.my=JSON.parse(JSON.stringify(x.entries||[]));state.secondaryPersonalPlans=JSON.parse(JSON.stringify(x.secondaryPlans||defaultSecondaryPersonalPlans()));ensureSecondaryPersonalPlans();state.gameReferencePersonal={phases:{Command:[],Movement:[],Shooting:[],Charge:[],Fight:[],End:[]},quick:[],primary:[],custom:''};
+ state.activeRosterId=x.id;state.myName=x.name||'My Army';state.faction=x.faction||state.faction;state.detachmentSelections=Array.isArray(x.detachmentSelections)?[...x.detachmentSelections]:[];state.detachment=x.detachment||state.detachmentSelections[0]||'';state.limit=Number(x.limit)||2000;state.my=JSON.parse(JSON.stringify(x.entries||[]));state.secondaryPersonalPlans=JSON.parse(JSON.stringify(x.secondaryPlans||defaultSecondaryPersonalPlans()));state.deploymentPlans=JSON.parse(JSON.stringify(x.deploymentPlans||{}));ensureSecondaryPersonalPlans();state.gameReferencePersonal={phases:{Command:[],Movement:[],Shooting:[],Charge:[],Fight:[],End:[]},quick:[],primary:[],custom:''};
  state.savedMyListSnapshot=currentMyListSnapshot();
  save();render();
 }
@@ -4788,7 +4715,7 @@ function startBattle(){
     });
   }
 
-state.myCP=1;state.oppCP=1;state.phaseCP={};state.battleFirstTurn=state.firstTurn==='opp'?'opp':'my';state.stratagemUsesMy=[];state.stratagemUsesOpp=[];resetStratagemPhaseUses();state.newOrdersCompletedMy=false;state.newOrdersCompletedOpp=false;state.tactical={version:TACTICAL_STATE_VERSION,pairs:{},unitUse:{},unitMovement:{},unitActions:{}};if(!forceDisposition('my')&&availableForceDispositions('my').length)state.myForceDisposition=availableForceDispositions('my')[0];if(!forceDisposition('opp')&&availableForceDispositions('opp').length)state.oppForceDisposition=availableForceDispositions('opp')[0];state.page='battle';state.phase='Command';state.currentTurn=state.firstTurn==='opp'?'opp':'my';state.gameTimer.turnMyMs=0;state.gameTimer.turnOppMs=0;state.gameTimer.turnStartedGameMs=gameTimerElapsed();state.gameTimer.turnPaused=false;state.manualVPMy=0;state.manualVPOpp=0;state.myVP=state.battleReadyMy?10:0;state.oppVP=state.battleReadyOpp?10:0;state.events=[];state.objectives={};state.objectiveTurnStartOwners={};if(Array.isArray(state.stratagemsMy))state.stratagemsMy.forEach(s=>{if(s)s.used=false});
+state.myCP=1;state.oppCP=1;state.phaseCP={};state.battleFirstTurn=state.firstTurn==='opp'?'opp':'my';state.stratagemUsesMy=[];state.stratagemUsesOpp=[];resetStratagemPhaseUses();state.newOrdersCompletedMy=false;state.newOrdersCompletedOpp=false;state.tactical={version:TACTICAL_STATE_VERSION,pairs:{},unitUse:{},unitMovement:{},unitActions:{}};if(!forceDisposition('my')&&availableForceDispositions('my').length)state.myForceDisposition=availableForceDispositions('my')[0];if(!forceDisposition('opp')&&availableForceDispositions('opp').length)state.oppForceDisposition=availableForceDispositions('opp')[0];state.page='battle';state.phase='Command';state.currentTurn=state.firstTurn==='opp'?'opp':'my';const startingPlan=deploymentPlanForCurrentMap();state.battlefieldUnitPositions={};Object.entries(startingPlan).forEach(([uid,p])=>{const x=Math.round(Number(p.x)*10)/10,y=Math.round(Number(p.y)*10)/10;if(Number.isFinite(x)&&Number.isFinite(y)&&x>=0&&x<=60&&y>=0&&y<=44)state.battlefieldUnitPositions[uid]={x,y,side:'my',source:'deployment-plan',round:1};});state.gameTimer.turnMyMs=0;state.gameTimer.turnOppMs=0;state.gameTimer.turnStartedGameMs=gameTimerElapsed();state.gameTimer.turnPaused=false;state.manualVPMy=0;state.manualVPOpp=0;state.myVP=state.battleReadyMy?10:0;state.oppVP=state.battleReadyOpp?10:0;state.events=[];state.objectives={};state.objectiveTurnStartOwners={};if(Array.isArray(state.stratagemsMy))state.stratagemsMy.forEach(s=>{if(s)s.used=false});
 if(Array.isArray(state.stratagemsOpp))state.stratagemsOpp.forEach(s=>{if(s)s.used=false});
 state.secondaryMyDiscard=[];state.secondaryOppDiscard=[];state.secondaryTacticalDrawKeys={};state.secondaryMyScored=[];state.secondaryOppScored=[];state.secondaryMyScoredVP={};state.secondaryOppScoredVP={};state.secondaryMyScoredVPByRound={};state.secondaryOppScoredVPByRound={};state.secondaryMyScoredRound={};state.secondaryOppScoredRound={};state.secondaryMyDeck=[];state.secondaryOppDeck=[];state.secondaryMyDeckInitialized=false;state.secondaryOppDeckInitialized=false;state.secondaryMyCards=[];state.secondaryOppCards=[];state.secondaryTacticalDrawKeys={'1|my':true,'1|opp':true};if(state.secondaryMy==='tactical'){initTacticalDeck('my')}if(state.secondaryOpp==='tactical'){initTacticalDeck('opp')};state.my.forEach(e=>{const u=get(e.unitId),roster=ensureModelRoster(e,u);e.game={entryId:e.uid,models:e.models,wounds:e.models*get(e.unitId).wounds,status:'Alive',battleshocked:false,modelRoster:roster.map(m=>({...m,alive:true,woundsRemaining:Number(u.wounds)||1}))};});
 state.opp.forEach(e=>{const u=get(e.unitId),roster=ensureModelRoster(e,u);e.game={entryId:e.uid,models:e.models,wounds:e.models*get(e.unitId).wounds,status:'Alive',battleshocked:false,modelRoster:roster.map(m=>({...m,alive:true,woundsRemaining:Number(u.wounds)||1}))};});event('GAME_STARTED',{unit:'Game',action:'Start / Reset Battle',round:state.round,phase:state.phase,attacker:state.attackerSide,defender:state.attackerSide==='my'?'opp':'my',firstTurn:state.firstTurn,secondaryMy:state.secondaryMy,secondaryOpp:state.secondaryOpp,battleReadyMy:state.battleReadyMy,battleReadyOpp:state.battleReadyOpp,myStartingVP:state.myVP,oppStartingVP:state.oppVP,myDetachment:state.detachmentSelections,oppDetachment:state.oppDetachmentSelections,myDetachmentDP:detachmentDP('my'),oppDetachmentDP:detachmentDP('opp'),myForceDisposition:forceDisposition('my'),oppForceDisposition:forceDisposition('opp'),myPrimaryMission:primaryMission('my'),oppPrimaryMission:primaryMission('opp')},before);save();render()}
@@ -4999,7 +4926,7 @@ ${objectiveControlTrackerHtml()}${battleNotesHtml()}${state.currentTurn==='opp'?
 <div class="secondary-missions-body"><div class="grid2">${secondaryActiveSide()==='my'?secondaryCatalogHtml('my')+secondaryCatalogHtml('opp'):secondaryCatalogHtml('opp')+secondaryCatalogHtml('my')}</div>${secondaryDetailHtml(secondaryActiveSide())}</div></details>
   ${stratagemsUI()}
 
-</div><div class="battle-state-column"><div class="army-state-grid"><div>${armyStateCard('my','My Army State')}</div><div>${armyStateCard('opp','Opponent Army State')}</div></div></div>
+</div>${objectiveMapRendererHtml("battle")}<div class="battle-state-column"><div class="army-state-grid"><div>${armyStateCard('my','My Army State')}</div><div>${armyStateCard('opp','Opponent Army State')}</div></div></div>
 <div class="battle-log card"><div class="split"><div><h3>Action Log</h3><div class="muted">Latest actions</div></div></div>${recent.length?recent.map((e,i)=>actionLogLine(e,i)).join(''):'<div class="empty">No actions yet.</div>'}</div>
 <div class="game-data-status"><div class="status">✓ Browser app loaded locally • Source: ${esc(state.source)} • ${esc(state.revision)} • 40k.app v${esc(String(ONOFORGE_40KAPP_SOURCE?.source?.revision||'925'))}</div>${dataSyncStatusHtml()}</div>
 </div>
@@ -10529,46 +10456,9 @@ document.addEventListener('change',function(ev){
     toggleObjectiveControlUnit(oc.dataset.objectiveOcName,oc.dataset.objectiveOcEntry,oc.checked);
   }
 });
-document.addEventListener('change',function(ev){
-  const sel=ev.target.closest('.objective-map-unit-select');
-  if(sel){
-    const value=String(sel.value||'');
-    if(!value){delete state.battlefieldMapPlacement;render();return;}
-    const [side,uid]=value.split('|');
-    if(side&&uid){state.battlefieldMapPlacement={side,uid};render();}
-    return;
-  }
-});
-document.addEventListener('click',function(ev){
-  const cancel=ev.target.closest('[data-map-placement-cancel]');
-  if(cancel){ev.preventDefault();delete state.battlefieldMapPlacement;render();return;}
-  const canvas=ev.target.closest('[data-objective-map-canvas]');
-  if(!canvas)return;
-  if(ev.target.closest('[data-map-unit],[data-map-objective]'))return;
-  const placement=state.battlefieldMapPlacement;
-  if(!placement?.side||!placement?.uid)return;
-  const rect=canvas.getBoundingClientRect();
-  if(!rect.width||!rect.height)return;
-  const x=Math.max(0,Math.min(60,((ev.clientX-rect.left)/rect.width)*60));
-  const y=Math.max(0,Math.min(44,(1-(ev.clientY-rect.top)/rect.height)*44));
-  if(setBattlefieldUnitPosition(placement.side,placement.uid,Math.round(x*10)/10,Math.round(y*10)/10)){
-    delete state.battlefieldMapPlacement;
-    render();
-  }
-});
-document.addEventListener('click',function(ev){
-  const bc=ev.target.closest('[data-battlefield-clear]');
-  if(bc){ev.preventDefault();ev.stopPropagation();clearBattlefieldUnitPosition(bc.dataset.battlefieldClear);return;}
-  const bp=ev.target.closest('[data-battlefield-save]');
-  if(bp){
-    ev.preventDefault();ev.stopPropagation();
-    const side=bp.dataset.battlefieldSave,uid=bp.dataset.battlefieldUid;
-    const x=document.querySelector('[data-battlefield-x="'+side+'"][data-battlefield-uid="'+uid+'"]')?.value;
-    const y=document.querySelector('[data-battlefield-y="'+side+'"][data-battlefield-uid="'+uid+'"]')?.value;
-    setBattlefieldUnitPosition(side,uid,x,y);
-    return;
-  }
-});
+document.addEventListener('change',function(ev){const sel=ev.target.closest('.objective-map-unit-select');if(!sel)return;const mode=sel.dataset.mapMode==='setup'?'setup':'battle',value=String(sel.value||'');if(mode==='setup'){if(!value){delete state.deploymentMapPlacement;render();return;}state.deploymentMapPlacement={uid:value};render();return;}if(!value){delete state.battlefieldMapPlacement;render();return;}const [side,uid]=value.split('|');if(side&&uid)state.battlefieldMapPlacement={side,uid};render();});
+document.addEventListener('click',function(ev){const cancel=ev.target.closest('[data-map-placement-cancel]');if(cancel){ev.preventDefault();delete state.battlefieldMapPlacement;render();return;}const dc=ev.target.closest('[data-deployment-placement-cancel]');if(dc){ev.preventDefault();delete state.deploymentMapPlacement;render();return;}const canvas=ev.target.closest('[data-objective-map-canvas]');if(!canvas||ev.target.closest('[data-map-unit],[data-map-objective]'))return;const mode=canvas.dataset.objectiveMapMode==='setup'?'setup':'battle',rect=canvas.getBoundingClientRect();if(!rect.width||!rect.height)return;const x=Math.max(0,Math.min(60,((ev.clientX-rect.left)/rect.width)*60)),y=Math.max(0,Math.min(44,(1-(ev.clientY-rect.top)/rect.height)*44));if(mode==='setup'){const uid=state.deploymentMapPlacement?.uid;if(uid&&setDeploymentPlanPosition(uid,x,y)){delete state.deploymentMapPlacement;render();}return;}const placement=state.battlefieldMapPlacement;if(placement?.side&&placement?.uid&&setBattlefieldUnitPosition(placement.side,placement.uid,x,y)){delete state.battlefieldMapPlacement;render();}});
+document.addEventListener('click',function(ev){const bc=ev.target.closest('[data-battlefield-clear]');if(bc){ev.preventDefault();ev.stopPropagation();clearBattlefieldUnitPosition(bc.dataset.battlefieldClear);return;}const bp=ev.target.closest('[data-battlefield-save]');if(bp){ev.preventDefault();ev.stopPropagation();const side=bp.dataset.battlefieldSave,uid=bp.dataset.battlefieldUid,x=document.querySelector('[data-battlefield-x="'+side+'"][data-battlefield-uid="'+uid+'"]')?.value,y=document.querySelector('[data-battlefield-y="'+side+'"][data-battlefield-uid="'+uid+'"]')?.value;setBattlefieldUnitPosition(side,uid,x,y);return;}const dp=ev.target.closest('[data-deployment-save]');if(dp){ev.preventDefault();ev.stopPropagation();const uid=dp.dataset.deploymentSave,x=document.querySelector('[data-deployment-x="'+uid+'"]')?.value,y=document.querySelector('[data-deployment-y="'+uid+'"]')?.value;setDeploymentPlanPosition(uid,x,y);return;}const dclear=ev.target.closest('[data-deployment-clear]');if(dclear){ev.preventDefault();ev.stopPropagation();clearDeploymentPlanPosition(dclear.dataset.deploymentClear);return;}if(ev.target.closest('[data-deployment-save-plan]')){ev.preventDefault();saveDeploymentPlan();return;}if(ev.target.closest('[data-deployment-load-plan]')){ev.preventDefault();loadDeploymentPlan();return;}if(ev.target.closest('[data-deployment-clear-plan]')){ev.preventDefault();clearDeploymentPlanForCurrentMap();return;}});
 document.addEventListener('click',function(ev){
   const sb=ev.target.closest('[data-stratagem-use]');
   if(sb){
