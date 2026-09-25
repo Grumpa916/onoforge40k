@@ -17,8 +17,8 @@ check('Canonical Event Companion v1.2 loader',
   'index.html must load v1.2 only.');
 
 check('All 45 layouts verified',
-  Array.isArray(data.layouts) && data.layouts.length===45 &&
-  data.layouts.every(x=>x?.layoutGeometry?.geometryStatus==='verified'),
+  Array.isArray(data.layoutGeometry?.layouts) && data.layoutGeometry.layouts.length===45 &&
+  data.layoutGeometry.layouts.every(x=>x?.verified===true),
   'Expected exactly 45 verified layout records.');
 
 check('All 15 mission pairs available',
