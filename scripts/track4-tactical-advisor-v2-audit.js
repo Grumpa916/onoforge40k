@@ -1,0 +1,25 @@
+const fs=require('fs');
+const path=require('path');
+const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
+const checks=[];
+const check=(name,pass,detail)=>checks.push({name,pass:!!pass,detail});
+const has=(re)=>re.test(html);
+
+check('Tactical Advisor v2 function exists',has(/function tacticalAdvisorV2\(/),'Track 4 requires an explicit v2 advisor layer.');
+check('Battle-state context includes round and phase',has(/tacticalAdvisorBattleStateContext\(\)[\s\S]*round:[^,]+,phase:/),'Advisor context must expose current turn timing state.');
+check('Battle-state context includes VP and CP',has(/tacticalAdvisorBattleStateContext\(\)[\s\S]*vp:\{my:[\s\S]*cp:\{my:/),'Advisor context must consume authoritative VP/CP state.');
+check('Battle-state context includes objective state',has(/tacticalAdvisorBattleStateContext\(\)[\s\S]*objectives:mission\.objectives/),'Advisor must consume the authoritative objective context.');
+check('Battle-state context includes secondary state',has(/activeSecondaries:\{my:activeSecondary\('my'\)/),'Advisor must see active Secondary state.');
+check('Battle-state context includes reserves',has(/reserves:\{my:reserved\('my'\)/),'Advisor must account for declared reserves.');
+check('Battle-state context includes battlefield positions',has(/positions:\{my:positioned\('my'\)/),'Advisor must consume known live battlefield positions.');
+check('Unknown positions are not invented',has(/known:Number\.isFinite\(Number\(p\?\.x\)\)&&Number\.isFinite\(Number\(p\?\.y\)\)/),'Unknown position data must remain unknown.');
+check('V2 preserves existing recommendation engine',has(/const base=tacticalAdvisorV1\(attackerEntryUid,options\)/),'V2 must layer battle-state context over the established rules-aware engine.');
+check('V2 exposes decision context',has(/decisionContext:\{phase:battle\.phase/),'V2 must expose concise game-time context.');
+check('V2 surfaces state alerts',has(/const alerts=\[\]/)&&has(/alerts,\n    limitations:/),'V2 must surface actionable state warnings without mutating state.');
+check('Advisor is explicitly read-only',has(/Battle-state context is read-only; generating advice does not mutate authoritative game state/),'Advisor generation must not alter authoritative game state.');
+check('V2 result is cached by state-aware advisor cache',has(/function getTacticalAdvisorV2Result\(/)&&has(/key='v2'\+/),'V2 rendering must reuse the existing state-invalidating cache architecture.');
+check('V2 decision surface is deployed',has(/id="onoforge-advisor-render"/),'Deployment must expose a dedicated advisor render surface.');
+check('No legacy Big Guns rule',!has(/Big Guns Never Tire/i),'11th-edition-only integrity must remain intact.');
+const failures=checks.filter(x=>!x.pass);
+console.log(JSON.stringify({audit:'Track 4 Tactical Advisor v2 battle-state audit',checks:checks.length,passed:checks.length-failures.length,failed:failures.length,failures},null,2));
+if(failures.length)process.exit(1);
