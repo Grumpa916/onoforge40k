@@ -8416,7 +8416,8 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
     const outgoing=Math.max(0,Number(x.expectedDamage)||0);
     const objectiveControl=Math.max(0,Number(x.strategicHook?.objectiveControl)||0);
     const objectiveContext=x.strategicHook?.objective||{value:0,status:'unknown',reason:'objective-context-unavailable'};
-    const primaryTargetImpact=tacticalPrimaryTargetImpact(entry('opp',x.entryUid),pairDecisionCtx);
+    const objectivePairCtx=tacticalPairState(atkEntry.uid,x.entryUid);
+    const primaryTargetImpact=tacticalPrimaryTargetImpact(entry('opp',x.entryUid),objectivePairCtx);
     const objectiveValue=Math.max(0,Math.min(1,
       0.70*(Number(objectiveContext.value)||0)+
       0.15*(Number(primaryTargetImpact.ownScoringValue)||0)+
