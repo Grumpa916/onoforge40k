@@ -186,6 +186,7 @@ Goal: Every major feature change must be verifiable before deployment.
 - 🟢 Tournament playtest audit
 - 🟢 Map interaction audit
 - 🟢 Deployment planning / live battlefield map separation
+- 🟢 Live deployment tracking / drag-based battlefield movement
 - 🟢 Objective-control audit
 - 🟢 Tactical Advisor integration audit
 - 🟢 Tournament UI audit
@@ -246,8 +247,8 @@ Tablet-first dashboard, touch optimization, minimal data entry, fast phase trans
 - Task 32 — 🟢 FNP resolution integrity audit
 - Track 1 — 🔵 Authoritative Game State
 - Track 1 first layer — 🔵 End-of-turn primary scoring automation
-- Current main: 0a2acfb4262c53cdf7bca611765421d5fc367e1a
-- Latest main deployment gate: 🟢 GitHub Pages deployment run 922
+- Current main: fc8ae0cdb067839a7efdd0773a6cc75145fbb6cb
+- Latest main deployment gate: 🟢 GitHub Pages deployment run 946
 - Track 1 regression audit: scripts/track1-end-turn-scoring-audit.js
 - Track 1 next layer: 🔵 Scoring → VP/CP state integrity
 
