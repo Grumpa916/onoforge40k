@@ -61,7 +61,7 @@ const vp=(n,m)=>((scoring[n]?.[m]||[]).map(r=>String(r[0]).replace(/[^0-9+]/g,''
 const expectedVP={
  'A Grievous Blow':{Fixed:['4'],Tactical:['5']},
  'A Tempting Target':{Tactical:['5']},
- 'Assassination':{Fixed:['3','+1'],Tactical:['5']},
+ 'Assassination':{Fixed:['3','1'],Tactical:['5']},
  'Beacon':{Tactical:['3','5']},
  'Behind Enemy Lines':{Tactical:['3']},
  'Bring It Down':{Fixed:['4'],Tactical:['5']},
