@@ -5949,6 +5949,7 @@ function restorePhaseCP(round,turn,phase){
  }
 }
 function changeCP(side,d){d=Number(d)||0;const fullBefore=snapshotForUndo();const before=side==='my'?Number(state.myCP)||0:Number(state.oppCP)||0;const after=Math.max(0,before+d);const delta=after-before;if(side==='my')state.myCP=after;else state.oppCP=after;rememberPhaseCP();event('CP_CHANGED',{side,unit:side==='my'?'My CP':'Opponent CP',action:'CP '+(delta>0?'+':'')+delta,before,after,delta},fullBefore);save();render()}
+function autoScorePrimaryEndOfTurn(side){ const player=side==='opp'?'opp':'my'; const mission=primaryMission(player); if(!mission)return []; const rows=primaryScoringRowsForRound(mission); const scored=[]; rows.forEach((row,index)=>{ const timing=String(row?.[0]||'').toLowerCase(); if(!/end of turn/.test(timing))return; const evidence=primaryScoringEvidence(player,index,mission); if(!evidence.eligible)return; scorePrimaryItem(player,index,mission); scored.push({index,scoringItem:String(row?.[2]||''),vp:Number(evidence.allowedVP)||0}); }); return scored; }
 function advancePhase(){
   const before=snapshotForUndo();
   const phases=['Command','Movement','Shooting','Charge','Fight'];
@@ -5962,6 +5963,7 @@ function advancePhase(){
     const endingTurn=state.currentTurn==='opp'?'opp':'my';
     const firstTurn=state.battleFirstTurn==='opp'?'opp':'my';
     const otherTurn=endingTurn==='my'?'opp':'my';
+    autoScorePrimaryEndOfTurn(endingTurn);
 
     if(endingTurn!==firstTurn){
       const currentRound=Math.max(1,Number(state.round)||1);
