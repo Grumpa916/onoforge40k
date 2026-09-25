@@ -185,6 +185,7 @@ Goal: Every major feature change must be verifiable before deployment.
 - 🟢 Tournament regression audit
 - 🟢 Tournament playtest audit
 - 🟢 Map interaction audit
+- 🟢 Deployment planning / live battlefield map separation
 - 🟢 Objective-control audit
 - 🟢 Tactical Advisor integration audit
 - 🟢 Tournament UI audit
