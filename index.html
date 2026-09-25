@@ -4545,6 +4545,7 @@ function setup(){
  <div class="setup-section roster-selector"><h3>Opponent Roster</h3><div class="field"><label>Roster</label><select onchange="selectOpponentRosterFromSetup(this.value)">${opponentRosterSetupOptions()}</select></div><div class="roster-meta"><strong>Active Roster:</strong> ${esc(activeArmyDisplayName('opp')||'Opponent Army')}<span class="muted"> • ${esc(state.oppFaction||'')} • ${total('opp')} pts</span></div></div>
  </div>
  ${primaryMissionPanel('setup')}
+ ${objectiveLayoutHtml()}
  <div class="setup-section"><h3>Battle Options</h3><div class="grid2">
    <div class="field compact-battle-menu"><label>My Army Battle Ready</label><select style="width:160px!important;max-width:160px!important;min-width:0!important" onchange="state.battleReadyMy=this.value==='yes';save();render()"><option value="no" ${!state.battleReadyMy?'selected':''}>No</option><option value="yes" ${state.battleReadyMy?'selected':''}>Yes — +10 VP</option></select></div>
    <div class="field compact-battle-menu"><label>Opponent Army Battle Ready</label><select style="width:160px!important;max-width:160px!important;min-width:0!important" onchange="state.battleReadyOpp=this.value==='yes';save();render()"><option value="no" ${!state.battleReadyOpp?'selected':''}>No</option><option value="yes" ${state.battleReadyOpp?'selected':''}>Yes — +10 VP</option></select></div>
@@ -5919,7 +5920,6 @@ function objectiveControlTrackerHtml(){
   }).join(''):'<div class="empty" style="padding:10px">No objectives tracked yet. Add the objectives from your mission.</div>';
   return '<details class="card objective-control-card '+(opponentTurn?'objective-control-opponent':'objective-control-self')+'" '+(open?'open':'')+' ontoggle="state.objectiveControlOpen=this.open;save()">'+
     '<summary style="cursor:pointer;list-style:none"><div class="split"><div><h3 style="margin:0">Objective Control</h3><div class="muted">'+(opponentTurn?'Record objective changes during the opponent turn.':'Current battlefield objective ownership used by scoring and Tactical Advisor.')+'</div></div><span class="pill">'+(opponentTurn?'Opponent turn':'Your turn')+'</span></div></summary>'+
-    objectiveLayoutHtml()+
     '<div class="objective-layout-sync-row"><button type="button" class="btn" onclick="autoSeedObjectiveStructure();return false;">Sync Objectives to Layout</button><span class="tiny">Auto-build official objective count and types.</span></div>'+
     '<div class="row objective-control-summary" style="margin-top:8px"><span class="pill">My '+myCount+'</span><span class="pill">Opp '+oppCount+'</span><span class="pill">Contested '+contestedCount+'</span><button type="button" class="btn" onclick="addTrackedObjective();return false;">+ Objective</button></div>'+
     '<div class="objective-control-list" style="margin-top:8px">'+rows+'</div>'+
