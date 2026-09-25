@@ -40,6 +40,7 @@ Goal: Establish a complete tournament game before Battle Mode begins.
 ## C. Battlefield / Maps / Deployment — 🟢 / 🟡
 Goal: Make the selected battlefield a functional game-state layer.
 - 🟢 Three supported map layouts
+- 🟢 Large pre-game terrain placement map with verified Event Companion measurements
 - 🟢 Interactive objective/map layer
 - 🟢 Deployment-zone awareness
 - 🟢 Territory awareness
@@ -244,7 +245,7 @@ Parallel progress: 🟢 rules-data provenance/version audit and tournament rules
 ### Track 7 — Tournament UX 🔵
 Tablet-first dashboard, touch optimization, minimal data entry, fast phase transitions, and at-a-glance game state.
 
-Current layer: tablet dashboard, sticky command rail, responsive touch controls, Tactical Advisor integration, and tournament-result handoff are covered by a deployment-gated UX audit.
+Current layer: tablet dashboard, sticky command rail, responsive touch controls, Tactical Advisor integration, tournament-result handoff, and a large pre-game terrain-placement map with verified Event Companion measurement overlays are covered by deployment-gated audits.
 
 # Development Rules
 
