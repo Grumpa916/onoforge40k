@@ -9,7 +9,7 @@ check('Advisor exposes stratagem pressure adjustment',html.includes('stratagemPr
 check('Advisor sorts by refined priority score',html.includes('Number(b.priorityScore??b.decisionScore'));
 check('Prioritization runs inside v2 after stratagem pressure exists',(()=>{
   const v2=html.indexOf('function tacticalAdvisorV2(');
-  const pressure=html.indexOf('const stratagemPressure=tacticalAdvisorStratagemPressure(battle,top);',v2);
+  const pressure=html.indexOf('const stratagemPressure=tacticalAdvisorStratagemPressure(battle,baseTop);',v2);
   const priority=html.indexOf('x.priorityScore=',v2);
   const v1=html.indexOf('function tacticalAdvisorV1(');
   return v2>=0&&pressure>v2&&priority>pressure&&priority<(v1>v2?v1:html.length);
