@@ -647,6 +647,7 @@ body{overflow-x:hidden}
 @media(max-width:700px){
   .battle-layout>.battle-state-column .game-unit-row{grid-template-columns:minmax(80px,95px) minmax(0,1fr)!important}
 }
+.objective-geometry-lock{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.objective-geometry-lock .tiny{padding:4px 6px;border:1px solid #30465c;border-radius:5px;background:#0f1924}.objective-manual-location{display:flex;gap:4px;align-items:center;flex-wrap:wrap}.objective-manual-location .tiny{padding-left:2px}
 </style>
 </head><body><div id="app"></div><script>
 window.addEventListener('error',function(ev){var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var msg=String(ev.error?.message||ev.message||'Unknown error');a.innerHTML='<span class="error-title">OnoForge error</span><div class="error-detail">'+msg.replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</div><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});window.addEventListener('unhandledrejection',function(ev){var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var reason=ev.reason?.message||ev.reason||'Unhandled promise rejection';a.innerHTML='<span class="error-title">OnoForge error</span><div class="error-detail">'+String(reason).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</div><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});
@@ -5704,32 +5705,36 @@ function objectiveStateSummary(){
   return {current,turnStartOwners:ensureObjectiveTurnSnapshot()};
 }
 
+function objectiveSpatialGeometryLocked(name){
+  const geometry=objectiveBattlefieldGeometry();
+  return !!geometry.verified && !!geometry.objectives.find(o=>o.name===String(name||''));
+}
 function setObjectiveRole(name,role){
   const key=String(name||'').trim();
   const next=['home','central','expansion'].includes(role)?role:null;
-  if(!key||!next)return;
+  if(!key||!next||objectiveSpatialGeometryLocked(key))return;
   const before=snapshotForUndo();
   const meta=ensureObjectiveMeta()[key]||{};meta.type=next;if(next!=='home'){meta.homeSide=null;meta.territory='nml';}else{meta.homeSide=meta.homeSide||'my';meta.territory=meta.homeSide;}ensureObjectiveMeta()[key]=meta;
-  event('OBJECTIVE_ROLE_CHANGED',{name:key,unit:'Objective '+key,action:'Location → '+objectiveRoleLabel(next),after:next,round:Math.max(1,Number(state.round)||1),phase:String(state.phase||'Command')},before);
+  event('OBJECTIVE_ROLE_CHANGED',{name:key,unit:'Objective '+key,action:'Location → '+objectiveRoleLabel(next),after:next,source:'manual-fallback',round:Math.max(1,Number(state.round)||1),phase:String(state.phase||'Command')},before);
   save();render();
 }
 function setObjectiveTerritory(name,territory){
   const key=String(name||'').trim();
   const next=['my','opp','nml'].includes(territory)?territory:null;
-  if(!key||!next)return;
+  if(!key||!next||objectiveSpatialGeometryLocked(key))return;
   const before=snapshotForUndo();
   const meta=ensureObjectiveMeta()[key]||{};
   meta.territory=next;
   ensureObjectiveMeta()[key]=meta;
-  event('OBJECTIVE_TERRITORY_CHANGED',{name:key,unit:'Objective '+key,action:'Territory → '+objectiveTerritoryLabel(next),after:next,round:Math.max(1,Number(state.round)||1),phase:String(state.phase||'Command')},before);
+  event('OBJECTIVE_TERRITORY_CHANGED',{name:key,unit:'Objective '+key,action:'Territory → '+objectiveTerritoryLabel(next),after:next,source:'manual-fallback',round:Math.max(1,Number(state.round)||1),phase:String(state.phase||'Command')},before);
   save();render();
 }
 function setObjectiveDeploymentZone(name,zone){
   const key=String(name||'').trim(),next=['my','opp','none'].includes(zone)?zone:null;
-  if(!key||!next)return;
+  if(!key||!next||objectiveSpatialGeometryLocked(key))return;
   const before=snapshotForUndo(),meta=ensureObjectiveMeta()[key]||{};
   meta.deploymentZone=next;ensureObjectiveMeta()[key]=meta;
-  event('OBJECTIVE_DEPLOYMENT_CHANGED',{name:key,unit:'Objective '+key,action:'Deployment zone → '+objectiveDeploymentZoneLabel(next),after:next,round:Math.max(1,Number(state.round)||1),phase:String(state.phase||'Command')},before);
+  event('OBJECTIVE_DEPLOYMENT_CHANGED',{name:key,unit:'Objective '+key,action:'Deployment zone → '+objectiveDeploymentZoneLabel(next),after:next,source:'manual-fallback',round:Math.max(1,Number(state.round)||1),phase:String(state.phase||'Command')},before);
   save();render();
 }
 function objectivePrimaryScoringImpact(side,name){
@@ -5784,6 +5789,12 @@ function setObjectiveControl(name,owner){
     name:key,unit:'Objective '+key,action:'Control → '+next,owner:next,previous,after:next,
     round:Math.max(1,Number(state.round)||1),phase:String(state.phase||'Command'),
     playerTurn:scoringSide,
+    territory:objectiveTerritory(key),
+    deploymentZone:objectiveDeploymentZone(key),
+    spatialSource:objectiveStateRecord(key).spatialSource,
+    spatialVerified:objectiveStateRecord(key).spatialVerified,
+    mapLayout:state.objectiveMapLayout||'A',
+    mapPage:objectiveLayoutPage(),
     scoringImpactBefore:scoringBefore,
     scoringImpactAfter:scoringAfter,
     primaryScoringCandidates:candidatesAfter
@@ -5845,17 +5856,22 @@ function objectiveControlTrackerHtml(){
     const current=['my','opp','contested','none'].includes(owner)?owner:'none';
     const role=objectiveRole(name);
     const start=objectiveTurnStartOwner(name);
+    const spatialRecord=objectiveStateRecord(name);
+    const geometryLocked=spatialRecord.spatialVerified===true;
     const roleOptions=['home','central','expansion'].map(value=>'<option value="'+value+'" '+(role===value?'selected':'')+'>'+objectiveRoleLabel(value,name)+'</option>').join('');
     const territory=objectiveTerritory(name);
     const territoryOptions=['my','opp','nml'].map(value=>'<option value="'+value+'" '+(territory===value?'selected':'')+'>'+objectiveTerritoryLabel(value)+'</option>').join('');
     const deploymentZone=objectiveDeploymentZone(name);
     const deploymentOptions=['my','opp','none'].map(value=>'<option value="'+value+'" '+(deploymentZone===value?'selected':'')+'>'+objectiveDeploymentZoneLabel(value)+'</option>').join('');
+    const spatialControls=geometryLocked
+      ?'<span class="objective-geometry-lock"><span class="pill">Verified geometry</span><span class="tiny">'+esc(objectiveRoleLabel(role,name))+' • '+esc(objectiveTerritoryLabel(territory))+' • '+esc(objectiveDeploymentZoneLabel(deploymentZone))+'</span></span>'
+      :'<span class="objective-manual-location"><select class="objective-role-select" aria-label="Objective location" onchange="setObjectiveRole(\''+escName(name)+'\',this.value);return false;">'+roleOptions+'</select><select class="objective-role-select" aria-label="Objective territory" onchange="setObjectiveTerritory(\''+escName(name)+'\',this.value);return false;">'+territoryOptions+'</select><select class="objective-role-select" aria-label="Objective deployment zone" onchange="setObjectiveDeploymentZone(\''+escName(name)+'\',this.value);return false;">'+deploymentOptions+'</select><span class="tiny">manual fallback</span></span>';
     const changeLabel=objectiveControlChangeLabel(name);
     const changeType=objectiveControlChangeType(name);
     const changeClass=changeType==='held'?'objective-change-held':changeType==='contested'?'objective-change-contested':changeType==='lost'?'objective-change-lost':'objective-change-active';
     const scoringImpact=objectivePrimaryScoringImpactLabel(state.currentTurn==='opp'?'opp':'my',name);
     const button=(value,label)=>'<button type="button" class="btn objective-control-btn '+(current===value?'active':'')+'" aria-pressed="'+(current===value?'true':'false')+'" onclick="setObjectiveControl(\''+escName(name)+'\',\''+value+'\');return false;">'+label+'</button>';
-    return '<div class="objective-control-row"><div class="objective-control-name"><b>'+esc(name)+'</b><span class="tiny">Start: '+esc(start==='my'?'My':start==='opp'?'Opp':start==='contested'?'Contested':'None')+'</span><span class="pill '+changeClass+'">'+esc(changeLabel)+'</span>'+(scoringImpact?'<span class="tiny" style="color:#aee2bf">'+esc(scoringImpact)+'</span>':'')+'<select class="objective-role-select" aria-label="Objective location" onchange="setObjectiveRole(\''+escName(name)+'\',this.value);return false;">'+roleOptions+'</select><select class="objective-role-select" aria-label="Objective territory" onchange="setObjectiveTerritory(\''+escName(name)+'\',this.value);return false;">'+territoryOptions+'</select><select class="objective-role-select" aria-label="Objective deployment zone" onchange="setObjectiveDeploymentZone(\''+escName(name)+'\',this.value);return false;">'+deploymentOptions+'</select>'+objectiveControlSourceHtml(name,current)+'</div><div class="objective-control-buttons">'+button('my','My')+button('opp','Opp')+button('contested','Contested')+button('none','None')+'<button type="button" class="btn objective-remove-btn" title="Remove objective" onclick="removeTrackedObjective(\''+escName(name)+'\');return false;">×</button></div></div>';
+    return '<div class="objective-control-row"><div class="objective-control-name"><b>'+esc(name)+'</b><span class="tiny">Start: '+esc(start==='my'?'My':start==='opp'?'Opp':start==='contested'?'Contested':'None')+'</span><span class="pill '+changeClass+'">'+esc(changeLabel)+'</span>'+(scoringImpact?'<span class="tiny" style="color:#aee2bf">'+esc(scoringImpact)+'</span>':'')+spatialControls+objectiveControlSourceHtml(name,current)+'</div><div class="objective-control-buttons">'+button('my','My')+button('opp','Opp')+button('contested','Contested')+button('none','None')+'<button type="button" class="btn objective-remove-btn" title="Remove objective" onclick="removeTrackedObjective(\''+escName(name)+'\');return false;">×</button></div></div>';
   }).join(''):'<div class="empty" style="padding:10px">No objectives tracked yet. Add the objectives from your mission.</div>';
   return '<details class="card objective-control-card '+(opponentTurn?'objective-control-opponent':'objective-control-self')+'" '+(open?'open':'')+' ontoggle="state.objectiveControlOpen=this.open;save()">'+
     '<summary style="cursor:pointer;list-style:none"><div class="split"><div><h3 style="margin:0">Objective Control</h3><div class="muted">'+(opponentTurn?'Record objective changes during the opponent turn.':'Current battlefield objective ownership used by scoring and Tactical Advisor.')+'</div></div><span class="pill">'+(opponentTurn?'Opponent turn':'Your turn')+'</span></div></summary>'+
