@@ -227,7 +227,7 @@ Battle state + objectives + mission + CP + combat state → contextual recommend
 
 Current layers completed: explicit v2 battle-state context (round/phase, VP/CP, objectives, active secondaries, reserves, and known battlefield positions), CP/stratagem availability and recent-use context, read-only state integration, v2 decision-surface activation, and deployment regression gate `scripts/track4-tactical-advisor-v2-audit.js`.
 
-Remaining Track 4 layers: deeper stratagem consequence analysis, recommendation prioritization refinement, and final v2 regression/deployment completion.
+Remaining Track 4 layers: recommendation prioritization refinement and final v2 regression/deployment completion. Stratagem consequence analysis is complete.
 
 ### Track 5 — Tournament Operations 🔵
 Clock + player turns + game timing + setup + scoring + end-game report.
@@ -277,6 +277,7 @@ Current layer: tablet dashboard, sticky command rail, responsive touch controls,
 - Current execution: Track 4 Tactical Advisor v2 🔵 (with Track 5/6 parallel integrity work active)
 - Track 4 battle-state context layer — 🟢 complete
 - Track 4 stratagem consequence analysis — 🟢 complete
+- Track 4 recommendation prioritization refinement — 🟢 implementation + deployment audit added
 - Track 4 v2 deployment regression gate — 🟢 added
 - Track 3 audit: scripts/track3-mission-system-audit.js
 - Track 1 audits: scripts/track1-end-turn-scoring-audit.js, scripts/track1-scoring-vp-cp-audit.js, scripts/track1-turn-phase-action-log-audit.js, scripts/track1-completion-audit.js
@@ -284,3 +285,8 @@ Current layer: tablet dashboard, sticky command rail, responsive touch controls,
 - Deployment workflow gates both completed tracks before GitHub Pages publication
 
 Next planning checkpoint: begin Track 4 Tactical Advisor v2.
+
+### Batch-First Development Workflow
+- 🟢 Local/pre-push batch preflight: `scripts/preflight-batch.js`
+- 🟢 Runtime internal-symbol deployment gate: `scripts/runtime-internal-symbol-audit.js`
+- Development batches should group 2–5 related tasks, preflight them before GitHub, then use GitHub Actions as the final independent integration/deployment gate.
