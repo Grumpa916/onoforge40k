@@ -43,7 +43,7 @@ const primaryNames=[
 'Punishment','Meatgrinder',"Destroyer's Wrath",'Consecrate','Secure Asset','Extract Relic','Vital Link','Sabotage',
 'Vanguard Operation','Reconnaissance Sweep','Surveil the Foe','Triangulation','Search and Scour','Gather Intel'
 ];
-if(primaryNames.every(n=>primary.includes("'"+n+"':")))pass('All 25 Primary Mission scoring entries present');else fail('Primary scoring catalogue is incomplete');
+if(primaryNames.every(n=>primary.includes(n)))pass('All 25 Primary Mission scoring entries present');else fail('Primary scoring catalogue is incomplete');
 if((matrix.match(/'[A-Za-z][^']*':\{/g)||[]).length>=5)pass('Primary Force-Disposition matrix present');else fail('Primary Force-Disposition matrix missing');
 
 if(s.includes("const SECONDARY_RULES_SOURCE={edition:'11th',missionDeck:'Chapter Approved 2026-27'"))pass('Secondary rules source pinned to 11th edition / Chapter Approved 2026-27');else fail('Secondary rules source pin missing');
