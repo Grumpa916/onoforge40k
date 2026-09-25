@@ -39,8 +39,8 @@ check('Objective control is stateful',
 
 check('Objective changes feed primary scoring candidates',
   has(/recordPrimaryScoringCandidates\(/) &&
-  /recordPrimaryScoringCandidates\('my'/.test(html) &&
-  /recordPrimaryScoringCandidates\('opp'/.test(html),
+  /recordPrimaryScoringCandidates\([^)]*my/.test(html) &&
+  /recordPrimaryScoringCandidates\([^)]*opp/.test(html),
   'Both sides must checkpoint scoring candidates.');
 
 check('Primary scoring candidate uses geometry evidence',
