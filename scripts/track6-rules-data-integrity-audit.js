@@ -40,6 +40,10 @@ check('Active mission geometry is verified',
 check('Rules-data version is represented in source state',
   /rulesDataPin|rulesDataVersion|rulesDataRevision|dataRevision|sourceRevision/.test(html),
   'Active state must have a path toward pinning tournament state to the rules-data revision.');
+check('Source manifest and runtime Event Companion revision agree',
+  /"name": "Warhammer Event Companion"[\\s\\S]*?"version": "1\\.2"[\\s\\S]*?"file": "data\\/warhammer-event-companion-v1\\.2\\.json"/.test(fs.readFileSync('data/40kapp-source.json','utf8')) &&
+  html.includes('warhammer-event-companion-v1.2.json'),
+  'The provenance manifest and runtime must point to the same Event Companion revision.');
 
 const failures=checks.filter(x=>!x.pass);
 console.log(JSON.stringify({
