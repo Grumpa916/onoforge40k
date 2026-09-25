@@ -233,7 +233,7 @@ Completed: recommendation prioritization refinement, final recommendation explan
 ### Track 5 — Tournament Operations 🔵
 Clock + player turns + game timing + setup + scoring + end-game report.
 
-Parallel progress: 🟢 game/turn timing, pause/resume, persistence-safe timer snapshots, battle completion timing, and end-game report foundations are now covered by `scripts/track5-tournament-operations-audit.js`. Remaining work: tournament lifecycle/setup workflow, result verification/lock, and final tournament operations regression. Result snapshot/export implementation is now in place.
+Parallel progress: 🟢 game/turn timing, pause/resume, persistence-safe timer snapshots, battle completion timing, and end-game report foundations are now covered by `scripts/track5-tournament-operations-audit.js`. Remaining work: final tournament-operations regression and tournament-day workflow hardening. The explicit SETUP → DEPLOYMENT → LIVE → COMPLETED lifecycle is now wired into Battle Setup; deployment preserves reserves and map state before Live.
 
 ### Track 6 — Rules Completeness 🔵
 Systematic 11th-edition validation across units, weapons, abilities, missions, secondaries, and stratagems.
@@ -275,7 +275,7 @@ Current layer: tablet dashboard, sticky command rail, responsive touch controls,
 - Manual turn override preserves scoring and CP integrity — 🟢 complete
 - Track 3 Tournament Mission System — 🟢 complete
 - Track 3 mission catalogue/scoring integrity gate — 🟢 complete
-- Current execution: Track 5 Tournament Operations 🔵 (with Track 6/7 parallel integrity work active)
+- Current execution: Track 5 Tournament Operations 🔵 — lifecycle wiring complete; final tournament-operations regression remains (with Track 6/7 parallel integrity work active)
 - Track 4 battle-state context layer — 🟢 complete
 - Track 4 stratagem consequence analysis — 🟢 complete
 - Track 4 recommendation prioritization refinement — 🟢 complete
