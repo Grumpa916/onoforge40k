@@ -6,7 +6,7 @@ const check=(name,pass,detail='')=>checks.push({name,pass:!!pass,detail});
 const start=html.indexOf('function tacticalPreRollResolveMixedFnp');
 const end=html.indexOf('function tacticalPreRollResolveMixedVariableDamage',start);
 const fnp=start>=0&&end>start?html.slice(start,end):'';
-const entryStart=html.lastIndexOf("if(field==='mixedFnp')",720000);
+const entryStart=html.indexOf("if(field==='mixedFnp')");
 const entryEnd=html.indexOf("return null;",entryStart);
 const entry=entryStart>=0&&entryEnd>entryStart?html.slice(entryStart,entryEnd):'';
 const mixedStart=html.indexOf('function tacticalPreRollResolveMixedVariableDamage');
