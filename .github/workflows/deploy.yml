@@ -75,6 +75,10 @@ jobs:
         shell: bash
         run: node scripts/fnp-resolution-audit.js
 
+      - name: Run Track 1 end-of-turn scoring audit
+        shell: bash
+        run: node scripts/track1-end-turn-scoring-audit.js
+
       - name: Render Tactical Advisor decision surface
         shell: bash
         run: |
