@@ -4934,7 +4934,7 @@ function beginDeployment(){
   const before=snapshotForUndo();
   if(!setTournamentLifecycle('DEPLOYMENT')){alert('The tournament cannot enter Deployment from the current lifecycle state.');return false;}
   ensureReserveState();
-  ensureDeploymentPlanState();
+  ensureDeploymentPlans();
   ensureBattlefieldUnitPositions();
   event('TOURNAMENT_DEPLOYMENT_STARTED',{
     side:'my',
