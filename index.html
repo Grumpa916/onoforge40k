@@ -5150,11 +5150,14 @@ function objectiveBattlefieldGeometry(){
   const missionKey=state.objectiveMapMissionKey||objectiveMissionKey();
   const source=ONOFORGE_EVENT_COMPANION?.terrain||null;
   const sourcePages=ONOFORGE_EVENT_COMPANION?.layoutIndex||null;
+  const geometrySource=ONOFORGE_EVENT_COMPANION?.layoutGeometry||null;
+  const geometryLayouts=Array.isArray(geometrySource?.layouts)?geometrySource.layouts:[];
+  const geometryEntry=geometryLayouts.find(g=>g&&g.missionKey===missionKey&&g.layout===layout)||null;
   const objectiveNames=Object.keys(state.objectives||{});
   return {
     version:'geometry.v1',
-    verified:false,
-    status:'Objective positions not yet verified from the Event Companion layout artwork',
+    verified:geometryEntry?.verified===true,
+    status:geometryEntry?.verified===true?'Objective positions verified from the Event Companion layout data':'Objective positions not yet verified from the Event Companion layout artwork',
     table:{widthInches:60,depthInches:44},
     layout,
     missionKey,
@@ -5163,7 +5166,9 @@ function objectiveBattlefieldGeometry(){
       title:ONOFORGE_EVENT_COMPANION?.source?.title||'Warhammer Event Companion',
       version:ONOFORGE_EVENT_COMPANION?.source?.version||'1.1',
       layoutPage:source?.layoutKeyPage||8,
-      layoutIndex:sourcePages||null
+      layoutIndex:sourcePages||null,
+      geometryStatus:geometrySource?.status||'unverified',
+      geometryEntry:geometryEntry||null
     },
     terrain:source?{
       battlefield:source.battlefield||'44 x 60 inches',
@@ -5175,8 +5180,8 @@ function objectiveBattlefieldGeometry(){
       type:objectiveType(name),
       territory:objectiveTerritory(name),
       deploymentZone:objectiveDeploymentZone(name),
-      position:null,
-      positionVerified:false
+      position:geometryEntry?.objectivePositions?.[name]||null,
+      positionVerified:geometryEntry?.verified===true
     }))
   };
 }
