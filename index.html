@@ -5144,6 +5144,39 @@ function objectiveControlSourceHtml(name,current){
   }).join(''):'<div class="tiny">No independent units available for '+esc(label)+'.</div>';
   return '<details style="margin-top:5px"><summary style="cursor:pointer;color:#9ecbff;font-size:10px">OC contributors: <b>'+checkedCount+'</b> <span class="tiny">optional</span></summary><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;margin-top:5px">'+options+'</div><div class="tiny" style="margin-top:5px">Select only units whose models are being credited toward this objective’s control. This does not infer control from unit presence.</div></details>';
 }
+function validateEventCompanionGeometry(){
+  const source=ONOFORGE_EVENT_COMPANION?.layoutGeometry||null;
+  const layouts=Array.isArray(source?.layouts)?source.layouts:[];
+  const issues=[];
+  const seen=new Set();
+  const validLayouts=new Set(['A','B','C']);
+  if(!source) issues.push('layoutGeometry source is missing');
+  if(source?.schemaVersion!=='geometry.v1') issues.push('layoutGeometry schemaVersion is not geometry.v1');
+  if(layouts.length!==45) issues.push('layoutGeometry must contain exactly 45 mission/layout entries');
+  layouts.forEach((entry,index)=>{
+    const key=entry&&entry.missionKey+'|'+entry.layout;
+    if(!entry||typeof entry!=='object') return issues.push('layoutGeometry entry '+(index+1)+' is not an object');
+    if(!entry.missionKey||!entry.missionA||!entry.missionB) issues.push('layoutGeometry entry '+(index+1)+' is missing mission identity');
+    if(!validLayouts.has(entry.layout)) issues.push('layoutGeometry entry '+(index+1)+' has invalid layout '+String(entry.layout));
+    if(seen.has(key)) issues.push('duplicate layoutGeometry entry '+key);
+    seen.add(key);
+    if(!Number.isInteger(entry.page)) issues.push('layoutGeometry entry '+key+' is missing a numeric page');
+    if(entry.verified===true){
+      if(!entry.objectivePositions||typeof entry.objectivePositions!=='object') issues.push('verified geometry '+key+' is missing objectivePositions');
+      if(!entry.deploymentZones||typeof entry.deploymentZones!=='object') issues.push('verified geometry '+key+' is missing deploymentZones');
+      const positions=entry.objectivePositions||{};
+      Object.entries(positions).forEach(([name,pos])=>{
+        if(!pos||!Number.isFinite(Number(pos.x))||!Number.isFinite(Number(pos.y))) issues.push('verified geometry '+key+' has invalid position for '+name);
+        else if(Number(pos.x)<0||Number(pos.x)>60||Number(pos.y)<0||Number(pos.y)>44) issues.push('verified geometry '+key+' has out-of-bounds position for '+name);
+      });
+    }
+  });
+  return {ok:issues.length===0,issues,count:layouts.length,verifiedCount:layouts.filter(e=>e?.verified===true).length};
+}
+function objectivePositionFor(name){
+  const geometry=objectiveBattlefieldGeometry();
+  return geometry.verified?geometry.objectives.find(o=>o.name===name)?.position||null:null;
+}
 function objectiveBattlefieldGeometry(){
   const layoutInfo=ensureObjectiveLayoutForMission();
   const layout=state.objectiveMapLayout||'A';
@@ -5152,12 +5185,15 @@ function objectiveBattlefieldGeometry(){
   const sourcePages=ONOFORGE_EVENT_COMPANION?.layoutIndex||null;
   const geometrySource=ONOFORGE_EVENT_COMPANION?.layoutGeometry||null;
   const geometryLayouts=Array.isArray(geometrySource?.layouts)?geometrySource.layouts:[];
+  const geometryValidation=validateEventCompanionGeometry();
   const geometryEntry=geometryLayouts.find(g=>g&&g.missionKey===missionKey&&g.layout===layout)||null;
   const objectiveNames=Object.keys(state.objectives||{});
+  const verified=geometryValidation.ok&&geometryEntry?.verified===true;
   return {
     version:'geometry.v1',
-    verified:geometryEntry?.verified===true,
-    status:geometryEntry?.verified===true?'Objective positions verified from the Event Companion layout data':'Objective positions not yet verified from the Event Companion layout artwork',
+    verified,
+    validation:geometryValidation,
+    status:verified?'Objective positions verified from the Event Companion layout data':geometryValidation.ok?'Objective positions not yet verified from the Event Companion layout artwork':'Event Companion geometry data failed validation; positions are blocked',
     table:{widthInches:60,depthInches:44},
     layout,
     missionKey,
@@ -5181,7 +5217,7 @@ function objectiveBattlefieldGeometry(){
       territory:objectiveTerritory(name),
       deploymentZone:objectiveDeploymentZone(name),
       position:geometryEntry?.objectivePositions?.[name]||null,
-      positionVerified:geometryEntry?.verified===true
+      positionVerified:verified
     }))
   };
 }
