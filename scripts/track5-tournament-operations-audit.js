@@ -66,6 +66,14 @@ check('No legacy 10th-edition rule contamination',
   !/Big Guns Never Tire/i.test(html),
   'Tournament operations must remain on the current rules path.');
 
+check('Legacy recovery cannot implicitly promote Battle page to Live',
+  has(/if\\(!allowed\.includes\(state\.tournamentLifecycle\)\)state\.tournamentLifecycle=state\.battleEnded\?'COMPLETED':'SETUP';/),
+  'Recovered legacy state must require an explicit Deployment transition.');
+
+check('Tournament result captures both deployment sides and audit state',
+  has(/deploymentReadyMy:/)&&has(/deploymentReadyOpp:/)&&has(/deploymentState:\{/)&&has(/positions:JSON\.parse\(JSON\.stringify\(ensureBattlefieldUnitPositions\(\)\)\)/),
+  'The final tournament record must preserve deployment and reserve context.');
+
 check('Tournament lifecycle has an explicit Deployment state',
   has(/allowed=\['SETUP','DEPLOYMENT','LIVE','COMPLETED'\]/)&&has(/DEPLOYMENT:\['SETUP','LIVE'\]/),
   'Tournament flow must distinguish setup, deployment, live battle, and completion.');
