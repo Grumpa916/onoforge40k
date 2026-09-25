@@ -267,6 +267,7 @@ Tablet-first dashboard, touch optimization, minimal data entry, fast phase trans
 - Track 3 mission catalogue/scoring integrity gate — 🟢 complete
 - Current execution: Track 4 Tactical Advisor v2 — 🔵 active
 - Track 4 battle-state context layer — 🟢 complete
+- Track 4 stratagem consequence analysis — 🟢 complete
 - Track 4 v2 deployment regression gate — 🟢 added
 - Track 3 audit: scripts/track3-mission-system-audit.js
 - Track 1 audits: scripts/track1-end-turn-scoring-audit.js, scripts/track1-scoring-vp-cp-audit.js, scripts/track1-turn-phase-action-log-audit.js, scripts/track1-completion-audit.js
