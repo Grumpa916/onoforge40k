@@ -92,6 +92,17 @@ check(
 );
 
 check(
+  'action log can be filtered by round and phase',
+  /function filteredActionLogEvents\(\)/.test(html) &&
+  /actionLogRoundFilter/.test(html) &&
+  /actionLogPhaseFilter/.test(html) &&
+  /setActionLogFilter/.test(html) &&
+  /All rounds/.test(html) &&
+  /All phases/.test(html),
+  'action history can be narrowed to a tournament round and phase'
+);
+
+check(
   'turn navigation is exposed to the active battle UI',
   /window\.nextRound=nextRound/.test(html) &&
   /window\.previousRound=previousRound/.test(html) &&
