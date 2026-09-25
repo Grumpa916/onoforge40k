@@ -24,6 +24,21 @@ check('No v1 prioritization references undefined stratagem pressure',(()=>{
 })(),'v1 must remain independent of v2-only stratagem pressure state.');
 check('Advisor preserves confidence and objective tie breakers',html.includes('decisionConfidence')&&html.includes('objectiveValue'));
 check('Advisor surfaces near-tie threshold',html.includes('const nearTieThreshold=0.015'));
+check('v2 refreshes explanation after final priority sort',(()=>{
+  const v2=html.indexOf('function tacticalAdvisorV2(');
+  const sort=html.indexOf('recommendations.sort((a,b)=>',v2);
+  const refresh=html.indexOf('const v2NearTieThreshold=0.015;',v2);
+  const top=html.indexOf('const top=recommendations[0]||null;',v2);
+  return v2>=0&&sort>v2&&refresh>sort&&top>refresh&&
+    html.includes('x.recommendationExplanation={')&&
+    html.includes('rank:i+1')&&html.includes('nearTie:margin<=v2NearTieThreshold');
+})(),'Final v2 recommendation explanations must be recalculated after priorityScore sorting.');
+check('v2 close-call alert uses final sorted recommendation',(()=>{
+  const v2=html.indexOf('function tacticalAdvisorV2(');
+  const top=html.indexOf('const top=recommendations[0]||null;',v2);
+  const alert=html.indexOf('top?.recommendationExplanation?.nearTie',v2);
+  return top>=0&&alert>top;
+})(),'The v2 close-call alert must inspect the post-sort top recommendation.');
 const failures=checks.filter(x=>!x.pass);
 console.log(JSON.stringify({audit:'Track 4 prioritization refinement audit',checks,failures},null,2));
 if(failures.length)process.exit(1);
