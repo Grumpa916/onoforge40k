@@ -4657,6 +4657,7 @@ function setup(){
  ${objectiveLayoutHtml()}
  ${reserveDeclarationSectionHtml('my')}
  ${reserveDeclarationSectionHtml('opp')}
+ ${deploymentStatusHtml()}
  ${tournamentSetupChecklistHtml()}
  <div class="setup-section"><h3>Battle Options</h3><div class="grid2">
    <div class="field compact-battle-menu"><label>My Army Battle Ready</label><select style="width:160px!important;max-width:160px!important;min-width:0!important" onchange="state.battleReadyMy=this.value==='yes';save();render()"><option value="no" ${!state.battleReadyMy?'selected':''}>No</option><option value="yes" ${state.battleReadyMy?'selected':''}>Yes — +10 VP</option></select></div>
@@ -4823,8 +4824,8 @@ function tournamentResultSnapshot(){
   missionKey:state.objectiveMapMissionKey||objectiveMissionKey()||null,
   battlefieldLayout:state.objectiveMapLayout||null,
   mapPage:objectiveLayoutPage(),
-  deploymentReadyMy:Object.keys(ensureBattlefieldUnitPositions().my||{}).length>0||Object.keys(deploymentPlanForCurrentMap()).length>0,
-  deploymentReadyOpp:Object.keys(ensureBattlefieldUnitPositions().opp||{}).length>0,
+  deploymentReadyMy:Object.values(ensureBattlefieldUnitPositions()).some(p=>p&&p.side==='my'),
+  deploymentReadyOpp:Object.values(ensureBattlefieldUnitPositions()).some(p=>p&&p.side==='opp'),
   reservesDeclaredMy:Object.keys(ensureReserveState().my||{}).length,
   reservesDeclaredOpp:Object.keys(ensureReserveState().opp||{}).length,
   deploymentState:{mapPage:objectiveLayoutPage(),positions:JSON.parse(JSON.stringify(ensureBattlefieldUnitPositions())),plan:JSON.parse(JSON.stringify(deploymentPlanForCurrentMap())),reserves:JSON.parse(JSON.stringify(ensureReserveState()))},
@@ -4872,7 +4873,7 @@ function tournamentResultIntegrityCheck(){
  const r=state.battleResult;
  const reserveState=ensureReserveState();
  const positions=ensureBattlefieldUnitPositions();
- const expected={myVP:scoreTotalForSide('my'),oppVP:scoreTotalForSide('opp'),round:Math.max(1,Number(state.round)||1),missionKey:state.objectiveMapMissionKey||objectiveMissionKey()||null,battlefieldLayout:state.objectiveMapLayout||null,deploymentReadyMy:Object.keys(positions.my||{}).length>0||Object.keys(deploymentPlanForCurrentMap()).length>0,deploymentReadyOpp:Object.keys(positions.opp||{}).length>0,reservesDeclaredMy:Object.keys(reserveState.my||{}).length,reservesDeclaredOpp:Object.keys(reserveState.opp||{}).length};
+ const expected={myVP:scoreTotalForSide('my'),oppVP:scoreTotalForSide('opp'),round:Math.max(1,Number(state.round)||1),missionKey:state.objectiveMapMissionKey||objectiveMissionKey()||null,battlefieldLayout:state.objectiveMapLayout||null,deploymentReadyMy:Object.values(positions).some(p=>p&&p.side==='my'),deploymentReadyOpp:Object.values(positions).some(p=>p&&p.side==='opp'),reservesDeclaredMy:Object.keys(reserveState.my||{}).length,reservesDeclaredOpp:Object.keys(reserveState.opp||{}).length};
  const mismatches=Object.keys(expected).filter(k=>String(r[k]??'')!==String(expected[k]??''));
  return {ok:mismatches.length===0,mismatches};
 }
@@ -4940,6 +4941,27 @@ function resetTournamentToSetup(){
   save();render();
   return true;
 }
+function tournamentDeploymentValidation(){
+  const positions=ensureBattlefieldUnitPositions(), reserves=ensureReserveState();
+  const missing=[];
+  for(const side of ['my','opp']){
+    const list=Array.isArray(side==='my'?state.my:state.opp)?(side==='my'?state.my:state.opp):[];
+    for(const entry of list.filter(e=>e&&!e.attachedTo)){
+      const id=String(entry.uid);
+      if(reserves[side]?.[id]===true)continue;
+      const p=positions[id];
+      if(!p||p.side!==side||!Number.isFinite(Number(p.x))||!Number.isFinite(Number(p.y)))missing.push((side==='my'?state.myName:state.oppName)+': '+(unitDisplayName(side,entry)||get(entry.unitId)?.name||entry.name||entry.unitId||'Unit'));
+    }
+  }
+  return {ready:missing.length===0,missing};
+}
+
+function deploymentStatusHtml(){
+  if(state.tournamentLifecycle!=='DEPLOYMENT')return '';
+  const check=tournamentDeploymentValidation();
+  return '<div class="setup-section"><div class="split"><div><h3 style="margin:0">Deployment Status</h3><div class="tiny">Every non-reserve unit must have its actual tabletop position recorded. Reserved units remain in the reserve tray.</div></div><span class="pill '+(check.ready?'ok':'warn')+'">'+(check.ready?'Deployment complete':'Deployment incomplete')+'</span></div>'+(check.ready?'<div class="ok">All units are accounted for. Starting the battle will lock the deployment map.</div>':'<div class="warn">Still unrecorded: '+check.missing.slice(0,8).map(esc).join(' • ')+(check.missing.length>8?' • +'+(check.missing.length-8)+' more':'')+'</div>')+'</div>';
+}
+
 function beginDeployment(){
   const setupCheck=tournamentSetupValidation();
   if(!setupCheck.ready){alert('Tournament setup is incomplete:\n\n• '+setupCheck.missing.join('\n• '));return false;}
@@ -4977,6 +4999,8 @@ function startBattle(){
     alert('Begin Deployment before starting the live battle.');
     return false;
   }
+  const deploymentCheck=tournamentDeploymentValidation();
+  if(!deploymentCheck.ready){alert('Deployment is incomplete:\n\n• '+deploymentCheck.missing.join('\n• '));return false;}
   const before=snapshotForUndo();
   // Pin the rules-data revision for the lifetime of this tournament battle.
   // Loading an existing battle preserves its prior pin rather than silently adopting a newer deployed dataset.
