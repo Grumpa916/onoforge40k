@@ -20,7 +20,7 @@ check('Advisor uses mission state',
   'Recommendations must receive current mission, score, Primary/Secondary, objective, and turn context.');
 
 check('Advisor uses objective-control state',
-  has(/objectiveSummary:(?:objectiveSummary\.)?(?:current|control|summary)/) &&
+  has(/summary:objectiveSummary\.current/) &&
   has(/objectiveTacticalSummary\(\)/) &&
   has(/objectiveMapLayout:state\.objectiveMapLayout/),
   'Recommendations must consume the active objective-control and map state.');
