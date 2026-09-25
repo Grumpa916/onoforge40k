@@ -16,8 +16,10 @@ check('Prioritization runs inside v2 after stratagem pressure exists',(()=>{
 })(),'Stratagem-aware prioritization must execute in v2, after the pressure object is available.');
 check('No v1 prioritization references undefined stratagem pressure',(()=>{
   const v1=html.indexOf('function tacticalAdvisorV1(');
-  const v2=html.indexOf('function tacticalAdvisorV2(');
-  const block=html.slice(v1,v2);
+  if(v1<0)return false;
+  const nextFns=[html.indexOf('function tacticalAdvisorV2(',v1+1),html.indexOf('function getTacticalAdvisorV2Result(',v1+1)].filter(i=>i>=0);
+  const end=nextFns.length?Math.min(...nextFns):html.length;
+  const block=html.slice(v1,end);
   return !block.includes('stratagemPressure?.pressure')&&!block.includes('advisorStratagemPressure');
 })(),'v1 must remain independent of v2-only stratagem pressure state.');
 check('Advisor preserves confidence and objective tie breakers',html.includes('decisionConfidence')&&html.includes('objectiveValue'));
