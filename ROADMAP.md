@@ -102,7 +102,7 @@ Goal: Provide context-aware battlefield decisions without corrupting game state.
 - 🟢 Mission/VP consequence integration
 - 🟢 Current-turn/game-state awareness
 - 🟢 Reserve and battlefield-position context
-- 🟡 CP/stratagem consequence integration
+- 🟢 CP/stratagem consequence integration
 - 🟢 Expanded recommendation explanations
 - 🔵 Tactical Advisor v2 feature pass
 
@@ -222,9 +222,9 @@ Completed: Tactical/Fixed secondary state machine, Command-phase replenishment, 
 ### Track 4 — Tactical Advisor v2 🔵
 Battle state + objectives + mission + CP + combat state → contextual recommendations.
 
-Current layer completed: explicit v2 battle-state context (round/phase, VP/CP, objectives, active secondaries, reserves, and known battlefield positions), read-only state integration, v2 decision-surface activation, and deployment regression gate `scripts/track4-tactical-advisor-v2-audit.js`.
+Current layers completed: explicit v2 battle-state context (round/phase, VP/CP, objectives, active secondaries, reserves, and known battlefield positions), CP/stratagem availability and recent-use context, read-only state integration, v2 decision-surface activation, and deployment regression gate `scripts/track4-tactical-advisor-v2-audit.js`.
 
-Remaining Track 4 layers: deeper CP/stratagem consequence analysis, broader current-state decision context, recommendation prioritization refinement, and final v2 regression/deployment completion.
+Remaining Track 4 layers: deeper stratagem consequence analysis, recommendation prioritization refinement, and final v2 regression/deployment completion.
 
 ### Track 5 — Tournament Operations
 Clock + player turns + game timing + setup + scoring + end-game report.
