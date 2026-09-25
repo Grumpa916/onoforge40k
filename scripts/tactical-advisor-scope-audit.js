@@ -5,7 +5,8 @@ const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const checks=[];
 const check=(name,condition,detail='')=>checks.push({name,pass:!!condition,detail});
 
-const advisorStart=html.indexOf('function tacticalAdvisor(');
+const advisorMarker=html.includes('function tacticalAdvisorV1(')?'function tacticalAdvisorV1(':'function tacticalAdvisor('; 
+const advisorStart=html.indexOf(advisorMarker);
 const advisorEnd=html.indexOf('function math(){',advisorStart);
 const advisor=advisorStart>=0&&advisorEnd>advisorStart?html.slice(advisorStart,advisorEnd):'';
 const explanationStart=advisor.indexOf('x.recommendationExplanation={');
