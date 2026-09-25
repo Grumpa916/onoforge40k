@@ -7809,6 +7809,10 @@ function tacticalAdvisorHtml(){
       '<summary style="cursor:pointer;list-style:none"><div class="split"><div><b>#'+esc(e.rank||'')+' '+esc(r.name||'Target')+'</b><div class="tiny">'+Number(expected.damage||0).toFixed(1)+'W • '+Number(expected.modelsKilled||0).toFixed(1)+' models • '+(Number(expected.wipeChance||0)*100).toFixed(0)+'% wipe</div></div><span class="pill '+(selected?'ok':'')+'">'+(selected?'Selected':(e.confidence?.label==='Limited'?'Verify context':'Select'))+'</span></div></summary>'+
       '<div class="grid3" style="margin-top:7px"><div class="status"><div class="muted small">Expected damage</div><b>'+Number(expected.damage||0).toFixed(1)+'W</b></div><div class="status"><div class="muted small">Models killed</div><b>'+Number(expected.modelsKilled||0).toFixed(1)+'</b></div><div class="status"><div class="'+confidenceClass(conf.label)+'"><div class="muted small">Confidence</div><b>'+esc(conf.label||'Limited')+'</b></div></div></div>'+
       '<div style="margin-top:7px"><b>Why:</b> '+esc(e.why||'Combat and mission factors are combined.')+'</div>'+
+      (e.missionImpact?.objective?'<div style="margin-top:7px"><b>Mission:</b> '+esc(e.missionImpact.objective)+' • '+esc(e.missionImpact.status||'unknown')+
+        (Number(e.missionImpact.denyOpponentPrimary||0)>0?' • can affect opponent Primary scoring':'')+
+        (Number(e.missionImpact.ownPrimaryOpportunity||0)>0?' • linked to your Primary scoring':'')+
+        '</div>':'')+
       '<div style="margin-top:7px"><b>Risk:</b> '+esc(String(risk.band||'unknown'))+' • '+Number(risk.incomingThreat||0).toFixed(1)+' incoming W • '+Number(risk.pointsAtRisk||0).toFixed(0)+' pts at risk</div>'+
       (changes.length?'<div style="margin-top:7px"><b>What could change it:</b><ul style="margin:3px 0 0 18px">'+changes.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul></div>':'')+
       '<button type="button" class="btn primary" style="width:100%;margin-top:8px" onclick="ensureTacticalState().selectedTargetUid=\''+esc(r.entryUid).replace(/'/g,"\\'")+'\';save();render()">Select '+esc(r.name||'Target')+'</button>'+
