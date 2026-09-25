@@ -269,7 +269,7 @@ Tablet-first dashboard, touch optimization, minimal data entry, fast phase trans
 - Manual turn override preserves scoring and CP integrity — 🟢 complete
 - Track 3 Tournament Mission System — 🟢 complete
 - Track 3 mission catalogue/scoring integrity gate — 🟢 complete
-- Current execution: Track 4 Tactical Advisor v2 🔵 (with Track 5/6 parallel integrity work active)v2 — 🔵 active
+- Current execution: Track 4 Tactical Advisor v2 🔵 (with Track 5/6 parallel integrity work active)
 - Track 4 battle-state context layer — 🟢 complete
 - Track 4 stratagem consequence analysis — 🟢 complete
 - Track 4 v2 deployment regression gate — 🟢 added
