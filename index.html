@@ -901,6 +901,8 @@ function terrainMeasurementOverlayHtml(model,pct){
     const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);
     const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
     const width=maxX-minX,height=maxY-minY;
+    const edgeDistances=[['LEFT',minX],['RIGHT',60-maxX],['BOTTOM',minY],['TOP',44-maxY]].filter(([,d])=>Number.isFinite(d)&&d>=0).sort((a,b)=>a[1]-b[1]);
+    const nearestEdge=edgeDistances[0]||['EDGE',0],nearestEdgeName=nearestEdge[0],nearestEdgeDistance=nearestEdge[1];
     const cx=(minX+maxX)/2,cy=(minY+maxY)/2;
     const labelY=Math.max(minY+Math.min(height*.34,1.4),Math.min(maxY-.9,44-.9));
     parts.push(
@@ -910,7 +912,7 @@ function terrainMeasurementOverlayHtml(model,pct){
         '<text class="terrain-label-name" x="'+px(cx)+'%" y="'+py(labelY+.65)+'%" text-anchor="middle">'+esc(String(key))+'</text>',
         '<text class="terrain-label-size" x="'+px(cx)+'%" y="'+py(labelY-1.05)+'%" text-anchor="middle">'+fmt(width)+' × '+fmt(height)+'″</text>',
       '</g>',
-      '<text class="terrain-label-offset" x="'+px(Math.max(1.1,minX+1.0))+'%" y="'+py(Math.max(1.2,minY+1.25))+'%" text-anchor="start">L '+fmt(minX)+'″ • B '+fmt(minY)+'″</text>'
+      '<text class="terrain-label-offset" x="'+px(Math.max(1.1,minX+1.0))+'%" y="'+py(Math.max(1.2,minY+1.25))+'%" text-anchor="start">'+fmt(nearestEdgeDistance)+'″ from '+nearestEdgeName+' edge</text>'
     );
   });
   return '<svg class="terrain-measurement-overlay" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="Simplified terrain placement reference">'+parts.join('')+'</svg>';
