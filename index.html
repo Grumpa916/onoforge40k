@@ -685,6 +685,79 @@ function objectiveLayoutInfo(){const m=[primaryMission('my'),primaryMission('opp
 function ensureObjectiveLayoutForMission(){const key=objectiveMissionKey();if(!key)return null;if(state.objectiveMapMissionKey!==key){state.objectiveMapMissionKey=key;state.objectiveMapLayout='A';}state.objectiveMapLayout=['A','B','C'].includes(state.objectiveMapLayout)?state.objectiveMapLayout:'A';return objectiveLayoutInfo();}
 function setObjectiveMapLayout(layout){const next=['A','B','C'].includes(layout)?layout:null;if(!next)return;const info=ensureObjectiveLayoutForMission();if(!info)return;const before=snapshotForUndo();const previous=state.objectiveMapLayout||'A';state.objectiveMapLayout=next;state.objectiveMapMissionKey=objectiveMissionKey();if(Object.keys(state.objectives||{}).length===0)autoSeedObjectiveStructure();event('OBJECTIVE_LAYOUT_CHANGED',{unit:'Battlefield Layout',action:'Layout '+next+' selected',previous,after:next,round:Math.max(1,Number(state.round)||1),primaryMissions:[primaryMission('my'),primaryMission('opp')],missionKey:state.objectiveMapMissionKey,page:objectiveLayoutPage()},before);save();render();}
 function objectiveLayoutPage(){const info=ensureObjectiveLayoutForMission();if(!info)return null;const i=['A','B','C'].indexOf(state.objectiveMapLayout);return info.pages[i<0?0:i];}
+function objectiveMapModel(){
+  const geometry=objectiveBattlefieldGeometry();
+  const objectives=Object.keys(state.objectives||{}).map(objectiveStateRecord);
+  return {
+    version:'map.v1',
+    layout:geometry.layout,
+    missionKey:geometry.missionKey,
+    page:geometry.page,
+    table:geometry.table,
+    verified:geometry.verified,
+    deploymentZones:geometry.verified?(geometry.source.geometryEntry?.deploymentZones||null):null,
+    terrainGeometry:geometry.verified?(geometry.source.geometryEntry?.terrainGeometry||null):null,
+    objectives:objectives.map(o=>({
+      name:o.name,owner:o.owner,type:o.type,territory:o.territory,deploymentZone:o.deploymentZone,
+      position:o.battlefieldPosition||null
+    })),
+    unitPositions:ensureBattlefieldUnitPositions()
+  };
+}
+function ensureBattlefieldUnitPositions(){
+  if(!state.battlefieldUnitPositions||typeof state.battlefieldUnitPositions!=='object'||Array.isArray(state.battlefieldUnitPositions))state.battlefieldUnitPositions={};
+  return state.battlefieldUnitPositions;
+}
+function battlefieldUnitPosition(side,uid){
+  const raw=ensureBattlefieldUnitPositions()[String(uid)];
+  if(!raw||raw.side!==(side==='opp'?'opp':'my'))return null;
+  const x=Number(raw.x),y=Number(raw.y);
+  if(!Number.isFinite(x)||!Number.isFinite(y)||x<0||x>60||y<0||y>44)return null;
+  return {x,y,side:raw.side,source:raw.source||'manual'};
+}
+function setBattlefieldUnitPosition(side,uid,x,y){
+  const nextSide=side==='opp'?'opp':'my',id=String(uid||'');
+  const nx=Number(x),ny=Number(y);
+  if(!id||!Number.isFinite(nx)||!Number.isFinite(ny)||nx<0||nx>60||ny<0||ny>44)return false;
+  const before=snapshotForUndo();
+  ensureBattlefieldUnitPositions()[id]={x:nx,y:ny,side:nextSide,source:'manual',round:Math.max(1,Number(state.round)||1)};
+  event('UNIT_BATTLEFIELD_POSITION_CHANGED',{unit:id,action:'Battlefield position recorded',side:nextSide,x:nx,y:ny,round:Math.max(1,Number(state.round)||1),phase:String(state.phase||'Command')},before);
+  save();render();return true;
+}
+function clearBattlefieldUnitPosition(uid){
+  const id=String(uid||'');
+  if(!id||!Object.prototype.hasOwnProperty.call(ensureBattlefieldUnitPositions(),id))return;
+  const before=snapshotForUndo();
+  delete ensureBattlefieldUnitPositions()[id];
+  event('UNIT_BATTLEFIELD_POSITION_CLEARED',{unit:id,action:'Battlefield position cleared',round:Math.max(1,Number(state.round)||1),phase:String(state.phase||'Command')},before);
+  save();render();
+}
+function battlefieldDistanceBetween(a,b){
+  if(!a||!b)return null;
+  const ax=Number(a.x),ay=Number(a.y),bx=Number(b.x),by=Number(b.y);
+  if(![ax,ay,bx,by].every(Number.isFinite))return null;
+  return Math.hypot(ax-bx,ay-by);
+}
+function objectiveDistanceFromUnit(side,uid,objectiveName){
+  const unit=battlefieldUnitPosition(side,uid);
+  const objective=objectiveStateRecord(objectiveName);
+  return unit&&objective.battlefieldPosition?battlefieldDistanceBetween(unit,objective.battlefieldPosition):null;
+}
+function objectiveMapRendererHtml(){
+  const model=objectiveMapModel();
+  const status=model.verified?'Verified geometry':'Geometry pending verification';
+  const objectiveNodes=model.objectives.map(o=>{
+    const p=o.position;
+    const x=p?Math.max(0,Math.min(100,(Number(p.x)/60)*100)):null;
+    const y=p?Math.max(0,Math.min(100,100-(Number(p.y)/44)*100)):null;
+    const ownerClass=o.owner==='my'?'my':o.owner==='opp'?'opp':o.owner==='contested'?'contested':'none';
+    return '<div class="objective-map-node '+ownerClass+'" style="'+(x===null||y===null?'display:none;':'left:'+x+'%;top:'+y+'%;')+'" title="'+esc(o.name)+'">'+esc(o.name.replace(/^Central |^Expansion |^My |^Opponent /,''))+'</div>';
+  }).join('');
+  const pending='<div class="status" style="margin-top:8px"><b>Map geometry pending verification.</b><div class="tiny" style="margin-top:4px">The Event Companion layout is selected, but objective, deployment-zone, and terrain coordinates are not used until verified source geometry is loaded.</div></div>';
+  return '<div class="card objective-map-renderer"><div class="split"><div><h3 style="margin:0">Battlefield Map</h3><div class="muted">'+esc(model.missionKey)+' • Layout '+esc(model.layout)+' • Event Companion p.'+esc(String(model.page||'—'))+'</div></div><span class="pill">'+status+'</span></div>'+
+    '<div class="objective-map-canvas" role="img" aria-label="60 by 44 inch battlefield map">'+(model.verified?objectiveNodes:'<div class="objective-map-placeholder">Verified Event Companion geometry required</div>')+'</div>'+
+    '<div class="tiny" style="margin-top:6px">60 × 44 inches • Territory and deployment zone are tracked independently.</div>'+(!model.verified?pending:'')+'</div>';
+}
 function objectiveLayoutHtml(){const info=ensureObjectiveLayoutForMission();if(!info)return '';const layout=state.objectiveMapLayout||'A';const page=objectiveLayoutPage();const buttons=['A','B','C'].map(letter=>'<button type="button" class="btn objective-layout-btn '+(layout===letter?'active':'')+'" aria-pressed="'+(layout===letter?'true':'false')+'" onclick="setObjectiveMapLayout(\''+letter+'\');return false;">Layout '+letter+'</button>').join('');return '<div class="objective-layout-panel"><div class="split"><div><strong>Recommended Battlefield Layout</strong><div class="tiny">'+esc(info.missions[0])+' ↔ '+esc(info.missions[1])+' • Layout '+layout+'</div></div><span class="pill">Event Companion p.'+page+'</span></div><div class="objective-layout-buttons">'+buttons+'<a class="btn" href="'+WARHAMMER_EVENT_COMPANION_PDF+'#page='+page+'" target="_blank" rel="noopener">Open Map</a></div><details class="objective-layout-preview"><summary>Preview selected layout</summary><iframe title="Warhammer Event Companion layout '+layout+'" src="'+WARHAMMER_EVENT_COMPANION_PDF+'#page='+page+'" loading="lazy"></iframe></details></div>';}
 const CURRENT_11E_DATA_SOURCES={
   Tyranids:'https://raw.githubusercontent.com/BSData/wh40k-11e/main/Tyranids.json',
