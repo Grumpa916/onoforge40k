@@ -20,7 +20,7 @@ check('FNP reduces only unignored damage',fnp.includes('pending-n')&&fnp.include
 check('FNP updates individual model state',fnp.includes('m.woundsRemaining=Math.max(0,before-applied)')&&fnp.includes('m.alive=m.woundsRemaining>0'),'FNP resolution must update the allocated model.');
 check('FNP records physical resolution',fnp.includes('fnpResults.push({damage:pending,ignored:n,applied})'),'FNP results must be retained for review and logging.');
 check('FNP resumes the correct resolution phase',fnp.includes("vs.kind==='devastating'")&&fnp.includes('vs.index++')&&fnp.includes('mixedVariableSave'),'After FNP, resolution must continue with the correct normal/devastating path.');
-check('Fixed damage also routes through FNP',mixed.includes('if(engineFnp(m))')&&mixed.includes("s.stage='mixedFnp'"),'FNP must apply to fixed-damage attacks as well as variable damage.');
+check('Fixed damage also routes through FNP',mixed.includes('if(tacticalPreRollFnp(m,s))')&&mixed.includes("s.stage='mixedFnp'"),'FNP must apply to fixed-damage attacks as well as variable damage.');
 const failures=checks.filter(x=>!x.pass);
 console.log(JSON.stringify({audit:'Task 32 Feel No Pain resolution integrity',checks:checks.length,passed:checks.length-failures.length,failed:failures.length,failures},null,2));
 if(failures.length)process.exit(1);
