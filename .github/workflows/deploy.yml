@@ -62,6 +62,10 @@ jobs:
       - name: Run Task 28 dice entry architecture audit
         shell: bash
         run: node scripts/dice-entry-architecture-audit.js
+      
+      - name: Run Task 29 Tactical Advisor scope regression audit
+        shell: bash
+        run: node scripts/tactical-advisor-scope-audit.js
 
       - name: Render Tactical Advisor decision surface
         shell: bash
