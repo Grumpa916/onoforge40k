@@ -13,7 +13,7 @@ check('Battle-state context includes secondary state',has(/activeSecondaries:\{m
 check('Battle-state context includes reserves',has(/reserves:\{my:reserved\('my'\)/),'Advisor must account for declared reserves.');
 check('Battle-state context includes stratagem availability and history',has(/stratagems:\{[\s\S]*myPhaseAvailable:/)&&has(/myUsedThisPhase:/)&&has(/myRecent:/),'Advisor must account for current-phase stratagem options and recent usage.');
 check('V2 decision context includes stratagem pressure',has(/phaseStratagemCount:battle\.stratagems\.myPhaseAvailable\.length/)&&has(/phaseStratagemsUsed:battle\.stratagems\.myUsedThisPhase\.length/),'V2 must expose CP/stratagem consequence context.');
-check('V2 computes stratagem consequence pressure',has(/function tacticalAdvisorStratagemPressure\(/)&&has(/stratagemPressure=tacticalAdvisorStratagemPressure\(battle,top\)/),'V2 must connect recommendations to affordable phase-legal stratagem options.');
+check('V2 computes stratagem consequence pressure',has(/function tacticalAdvisorStratagemPressure\(/)&&has(/stratagemPressure=tacticalAdvisorStratagemPressure\(battle,(?:top|baseTop)\)/),'V2 must connect recommendations to affordable phase-legal stratagem options.');
 check('Battle-state context includes battlefield positions',has(/positions:\{my:positioned\('my'\)/),'Advisor must consume known live battlefield positions.');
 check('Unknown positions are not invented',has(/known:Number\.isFinite\(Number\(p\?\.x\)\)&&Number\.isFinite\(Number\(p\?\.y\)\)/),'Unknown position data must remain unknown.');
 check('V2 preserves existing recommendation engine',has(/const base=tacticalAdvisorV1\(attackerEntryUid,options\)/),'V2 must layer battle-state context over the established rules-aware engine.');
