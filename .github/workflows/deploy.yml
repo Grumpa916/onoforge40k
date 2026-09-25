@@ -55,6 +55,10 @@ jobs:
         shell: bash
         run: node scripts/tactical-advisor-integration-audit.js
 
+      - name: Run Task 26 tournament UI optimization audit
+        shell: bash
+        run: node scripts/tournament-ui-optimization-audit.js
+
       - name: Render Tactical Advisor decision surface
         shell: bash
         run: |
