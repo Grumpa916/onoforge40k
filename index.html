@@ -7969,22 +7969,36 @@ function tacticalObjectiveValueForTarget(targetEntry,pairCtx){
 }
 
 function tacticalPrimaryTargetImpact(targetEntry,pairCtx){
-  const objective=String(pairCtx?.objective||'').trim();
-  if(!objective)return {objective:'',my:{potentialVP:0,conditionCount:0,items:[]},opp:{potentialVP:0,conditionCount:0,items:[]},ownScoringValue:0,denyScoringValue:0,status:'unknown'};
-  const myImpact=objectivePrimaryScoringImpact('my',objective);
-  const oppImpact=objectivePrimaryScoringImpact('opp',objective);
-  const owner=['my','opp','contested','none'].includes(state.objectives?.[objective])?state.objectives[objective]:'unknown';
-  const targetSide='opp';
-  const targetControls=owner===targetSide;
-  const myOpportunity=myImpact.potentialVP>0?myImpact.potentialVP:(myImpact.conditionCount>0?0.25:0);
-  const denyOpportunity=targetControls?(oppImpact.potentialVP>0?oppImpact.potentialVP:(oppImpact.conditionCount>0?0.25:0)):0;
+  const explicitObjective=String(pairCtx?.objective||'').trim();
+  const linkedObjectives=Object.keys(state.objectives||{}).filter(name=>{
+    const ids=objectiveControlSourceIds(name);
+    return targetEntry?.uid&&ids.includes(String(targetEntry.uid));
+  });
+  const objectives=explicitObjective?[explicitObjective]:linkedObjectives;
+  if(!objectives.length)return {objective:'',objectives:[],my:{potentialVP:0,conditionCount:0,items:[]},opp:{potentialVP:0,conditionCount:0,items:[]},ownScoringValue:0,denyScoringValue:0,status:'unknown',linkSource:'none'};
+  const impacts=objectives.map(objective=>{
+    const myImpact=objectivePrimaryScoringImpact('my',objective);
+    const oppImpact=objectivePrimaryScoringImpact('opp',objective);
+    const owner=['my','opp','contested','none'].includes(state.objectives?.[objective])?state.objectives[objective]:'unknown';
+    const targetControls=owner==='opp';
+    const myOpportunity=myImpact.potentialVP>0?myImpact.potentialVP:(myImpact.conditionCount>0?0.25:0);
+    const denyOpportunity=targetControls?(oppImpact.potentialVP>0?oppImpact.potentialVP:(oppImpact.conditionCount>0?0.25:0)):0;
+    return {objective,owner,targetControls,myImpact,oppImpact,myOpportunity,denyOpportunity};
+  });
+  const myOpportunity=Math.max(...impacts.map(x=>x.myOpportunity),0);
+  const denyOpportunity=Math.max(...impacts.map(x=>x.denyOpportunity),0);
+  const strongest=impacts.slice().sort((a,b)=>(b.myOpportunity+b.denyOpportunity)-(a.myOpportunity+a.denyOpportunity))[0];
   return {
-    objective,owner,targetControls,
-    my:{potentialVP:myImpact.potentialVP,conditionCount:myImpact.conditionCount,items:myImpact.items},
-    opp:{potentialVP:oppImpact.potentialVP,conditionCount:oppImpact.conditionCount,items:oppImpact.items},
+    objective:strongest?.objective||'',
+    objectives:impacts.map(x=>x.objective),
+    owner:strongest?.owner||'unknown',
+    targetControls:!!strongest?.targetControls,
+    my:{potentialVP:strongest?.myImpact?.potentialVP||0,conditionCount:strongest?.myImpact?.conditionCount||0,items:strongest?.myImpact?.items||[]},
+    opp:{potentialVP:strongest?.oppImpact?.potentialVP||0,conditionCount:strongest?.oppImpact?.conditionCount||0,items:strongest?.oppImpact?.items||[]},
     ownScoringValue:Math.min(1,myOpportunity/5),
     denyScoringValue:Math.min(1,denyOpportunity/5),
-    status:owner==='unknown'?'unknown':targetControls?'enemy-controlled':owner==='my'?'friendly-controlled':owner==='contested'?'contested':'uncontrolled'
+    status:strongest?.owner==='unknown'?'unknown':strongest?.targetControls?'enemy-controlled':strongest?.owner==='my'?'friendly-controlled':strongest?.owner==='contested'?'contested':'uncontrolled',
+    linkSource:explicitObjective?'pair-context':linkedObjectives.length?'oc-contributor':'none'
   };
 }
 function tacticalAdvisorStateSnapshot(attackerEntryUid){
