@@ -124,7 +124,7 @@ jobs:
                   '</div>'+
                   '<div class="ta-reason"><b>Why:</b> '+String(interpretation)+'</div>'+
                   (targets.length?'<div class="ta-targets">'+targets.map((t,i)=>'<div class="ta-target"><div class="ta-target-name">'+String(t.targetName||t.name||t.defenderName||'Target '+(i+1))+'</div><div class="ta-target-score">'+pct(t.decisionScore)+'</div><div class="ta-target-meta">'+modeLabel(t.decisionMode||'TACTICAL')+' • damage '+num(t.expectedDamage,1)+' • kill '+pct(t.killFraction||t.wipeChance)+'</div></div>').join('')+'</div>':'<div class="ta-unknown" style="margin-top:10px">No legal target recommendation is available from the current state.</div>')+
-                  '<div class="ta-foot">Mission context: Round '+String(mc.round??window.state.round??'—')+' • VP '+String(mc.myVP??window.state.myVP??'—')+'–'+String(mc.oppVP??window.state.oppVP??'—')+' • objective data is used only when known; unknown state is not guessed.</div>'+
+                  '<div class="ta-foot">Mission context: Round '+String(mc.round??window.state.round??'—')+' • VP '+String(mc.myVP??window.state.myVP??'—')+'–'+String(mc.oppVP??window.state.oppVP??'—')+' • Battlefield Layout '+String(mc.battlefield?.mapLayout||window.state.objectiveMapLayout||'—')+(mc.battlefield?.mapPage?' • Event Companion p.'+String(mc.battlefield.mapPage):'')+' • objective data is used only when known; unknown state is not guessed.</div>'+
                   '</div>';
               }catch(e){
                 host.innerHTML='<div class="ta-decision-render"><div class="ta-decision-title">Tactical Advisor</div><div class="ta-unknown">Decision analysis unavailable for this state.</div></div>';
