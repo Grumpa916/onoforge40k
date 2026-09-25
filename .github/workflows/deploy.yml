@@ -83,6 +83,10 @@ jobs:
         shell: bash
         run: node scripts/track1-scoring-vp-cp-audit.js
 
+      - name: Run deployment planning and live battlefield map integrity audit
+        shell: bash
+        run: node scripts/deployment-map-integrity-audit.js
+
       - name: Render Tactical Advisor decision surface
         shell: bash
         run: |
