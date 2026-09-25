@@ -9039,6 +9039,27 @@ function tacticalAdvisorV2(attackerEntryUid,options={}){
     if(Math.abs(objectiveDiff)>0.01)return objectiveDiff;
     return Number(b.expectedDamage||0)-Number(a.expectedDamage||0);
   });
+  // v2 changes the final ordering with priorityScore, so refresh the user-facing
+  // rank/margin/near-tie explanation after that ordering is complete. This keeps
+  // the explanation and the actual recommendation order authoritative to the same
+  // score rather than leaking v1's pre-stratagem ordering.
+  const v2NearTieThreshold=0.015;
+  recommendations.forEach((x,i)=>{
+    const next=recommendations[i+1];
+    const priority=Number(x.priorityScore??x.decisionScore??0);
+    const nextPriority=next?Number(next.priorityScore??next.decisionScore??0):null;
+    const margin=next?Math.max(0,priority-nextPriority):1;
+    const explanation=x.recommendationExplanation&&typeof x.recommendationExplanation==='object'
+      ?x.recommendationExplanation:{};
+    x.recommendationExplanation={
+      ...explanation,
+      rank:i+1,
+      margin,
+      nearTie:margin<=v2NearTieThreshold,
+      headline:i===0?(margin<=v2NearTieThreshold?'Close call — verify battlefield context':'Top candidate'):'Ranked candidate'
+    };
+  });
+  const top=recommendations[0]||null;
   const alerts=[];
   if(battle.currentTurn==='my'&&battle.cp.my<=1)alerts.push('CP is limited; preserve 1 CP when a critical stratagem window is expected.');
   if(battle.vp.gap<0)alerts.push('You are currently behind on VP; prioritize actions that create or deny scoring opportunities when legal.');
