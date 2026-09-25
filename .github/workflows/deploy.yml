@@ -102,6 +102,10 @@ jobs:
         shell: bash
         run: node scripts/track3-mission-catalogue-audit.js
 
+      - name: Run Track 4 Tactical Advisor v2 battle-state audit
+        shell: bash
+        run: node scripts/track4-tactical-advisor-v2-audit.js
+
       - name: Run deployment planning and live battlefield map integrity audit
         shell: bash
         run: node scripts/deployment-map-integrity-audit.js
