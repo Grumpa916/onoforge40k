@@ -242,7 +242,9 @@ Tablet-first dashboard, touch optimization, minimal data entry, fast phase trans
 - Task 32 — 🟢 FNP resolution integrity audit
 - Track 1 — 🔵 Authoritative Game State
 - Track 1 first layer — 🔵 End-of-turn primary scoring automation
-- Current main: 6e42b482ad6da099871ed1f3d536e56af60de8ea
+- Current main: 0a2acfb4262c53cdf7bca611765421d5fc367e1a
+- Latest main deployment gate: 🟢 GitHub Pages deployment run 922
 - Track 1 regression audit: scripts/track1-end-turn-scoring-audit.js
+- Track 1 next layer: 🔵 Scoring → VP/CP state integrity
 
-Next planning checkpoint: verify the Track 1 deployment gate, then continue objective scoring → VP/CP → turn/phase → action log integration.
+Next planning checkpoint: complete the scoring → VP/CP integrity layer, then continue turn/phase → action log integration.
