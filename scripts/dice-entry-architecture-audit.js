@@ -26,9 +26,11 @@ check('Subclassify only when required',
   'Critical and Lethal classifications must be requested only where downstream rules require them.');
 
 check('Exact physical results are reserved for resolution',
-  has(/mode:'individual'/) &&
-  has(/mode:'damage'/) &&
-  has(/actual physical D6 result/),
+  has(/field==='precisionSave'/) &&
+  has(/field==='precisionSaveReroll'/) &&
+  has(/field==='precisionDamage'/) &&
+  has(/field==='mixedVariableSave'/) &&
+  has(/field==='mixedDamage'/),
   'Individual die faces must be collected only where allocation, re-rolls, variable damage, or similar rules require them.');
 
 check('Dice inputs are bounded',
