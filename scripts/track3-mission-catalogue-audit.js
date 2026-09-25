@@ -57,7 +57,7 @@ for(const n of names){
   if(!cards.find(x=>x.name===n)?.fixed&&c.Fixed)fail(n+' incorrectly exposes Fixed scoring data');
 }
 pass('Secondary scoring mode integrity checked');
-const vp=(n,m)=>((scoring[n]?.[m]||[]).map(r=>String(r[0]).replace(/[^0-9+]/g,'')));
+const vp=(n,m)=>((scoring[n]?.[m]||[]).map(r=>(String(r[0]).match(/\d+/)||[''])[0]));
 const expectedVP={
  'A Grievous Blow':{Fixed:['4'],Tactical:['5']},
  'A Tempting Target':{Tactical:['5']},
