@@ -43,6 +43,10 @@ jobs:
         shell: bash
         run: node scripts/tournament-playtest-audit.js
 
+      - name: Run Step 23 interactive tournament map layer audit
+        shell: bash
+        run: node scripts/map-interaction-audit.js
+
       - name: Render Tactical Advisor decision surface
         shell: bash
         run: |
