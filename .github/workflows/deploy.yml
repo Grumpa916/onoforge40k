@@ -121,6 +121,9 @@ jobs:
       - name: Run Track 5 tournament recovery audit
         shell: bash
         run: node scripts/track5-tournament-recovery-audit.js
+      - name: Run Track 5 tournament-day workflow hardening audit
+        shell: bash
+        run: node scripts/track5-tournament-day-workflow-audit.js
 
       - name: Run Track 6 Rules Data Integrity audit
         shell: bash
