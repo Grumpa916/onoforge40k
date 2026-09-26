@@ -1112,6 +1112,313 @@ function savedListsPage(){
   </div>`;
 }
 
+const CURRENT_11E_DATA_SOURCES={
+  Tyranids:'https://raw.githubusercontent.com/BSData/wh40k-11e/main/Tyranids.json',
+  Ultramarines:'https://raw.githubusercontent.com/BSData/wh40k-11e/main/Imperium%20-%20Ultramarines.json'
+};
+const ONOFORGE_SOURCE_POLICY_11E={
+  canonical:{name:'40k.app',manifest:'data/40kapp-source.json',role:'authoritative'},
+  supplemental:[{name:'BSData 11e',role:'supplemental'}],
+  bootstrap:[{name:'Embedded catalogue',variable:'EXPANDED_CATALOGUE',role:'fallback-only'}]
+};
+window.ONOFORGE_SOURCE_POLICY_11E=ONOFORGE_SOURCE_POLICY_11E;
+
+function unitDatabase(){
+  // Runtime canonical data wins. The embedded expanded catalogue is bootstrap-only
+  // and must never be promoted to canonical status by a supplemental refresh.
+  return window.CURRENT_UNIT_DATABASE ||
+    ((typeof EXPANDED_CATALOGUE!=='undefined')?EXPANDED_CATALOGUE:DEMO);
+}
+function canonicalUnitDatabase(){
+  return Array.isArray(window.CURRENT_UNIT_DATABASE)?window.CURRENT_UNIT_DATABASE:null;
+}
+function bootstrapUnitDatabase(){
+  return typeof EXPANDED_CATALOGUE!=='undefined'?EXPANDED_CATALOGUE:(Array.isArray(DEMO)?DEMO:[]);
+}
+function mergeSupplementalUnits(canonical,supplemental){
+  const out=Array.isArray(canonical)?canonical.map(u=>({...u,sourceRole:'canonical'})):[];
+  const seen=new Set(out.map(u=>String(u?.faction||'')+'|'+String(u?.name||'')));
+  for(const u of (Array.isArray(supplemental)?supplemental:[])){
+    const k=String(u?.faction||'')+'|'+String(u?.name||'');
+    if(!seen.has(k)){
+      out.push({...u,sourceRole:'supplemental'});
+      seen.add(k);
+    }
+  }
+  return out;
+}
+
+function collectBSDataObjects(root){
+  const map=new Map(), seen=new Set();
+  function walk(x){
+    if(!x||typeof x!=='object'||seen.has(x))return;
+    seen.add(x);
+    if(typeof x.id==='string')map.set(x.id,x);
+    Object.keys(x).forEach(k=>walk(x[k]));
+  }
+  walk(root);
+  return map;
+}
+
+function bsProfile(entry,typeName){
+  return (entry?.profiles||[]).find(p=>p.typeName===typeName) || null;
+}
+
+function bsCharacteristics(profile){
+  const out={};
+  (profile?.characteristics||[]).forEach(c=>{
+    const k=c.name==='LD'?'Ld':c.name;
+    out[k]=c.$text??'';
+  });
+  return out;
+}
+
+function bsAbilities(entry){
+  const out=[],seen=new Set();
+  function walk(x){
+    if(!x||typeof x!=='object')return;
+    if(Array.isArray(x.profiles)){
+      x.profiles.forEach(p=>{
+        if(String(p.typeName||'').toLowerCase()!=='abilities')return;
+        const description=(p.characteristics||[]).find(c=>c.name==='Description')?.$text||'';
+        if(!p.name||!description||seen.has(p.name))return;
+        seen.add(p.name);
+        out.push({name:p.name,description});
+      });
+    }
+    if(Array.isArray(x.selectionEntries))x.selectionEntries.forEach(walk);
+    if(Array.isArray(x.selectionEntryGroups))x.selectionEntryGroups.forEach(walk);
+    if(Array.isArray(x.entryLinks)){
+      x.entryLinks.forEach(link=>{
+        const targetId=link.targetId||link.id;
+        if(window.__BS_OBJECT_MAP&&targetId){
+          const target=window.__BS_OBJECT_MAP.get(targetId);
+          if(target)walk(target);
+        }
+      });
+    }
+  }
+  walk(entry);
+  return out;
+}
+function normalize11eWeaponAbilities(raw){
+  const src=Array.isArray(raw)?raw:[];
+  const out=[];
+  src.forEach(value=>{
+    const text=String(value??'').trim();
+    if(!text)return;
+    // 11th edition renamed the former PISTOL weapon keyword to CLOSE-QUARTERS.
+    // Normalize legacy source labels at ingestion so stale supplemental data
+    // cannot silently reintroduce 10th-edition terminology into the engine.
+    const normalized=text.toUpperCase().replace(/-/g,' ').replace(/_/g,' ').replace(/\\s+/g,' ').trim();
+    if(normalized==='PISTOL') out.push('CLOSE QUARTERS');
+    else out.push(text);
+  });
+  return [...new Set(out)];
+}
+
+function bsWeapons(entry){
+  const out=[], seen=new Set(), visited=new Set();
+  const objectMap=(typeof window!=='undefined' && window.__BS_OBJECT_MAP && typeof window.__BS_OBJECT_MAP.get==='function')?window.__BS_OBJECT_MAP:null;
+  function walk(x){
+    if(!x||typeof x!=='object')return;
+    const objectId=x.id||x.targetId;
+    if(objectId){
+      if(visited.has(objectId))return;
+      visited.add(objectId);
+    }
+    if(Array.isArray(x.profiles)){
+      x.profiles.forEach(p=>{
+        const type=String(p.typeName||'').toLowerCase();
+        if(type!=='ranged weapons' && type!=='melee weapons' && !type.includes('ranged weapon') && !type.includes('melee weapon'))return;
+        const chars=bsCharacteristics(p);
+        const w={name:p.name,...chars,abilities:normalize11eWeaponAbilities(chars.Keywords?[chars.Keywords]:[])};
+        delete w.Keywords;
+        const key=JSON.stringify(w);
+        if(!seen.has(key)){seen.add(key);out.push(w);}
+      });
+    }
+    if(Array.isArray(x.selectionEntries))x.selectionEntries.forEach(walk);
+    if(Array.isArray(x.selectionEntryGroups))x.selectionEntryGroups.forEach(walk);
+    if(Array.isArray(x.entryLinks)){
+      x.entryLinks.forEach(link=>{
+        const targetId=link.targetId||link.id;
+        if(objectMap && targetId){
+          const target=objectMap.get(targetId);
+          if(target)walk(target);
+        }
+      });
+    }
+  }
+  walk(entry);
+  return out;
+}
+function bsWargearOptions(entry){
+  const out=[],seen=new Set();
+  function walk(x){
+    if(!x||typeof x!=='object')return;
+    if(Array.isArray(x.selectionEntries))x.selectionEntries.forEach(s=>{
+      if(s.type==='upgrade' && s.name && !seen.has(s.name)){
+        seen.add(s.name);out.push(s.name);
+      }
+      walk(s);
+    });
+    if(Array.isArray(x.selectionEntryGroups))x.selectionEntryGroups.forEach(walk);
+  }
+  walk(entry);
+  return out;
+}
+
+function bsUnitFromEntry(entry,faction){
+  if(!entry||entry.type!=='unit')return null;
+  const p=bsProfile(entry,'Unit');
+  if(!p)return null;
+  const stats=bsCharacteristics(p);
+  const pts=(entry.costs||[]).find(c=>c.name==='pts');
+  const categories=(entry.categoryLinks||[]).map(c=>c.name).filter(Boolean);
+  const weapons=bsWeapons(entry);
+  return {
+    id:`${faction}_${String(entry.name).toLowerCase().replace(/[^a-z0-9]+/g,'_')}`,
+    name:entry.name,
+    faction,
+    points:pts?Number(pts.value):0,
+    models:1,
+    wounds:Number(stats.W)||1,
+    profile:stats,
+    keywords:categories,
+    abilities:bsAbilities(entry),
+    weapons,
+    weaponOptions:bsWargearOptions(entry),
+    dataSource:'BSData 11e',
+    dataVersion:'current'
+  };
+}
+
+async function refreshCurrentUnitDatabase(showMessage=true){
+  try{
+    const all=[];
+    for(const faction of Object.keys(CURRENT_11E_DATA_SOURCES)){
+      const res=await fetch(CURRENT_11E_DATA_SOURCES[faction],{cache:'no-store'});
+      if(!res.ok)throw new Error(`${faction} data request failed (${res.status})`);
+      const root=await res.json();
+      const map=collectBSDataObjects(root);
+      window.__BS_OBJECT_MAP=map;
+      const links=root?.catalogue?.entryLinks||[];
+      const seen=new Set();
+      links.forEach(link=>{
+        const entry=map.get(link.targetId||link.id);
+        const u=bsUnitFromEntry(entry,faction);
+        if(u&&!seen.has(u.name)){seen.add(u.name);all.push(u);}
+      });
+      // Only catalogue-linked unit entries are eligible for supplemental import.
+      // Direct model entries include weapon/model variants and must not become units.
+    }
+
+    if(!all.length)throw new Error('No unit data was found.');
+    const currentCanonical=canonicalUnitDatabase();
+    const supplemental=all.map(u=>({...u,sourceRole:'supplemental'}));
+    window.SUPPLEMENTAL_UNIT_DATABASE=supplemental;
+    if(currentCanonical){
+      window.CURRENT_UNIT_DATABASE=mergeSupplementalUnits(currentCanonical,all);
+      DEMO.splice(0,DEMO.length,...window.CURRENT_UNIT_DATABASE);
+    }    state.dataUpdatedAt=new Date().toISOString();
+    save();
+    render();
+    if(showMessage)alert(`Updated ${all.length} units from current 11th-edition data.`);
+  }catch(err){
+    console.error(err);
+    if(showMessage)alert('Unit database update failed: '+(err.message||err));
+  }
+}
+function saveCurrentArmyList(){
+  if(!Array.isArray(state.savedArmyLists))state.savedArmyLists=[];
+  const name=prompt('Name this army list:', `${state.faction||'Army'} List`);
+  if(!name)return;
+  const list={
+    id:uid(),
+    name,
+    faction:state.faction||'',
+    detachment:state.detachment||state.detachmentSelections?.[0]||'',
+    units:JSON.parse(JSON.stringify(state.my||[])),
+    secondaryPlans:JSON.parse(JSON.stringify(ensureSecondaryPersonalPlans())),
+    personalNotes:String(state.personalArmyNotes||''),
+    deploymentPlans:JSON.parse(JSON.stringify(ensureDeploymentPlans())),
+    created:new Date().toISOString(),
+    updated:new Date().toISOString()
+  };
+  state.savedArmyLists.push(list);
+  save();
+  render();
+  cloudUpsertArmyList(list).catch(()=>{});
+}
+
+function loadSavedArmyList(id){
+  const list=(state.savedArmyLists||[]).find(x=>x.id===id);
+  if(!list)return;
+  state.myName=list.name||'My Army';
+  state.faction=list.faction||'';
+  state.my=JSON.parse(JSON.stringify(list.units||[]));state.deploymentPlans=JSON.parse(JSON.stringify(list.deploymentPlans||{}));
+  state.secondaryPersonalPlans=JSON.parse(JSON.stringify(list.secondaryPlans||defaultSecondaryPersonalPlans()));ensureSecondaryPersonalPlans();state.personalArmyNotes=String(list.personalNotes||'');state.gameReferencePersonal={phases:{Command:[],Movement:[],Shooting:[],Charge:[],Fight:[],End:[]},quick:[],primary:[],custom:''};
+  state.detachmentSelections=list.detachment?[list.detachment]:[];
+  state.detachment=list.detachment||'';
+  state.activeRosterId=list.id;
+  state.savedMyListSnapshot=currentMyListSnapshot();
+  save();
+  render();
+}
+
+function deleteSavedArmyList(id){
+  const list=(state.savedArmyLists||[]).find(x=>x.id===id);
+  state.savedArmyLists=(state.savedArmyLists||[]).filter(x=>x.id!==id);
+  save();
+  render();
+  if(list)cloudDeleteArmyList(list).catch(()=>{});
+}
+
+function savedListsUI(){
+  return '';
+}
+
+function formatSavedListDate(value){
+  if(!value)return 'Date not recorded';
+  const d=new Date(value);
+  if(Number.isNaN(d.getTime()))return String(value);
+  return d.toLocaleString(undefined,{year:'numeric',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+}
+function savedListsPage(){
+  const lists=Array.isArray(state.savedArmyLists)?state.savedArmyLists:[];
+  return `<div class="card">
+    <div class="split">
+      <div>
+        <h2 style="margin:0">Saved Lists</h2>
+        <div class="muted" style="margin-top:4px">${lists.length} saved My List${lists.length===1?'':'s'}</div>
+      </div>
+      <div class="row">
+        <button class="btn" type="button" onclick="state.page='builder';state.builderView='full';render()">List Builder</button>
+      </div>
+    </div>
+    <div style="margin-top:12px">
+      ${lists.length?lists.slice().reverse().map(x=>`<div class="card" style="padding:12px;margin-top:8px">
+        <div class="split">
+          <div>
+            <strong>${esc(x.name)}</strong>
+            <div class="muted small" style="margin-top:3px">
+              ${esc(x.faction||'No faction')}
+              ${x.detachment?` • ${esc(x.detachment)}`:''}
+              • ${(x.units||[]).length} unit entr${(x.units||[]).length===1?'y':'ies'}
+              <div style="margin-top:3px">Saved: ${esc(formatSavedListDate(x.created))}</div>
+            </div>
+          </div>
+          <div class="row" style="gap:6px">
+            <button class="btn" type="button" onclick="loadSavedArmyList('${x.id}');state.page='builder';state.builderView='full';render()">Load</button>
+            <button class="btn danger" type="button" onclick="deleteSavedArmyList('${x.id}')">Delete</button>
+          </div>
+        </div>
+      </div>`).join(''):'<div class="empty">No saved My Lists yet. Build a list in List Builder, then save it here.</div>'}
+    </div>
+  </div>`;
+}
+
 function forceDispositionNameForDetachment(side){
   const names=detachmentSelections(side);
   const faction=side==='my'?state.faction:state.oppFaction;
