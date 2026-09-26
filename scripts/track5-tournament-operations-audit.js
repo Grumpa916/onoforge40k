@@ -95,7 +95,7 @@ check('Embarkation removes stale battlefield position state',
   has(/delete state\.battlefieldUnitPositions\[pid\]/),
   'A unit declared embarked must not retain an independent deployment position.');
 check('Transport declarations are included in locked result verification',
-  has(/transportEmbarkations:JSON\.parse\(JSON\.stringify\(ensureTransportEmbarkations\(\)\)\)/)&&has(/const expected=\{/)&&has(/transportEmbarkations,\n  rulesDataPin/),
+  has(/transportEmbarkations:JSON\.parse\(JSON\.stringify\(ensureTransportEmbarkations\(\)\)\)/)&&has(/const expected=\{/)&&has(/transportEmbarkations:JSON\.parse\(JSON\.stringify\(ensureTransportEmbarkations\(\)\)\),\n  rulesDataPin:/),
   'Transport declarations must remain part of the authoritative result integrity comparison.');
 
 check('Tournament result captures both deployment sides and audit state',
