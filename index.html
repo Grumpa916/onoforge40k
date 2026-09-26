@@ -5047,7 +5047,8 @@ function tournamentDeploymentValidation(){
     const list=Array.isArray(side==='my'?state.my:state.opp)?(side==='my'?state.my:state.opp):[];
     for(const entry of list.filter(e=>e&&!e.attachedTo)){
       const id=String(entry.uid);
-      if(reserves[side]?.[id]===true)continue;\n      if(isUnitEmbarked(side,id))continue;
+      if(reserves[side]?.[id]===true)continue;
+      if(isUnitEmbarked(side,id))continue;
       const p=positions[id];
       if(!p||p.side!==side||!Number.isFinite(Number(p.x))||!Number.isFinite(Number(p.y))){
         missing.push((side==='my'?state.myName:state.oppName)+': '+(unitDisplayName(side,entry)||get(entry.unitId)?.name||entry.name||entry.unitId||'Unit')+' — position not recorded');
