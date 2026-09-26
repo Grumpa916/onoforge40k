@@ -5132,6 +5132,16 @@ function deploymentStatusHtml(){
   return '<div class="setup-section"><div class="split"><div><h3 style="margin:0">Deployment Status</h3><div class="tiny">Every non-reserve unit must have its actual tabletop position recorded. Reserved units remain in the reserve tray.</div></div><span class="pill '+(check.ready?'ok':'warn')+'">'+(check.ready?'Deployment complete':'Deployment incomplete')+'</span></div>'+(check.ready?'<div class="ok">All units are accounted for. Starting the battle will lock the deployment map.</div>':'<div class="warn">Still unrecorded: '+check.missing.slice(0,8).map(esc).join(' • ')+(check.missing.length>8?' • +'+(check.missing.length-8)+' more':'')+'</div>')+'</div>';
 }
 
+function initializeLiveDeploymentFromPlan(){
+  const live=ensureBattlefieldUnitPositions(),plan=deploymentPlanForCurrentMap();
+  Object.keys(live).forEach(uid=>delete live[uid]);
+  Object.entries(plan).forEach(([uid,p])=>{
+    if(!p||isUnitReserved('my',uid))return;
+    const x=Math.round(Number(p.x)*10)/10,y=Math.round(Number(p.y)*10)/10;
+    if(!Number.isFinite(x)||!Number.isFinite(y)||x<0||x>60||y<0||y>44)return;
+    live[String(uid)]={x,y,side:'my',source:'deployment-plan',round:Math.max(1,Number(state.round)||1)};
+  });
+}
 function beginDeployment(){
   const setupCheck=tournamentSetupValidation();
   if(!setupCheck.ready){alert('Tournament setup is incomplete:\n\n• '+setupCheck.missing.join('\n• '));return false;}
@@ -5139,7 +5149,9 @@ function beginDeployment(){
   if(!setTournamentLifecycle('DEPLOYMENT')){alert('The tournament cannot enter Deployment from the current lifecycle state.');return false;}
   ensureReserveState();
   ensureDeploymentPlans();
-  ensureBattlefieldUnitPositions();
+  initializeLiveDeploymentFromPlan();
+  delete state.battlefieldMapPlacement;
+  delete state.deploymentMapPlacement;
   event('TOURNAMENT_DEPLOYMENT_STARTED',{
     side:'my',
     unit:'Battle',
