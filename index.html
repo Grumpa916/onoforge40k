@@ -1230,6 +1230,7 @@ function saveCurrentArmyList(){
 }
 
 function loadSavedArmyList(id){
+  ensurePermanentSampleArmies();
   const list=(state.savedArmyLists||[]).find(x=>x.id===id);
   if(!list)return;
   state.myName=list.name||'My Army';
@@ -1244,8 +1245,54 @@ function loadSavedArmyList(id){
   render();
 }
 
-function deleteSavedArmyList(id){const list=(state.savedArmyLists||[]).find(x=>x.id===id);if(!list)return;state.savedArmyLists=(state.savedArmyLists||[]).filter(x=>x.id!==id);if(!Array.isArray(state.deletedSavedArmyLists))state.deletedSavedArmyLists=[];state.deletedSavedArmyLists.push({...JSON.parse(JSON.stringify(list)),deletedAt:new Date().toISOString()});state.deletedSavedArmyLists=state.deletedSavedArmyLists.slice(-10);save();render();cloudDeleteArmyList(list).catch(()=>{});}
+function deleteSavedArmyList(id){if(isPermanentSampleArmy(id)){state.saveListMessage='Permanent test armies cannot be deleted.';save();render();return;}const list=(state.savedArmyLists||[]).find(x=>x.id===id);if(!list)return;state.savedArmyLists=(state.savedArmyLists||[]).filter(x=>x.id!==id);if(!Array.isArray(state.deletedSavedArmyLists))state.deletedSavedArmyLists=[];state.deletedSavedArmyLists.push({...JSON.parse(JSON.stringify(list)),deletedAt:new Date().toISOString()});state.deletedSavedArmyLists=state.deletedSavedArmyLists.slice(-10);save();render();cloudDeleteArmyList(list).catch(()=>{});}
 function undoDeletedSavedArmyList(){const deleted=Array.isArray(state.deletedSavedArmyLists)?state.deletedSavedArmyLists:[];const list=deleted.pop();if(!list)return;delete list.deletedAt;if(!Array.isArray(state.savedArmyLists))state.savedArmyLists=[];if(!state.savedArmyLists.some(x=>x.id===list.id))state.savedArmyLists.push(list);state.deletedSavedArmyLists=deleted;save();render();cloudUpsertArmyList(list).catch(()=>{});}
+
+function ensurePermanentSampleArmies(){
+  if(!Array.isArray(state.savedArmyLists))state.savedArmyLists=[];
+  if(!Array.isArray(state.lists))state.lists=[];
+  const samples=[
+    {id:'sample-tyranid-skirmish',name:'TEST • Tyranid Skirmish',faction:'Tyranids',detachment:'Invasion Fleet',limit:1000,units:[
+      ['Hormagaunts',10],['Lictor',1],['Biovore',1]
+    ]},
+    {id:'sample-ultramarine-infantry',name:'TEST • Ultramarine Infantry',faction:'Ultramarines',detachment:'Gladius Task Force',limit:1000,units:[
+      ['Captain',1],['Intercessor Squad',5],['Infernus Squad',5],['Aggressor Squad',3]
+    ]},
+    {id:'sample-space-marine-test',name:'TEST • Space Marine Core',faction:'Space Marines',detachment:'Gladius Task Force',limit:1000,units:[
+      ['Captain',1],['Intercessor Squad',5],['Hellblaster Squad',5]
+    ]}
+  ];
+  for(const spec of samples){
+    const entries=[];
+    for(const [name,qty] of spec.units){
+      const u=DEMO.find(x=>String(x?.name||'').trim()===name && (!spec.faction || String(x?.faction||'').trim()===spec.faction))
+        || DEMO.find(x=>String(x?.name||'').trim()===name);
+      if(!u)continue;
+      const e=makeEntry(u);
+      e.qty=Math.max(1,Number(qty)||1);
+      if(Array.isArray(e.models)&&e.models.length===1&&Number(e.models[0])===1&&e.qty>1)e.models=[e.qty];
+      entries.push(e);
+    }
+    const existing=state.savedArmyLists.find(x=>x.id===spec.id);
+    const list={
+      id:spec.id,name:spec.name,faction:spec.faction,detachment:spec.detachment,
+      units:entries,secondaryPlans:{},personalNotes:'Permanent test fixture — do not delete.',
+      deploymentPlans:{},created:'2026-01-01T00:00:00.000Z',updated:'2026-01-01T00:00:00.000Z',permanentSample:true
+    };
+    if(existing)Object.assign(existing,list);
+    else state.savedArmyLists.push(list);
+    const roster=state.lists.find(x=>x.id===spec.id);
+    const rosterRecord={id:spec.id,name:spec.name,faction:spec.faction,detachment:spec.detachment,
+      detachmentSelections:spec.detachment?[spec.detachment]:[],detachmentDP:0,limit:spec.limit,entries:entries,
+      secondaryPlans:{},gameReferencePersonal:ensureGameReferencePersonal(),deploymentPlans:{},created:list.created,permanentSample:true};
+    if(roster)Object.assign(roster,rosterRecord);else state.lists.push(rosterRecord);
+  }
+  return samples.map(x=>x.id);
+}
+
+function isPermanentSampleArmy(id){
+  return String(id||'').startsWith('sample-');
+}
 
 function savedListsUI(){
   return '';
@@ -1284,7 +1331,7 @@ function savedListsPage(){
           </div>
           <div class="row" style="gap:6px">
             <button class="btn" type="button" onclick="loadSavedArmyList('${x.id}');state.page='builder';state.builderView='full';render()">Load</button>
-            <button class="btn danger" type="button" onclick="deleteSavedArmyList('${x.id}')">Delete</button>
+            ${x.permanentSample?'<span class="pill ok">Permanent Test</span>':`<button class="btn danger" type="button" onclick="deleteSavedArmyList('${x.id}')">Delete</button>`}
           </div>
         </div>
       </div>`).join(''):'<div class="empty">No saved My Lists yet. Build a list in List Builder, then save it here.</div>'}
@@ -3175,6 +3222,7 @@ function load(){
     }
   }catch(e){console.warn('OnoForge saved state reset:',e)}
   if(!state.rulesDataPin||typeof state.rulesDataPin!=='object')state.rulesDataPin=JSON.parse(JSON.stringify(ONOFORGE_RULES_DATA_PIN));
+  ensurePermanentSampleArmies();
   state.detachmentSelections=Array.isArray(state.detachmentSelections)?state.detachmentSelections:[];
   state.myForceDisposition=state.myForceDisposition||'';state.oppForceDisposition=state.oppForceDisposition||'';
   state.oppDetachmentSelections=Array.isArray(state.oppDetachmentSelections)?state.oppDetachmentSelections:[];
