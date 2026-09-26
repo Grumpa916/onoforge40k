@@ -991,127 +991,6 @@ function completeTerrainSetup(){
  save();render();
 }
 function objectiveLayoutHtml(){const info=ensureObjectiveLayoutForMission();if(!info)return '';const layout=state.objectiveMapLayout||'A';const page=objectiveLayoutPage();const complete=!!state.terrainSetupComplete;const buttons=['A','B','C'].map(letter=>'<button type="button" class="btn objective-layout-btn '+(layout===letter?'active':'')+'" aria-pressed="'+(layout===letter?'true':'false')+'" onclick="setObjectiveMapLayout(\''+letter+'\');return false;">Layout '+letter+'</button>').join('');return '<div class="setup-section"><div class="split"><div><h3 style="margin:0">Step 4 — Create the Battlefield: Terrain Setup</h3><div class="muted" style="margin-top:4px">Set up the battlefield terrain using the selected Event Companion layout. Measurements are shown on this map only.</div></div><span class="pill '+(complete?'ok':'')+'">'+(complete?'Terrain setup complete':'Terrain setup required')+'</span></div><div class="objective-layout-panel" style="margin-top:10px"><div class="split"><div><strong>Recommended Battlefield Layout</strong><div class="tiny">'+esc(info.missions[0])+' ↔ '+esc(info.missions[1])+' • Layout '+layout+'</div></div><span class="pill">Event Companion p.'+page+'</span></div><div class="objective-layout-buttons">'+buttons+'<a class="btn" href="'+WARHAMMER_EVENT_COMPANION_PDF+'#page='+page+'" target="_blank" rel="noopener">Open Map</a></div></div>'+objectiveMapRendererHtml('terrain')+'<div class="row" style="margin-top:10px">'+(complete?'<span class="ok" style="margin:0">✓ Terrain setup recorded. Deployment planning is unlocked.</span>':'<button type="button" class="btn primary" onclick="completeTerrainSetup();return false;">Terrain Setup Complete — Continue to Deployment Planning</button>')+'</div>'+(!complete?'<div class="tiny" style="margin-top:7px">Complete this acknowledgement after the physical terrain has been placed. Changing Layout A/B/C resets the acknowledgement.</div>':'')+(complete?'<div class="setup-section" style="margin:14px 0 0"><div class="split"><div><h3 style="margin:0">Step 8 Preparation — Deployment Planning</h3><div class="muted" style="margin-top:4px">Plan your opening positions separately from the physical terrain setup. This is a plan only; actual alternating deployment is recorded after Begin Deployment.</div></div><span class="pill">Planning Map</span></div>'+objectiveMapRendererHtml('setup')+'<details class="card" style="margin-top:10px"><summary style="cursor:pointer;color:#9ecbff"><strong>Live Deployment Tracking</strong><span class="tiny"> • actual placements</span></summary><div class="tiny" style="margin-top:7px">Use this after deployment begins to record the actual alternating placement. Opponent placement can change your plan.</div>'+objectiveMapRendererHtml('deployment')+'</details></div>':'')+'</div>';}
-async function refreshCurrentUnitDatabase(showMessage=true){
-  try{
-    const all=[];
-    for(const faction of Object.keys(CURRENT_11E_DATA_SOURCES)){
-      const res=await fetch(CURRENT_11E_DATA_SOURCES[faction],{cache:'no-store'});
-      if(!res.ok)throw new Error(`${faction} data request failed (${res.status})`);
-      const root=await res.json();
-      const map=collectBSDataObjects(root);
-      window.__BS_OBJECT_MAP=map;
-      const links=root?.catalogue?.entryLinks||[];
-      const seen=new Set();
-      links.forEach(link=>{
-        const entry=map.get(link.targetId||link.id);
-        const u=bsUnitFromEntry(entry,faction);
-        if(u&&!seen.has(u.name)){seen.add(u.name);all.push(u);}
-      });
-      // Only catalogue-linked unit entries are eligible for supplemental import.
-      // Direct model entries include weapon/model variants and must not become units.
-    }
-
-    if(!all.length)throw new Error('No unit data was found.');
-    const currentCanonical=canonicalUnitDatabase();
-    const supplemental=all.map(u=>({...u,sourceRole:'supplemental'}));
-    window.SUPPLEMENTAL_UNIT_DATABASE=supplemental;
-    if(currentCanonical){
-      window.CURRENT_UNIT_DATABASE=mergeSupplementalUnits(currentCanonical,all);
-      DEMO.splice(0,DEMO.length,...window.CURRENT_UNIT_DATABASE);
-    }    state.dataUpdatedAt=new Date().toISOString();
-    save();
-    render();
-    if(showMessage)alert(`Updated ${all.length} units from current 11th-edition data.`);
-  }catch(err){
-    console.error(err);
-    if(showMessage)alert('Unit database update failed: '+(err.message||err));
-  }
-}
-function saveCurrentArmyList(){
-  if(!Array.isArray(state.savedArmyLists))state.savedArmyLists=[];
-  const name=prompt('Name this army list:', `${state.faction||'Army'} List`);
-  if(!name)return;
-  const list={
-    id:uid(),
-    name,
-    faction:state.faction||'',
-    detachment:state.detachment||state.detachmentSelections?.[0]||'',
-    units:JSON.parse(JSON.stringify(state.my||[])),
-    secondaryPlans:JSON.parse(JSON.stringify(ensureSecondaryPersonalPlans())),
-    personalNotes:String(state.personalArmyNotes||''),
-    deploymentPlans:JSON.parse(JSON.stringify(ensureDeploymentPlans())),
-    created:new Date().toISOString(),
-    updated:new Date().toISOString()
-  };
-  state.savedArmyLists.push(list);
-  save();
-  render();
-  cloudUpsertArmyList(list).catch(()=>{});
-}
-
-function loadSavedArmyList(id){
-  const list=(state.savedArmyLists||[]).find(x=>x.id===id);
-  if(!list)return;
-  state.myName=list.name||'My Army';
-  state.faction=list.faction||'';
-  state.my=JSON.parse(JSON.stringify(list.units||[]));state.deploymentPlans=JSON.parse(JSON.stringify(list.deploymentPlans||{}));
-  state.secondaryPersonalPlans=JSON.parse(JSON.stringify(list.secondaryPlans||defaultSecondaryPersonalPlans()));ensureSecondaryPersonalPlans();state.personalArmyNotes=String(list.personalNotes||'');state.gameReferencePersonal={phases:{Command:[],Movement:[],Shooting:[],Charge:[],Fight:[],End:[]},quick:[],primary:[],custom:''};
-  state.detachmentSelections=list.detachment?[list.detachment]:[];
-  state.detachment=list.detachment||'';
-  state.activeRosterId=list.id;
-  state.savedMyListSnapshot=currentMyListSnapshot();
-  save();
-  render();
-}
-
-function deleteSavedArmyList(id){const list=(state.savedArmyLists||[]).find(x=>x.id===id);if(!list)return;state.savedArmyLists=(state.savedArmyLists||[]).filter(x=>x.id!==id);if(!Array.isArray(state.deletedSavedArmyLists))state.deletedSavedArmyLists=[];state.deletedSavedArmyLists.push({...JSON.parse(JSON.stringify(list)),deletedAt:new Date().toISOString()});state.deletedSavedArmyLists=state.deletedSavedArmyLists.slice(-10);save();render();cloudDeleteArmyList(list).catch(()=>{});}
-function undoDeletedSavedArmyList(){const deleted=Array.isArray(state.deletedSavedArmyLists)?state.deletedSavedArmyLists:[];const list=deleted.pop();if(!list)return;delete list.deletedAt;if(!Array.isArray(state.savedArmyLists))state.savedArmyLists=[];if(!state.savedArmyLists.some(x=>x.id===list.id))state.savedArmyLists.push(list);state.deletedSavedArmyLists=deleted;save();render();cloudUpsertArmyList(list).catch(()=>{});}
-
-function savedListsUI(){
-  return '';
-}
-
-function formatSavedListDate(value){
-  if(!value)return 'Date not recorded';
-  const d=new Date(value);
-  if(Number.isNaN(d.getTime()))return String(value);
-  return d.toLocaleString(undefined,{year:'numeric',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
-}
-function savedListsPage(){
-  const lists=Array.isArray(state.savedArmyLists)?state.savedArmyLists:[];
-  return `<div class="card">
-    <div class="split">
-      <div>
-        <h2 style="margin:0">Saved Lists</h2>
-        <div class="muted" style="margin-top:4px">${lists.length} saved My List${lists.length===1?'':'s'}</div>
-      </div>
-      <div class="row">
-        <button class="btn" type="button" onclick="state.page='builder';state.builderView='full';render()">List Builder</button>
-      </div>
-    </div>
-    ${Array.isArray(state.deletedSavedArmyLists)&&state.deletedSavedArmyLists.length?`<div class="status" style="margin-top:12px"><div class="split"><div><strong>Recently deleted</strong><div class="tiny">Last deleted: ${esc(state.deletedSavedArmyLists[state.deletedSavedArmyLists.length-1]?.name||'Saved List')}</div></div><button class="btn" type="button" onclick="undoDeletedSavedArmyList()">↶ Undo Delete</button></div></div>`:''}
-    <div style="margin-top:12px">
-      ${lists.length?lists.slice().reverse().map(x=>`<div class="card" style="padding:12px;margin-top:8px">
-        <div class="split">
-          <div>
-            <strong>${esc(x.name)}</strong>
-            <div class="muted small" style="margin-top:3px">
-              ${esc(x.faction||'No faction')}
-              ${x.detachment?` • ${esc(x.detachment)}`:''}
-              • ${(x.units||[]).length} unit entr${(x.units||[]).length===1?'y':'ies'}
-              <div style="margin-top:3px">Saved: ${esc(formatSavedListDate(x.created))}</div>
-            </div>
-          </div>
-          <div class="row" style="gap:6px">
-            <button class="btn" type="button" onclick="loadSavedArmyList('${x.id}');state.page='builder';state.builderView='full';render()">Load</button>
-            <button class="btn danger" type="button" onclick="deleteSavedArmyList('${x.id}')">Delete</button>
-          </div>
-        </div>
-      </div>`).join(''):'<div class="empty">No saved My Lists yet. Build a list in List Builder, then save it here.</div>'}
-    </div>
-  </div>`;
-}
-
 const CURRENT_11E_DATA_SOURCES={
   Tyranids:'https://raw.githubusercontent.com/BSData/wh40k-11e/main/Tyranids.json',
   Ultramarines:'https://raw.githubusercontent.com/BSData/wh40k-11e/main/Imperium%20-%20Ultramarines.json'
@@ -1367,13 +1246,8 @@ function loadSavedArmyList(id){
   render();
 }
 
-function deleteSavedArmyList(id){
-  const list=(state.savedArmyLists||[]).find(x=>x.id===id);
-  state.savedArmyLists=(state.savedArmyLists||[]).filter(x=>x.id!==id);
-  save();
-  render();
-  if(list)cloudDeleteArmyList(list).catch(()=>{});
-}
+function deleteSavedArmyList(id){const list=(state.savedArmyLists||[]).find(x=>x.id===id);if(!list)return;state.savedArmyLists=(state.savedArmyLists||[]).filter(x=>x.id!==id);if(!Array.isArray(state.deletedSavedArmyLists))state.deletedSavedArmyLists=[];state.deletedSavedArmyLists.push({...JSON.parse(JSON.stringify(list)),deletedAt:new Date().toISOString()});state.deletedSavedArmyLists=state.deletedSavedArmyLists.slice(-10);save();render();cloudDeleteArmyList(list).catch(()=>{});}
+function undoDeletedSavedArmyList(){const deleted=Array.isArray(state.deletedSavedArmyLists)?state.deletedSavedArmyLists:[];const list=deleted.pop();if(!list)return;delete list.deletedAt;if(!Array.isArray(state.savedArmyLists))state.savedArmyLists=[];if(!state.savedArmyLists.some(x=>x.id===list.id))state.savedArmyLists.push(list);state.deletedSavedArmyLists=deleted;save();render();cloudUpsertArmyList(list).catch(()=>{});}
 
 function savedListsUI(){
   return '';
@@ -1397,6 +1271,7 @@ function savedListsPage(){
         <button class="btn" type="button" onclick="state.page='builder';state.builderView='full';render()">List Builder</button>
       </div>
     </div>
+    ${Array.isArray(state.deletedSavedArmyLists)&&state.deletedSavedArmyLists.length?`<div class="status" style="margin-top:12px"><div class="split"><div><strong>Recently deleted</strong><div class="tiny">Last deleted: ${esc(state.deletedSavedArmyLists[state.deletedSavedArmyLists.length-1]?.name||'Saved List')}</div></div><button class="btn" type="button" onclick="undoDeletedSavedArmyList()">↶ Undo Delete</button></div></div>`:''}
     <div style="margin-top:12px">
       ${lists.length?lists.slice().reverse().map(x=>`<div class="card" style="padding:12px;margin-top:8px">
         <div class="split">
