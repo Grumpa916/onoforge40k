@@ -24,6 +24,7 @@ check('Result verification compares structured state deterministically',
   has("const comparable=(value)=>value&&typeof value==='object'?JSON.stringify(value):String(value??'');")&&has('comparable(r[k])!==comparable(expected[k])'),
   'Structured transport and rules-pin data must be compared by value rather than object string coercion.');
 check('Tournament result export remains read-only',has('JSON.stringify(state.battleResult,null,2)')&&has('if(!state.battleEnded||!state.battleResult)'), 'Result export must consume the captured snapshot rather than recomputing mutable state.');
+check('Tournament result export revalidates immediately before serialization',has("const check=tournamentResultIntegrityCheck();")&&has("if(!check.ok){state.battleResultVerified=false;")&&has("JSON.stringify(state.battleResult,null,2)"), 'Export must not rely solely on an earlier verification flag.');
 const failures=checks.filter(x=>!x.pass);
 console.log(JSON.stringify({audit:'Track 5 result locking and lifecycle audit',checks:checks.length,passed:checks.length-failures.length,failed:failures.length,failures},null,2));
 if(failures.length)process.exit(1);
