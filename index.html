@@ -4793,11 +4793,22 @@ function toggleTurnPause(){
   const t=ensureGameTimer();
   if(t.finishedAt)return;
   if(t.turnPaused){
-    t.turnStartedGameMs=gameTimerElapsed();
+    t.startedAt=Date.now();
+    t.running=true;
+    t.paused=false;
+    t.pausedAt=0;
+    t.turnStartedGameMs=Number(t.elapsedMs)||0;
     t.turnPaused=false;
+    if(gameTimerInterval)clearInterval(gameTimerInterval);
+    gameTimerInterval=setInterval(updateGameTimerDisplay,100);
   }else{
     finalizeCurrentTurnTime();
-    t.turnPaused=true;
+    t.elapsedMs=gameTimerElapsed();
+    t.running=false;
+    t.paused=true;
+    t.pausedAt=Date.now();
+    t.turnStartedGameMs=t.elapsedMs;
+    if(gameTimerInterval){clearInterval(gameTimerInterval);gameTimerInterval=null;}
   }
   save();
   render();
@@ -4829,7 +4840,7 @@ function updateGameTimerDisplay(){
   const status=document.getElementById('game-timer-status');
   if(status){
     const t=ensureGameTimer();
-    status.textContent=t.finishedAt?'Finished':(t.turnPaused?'Turn Paused':'Game Running');
+    status.textContent=t.finishedAt?'Finished':(t.turnPaused?'Game Paused':'Game Running');
   }
 }
 function ensureLiveGameTimerDisplay(){
@@ -4869,7 +4880,7 @@ function finishGameTimer(){
 function saveBattleFromTimer(){if(state.cloud?.userId){cloudSaveCurrentBattle({silent:false});return;}save();alert('Battle saved on this device.');}
 function gameTimerHtml(){
   const t=ensureGameTimer();
-  const label=t.finishedAt?'Finished':t.turnPaused?'Resume Turn':'Pause Turn';
+  const label=t.finishedAt?'Finished':t.turnPaused?'Resume Game':'Pause Game';
   const action=t.finishedAt?'':`<button type="button" class="btn ${t.turnPaused?'primary':'danger'}" onclick="toggleGameTimer();return false;">${label}</button>`;
   return `<div class="game-timer" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 10px;padding:7px 9px;border:1px solid var(--border,#2d4055);border-radius:8px;background:var(--panel,#111c2b)">
     <strong>Game Time</strong>
