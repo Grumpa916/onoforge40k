@@ -4939,8 +4939,35 @@ function tournamentResultIntegrityCheck(){
  const r=state.battleResult;
  const reserveState=ensureReserveState();
  const positions=ensureBattlefieldUnitPositions();
- const expected={tournamentLifecycle:'COMPLETED',myVP:scoreTotalForSide('my'),oppVP:scoreTotalForSide('opp'),round:Math.max(1,Number(state.round)||1),missionKey:state.objectiveMapMissionKey||objectiveMissionKey()||null,battlefieldLayout:state.objectiveMapLayout||null,deploymentReadyMy:Object.values(positions).some(p=>p&&p.side==='my'),deploymentReadyOpp:Object.values(positions).some(p=>p&&p.side==='opp'),reservesDeclaredMy:Object.keys(reserveState.my||{}).length,reservesDeclaredOpp:Object.keys(reserveState.opp||{}).length,transportEmbarkations:JSON.parse(JSON.stringify(ensureTransportEmbarkations()))};
- const mismatches=Object.keys(expected).filter(k=>String(r[k]??'')!==String(expected[k]??''));
+ const timer=ensureGameTimer();
+ const expected={
+  tournamentLifecycle:'COMPLETED',
+  myVP:scoreTotalForSide('my'),
+  oppVP:scoreTotalForSide('opp'),
+  primaryMyVP:Number(state.primaryMyScoredVP)||0,
+  primaryOppVP:Number(state.primaryOppScoredVP)||0,
+  secondaryMyVP:secondaryTotalScoredVP('my'),
+  secondaryOppVP:secondaryTotalScoredVP('opp'),
+  battleReadyMy:!!state.battleReadyMy,
+  battleReadyOpp:!!state.battleReadyOpp,
+  round:Math.max(1,Number(state.round)||1),
+  firstTurn:state.firstTurn||null,
+  currentTurn:state.currentTurn||null,
+  phase:state.phase||null,
+  gameElapsedMs:Number(timer.elapsedMs)||0,
+  turnMyMs:Number(timer.turnMyMs)||0,
+  turnOppMs:Number(timer.turnOppMs)||0,
+  missionKey:state.objectiveMapMissionKey||objectiveMissionKey()||null,
+  battlefieldLayout:state.objectiveMapLayout||null,
+  deploymentReadyMy:Object.values(positions).some(p=>p&&p.side==='my'),
+  deploymentReadyOpp:Object.values(positions).some(p=>p&&p.side==='opp'),
+  reservesDeclaredMy:Object.keys(reserveState.my||{}).length,
+  reservesDeclaredOpp:Object.keys(reserveState.opp||{}).length,
+  transportEmbarkations:JSON.parse(JSON.stringify(ensureTransportEmbarkations())),
+  rulesDataPin:state.rulesDataPin?JSON.parse(JSON.stringify(state.rulesDataPin)):null
+ };
+ const comparable=(value)=>value&&typeof value==='object'?JSON.stringify(value):String(value??'');
+ const mismatches=Object.keys(expected).filter(k=>comparable(r[k])!==comparable(expected[k]));
  return {ok:mismatches.length===0,mismatches};
 }
 function verifyTournamentResult(){
