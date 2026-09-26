@@ -1235,6 +1235,7 @@ function loadSavedArmyList(id){
   if(!list)return;
   state.myName=list.name||'My Army';
   state.faction=list.faction||'';
+  state.limit=Number(list.limit)||2000;
   state.my=JSON.parse(JSON.stringify(list.units||[]));state.deploymentPlans=JSON.parse(JSON.stringify(list.deploymentPlans||{}));
   state.secondaryPersonalPlans=JSON.parse(JSON.stringify(list.secondaryPlans||defaultSecondaryPersonalPlans()));ensureSecondaryPersonalPlans();state.personalArmyNotes=String(list.personalNotes||'');state.gameReferencePersonal={phases:{Command:[],Movement:[],Shooting:[],Charge:[],Fight:[],End:[]},quick:[],primary:[],custom:''};
   state.detachmentSelections=list.detachment?[list.detachment]:[];
@@ -1258,8 +1259,8 @@ function ensurePermanentSampleArmies(){
     {id:'sample-ultramarine-infantry',name:'TEST • Ultramarine Infantry',faction:'Ultramarines',detachment:'Gladius Task Force',limit:1000,units:[
       ['Captain',1],['Intercessor Squad',5],['Infernus Squad',5],['Aggressor Squad',3]
     ]},
-    {id:'sample-space-marine-test',name:'TEST • Space Marine Core',faction:'Space Marines',detachment:'Gladius Task Force',limit:1000,units:[
-      ['Captain',1],['Intercessor Squad',5],['Hellblaster Squad',5]
+    {id:'sample-tyranid-heavy',name:'TEST • Tyranid Heavy',faction:'Tyranids',detachment:'Invasion Fleet',limit:1000,units:[
+      ['Tyrannofex',1],['Exocrine',1],['Hormagaunts',10]
     ]}
   ];
   for(const spec of samples){
@@ -1276,6 +1277,7 @@ function ensurePermanentSampleArmies(){
     const existing=state.savedArmyLists.find(x=>x.id===spec.id);
     const list={
       id:spec.id,name:spec.name,faction:spec.faction,detachment:spec.detachment,
+      limit:spec.limit,
       units:entries,secondaryPlans:{},personalNotes:'Permanent test fixture — do not delete.',
       deploymentPlans:{},created:'2026-01-01T00:00:00.000Z',updated:'2026-01-01T00:00:00.000Z',permanentSample:true
     };
