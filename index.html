@@ -687,7 +687,7 @@ body{overflow-x:hidden}
 #battle-view #onoforge-advisor-render .ta-decision-render{margin-bottom:10px;padding:11px}
 @media (min-width:701px){#battle-view #onoforge-advisor-render .ta-grid{grid-template-columns:repeat(8,minmax(0,1fr));gap:5px}#battle-view #onoforge-advisor-render .ta-metric{padding:6px}#battle-view #onoforge-advisor-render .ta-metric b{font-size:14px}}
 </style>
-</head><body><div id="app"></div><script>
+<style id="ono-battle-ux-requested">.battle-layout>.objective-map-renderer{grid-column:1!important;grid-row:2!important}.battle-layout>.battle-state-column{grid-column:2!important;grid-row:1 / span 2!important}.battle-layout>.battle-log{grid-column:1 / -1!important;grid-row:3!important}@media (min-width:900px) and (max-width:1300px) and (orientation:landscape){.battle-layout{display:grid!important;grid-template-columns:minmax(0,1fr) 500px!important;grid-template-rows:auto auto auto!important;gap:12px!important}.battle-layout>div:first-child{grid-column:1!important;grid-row:1!important}.battle-layout>.objective-map-renderer{grid-column:1!important;grid-row:2!important}.battle-layout>.battle-state-column{grid-column:2!important;grid-row:1 / span 2!important}.battle-layout>.battle-state-column .army-state-grid{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)!important;gap:10px!important}.battle-layout>.battle-log{grid-column:1 / -1!important;grid-row:3!important}}</style></head><body><div id="app"></div><script>
 window.addEventListener('error',function(ev){if(ev.target&&ev.target.tagName==='SCRIPT'&&ev.target.src===SUPABASE_SCRIPT_URL)return;var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var msg=String(ev.error?.message||ev.message||'Unknown error');a.innerHTML='<span class="error-title">OnoForge error</span><div class="error-detail">'+msg.replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</div><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});window.addEventListener('unhandledrejection',function(ev){var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var reason=ev.reason?.message||ev.reason||'Unhandled promise rejection';a.innerHTML='<span class="error-title">OnoForge error</span><div class="error-detail">'+String(reason).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</div><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});
 
 window.__ONOFORGE_DETACHMENTS = window.__ONOFORGE_DETACHMENTS || {}; function detachmentCatalog(){return window.__ONOFORGE_DETACHMENTS;}
@@ -724,7 +724,7 @@ const WARHAMMER_EVENT_COMPANION_PDF='https://assets.warhammer-community.com/eng_
 function objectiveMissionKey(){return [primaryMission('my'),primaryMission('opp')].filter(Boolean).sort().join(' ↔ ');}
 function objectiveLayoutInfo(){const m=[primaryMission('my'),primaryMission('opp')];if(m.length<2||m.some(x=>!x))return null;const s=m.slice().sort();return OBJECTIVE_LAYOUT_INDEX.find(x=>x.missions[0]===s[0]&&x.missions[1]===s[1])||null;}
 function ensureObjectiveLayoutForMission(){const key=objectiveMissionKey();if(!key)return null;if(state.objectiveMapMissionKey!==key){state.objectiveMapMissionKey=key;state.objectiveMapLayout='A';}state.objectiveMapLayout=['A','B','C'].includes(state.objectiveMapLayout)?state.objectiveMapLayout:'A';return objectiveLayoutInfo();}
-function setObjectiveMapLayout(layout){const next=['A','B','C'].includes(layout)?layout:null;if(!next)return;const info=ensureObjectiveLayoutForMission();if(!info)return;const before=snapshotForUndo();const previous=state.objectiveMapLayout||'A';state.objectiveMapLayout=next;state.objectiveMapMissionKey=objectiveMissionKey();if(Object.keys(state.objectives||{}).length===0)autoSeedObjectiveStructure();event('OBJECTIVE_LAYOUT_CHANGED',{unit:'Battlefield Layout',action:'Layout '+next+' selected',previous,after:next,round:Math.max(1,Number(state.round)||1),primaryMissions:[primaryMission('my'),primaryMission('opp')],missionKey:state.objectiveMapMissionKey,page:objectiveLayoutPage()},before);save();render();}
+function setObjectiveMapLayout(layout){const next=['A','B','C'].includes(layout)?layout:null;if(!next)return;const info=ensureObjectiveLayoutForMission();if(!info)return;const before=snapshotForUndo();const previous=state.objectiveMapLayout||'A';state.objectiveMapLayout=next;state.objectiveMapMissionKey=objectiveMissionKey();state.terrainSetupComplete=false;if(Object.keys(state.objectives||{}).length===0)autoSeedObjectiveStructure();event('OBJECTIVE_LAYOUT_CHANGED',{unit:'Battlefield Layout',action:'Layout '+next+' selected',previous,after:next,round:Math.max(1,Number(state.round)||1),primaryMissions:[primaryMission('my'),primaryMission('opp')],missionKey:state.objectiveMapMissionKey,page:objectiveLayoutPage()},before);save();render();}
 function objectiveLayoutPage(){const info=ensureObjectiveLayoutForMission();if(!info)return null;const i=['A','B','C'].indexOf(state.objectiveMapLayout);return info.pages[i<0?0:i];}
 function deploymentPlanKey(){const mission=String(state.objectiveMapMissionKey||objectiveMissionKey()||'unselected'),layout=['A','B','C'].includes(state.objectiveMapLayout)?state.objectiveMapLayout:'A';return mission+'|'+layout;}
 
@@ -980,318 +980,17 @@ function terrainMeasurementOverlayHtml(model,pct){
   });
   return '<svg class="terrain-measurement-overlay" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="Simplified terrain placement reference">'+parts.join('')+'</svg>';
 }
-function objectiveMapRendererHtml(mode='battle'){const model=objectiveMapModel(mode),status=model.verified?'Verified geometry':'Geometry pending verification',pct=(n,max)=>Math.max(0,Math.min(100,(Number(n)/Number(max))*100)),point=p=>p&&Number.isFinite(Number(p.x))&&Number.isFinite(Number(p.y)),setup=mode==='setup',deployment=mode==='deployment';const regionLabel=key=>{const k=String(key||'');if(k==='attackerDeployment')return (state.attackerSide==='opp'?state.oppName:state.myName)+' Deployment Zone';if(k==='defenderDeployment')return (state.attackerSide==='opp'?state.myName:state.oppName)+' Deployment Zone';if(k==='attackerTerritory')return (state.attackerSide==='opp'?state.oppName:state.myName)+' Territory';if(k==='defenderTerritory')return (state.attackerSide==='opp'?state.myName:state.oppName)+' Territory';return ({my:'My Deployment Zone',opp:'Opponent Deployment Zone',noMansLand:"No Man's Land",myTerritory:'My Territory',oppTerritory:'Opponent Territory'})[k]||k.replace(/([A-Z])/g,' $1').replace(/^./,s=>s.toUpperCase());};const regionClass=key=>{const k=String(key||'').toLowerCase();return k.includes('deployment')?'deployment':k.includes('territory')?'territory':'region';};const renderRegion=(key,r)=>{if(!r||typeof r!=='object')return '';if([r.x,r.y,r.width,r.height].every(v=>Number.isFinite(Number(v))))return '<div class="objective-map-region '+regionClass(key)+'" style="left:'+pct(r.x,60)+'%;top:'+pct(44-(Number(r.y)+Number(r.height)),44)+'%;width:'+pct(r.width,60)+'%;height:'+pct(r.height,44)+'%" title="'+esc(regionLabel(key))+'">'+esc(regionLabel(key))+'</div>';if(Array.isArray(r.points)&&r.points.every(point)){const pts=r.points.map(p=>pct(p.x,60)+','+pct(44-p.y,44)).join(' ');return '<svg class="objective-map-region-polygon '+regionClass(key)+'" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="'+esc(regionLabel(key))+'"><polygon points="'+pts+'"/><text x="50" y="50" text-anchor="middle">'+esc(regionLabel(key))+'</text></svg>';}return '';};const renderTerrain=(key,r)=>{if(!r||typeof r!=='object')return '';const label='Terrain '+String(key||'');if([r.x,r.y,r.width,r.height].every(v=>Number.isFinite(Number(v))))return '<div class="objective-map-terrain" style="left:'+pct(r.x,60)+'%;top:'+pct(44-(Number(r.y)+Number(r.height)),44)+'%;width:'+pct(r.width,60)+'%;height:'+pct(r.height,44)+'%" title="'+esc(label)+'"></div>';if(Array.isArray(r.points)&&r.points.every(point)){const pts=r.points.map(p=>pct(p.x,60)+'% '+pct(44-Number(p.y),44)+'%').join(',');return '<div class="objective-map-terrain-polygon" style="clip-path:polygon('+pts+')" title="'+esc(label)+'"></div>';}return '';};const regions=(!setup&&model.verified)?Object.entries(model.deploymentZones||{}).map(([k,v])=>renderRegion(k,v)).join(''):'';const terrain=model.verified?Object.entries(model.terrainGeometry||{}).map(([k,v])=>renderTerrain(k,v)).join(''):'';const ghostNodes=mode==='deployment'?objectiveMapPlanGhostNodesHtml(model,pct):'',unitNodes=objectiveMapUnitNodesHtml(model,pct,mode),measurementToggle=setup?'<span class="pill">Measurements shown</span>':'',objectiveNodes=setup?'':model.objectives.map(o=>{const p=o.position,x=point(p)?pct(p.x,60):null,y=point(p)?pct(44-p.y,44):null,ownerClass=o.owner==='my'?'my':o.owner==='opp'?'opp':o.owner==='contested'?'contested':'none';return '<div class="objective-map-node '+ownerClass+'" data-map-objective="'+esc(o.name)+'" style="'+(x===null||y===null?'display:none;':'left:'+x+'%;top:'+y+'%;')+'" title="'+esc(o.name)+'">'+esc(o.name.replace(/^Central |^Expansion |^My |^Opponent /,''))+'</div>';}).join(''),pending='<div class="status" style="margin-top:8px"><b>Map geometry pending verification.</b><div class="tiny" style="margin-top:4px">No deployment zone, territory, terrain, or objective position is inferred from the 60 × 44 table boundary. The Event Companion geometry must be verified first.</div></div>',title=setup?'Terrain & Deployment Planning':deployment?'Deployment Tracking':'Battlefield Map',subtitle=setup?'Pre-game terrain placement reference + optional opening deployment plan.':deployment?'Record actual alternating deployment positions • drag units after placement.':'Live battlefield positions • drag units to record movement',controls=setup?deploymentPlanMapControlsHtml(model):deployment?deploymentTrackingControlsHtml(model):objectiveMapPlacementPanelHtml(model),reserveTray=(deployment||mode==='battle')?reserveTrayHtml():'',editor=setup?deploymentPlanPositionEditorHtml():deployment?deploymentTrackingEditorHtml():battlefieldPositionEditorHtml();return '<div class="card objective-map-renderer '+(setup?'terrain-planning-card':'')+'"><div class="split"><div><h3 style="margin:0">'+title+'</h3><div class="muted">'+subtitle+' • '+esc(model.missionKey)+' • Layout '+esc(model.layout)+' • Event Companion p.'+esc(String(model.page||'—'))+'</div></div><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span class="pill">'+status+'</span>'+measurementToggle+'</div></div>'+controls+reserveTray+'<div class="objective-map-canvas '+(setup?'terrain-measurement-map':'')+'" data-objective-map-canvas data-objective-map-mode="'+esc(mode)+'" role="application" aria-label="'+esc(title)+' 60 by 44 inch battlefield map">'+(model.verified?regions+terrain+objectiveNodes+ghostNodes+unitNodes+(setup?terrainMeasurementOverlayHtml(model,pct):''):'<div class="objective-map-placeholder">Verified Event Companion geometry required</div>')+'</div>'+(setup?'<div class="terrain-measurement-note"><strong>Terrain placement measurements:</strong> derived from the verified Event Companion vector geometry for this layout. Footprint dimensions are bounding dimensions of each terrain polygon; edge values show the footprint offset from the 60 × 44″ battlefield edge. Reference only — no deployment state is changed.</div>':'')+'<div class="objective-map-legend"><span><i class="objective-map-legend-swatch terrain"></i>Terrain</span><span><i class="objective-map-legend-swatch deployment"></i>Deployment</span><span><i class="objective-map-legend-swatch territory"></i>Territory</span><span><i class="objective-map-legend-swatch objective"></i>Objective</span></div><div class="tiny" style="margin-top:6px">60 × 44 inches • bottom-left origin • geometry and terrain are rendered only from verified Event Companion data. Line of sight is never inferred.</div>'+(!model.verified?pending:'')+'</div>'+editor;}
+function objectiveMapRendererHtml(mode='battle'){const model=objectiveMapModel(mode),status=model.verified?'Verified geometry':'Geometry pending verification',pct=(n,max)=>Math.max(0,Math.min(100,(Number(n)/Number(max))*100)),point=p=>p&&Number.isFinite(Number(p.x))&&Number.isFinite(Number(p.y)),terrainSetup=mode==='terrain',setup=mode==='setup',deployment=mode==='deployment';const regionLabel=key=>{const k=String(key||'');if(k==='attackerDeployment')return (state.attackerSide==='opp'?state.oppName:state.myName)+' Deployment Zone';if(k==='defenderDeployment')return (state.attackerSide==='opp'?state.myName:state.oppName)+' Deployment Zone';if(k==='attackerTerritory')return (state.attackerSide==='opp'?state.oppName:state.myName)+' Territory';if(k==='defenderTerritory')return (state.attackerSide==='opp'?state.myName:state.oppName)+' Territory';return ({my:'My Deployment Zone',opp:'Opponent Deployment Zone',noMansLand:"No Man's Land",myTerritory:'My Territory',oppTerritory:'Opponent Territory'})[k]||k.replace(/([A-Z])/g,' $1').replace(/^./,s=>s.toUpperCase());};const regionClass=key=>{const k=String(key||'').toLowerCase();return k.includes('deployment')?'deployment':k.includes('territory')?'territory':'region';};const renderRegion=(key,r)=>{if(!r||typeof r!=='object')return '';if([r.x,r.y,r.width,r.height].every(v=>Number.isFinite(Number(v))))return '<div class="objective-map-region '+regionClass(key)+'" style="left:'+pct(r.x,60)+'%;top:'+pct(44-(Number(r.y)+Number(r.height)),44)+'%;width:'+pct(r.width,60)+'%;height:'+pct(r.height,44)+'%" title="'+esc(regionLabel(key))+'">'+esc(regionLabel(key))+'</div>';if(Array.isArray(r.points)&&r.points.every(point)){const pts=r.points.map(p=>pct(p.x,60)+','+pct(44-p.y,44)).join(' ');return '<svg class="objective-map-region-polygon '+regionClass(key)+'" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="'+esc(regionLabel(key))+'"><polygon points="'+pts+'"/><text x="50" y="50" text-anchor="middle">'+esc(regionLabel(key))+'</text></svg>';}return '';};const renderTerrain=(key,r)=>{if(!r||typeof r!=='object')return '';const label='Terrain '+String(key||'');if([r.x,r.y,r.width,r.height].every(v=>Number.isFinite(Number(v))))return '<div class="objective-map-terrain" style="left:'+pct(r.x,60)+'%;top:'+pct(44-(Number(r.y)+Number(r.height)),44)+'%;width:'+pct(r.width,60)+'%;height:'+pct(r.height,44)+'%" title="'+esc(label)+'"></div>';if(Array.isArray(r.points)&&r.points.every(point)){const pts=r.points.map(p=>pct(p.x,60)+'% '+pct(44-Number(p.y),44)+'%').join(',');return '<div class="objective-map-terrain-polygon" style="clip-path:polygon('+pts+')" title="'+esc(label)+'"></div>';}return '';};const regions=(!terrainSetup&&model.verified)?Object.entries(model.deploymentZones||{}).map(([k,v])=>renderRegion(k,v)).join(''):'';const terrain=model.verified?Object.entries(model.terrainGeometry||{}).map(([k,v])=>renderTerrain(k,v)).join(''):'';const ghostNodes=(mode==='setup'||mode==='deployment')?objectiveMapPlanGhostNodesHtml(model,pct):'',unitNodes=terrainSetup?'':objectiveMapUnitNodesHtml(model,pct,mode),measurementToggle=terrainSetup?'<span class="pill">Measurements shown</span>':'',objectiveNodes=terrainSetup?'':model.objectives.map(o=>{const p=o.position,x=point(p)?pct(p.x,60):null,y=point(p)?pct(44-p.y,44):null,ownerClass=o.owner==='my'?'my':o.owner==='opp'?'opp':o.owner==='contested'?'contested':'none';return '<div class="objective-map-node '+ownerClass+'" data-map-objective="'+esc(o.name)+'" style="'+(x===null||y===null?'display:none;':'left:'+x+'%;top:'+y+'%;')+'" title="'+esc(o.name)+'">'+esc(o.name.replace(/^Central |^Expansion |^My |^Opponent /,''))+'</div>';}).join(''),pending='<div class="status" style="margin-top:8px"><b>Map geometry pending verification.</b><div class="tiny" style="margin-top:4px">No deployment zone, territory, terrain, or objective position is inferred from the 60 × 44 table boundary. The Event Companion geometry must be verified first.</div></div>',title=terrainSetup?'Terrain Setup':setup?'Deployment Planning':deployment?'Deployment Tracking':'Battlefield Map',subtitle=terrainSetup?'Step 4 • Create the Battlefield • measured terrain placement reference.':setup?'Step 8 preparation • plan opening positions separately from terrain setup.':deployment?'Record actual alternating deployment positions • drag units after placement.':'Live battlefield positions • drag units to record movement',controls=terrainSetup?'':setup?deploymentPlanMapControlsHtml(model):deployment?deploymentTrackingControlsHtml(model):objectiveMapPlacementPanelHtml(model),reserveTray=(deployment||mode==='battle')?reserveTrayHtml():'',editor=terrainSetup?'':setup?deploymentPlanPositionEditorHtml():deployment?deploymentTrackingEditorHtml():battlefieldPositionEditorHtml();return '<div class="card objective-map-renderer '+(setup?'terrain-planning-card':'')+'"><div class="split"><div><h3 style="margin:0">'+title+'</h3><div class="muted">'+subtitle+' • '+esc(model.missionKey)+' • Layout '+esc(model.layout)+' • Event Companion p.'+esc(String(model.page||'—'))+'</div></div><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span class="pill">'+status+'</span>'+measurementToggle+'</div></div>'+controls+reserveTray+'<div class="objective-map-canvas '+(setup?'terrain-measurement-map':'')+'" data-objective-map-canvas data-objective-map-mode="'+esc(mode)+'" role="application" aria-label="'+esc(title)+' 60 by 44 inch battlefield map">'+(model.verified?regions+terrain+objectiveNodes+ghostNodes+unitNodes+(terrainSetup?terrainMeasurementOverlayHtml(model,pct):''):'<div class="objective-map-placeholder">Verified Event Companion geometry required</div>')+'</div>'+(terrainSetup?'<div class="terrain-measurement-note"><strong>Terrain placement measurements:</strong> derived from the verified Event Companion vector geometry for this layout. Footprint dimensions are bounding dimensions of each terrain polygon; edge values show the footprint offset from the 60 × 44″ battlefield edge. Reference only — no deployment state is changed.</div>':'')+'<div class="objective-map-legend"><span><i class="objective-map-legend-swatch terrain"></i>Terrain</span><span><i class="objective-map-legend-swatch deployment"></i>Deployment</span><span><i class="objective-map-legend-swatch territory"></i>Territory</span><span><i class="objective-map-legend-swatch objective"></i>Objective</span></div><div class="tiny" style="margin-top:6px">60 × 44 inches • bottom-left origin • geometry and terrain are rendered only from verified Event Companion data. Line of sight is never inferred.</div>'+(!model.verified?pending:'')+'</div>'+editor;}
 function deploymentPlanMapControlsHtml(model){if(!model.verified)return '';const units=(Array.isArray(state.my)?state.my:[]).filter(e=>e&&!e.attachedTo),selected=state.deploymentMapPlacement||{},plan=deploymentPlanForCurrentMap(),count=Object.keys(plan).length,options=units.map(entry=>{const name=unitDisplayName('my',entry)||get(entry.unitId)?.name||entry.name||entry.unitId||'Unit';return '<option value="'+esc(entry.uid)+'" '+(String(selected.uid)===String(entry.uid)?'selected':'')+'>'+esc(name)+'</option>';}).join('');return '<div class="objective-map-controls"><div class="split"><div><strong>Deployment Planning</strong><div class="tiny">Only your army can be placed here. Select a unit, then tap/click its intended starting position.</div></div><span class="pill">'+count+' planned position'+(count===1?'':'s')+'</span></div><div class="objective-map-placement-row"><select class="objective-map-unit-select" data-map-mode="setup" aria-label="My unit to place in deployment plan"><option value="">Select your unit…</option>'+options+'</select><button type="button" class="btn primary" data-deployment-save-plan>Save Plan</button><button type="button" class="btn" data-deployment-load-plan>Load Saved</button><button type="button" class="btn danger" data-deployment-clear-plan>Clear Plan</button><button type="button" class="btn" data-deployment-placement-cancel '+(selected.uid?'':'disabled')+'>Cancel</button></div><div class="tiny" style="margin-top:6px">Plan key: '+esc(deploymentPlanKey())+' • Save the army list first so the deployment plan travels with it.</div></div>';}
 function deploymentPlanPositionEditorHtml(){const units=(Array.isArray(state.my)?state.my:[]).filter(e=>e&&!e.attachedTo);if(!units.length)return '';const rows=units.map(entry=>{const p=deploymentPlanPosition(entry.uid)||{x:'',y:''},name=unitDisplayName('my',entry)||get(entry.unitId)?.name||entry.name||entry.unitId||'Unit',clear=p.x!==''&&p.y!==''?'<button type="button" class="btn" data-deployment-clear="'+esc(entry.uid)+'">Clear</button>':'';return '<div class="unit battlefield-position-row"><div><strong>'+esc(name)+'</strong><div class="tiny">Planned starting position</div></div><input inputmode="decimal" type="number" min="0" max="60" step="0.1" value="'+esc(String(p.x))+'" placeholder="X" data-deployment-x="'+esc(entry.uid)+'"><input inputmode="decimal" type="number" min="0" max="44" step="0.1" value="'+esc(String(p.y))+'" placeholder="Y" data-deployment-y="'+esc(entry.uid)+'"><button type="button" class="btn" data-deployment-save="'+esc(entry.uid)+'">Set</button>'+clear+'</div>';}).join('');return '<details class="card" style="margin-top:10px"><summary style="cursor:pointer;color:#9ecbff"><strong>Deployment plan coordinates</strong><span class="tiny"> • 0.1″ tabletop coordinates</span></summary><div class="tiny" style="margin-top:7px">These are planned positions only. Starting a battle copies the current plan into the live battlefield map; later movement does not change the saved plan.</div>'+rows+'</details>';}
 function objectiveMapPlacementPanelHtml(model){const units=[...(Array.isArray(state.my)?state.my:[]).filter(e=>e&&!e.attachedTo).map(e=>({side:'my',entry:e})),...(Array.isArray(state.opp)?state.opp:[]).filter(e=>e&&!e.attachedTo).map(e=>({side:'opp',entry:e}))];if(!model.verified||!units.length)return '';const selected=state.battlefieldMapPlacement||{},options=units.map(({side,entry})=>{const name=unitDisplayName(side,entry)||get(entry.unitId)?.name||entry.name||entry.unitId||'Unit',selectedNow=selected.side===side&&String(selected.uid)===String(entry.uid);return '<option value="'+esc(side+'|'+entry.uid)+'" '+(selectedNow?'selected':'')+'>'+esc((side==='my'?'My: ':'Opponent: ')+name)+'</option>';}).join(''),selectedEntry=selected.uid?units.find(x=>x.side===selected.side&&String(x.entry.uid)===String(selected.uid))?.entry:null,selectedName=selectedEntry?unitDisplayName(selected.side,selectedEntry):'selected unit';return '<div class="objective-map-controls"><div class="split"><div><strong>Map Placement</strong><div class="tiny">Select a unit, then tap/click its new tabletop position on the map.</div></div><span class="pill">0.1″ coordinates</span></div><div class="objective-map-placement-row"><select class="objective-map-unit-select" aria-label="Unit to place on battlefield map"><option value="">Select unit…</option>'+options+'</select><button type="button" class="btn primary" data-map-placement-cancel '+(selected.uid?'':'disabled')+'>Cancel</button></div><div class="tiny objective-map-placement-status">'+(selected.uid?'Placement active — tap the map to set '+esc(selectedName)+' position.':'Placement inactive — no unit is selected.')+'</div></div>';}
-function objectiveLayoutHtml(){const info=ensureObjectiveLayoutForMission();if(!info)return '';const layout=state.objectiveMapLayout||'A';const page=objectiveLayoutPage();const buttons=['A','B','C'].map(letter=>'<button type="button" class="btn objective-layout-btn '+(layout===letter?'active':'')+'" aria-pressed="'+(layout===letter?'true':'false')+'" onclick="setObjectiveMapLayout(\''+letter+'\');return false;">Layout '+letter+'</button>').join('');return '<div class="objective-layout-panel"><div class="split"><div><strong>Recommended Battlefield Layout</strong><div class="tiny">'+esc(info.missions[0])+' ↔ '+esc(info.missions[1])+' • Layout '+layout+'</div></div><span class="pill">Event Companion p.'+page+'</span></div><div class="objective-layout-buttons">'+buttons+'<a class="btn" href="'+WARHAMMER_EVENT_COMPANION_PDF+'#page='+page+'" target="_blank" rel="noopener">Open Map</a></div><details class="objective-layout-preview"><summary>Preview selected layout</summary><iframe title="Warhammer Event Companion layout '+layout+'" src="'+WARHAMMER_EVENT_COMPANION_PDF+'#page='+page+'" loading="lazy"></iframe></details></div>'+objectiveMapRendererHtml('setup')+'<details class="card" style="margin-top:10px"><summary style="cursor:pointer;color:#9ecbff"><strong>Live Deployment Tracking</strong><span class="tiny"> • actual placements</span></summary><div class="tiny" style="margin-top:7px">Use this after deployment begins to record the actual alternating placement. Opponent placement can change your plan.</div>'+objectiveMapRendererHtml('deployment')+'</details>';}
-const CURRENT_11E_DATA_SOURCES={
-  Tyranids:'https://raw.githubusercontent.com/BSData/wh40k-11e/main/Tyranids.json',
-  Ultramarines:'https://raw.githubusercontent.com/BSData/wh40k-11e/main/Imperium%20-%20Ultramarines.json'
-};
-const ONOFORGE_SOURCE_POLICY_11E={
-  canonical:{name:'40k.app',manifest:'data/40kapp-source.json',role:'authoritative'},
-  supplemental:[{name:'BSData 11e',role:'supplemental'}],
-  bootstrap:[{name:'Embedded catalogue',variable:'EXPANDED_CATALOGUE',role:'fallback-only'}]
-};
-window.ONOFORGE_SOURCE_POLICY_11E=ONOFORGE_SOURCE_POLICY_11E;
-
-function unitDatabase(){
-  // Runtime canonical data wins. The embedded expanded catalogue is bootstrap-only
-  // and must never be promoted to canonical status by a supplemental refresh.
-  return window.CURRENT_UNIT_DATABASE ||
-    ((typeof EXPANDED_CATALOGUE!=='undefined')?EXPANDED_CATALOGUE:DEMO);
+function completeTerrainSetup(){
+ const before=snapshotForUndo();
+ state.terrainSetupComplete=true;
+ event('TERRAIN_SETUP_COMPLETED',{side:'my',unit:'Battlefield',action:'Terrain setup completed; deployment planning unlocked',round:Math.max(1,Number(state.round)||1)},before);
+ save();render();
 }
-function canonicalUnitDatabase(){
-  return Array.isArray(window.CURRENT_UNIT_DATABASE)?window.CURRENT_UNIT_DATABASE:null;
-}
-function bootstrapUnitDatabase(){
-  return typeof EXPANDED_CATALOGUE!=='undefined'?EXPANDED_CATALOGUE:(Array.isArray(DEMO)?DEMO:[]);
-}
-function mergeSupplementalUnits(canonical,supplemental){
-  const out=Array.isArray(canonical)?canonical.map(u=>({...u,sourceRole:'canonical'})):[];
-  const seen=new Set(out.map(u=>String(u?.faction||'')+'|'+String(u?.name||'')));
-  for(const u of (Array.isArray(supplemental)?supplemental:[])){
-    const k=String(u?.faction||'')+'|'+String(u?.name||'');
-    if(!seen.has(k)){
-      out.push({...u,sourceRole:'supplemental'});
-      seen.add(k);
-    }
-  }
-  return out;
-}
-
-function collectBSDataObjects(root){
-  const map=new Map(), seen=new Set();
-  function walk(x){
-    if(!x||typeof x!=='object'||seen.has(x))return;
-    seen.add(x);
-    if(typeof x.id==='string')map.set(x.id,x);
-    Object.keys(x).forEach(k=>walk(x[k]));
-  }
-  walk(root);
-  return map;
-}
-
-function bsProfile(entry,typeName){
-  return (entry?.profiles||[]).find(p=>p.typeName===typeName) || null;
-}
-
-function bsCharacteristics(profile){
-  const out={};
-  (profile?.characteristics||[]).forEach(c=>{
-    const k=c.name==='LD'?'Ld':c.name;
-    out[k]=c.$text??'';
-  });
-  return out;
-}
-
-function bsAbilities(entry){
-  const out=[],seen=new Set();
-  function walk(x){
-    if(!x||typeof x!=='object')return;
-    if(Array.isArray(x.profiles)){
-      x.profiles.forEach(p=>{
-        if(String(p.typeName||'').toLowerCase()!=='abilities')return;
-        const description=(p.characteristics||[]).find(c=>c.name==='Description')?.$text||'';
-        if(!p.name||!description||seen.has(p.name))return;
-        seen.add(p.name);
-        out.push({name:p.name,description});
-      });
-    }
-    if(Array.isArray(x.selectionEntries))x.selectionEntries.forEach(walk);
-    if(Array.isArray(x.selectionEntryGroups))x.selectionEntryGroups.forEach(walk);
-    if(Array.isArray(x.entryLinks)){
-      x.entryLinks.forEach(link=>{
-        const targetId=link.targetId||link.id;
-        if(window.__BS_OBJECT_MAP&&targetId){
-          const target=window.__BS_OBJECT_MAP.get(targetId);
-          if(target)walk(target);
-        }
-      });
-    }
-  }
-  walk(entry);
-  return out;
-}
-function normalize11eWeaponAbilities(raw){
-  const src=Array.isArray(raw)?raw:[];
-  const out=[];
-  src.forEach(value=>{
-    const text=String(value??'').trim();
-    if(!text)return;
-    // 11th edition renamed the former PISTOL weapon keyword to CLOSE-QUARTERS.
-    // Normalize legacy source labels at ingestion so stale supplemental data
-    // cannot silently reintroduce 10th-edition terminology into the engine.
-    const normalized=text.toUpperCase().replace(/-/g,' ').replace(/_/g,' ').replace(/\\s+/g,' ').trim();
-    if(normalized==='PISTOL') out.push('CLOSE QUARTERS');
-    else out.push(text);
-  });
-  return [...new Set(out)];
-}
-
-function bsWeapons(entry){
-  const out=[], seen=new Set(), visited=new Set();
-  const objectMap=(typeof window!=='undefined' && window.__BS_OBJECT_MAP && typeof window.__BS_OBJECT_MAP.get==='function')?window.__BS_OBJECT_MAP:null;
-  function walk(x){
-    if(!x||typeof x!=='object')return;
-    const objectId=x.id||x.targetId;
-    if(objectId){
-      if(visited.has(objectId))return;
-      visited.add(objectId);
-    }
-    if(Array.isArray(x.profiles)){
-      x.profiles.forEach(p=>{
-        const type=String(p.typeName||'').toLowerCase();
-        if(type!=='ranged weapons' && type!=='melee weapons' && !type.includes('ranged weapon') && !type.includes('melee weapon'))return;
-        const chars=bsCharacteristics(p);
-        const w={name:p.name,...chars,abilities:normalize11eWeaponAbilities(chars.Keywords?[chars.Keywords]:[])};
-        delete w.Keywords;
-        const key=JSON.stringify(w);
-        if(!seen.has(key)){seen.add(key);out.push(w);}
-      });
-    }
-    if(Array.isArray(x.selectionEntries))x.selectionEntries.forEach(walk);
-    if(Array.isArray(x.selectionEntryGroups))x.selectionEntryGroups.forEach(walk);
-    if(Array.isArray(x.entryLinks)){
-      x.entryLinks.forEach(link=>{
-        const targetId=link.targetId||link.id;
-        if(objectMap && targetId){
-          const target=objectMap.get(targetId);
-          if(target)walk(target);
-        }
-      });
-    }
-  }
-  walk(entry);
-  return out;
-}
-function bsWargearOptions(entry){
-  const out=[],seen=new Set();
-  function walk(x){
-    if(!x||typeof x!=='object')return;
-    if(Array.isArray(x.selectionEntries))x.selectionEntries.forEach(s=>{
-      if(s.type==='upgrade' && s.name && !seen.has(s.name)){
-        seen.add(s.name);out.push(s.name);
-      }
-      walk(s);
-    });
-    if(Array.isArray(x.selectionEntryGroups))x.selectionEntryGroups.forEach(walk);
-  }
-  walk(entry);
-  return out;
-}
-
-function bsUnitFromEntry(entry,faction){
-  if(!entry||entry.type!=='unit')return null;
-  const p=bsProfile(entry,'Unit');
-  if(!p)return null;
-  const stats=bsCharacteristics(p);
-  const pts=(entry.costs||[]).find(c=>c.name==='pts');
-  const categories=(entry.categoryLinks||[]).map(c=>c.name).filter(Boolean);
-  const weapons=bsWeapons(entry);
-  return {
-    id:`${faction}_${String(entry.name).toLowerCase().replace(/[^a-z0-9]+/g,'_')}`,
-    name:entry.name,
-    faction,
-    points:pts?Number(pts.value):0,
-    models:1,
-    wounds:Number(stats.W)||1,
-    profile:stats,
-    keywords:categories,
-    abilities:bsAbilities(entry),
-    weapons,
-    weaponOptions:bsWargearOptions(entry),
-    dataSource:'BSData 11e',
-    dataVersion:'current'
-  };
-}
-
-async function refreshCurrentUnitDatabase(showMessage=true){
-  try{
-    const all=[];
-    for(const faction of Object.keys(CURRENT_11E_DATA_SOURCES)){
-      const res=await fetch(CURRENT_11E_DATA_SOURCES[faction],{cache:'no-store'});
-      if(!res.ok)throw new Error(`${faction} data request failed (${res.status})`);
-      const root=await res.json();
-      const map=collectBSDataObjects(root);
-      window.__BS_OBJECT_MAP=map;
-      const links=root?.catalogue?.entryLinks||[];
-      const seen=new Set();
-      links.forEach(link=>{
-        const entry=map.get(link.targetId||link.id);
-        const u=bsUnitFromEntry(entry,faction);
-        if(u&&!seen.has(u.name)){seen.add(u.name);all.push(u);}
-      });
-      // Only catalogue-linked unit entries are eligible for supplemental import.
-      // Direct model entries include weapon/model variants and must not become units.
-    }
-
-    if(!all.length)throw new Error('No unit data was found.');
-    const currentCanonical=canonicalUnitDatabase();
-    const supplemental=all.map(u=>({...u,sourceRole:'supplemental'}));
-    window.SUPPLEMENTAL_UNIT_DATABASE=supplemental;
-    if(currentCanonical){
-      window.CURRENT_UNIT_DATABASE=mergeSupplementalUnits(currentCanonical,all);
-      DEMO.splice(0,DEMO.length,...window.CURRENT_UNIT_DATABASE);
-    }    state.dataUpdatedAt=new Date().toISOString();
-    save();
-    render();
-    if(showMessage)alert(`Updated ${all.length} units from current 11th-edition data.`);
-  }catch(err){
-    console.error(err);
-    if(showMessage)alert('Unit database update failed: '+(err.message||err));
-  }
-}
-function saveCurrentArmyList(){
-  if(!Array.isArray(state.savedArmyLists))state.savedArmyLists=[];
-  const name=prompt('Name this army list:', `${state.faction||'Army'} List`);
-  if(!name)return;
-  const list={
-    id:uid(),
-    name,
-    faction:state.faction||'',
-    detachment:state.detachment||state.detachmentSelections?.[0]||'',
-    units:JSON.parse(JSON.stringify(state.my||[])),
-    secondaryPlans:JSON.parse(JSON.stringify(ensureSecondaryPersonalPlans())),
-    personalNotes:String(state.personalArmyNotes||''),
-    deploymentPlans:JSON.parse(JSON.stringify(ensureDeploymentPlans())),
-    created:new Date().toISOString(),
-    updated:new Date().toISOString()
-  };
-  state.savedArmyLists.push(list);
-  save();
-  render();
-  cloudUpsertArmyList(list).catch(()=>{});
-}
-
-function loadSavedArmyList(id){
-  const list=(state.savedArmyLists||[]).find(x=>x.id===id);
-  if(!list)return;
-  state.myName=list.name||'My Army';
-  state.faction=list.faction||'';
-  state.my=JSON.parse(JSON.stringify(list.units||[]));state.deploymentPlans=JSON.parse(JSON.stringify(list.deploymentPlans||{}));
-  state.secondaryPersonalPlans=JSON.parse(JSON.stringify(list.secondaryPlans||defaultSecondaryPersonalPlans()));ensureSecondaryPersonalPlans();state.personalArmyNotes=String(list.personalNotes||'');state.gameReferencePersonal={phases:{Command:[],Movement:[],Shooting:[],Charge:[],Fight:[],End:[]},quick:[],primary:[],custom:''};
-  state.detachmentSelections=list.detachment?[list.detachment]:[];
-  state.detachment=list.detachment||'';
-  state.activeRosterId=list.id;
-  state.savedMyListSnapshot=currentMyListSnapshot();
-  save();
-  render();
-}
-
-function deleteSavedArmyList(id){
-  const list=(state.savedArmyLists||[]).find(x=>x.id===id);
-  state.savedArmyLists=(state.savedArmyLists||[]).filter(x=>x.id!==id);
-  save();
-  render();
-  if(list)cloudDeleteArmyList(list).catch(()=>{});
-}
-
-function savedListsUI(){
-  return '';
-}
-
-function formatSavedListDate(value){
-  if(!value)return 'Date not recorded';
-  const d=new Date(value);
-  if(Number.isNaN(d.getTime()))return String(value);
-  return d.toLocaleString(undefined,{year:'numeric',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
-}
-function savedListsPage(){
-  const lists=Array.isArray(state.savedArmyLists)?state.savedArmyLists:[];
-  return `<div class="card">
-    <div class="split">
-      <div>
-        <h2 style="margin:0">Saved Lists</h2>
-        <div class="muted" style="margin-top:4px">${lists.length} saved My List${lists.length===1?'':'s'}</div>
-      </div>
-      <div class="row">
-        <button class="btn" type="button" onclick="state.page='builder';state.builderView='full';render()">List Builder</button>
-      </div>
-    </div>
-    <div style="margin-top:12px">
-      ${lists.length?lists.slice().reverse().map(x=>`<div class="card" style="padding:12px;margin-top:8px">
-        <div class="split">
-          <div>
-            <strong>${esc(x.name)}</strong>
-            <div class="muted small" style="margin-top:3px">
-              ${esc(x.faction||'No faction')}
-              ${x.detachment?` • ${esc(x.detachment)}`:''}
-              • ${(x.units||[]).length} unit entr${(x.units||[]).length===1?'y':'ies'}
-              <div style="margin-top:3px">Saved: ${esc(formatSavedListDate(x.created))}</div>
-            </div>
-          </div>
-          <div class="row" style="gap:6px">
-            <button class="btn" type="button" onclick="loadSavedArmyList('${x.id}');state.page='builder';state.builderView='full';render()">Load</button>
-            <button class="btn danger" type="button" onclick="deleteSavedArmyList('${x.id}')">Delete</button>
-          </div>
-        </div>
-      </div>`).join(''):'<div class="empty">No saved My Lists yet. Build a list in List Builder, then save it here.</div>'}
-    </div>
-  </div>`;
-}
-
+function objectiveLayoutHtml(){const info=ensureObjectiveLayoutForMission();if(!info)return '';const layout=state.objectiveMapLayout||'A';const page=objectiveLayoutPage();const complete=!!state.terrainSetupComplete;const buttons=['A','B','C'].map(letter=>'<button type="button" class="btn objective-layout-btn '+(layout===letter?'active':'')+'" aria-pressed="'+(layout===letter?'true':'false')+'" onclick="setObjectiveMapLayout(\''+letter+'\');return false;">Layout '+letter+'</button>').join('');return '<div class="setup-section"><div class="split"><div><h3 style="margin:0">Step 4 — Create the Battlefield: Terrain Setup</h3><div class="muted" style="margin-top:4px">Set up the battlefield terrain using the selected Event Companion layout. Measurements are shown on this map only.</div></div><span class="pill '+(complete?'ok':'')+'">'+(complete?'Terrain setup complete':'Terrain setup required')+'</span></div><div class="objective-layout-panel" style="margin-top:10px"><div class="split"><div><strong>Recommended Battlefield Layout</strong><div class="tiny">'+esc(info.missions[0])+' ↔ '+esc(info.missions[1])+' • Layout '+layout+'</div></div><span class="pill">Event Companion p.'+page+'</span></div><div class="objective-layout-buttons">'+buttons+'<a class="btn" href="'+WARHAMMER_EVENT_COMPANION_PDF+'#page='+page+'" target="_blank" rel="noopener">Open Map</a></div></div>'+objectiveMapRendererHtml('terrain')+'<div class="row" style="margin-top:10px">'+(complete?'<span class="ok" style="margin:0">✓ Terrain setup recorded. Deployment planning is unlocked.</span>':'<button type="button" class="btn primary" onclick="completeTerrainSetup();return false;">Terrain Setup Complete — Continue to Deployment Planning</button>')+'</div>'+(!complete?'<div class="tiny" style="margin-top:7px">Complete this acknowledgement after the physical terrain has been placed. Changing Layout A/B/C resets the acknowledgement.</div>':'')+(complete?'<div class="setup-section" style="margin:14px 0 0"><div class="split"><div><h3 style="margin:0">Step 8 Preparation — Deployment Planning</h3><div class="muted" style="margin-top:4px">Plan your opening positions separately from the physical terrain setup. This is a plan only; actual alternating deployment is recorded after Begin Deployment.</div></div><span class="pill">Planning Map</span></div>'+objectiveMapRendererHtml('setup')+'<details class="card" style="margin-top:10px"><summary style="cursor:pointer;color:#9ecbff"><strong>Live Deployment Tracking</strong><span class="tiny"> • actual placements</span></summary><div class="tiny" style="margin-top:7px">Use this after deployment begins to record the actual alternating placement. Opponent placement can change your plan.</div>'+objectiveMapRendererHtml('deployment')+'</details></div>':'')+'</div>';}
 function forceDispositionNameForDetachment(side){
   const names=detachmentSelections(side);
   const faction=side==='my'?state.faction:state.oppFaction;
@@ -2289,7 +1988,7 @@ function stratagemsUI(){
 const ONOFORGE_RULES_DATA_PIN={schema:'onoforge.rules-data-pin.v1',unitSource:'40k.app',unitRevision:925,unitRevisionDate:'2026-08-11',eventCompanion:'Warhammer Event Companion',eventCompanionVersion:'1.2',eventCompanionRevision:'1.2'};
 let state={
   savedArmyLists:[],tournamentLifecycle:'SETUP',battleResultLocked:false,battleResultVerified:false,battleResultVerifiedAt:null,
-  stratagemsMy:[], stratagemsOpp:[], stratagemsOpen:false,primaryMissionsOpen:false,secondaryMissionsOpen:false,page:'builder',myName:'My Army',oppName:'Opponent Army',faction:'Tyranids',detachment:'Invasion Fleet',detachmentSelections:['Invasion Fleet'],oppFaction:'Ultramarines',oppDetachment:'Gladius Task Force',oppDetachmentSelections:['Gladius Task Force'],limit:2000,my:[],opp:[],searchMy:'',searchOpp:'',configure:null,attacker:'norn',weapon:'Rupture Cannon',target:'marine',round:1,phase:'Command',myVP:0,oppVP:0,myCP:0,oppCP:0,phaseCP:{},battleReadyMy:false,battleReadyOpp:false,secondaryMy:'tactical',secondaryOpp:'tactical',secondaryMyCards:[],secondaryOppCards:[],secondaryMyDeck:[],secondaryOppDeck:[],secondaryMyDeckInitialized:false,secondaryOppDeckInitialized:false,secondaryMyDiscard:[],secondaryOppDiscard:[],newOrdersCompletedMy:false,newOrdersCompletedOpp:false,secondaryMyScored:[],secondaryOppScored:[],secondaryMyScoredVP:{},secondaryOppScoredVP:{},secondaryMyScoredVPByRound:{},secondaryOppScoredVPByRound:{},secondaryMyScoredRound:{},secondaryOppScoredRound:{},secondaryNewOrdersUsedMy:false,secondaryNewOrdersUsedOpp:false,secondaryPersonalPlans:{},secondaryPlanEdit:'',secondaryDetailSide:'',secondaryDetailName:'',gameReferencePersonal:{},rulesDataPin:null,myForceDisposition:'',oppForceDisposition:'',attackerSide:'my',firstTurn:'my',currentTurn:'my',objectives:{},objectiveMapLayout:'A',objectiveMapMissionKey:'',objectiveControlHistory:{},objectiveControlSources:{},objectiveMeta:{},deploymentTrackingSide:'my',battlefieldUnitPositions:{},deploymentMapPlacement:null,battlefieldMapPlacement:null,reserveDeclarations:{my:{},opp:{}},events:[],gameAssistantChecks:{},gameAssistantNotes:'',personalArmyNotes:'',lists:[],activeRosterId:'',activeOpponentRosterId:'',dataStatus:'40k.app canonical manifest • embedded catalogue bootstrap fallback • BSData supplemental',source:'40k.app',revision:'925',cloud:{email:'',userId:'',status:'Not connected',lastSync:'',error:''},cloudBattles:[],rulesLog:[],mathRules:{},gameTimer:{elapsedMs:0,running:false,paused:false,startedAt:0,pausedAt:0,finishedAt:0,turnMyMs:0,turnOppMs:0,turnStartedGameMs:0,turnPaused:false},cloudPasswordRecovery:false,localSavedAt:''};
+  stratagemsMy:[], stratagemsOpp:[], stratagemsOpen:false,primaryMissionsOpen:false,secondaryMissionsOpen:false,page:'builder',myName:'My Army',oppName:'Opponent Army',faction:'Tyranids',detachment:'Invasion Fleet',detachmentSelections:['Invasion Fleet'],oppFaction:'Ultramarines',oppDetachment:'Gladius Task Force',oppDetachmentSelections:['Gladius Task Force'],limit:2000,my:[],opp:[],searchMy:'',searchOpp:'',configure:null,attacker:'norn',weapon:'Rupture Cannon',target:'marine',round:1,phase:'Command',myVP:0,oppVP:0,myCP:0,oppCP:0,phaseCP:{},battleReadyMy:false,battleReadyOpp:false,secondaryMy:'tactical',secondaryOpp:'tactical',secondaryMyCards:[],secondaryOppCards:[],secondaryMyDeck:[],secondaryOppDeck:[],secondaryMyDeckInitialized:false,secondaryOppDeckInitialized:false,secondaryMyDiscard:[],secondaryOppDiscard:[],newOrdersCompletedMy:false,newOrdersCompletedOpp:false,secondaryMyScored:[],secondaryOppScored:[],secondaryMyScoredVP:{},secondaryOppScoredVP:{},secondaryMyScoredVPByRound:{},secondaryOppScoredVPByRound:{},secondaryMyScoredRound:{},secondaryOppScoredRound:{},secondaryNewOrdersUsedMy:false,secondaryNewOrdersUsedOpp:false,secondaryPersonalPlans:{},secondaryPlanEdit:'',secondaryDetailSide:'',secondaryDetailName:'',gameReferencePersonal:{},rulesDataPin:null,myForceDisposition:'',oppForceDisposition:'',attackerSide:'my',firstTurn:'my',currentTurn:'my',objectives:{},objectiveMapLayout:'A',objectiveMapMissionKey:'',terrainSetupComplete:false,objectiveControlHistory:{},objectiveControlSources:{},objectiveMeta:{},deploymentTrackingSide:'my',battlefieldUnitPositions:{},deploymentMapPlacement:null,battlefieldMapPlacement:null,reserveDeclarations:{my:{},opp:{}},events:[],gameAssistantChecks:{},gameAssistantNotes:'',personalArmyNotes:'',lists:[],activeRosterId:'',activeOpponentRosterId:'',dataStatus:'40k.app canonical manifest • embedded catalogue bootstrap fallback • BSData supplemental',source:'40k.app',revision:'925',cloud:{email:'',userId:'',status:'Not connected',lastSync:'',error:''},cloudBattles:[],rulesLog:[],mathRules:{},gameTimer:{elapsedMs:0,running:false,paused:false,startedAt:0,pausedAt:0,finishedAt:0,turnMyMs:0,turnOppMs:0,turnStartedGameMs:0,turnPaused:false},cloudPasswordRecovery:false,localSavedAt:''};
 
 const GAME_REFERENCE_PHASES={Command:[],Movement:[],Shooting:[],Charge:[],Fight:[],End:[]};
 const GAME_REFERENCE_QUICK=[];
@@ -4851,6 +4550,7 @@ function finishGameTimer(){
   save();
   render();
 }
+function saveBattleFromTimer(){if(state.cloud?.userId){cloudSaveCurrentBattle({silent:false});return;}save();alert('Battle saved on this device.');}
 function gameTimerHtml(){
   const t=ensureGameTimer();
   const label=t.finishedAt?'Finished':t.turnPaused?'Resume Turn':'Pause Turn';
@@ -4863,6 +4563,7 @@ function gameTimerHtml(){
     <span class="muted small">${esc(state.myName)}: <strong id="my-turn-time-value">${formatGameTime(turnElapsedMs('my'))}</strong></span>
     <span class="muted small">${esc(state.oppName)}: <strong id="opp-turn-time-value">${formatGameTime(turnElapsedMs('opp'))}</strong></span>
     ${action}
+    <button type="button" class="btn primary" onclick="saveBattleFromTimer();return false;">${state.cloudBattleSaving?'Saving…':'Save Battle'}</button>
     <button type="button" class="btn" onclick="finishGameTimer();return false;" ${t.finishedAt?'disabled':''}>Finish</button>
   </div>`;
 }
@@ -5021,6 +4722,7 @@ function tournamentSetupValidation(){
  if(!Array.isArray(state.opp)||!state.opp.length)missing.push('Opponent roster');
  if(!state.objectiveMapMissionKey&&!objectiveMissionKey())missing.push('Primary mission');
  if(!state.objectiveMapLayout)missing.push('Battlefield layout');
+ if(!state.terrainSetupComplete)missing.push('Terrain setup completion');
  if(state.firstTurn!=='my'&&state.firstTurn!=='opp')missing.push('First-turn selection');
  if(state.secondaryMy==='fixed'&&secState('my').length!==2)missing.push('My Fixed secondary selections (2)');
  if(state.secondaryOpp==='fixed'&&secState('opp').length!==2)missing.push('Opponent Fixed secondary selections (2)');
@@ -5454,7 +5156,6 @@ ${objectiveControlTrackerHtml()}${battleNotesHtml()}${state.currentTurn==='opp'?
 
 </div>${objectiveMapRendererHtml("battle")}<div class="battle-state-column"><div class="army-state-grid"><div>${armyStateCard('my','My Army State')}</div><div>${armyStateCard('opp','Opponent Army State')}</div></div></div>
 <div class="battle-log card"><div class="split"><div><h3>Action Log</h3><div class="muted">Latest actions</div></div></div>${recent.length?recent.map((e,i)=>actionLogLine(e,i)).join(''):'<div class="empty">No actions yet.</div>'}</div>
-<div class="game-data-status"><div class="status">✓ Browser app loaded locally • Source: ${esc(state.source)} • ${esc(state.revision)} • 40k.app v${esc(String(ONOFORGE_40KAPP_SOURCE?.source?.revision||'925'))}</div>${dataSyncStatusHtml()}</div>
 </div>
 ${currentArmyDisplay()}
 `}
@@ -10846,49 +10547,11 @@ function dataManagementPage(){const cfg=getCloudConfig();const battles=Array.isA
   <div class="split"><div><h2 style="margin:0">Data Management</h2><div class="muted" style="margin-top:4px">Back up and restore your OnoForge data on this device, or connect it to your Supabase account.</div></div><span class="pill">v294 Backup + Cloud</span></div>
 
   <div class="card cloud-card" style="margin-top:12px">
-    <div class="split">
-      <div><h3 style="margin:0">Cloud Sync</h3><div class="muted" style="margin-top:4px">Supabase stores your saved army lists and optional battle snapshots. Local browser data continues to work without an account.</div></div>
-      <div class="cloud-status"><span class="cloud-dot ${cloudStatusClass()}"></span><strong>${cloudStatusText()}</strong></div>
-    </div>
+    <div class="split"><div><h3 style="margin:0">Cloud Login</h3><div class="muted" style="margin-top:4px">Sign in only when you want cloud access. Local data remains available without an account.</div></div><span class="pill">${state.cloud?.userId?'Signed in':'Not signed in'}</span></div>
     ${state.cloud?.error?`<div class="warn" style="margin-top:10px">${esc(state.cloud.error)}</div>`:''}
-    <div class="ok" style="margin-top:12px">Cloud service is configured automatically. Your browser never needs Supabase connection details.</div>
-    <div class="cloud-actions">
-      <button class="btn primary" type="button" onclick="connectCloudFromInputs()">Save &amp; Connect</button>
-      ${state.cloud?.userId?`<button class="btn" type="button" onclick="cloudSyncSavedLists()">Sync Saved Lists</button><button class="btn primary" type="button" onclick="cloudSaveCurrentBattle()">${state.cloudBattleSaving?'Saving…':'Save Battle'}</button><button class="btn" type="button" onclick="cloudNewBattle()">New Battle</button><button class="btn" type="button" onclick="cloudSignOut()">Sign Out</button>`:''}
-      ${cfg.url||cfg.key?`<button class="btn danger" type="button" onclick="clearCloudConfiguration()">Forget Connection</button>`:''}
-    </div>
-    ${state.cloud?.userId&&state.cloudBattleSavedAt?`<div class="tiny" style="margin-top:8px">Battle snapshot: <b>Saved ✓</b> • ${esc(formatSavedListDate(state.cloudBattleSavedAt))}</div>`:''}
-    ${state.cloudBattleSaveError?`<div class="warn" style="margin-top:8px">${esc(state.cloudBattleSaveError)}</div>`:''}
-    <div class="cloud-help">Use only the <b>Publishable key</b> in this browser. Never put an <b>sb_secret_...</b> key or database password here. Your Supabase RLS policies control which records your signed-in account can access.</div>
-    ${state.cloudPasswordRecovery?`<div class="card" style="margin-top:14px;border-color:#3974a8">
-      <h3 style="margin-top:0">Reset Cloud Sync Password</h3>
-      <div class="muted">Enter a new password for this Cloud Sync account.</div>
-      <div class="cloud-auth-grid" style="margin-top:12px">
-        <div class="field"><label>New Password</label><input id="cloud-new-password" type="password" autocomplete="new-password" placeholder="At least 8 characters"></div>
-        <div class="field"><label>Confirm New Password</label><input id="cloud-confirm-password" type="password" autocomplete="new-password" placeholder="Repeat your new password"></div>
-      </div>
-      <div class="cloud-actions" style="margin-top:10px">
-        <button class="btn primary" type="button" onclick="cloudUpdatePassword()">Update Password</button>
-      </div>
-    </div>` : !state.cloud?.userId?`<div class="cloud-auth-grid" style="margin-top:14px">
-      <div class="field"><label>Email</label><input id="cloud-email" type="email" autocomplete="email" placeholder="you@example.com"></div>
-      <div class="field"><label>Password</label><input id="cloud-password" type="password" autocomplete="current-password" placeholder="At least 8 characters"></div>
-    </div>
-    <div class="cloud-actions">
-      <button class="btn primary" type="button" onclick="cloudSignIn()">Sign In</button>
-      <button class="btn" type="button" onclick="cloudSignUp()">Create Account</button>
-      <button class="btn" type="button" onclick="cloudForgotPassword()">Forgot Password?</button>
-    </div>
-    <div class="cloud-help">Email confirmation is enabled. After creating an account, check your email and use the confirmation link to return to OnoForge.</div>`:
-    `<div class="ok" style="margin-top:12px">Cloud account connected. Saved Lists can be synchronized between devices using this account.</div>`}
-    ${state.cloud?.lastSync?`<div class="tiny" style="margin-top:8px">Last cloud sync: ${esc(formatSavedListDate(state.cloud.lastSync))}</div>`:''}
+    ${!state.cloud?.userId?`<div class="cloud-auth-grid" style="margin-top:14px"><div class="field"><label>Email</label><input id="cloud-email" type="email" autocomplete="email" placeholder="you@example.com"></div><div class="field"><label>Password</label><input id="cloud-password" type="password" autocomplete="current-password" placeholder="Password"></div></div><div class="cloud-actions" style="margin-top:10px"><button class="btn primary" type="button" onclick="cloudSignIn()">Sign In</button><button class="btn" type="button" onclick="cloudSignUp()">Create Account</button><button class="btn" type="button" onclick="cloudForgotPassword()">Forgot Password?</button></div>`:`<div class="ok" style="margin-top:10px">Signed in as ${esc(state.cloud?.email||'Cloud account')}.</div><div class="cloud-actions" style="margin-top:10px"><button class="btn" type="button" onclick="cloudSignOut()">Sign Out</button></div>`}
+    ${state.cloudPasswordRecovery?`<div class="card" style="margin-top:12px"><h3 style="margin-top:0">Reset Password</h3><div class="cloud-auth-grid" style="margin-top:10px"><div class="field"><label>New Password</label><input id="cloud-new-password" type="password" autocomplete="new-password"></div><div class="field"><label>Confirm New Password</label><input id="cloud-confirm-password" type="password" autocomplete="new-password"></div></div><button class="btn primary" type="button" style="margin-top:10px" onclick="cloudUpdatePassword()">Update Password</button></div>`:''}
   </div>
-
-  ${state.cloud?.userId?`<div class="card" style="margin-top:12px">
-    <div class="split"><div><h3 style="margin:0">Cloud Battles</h3><div class="muted" style="margin-top:4px">Manual snapshots of your current battle state.</div></div><button class="btn" type="button" onclick="cloudRefreshBattles()">Refresh</button></div>
-    <div class="cloud-list">${battles.length?battles.map(b=>`<div class="cloud-list-row"><div><strong>${esc(b.name||'Battle')}</strong><div class="tiny">${esc(formatSavedListDate(b.created_at))}</div></div><div class="row"><button class="btn" type="button" onclick="cloudLoadBattle('${esc(b.id)}')">Load</button><button class="btn danger" type="button" onclick="cloudBattleDeleteConfirm('${esc(b.id)}')">Delete</button></div></div>`).join(''):'<div class="empty">No cloud battles saved yet.</div>'}</div>
-  </div>`:''}
-
   ${secondaryPlanEditorHtml()}
   ${gameReferenceEditorHtml()}
   <div class="status" style="margin-top:12px">Your army lists, battle state, settings, action log, and catalogue data are stored locally in this browser. Cloud sync is an additional copy; it does not replace the local backup system.</div>
