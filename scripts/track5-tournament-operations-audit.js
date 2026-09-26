@@ -84,6 +84,20 @@ check('Transport embarkations are a separate auditable declaration layer',
 check('Embarked units are accounted for during deployment validation',
   has(/isUnitEmbarked\(side,id\)/)&&has(/if\(isUnitEmbarked\(side,id\)\)continue;/),
   'A declared embarked passenger is not required to have an independent battlefield position.');
+
+check('Transport declarations reject self-embarkation and transport passengers',
+  has(/tid===pid/)&&has(/passengerKeywords\.includes\('TRANSPORT'\)/),
+  'A transport cannot embark itself or another transport through the declaration layer.');
+check('Transport declaration moves a passenger between transports instead of duplicating it',
+  has(/clearTransportEmbarkation\(s,pid\)/)&&has(/maps\[tid\]\.push\(pid\)/),
+  'A passenger must have at most one declared starting transport.');
+check('Embarkation removes stale battlefield position state',
+  has(/delete state\.battlefieldUnitPositions\[pid\]/),
+  'A unit declared embarked must not retain an independent deployment position.');
+check('Transport declarations are included in locked result verification',
+  has(/transportEmbarkations:JSON\.parse\(JSON\.stringify\(ensureTransportEmbarkations\(\)\)\)/)&&has(/const expected=\{/)&&has(/transportEmbarkations,\n  rulesDataPin/),
+  'Transport declarations must remain part of the authoritative result integrity comparison.');
+
 check('Tournament result captures both deployment sides and audit state',
   has(/deploymentReadyMy:/)&&has(/deploymentReadyOpp:/)&&has(/deploymentState:\{/)&&has(/positions:JSON\.parse\(JSON\.stringify\(ensureBattlefieldUnitPositions\(\)\)\)/),
   'The final tournament record must preserve deployment and reserve context.');
