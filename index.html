@@ -4985,6 +4985,8 @@ function exportTournamentResult(){
  try{
   if(!state.battleEnded||!state.battleResult){alert('Finish the battle before exporting the tournament result.');return;}
   if(!state.battleResultVerified){alert('Verify the tournament result before exporting it.');return;}
+  const check=tournamentResultIntegrityCheck();
+  if(!check.ok){state.battleResultVerified=false;alert('Tournament result changed after verification. Re-verify before exporting. Differences: '+check.mismatches.join(', '));return;}
   const payload=JSON.stringify(state.battleResult,null,2);
   const blob=new Blob([payload],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
