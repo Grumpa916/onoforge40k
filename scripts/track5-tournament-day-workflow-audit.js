@@ -40,8 +40,8 @@ check('Recovery persists lifecycle, result lock, timer, deployment, and rules pi
   'A refreshed or resumed tournament must retain the authoritative operational context.');
 
 check('Battle Mode omits browser/data diagnostics from the active header',
-  !has(/Browser app loaded locally[^]*dataSyncStatusHtml\(\)/),
-  'Diagnostics belong in setup/data surfaces, not the tournament table-facing battle header.');
+  has(/state\.page!==['\\"]battle['\\"]\?[^:]*Browser app loaded locally/) && has(/state\.page!==['\\"]battle['\\"]\?[^:]*dataSyncStatusHtml\(\)/),
+  'Browser/data diagnostics must be conditionally rendered only when the active page is not Battle Mode.');
 
 const failures=checks.filter(x=>!x.pass);
 console.log(JSON.stringify({
