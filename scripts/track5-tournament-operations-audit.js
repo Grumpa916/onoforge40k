@@ -78,6 +78,12 @@ check('Deployment is blocked when verified geometry is unavailable',
   'Tournament deployment must not silently proceed when the authoritative Event Companion geometry cannot be verified.');
 check('Live battle requires complete actual deployment',has('function tournamentDeploymentValidation()')&&has('const deploymentCheck=tournamentDeploymentValidation();')&&has("if(!deploymentCheck.ready){alert('Deployment is incomplete:"),'Start Battle must require actual deployment accounting before entering Live.');
 check('Deployment readiness does not count planning ghosts as actual placement',has("deploymentReadyMy:Object.values(ensureBattlefieldUnitPositions()).some(p=>p&&p.side==='my')")&&has("deploymentReadyOpp:Object.values(ensureBattlefieldUnitPositions()).some(p=>p&&p.side==='opp')"),'Saved deployment plans must remain distinct from actual battlefield positions.');
+check('Transport embarkations are a separate auditable declaration layer',
+  has(/function ensureTransportEmbarkations\(/)&&has(/function setTransportEmbarkation\(/)&&has(/TRANSPORT_EMBARKED/)&&has(/TRANSPORT_DISEMBARKED/),
+  'Transport formations must not be conflated with Leader/Bodyguard attachments.');
+check('Embarked units are accounted for during deployment validation',
+  has(/isUnitEmbarked\(side,id\)/)&&has(/if\(isUnitEmbarked\(side,id\)\)continue;/),
+  'A declared embarked passenger is not required to have an independent battlefield position.');
 check('Tournament result captures both deployment sides and audit state',
   has(/deploymentReadyMy:/)&&has(/deploymentReadyOpp:/)&&has(/deploymentState:\{/)&&has(/positions:JSON\.parse\(JSON\.stringify\(ensureBattlefieldUnitPositions\(\)\)\)/),
   'The final tournament record must preserve deployment and reserve context.');
@@ -98,8 +104,8 @@ check('Setup cannot jump directly to Live',
   has(/function beginDeployment\(/)&&has(/function startBattle\(/)&&has(/if\(state\.tournamentLifecycle!=='DEPLOYMENT'\)/),
   'Live battle must require an explicit Deployment transition.');
 
-check('Deployment initializes persistent map and reserve state',
-  has(/function beginDeployment\(/)&&has(/ensureReserveState\(\)/)&&has(/ensureDeploymentPlans\(\)/)&&has(/ensureBattlefieldUnitPositions\(\)/),
+check('Deployment initializes persistent map, reserve, and transport state',
+  has(/function beginDeployment\(/)&&has(/ensureReserveState\(\)/)&&has(/ensureDeploymentPlans\(\)/)&&has(/ensureBattlefieldUnitPositions\(\)/)&&has(/ensureTransportEmbarkations\(\)/),
   'Deployment must preserve reserves and battlefield/deployment map state.');
 
 check('Deployment and setup reopen transitions are auditable',

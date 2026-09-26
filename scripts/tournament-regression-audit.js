@@ -31,7 +31,7 @@ const required=[
   'objectiveMapRendererHtml','battlefieldPositionEditorHtml',
   'battlefieldTerrainPathIntersections','battlefieldTerrainContextBetweenUnits',
   'tacticalObjectiveAdvisor','tacticalObjectiveAdvisorHtml',
-  'eventCompanionMapRegressionAudit','validateEventCompanionGeometry'
+  'eventCompanionMapRegressionAudit','validateEventCompanionGeometry','ensureTournamentLifecycle','setTournamentLifecycle','tournamentDeploymentValidation','tournamentResultIntegrityCheck','ensureTransportEmbarkations','setTransportEmbarkation'
 ];
 required.forEach(requireFn);
 report.requiredFunctions=required.length;
@@ -99,6 +99,10 @@ for(const [label,textValue] of sourceGuardrails){
   if(html.includes(textValue)) failures.push({code:'RULESET_CONTAMINATION',label,text:textValue});
 }
 report.ruleset={editionGuard:'11th-edition code path; forbidden legacy phrase checks passed unless failures listed'};
+
+requireText('Transport declaration state is persisted','transportEmbarkations');
+requireText('Transport declarations are logged','TRANSPORT_EMBARKED');
+requireText('Embarked units are excluded from live deployment placement','isUnitEmbarked(side,id)');
 
 const tournamentSystems={
   scoring:['scorePrimary','scoreSecondary','ensureScoreLedger','scoreIntegrityAudit','primaryScorePreviewSummary','primaryObjectiveCheckpoint'],
