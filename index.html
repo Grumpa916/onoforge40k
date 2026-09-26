@@ -4376,9 +4376,22 @@ function rosterCreatedLabel(value){if(!value)return '';const d=new Date(value);i
 function savedRosterDisplayName(x){const stamp=rosterCreatedLabel(x?.created);return (x?.name||'Unnamed Roster')+(stamp?' • '+stamp:'');}
 function activeArmyDisplayName(side){const name=side==='my'?state.myName:state.oppName,id=side==='my'?state.activeRosterId:state.activeOpponentRosterId,list=(state.savedArmyLists||[]).find(x=>x.id===id);return savedRosterDisplayName({name,created:list?.created});}
 function unitHasSelectableWargear(u){return wargearGroups(u).some(g=>((g.type==='single'||g.type==='multi'||g.type==='count'||g.type==='allocation')&&Array.isArray(g.options)&&g.options.length>1))}
-function unitRow(side,e){
+function armyListDisplayEntries(side){
+ const units=Array.isArray(state[side])?state[side]:[];
+ const topLevel=units.filter(e=>e&&!e.attachedTo);
+ const byName=(a,b)=>unitDisplayName(side,a).localeCompare(unitDisplayName(side,b));
+ const bodyguards=topLevel.filter(e=>bodyguardLeaders(side,e.uid).length).sort(byName);
+ const grouped=new Set(),ordered=[];
+ bodyguards.forEach(body=>{
+   bodyguardLeaders(side,body.uid).slice().sort(byName).forEach(leader=>{ordered.push(leader);grouped.add(String(leader.uid));});
+   ordered.push(body);grouped.add(String(body.uid));
+ });
+ topLevel.filter(e=>!grouped.has(String(e.uid))).sort(byName).forEach(e=>ordered.push(e));
+ return ordered;
+}
+function unitRow(side,e,forceAttached=false){
  const u=get(e.unitId),displayName=unitDisplayName(side,e),wg=selectedWargearSummary(e,u),hasSelectableWargear=unitHasSelectableWargear(u),activeWeapons=activeWeaponNames(e,u);
- if(e.attachedTo)return '';
+ if(e.attachedTo&&!forceAttached)return '';
  const attachedLeaders=bodyguardLeaders(side,e.uid),attachedBodyguard=leaderBodyguard(side,e.uid),attachedSupports=bodyguardSupports(side,e.uid),attachedSupport=attachedSupports[0],bodyguardUnit=attachedBodyguard?get(attachedBodyguard.unitId):null,supportUnit=attachedSupport?get(attachedSupport.unitId):null;
  const isLeader=isLeaderUnit(u),isSupport=isSupportUnit(u);
  const leaderBoxes=attachedLeaders.map(attachedLeader=>{
@@ -4570,7 +4583,7 @@ function currentArmyDisplay(){
  </div>`;
 }
 function builder(){
- if(state.builderView==='my-only'){return `<div class="card"><div class="split"><h2>My List <span class="big">${total('my')} pts</span></h2><button class="btn" onclick="state.page='battle';state.builderView='full';render()">Back to Battle Mode</button></div>${state.my.length?state.my.slice().filter(e=>!e.attachedTo).sort((a,b)=>unitDisplayName('my',a).localeCompare(unitDisplayName('my',b))).map(e=>unitRow('my',e)).join(''):'<div class="empty">No units added.</div>'}</div>${leaderAttachmentModal()}`}
+ if(state.builderView==='my-only'){return `<div class="card"><div class="split"><h2>My List <span class="big">${total('my')} pts</span></h2><button class="btn" onclick="state.page='battle';state.builderView='full';render()">Back to Battle Mode</button></div>${state.my.length?armyListDisplayEntries('my').map(e=>unitRow('my',e,true)).join(''):'<div class="empty">No units added.</div>'}</div>${leaderAttachmentModal()}`}
  if(state.builderView==='opp-only'){return `<div class="card"><div class="split"><h2>Opponent List <span class="big">${total('opp')} pts</span></h2><button class="btn" onclick="state.page='battle';state.builderView='full';render()">Back to Battle Mode</button></div>${state.opp.length?state.opp.slice().filter(e=>!e.attachedTo).sort((a,b)=>unitDisplayName('opp',a).localeCompare(unitDisplayName('opp',b))).map(e=>unitRow('opp',e)).join(''):'<div class="empty">No opponent units added.</div>'}</div>${leaderAttachmentModal()}`}
  const myQ=state.searchMy.toLowerCase();
  const myCat=sortUnitList(DEMO.filter(u=>u.faction===state.faction&&u.name.toLowerCase().includes(myQ)));
@@ -4582,7 +4595,7 @@ function builder(){
    <div class="detachment-box"><div class="detachment-head"><label>11th Edition Detachments</label><span class="detachment-dp">${detachmentDP('my')} / 3 DP</span></div><div class="detachment-selected">${(Array.isArray(state.detachmentSelections)?state.detachmentSelections:[]).map(n=>`<span class="pill">${esc(n)}</span>`).join('')||'<span class="muted">No detachments selected</span>'}</div><div class="detachment-options">${detachmentChecklist('my')}</div><div class="detachment-help muted">Select one or more detachments. Combined Detachment Points cannot exceed 3 DP.</div></div>
    <div class="row" style="margin-top:10px"><div class="field"><label>Points Limit</label><input type="number" value="${state.limit}" onchange="state.limit=+this.value||2000;save();render()"></div><div class="field"><label>My Points</label><div class="metric">${total('my')} / ${state.limit}</div></div></div>
  </div>
- <div class="card"><h2>My List <span class="big">${total('my')} pts</span></h2>${state.my.length?state.my.slice().sort((a,b)=>unitDisplayName('my',a).localeCompare(unitDisplayName('my',b))).map(e=>unitRow('my',e)).join(''):'<div class="empty">No units added.</div>'}</div>
+ <div class="card"><h2>My List <span class="big">${total('my')} pts</span></h2>${state.my.length?armyListDisplayEntries('my').map(e=>unitRow('my',e,true)).join(''):'<div class="empty">No units added.</div>'}</div>
  <div class="card"><div class="split"><h3 style="margin:0">Add My Units</h3><button class="btn" type="button" onclick="refreshCurrentUnitDatabase(true)">Update Current Unit Data</button></div><div id="my-unit-results">${renderUnitSections(myCat,'my')}</div></div>${configureModal()}${leaderAttachmentModal()}${bodyguardAttachmentModal()}${supportAttachmentModal()}${supportBodyguardAttachmentModal()}`
 }
 function currentMyListSnapshot(){
