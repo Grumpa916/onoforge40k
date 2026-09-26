@@ -10811,36 +10811,76 @@ async function cloudSyncSavedLists(){
   if(!state.cloud?.userId)return;
   try{
     const client=await ensureSupabaseClient();
+    state.cloud.status='Syncing';state.cloud.error='';
+    save();render();
+
+    // Pull first, then reconcile by updated timestamp. This prevents a fresh device
+    // with an older localStorage copy from overwriting the newer cloud copy.
     const {data:remote,error}=await client.from('saved_army_lists').select('id,name,faction,detachment,army_data,created_at,updated_at').order('updated_at',{ascending:false});
     if(error)throw error;
     const remoteByLocalId=new Map();
-    (remote||[]).forEach(r=>{const localId=r.army_data?.id||r.army_data?.localId;if(localId)remoteByLocalId.set(localId,r)});
-    for(const list of (state.savedArmyLists||[])){
-      let remoteRow=list.cloudId?(remote||[]).find(r=>r.id===list.cloudId):remoteByLocalId.get(list.id);
-      const payload=cloudArmyPayload(list,state.cloud.userId);
-      if(remoteRow){
-        const {error:e}=await client.from('saved_army_lists').update(payload).eq('id',remoteRow.id).eq('user_id',state.cloud.userId);
-        if(e)throw e;
-        list.cloudId=remoteRow.id;
-      }else{
-        const {data:d,error:e}=await client.from('saved_army_lists').insert(payload).select('id').single();
+    (remote||[]).forEach(r=>{
+      const localId=r.army_data?.id||r.army_data?.localId;
+      if(localId)remoteByLocalId.set(String(localId),r);
+    });
+
+    const locals=Array.isArray(state.savedArmyLists)?state.savedArmyLists:[];
+    for(const list of locals){
+      const remoteRow=list.cloudId?(remote||[]).find(r=>r.id===list.cloudId):remoteByLocalId.get(String(list.id));
+      if(!remoteRow){
+        const {data:d,error:e}=await client.from('saved_army_lists').insert(cloudArmyPayload(list,state.cloud.userId)).select('id').single();
         if(e)throw e;
         list.cloudId=d?.id||'';
+        continue;
       }
-      list.updated=new Date().toISOString();
+
+      list.cloudId=remoteRow.id;
+      const localTime=Date.parse(list.updated||list.created||'')||0;
+      const remoteTime=Date.parse(remoteRow.updated_at||remoteRow.created_at||'')||0;
+      if(localTime>remoteTime){
+        const {error:e}=await client.from('saved_army_lists').update(cloudArmyPayload(list,state.cloud.userId)).eq('id',remoteRow.id).eq('user_id',state.cloud.userId);
+        if(e)throw e;
+      }else if(remoteTime>localTime){
+        const d=(remoteRow.army_data&&typeof remoteRow.army_data==='object')?JSON.parse(JSON.stringify(remoteRow.army_data)):{};
+        Object.assign(list,{
+          ...d,
+          id:list.id||d.id||d.localId||uid(),
+          cloudId:remoteRow.id,
+          name:remoteRow.name||d.name||'Army List',
+          faction:remoteRow.faction||d.faction||'',
+          detachment:remoteRow.detachment||d.detachment||'',
+          units:Array.isArray(d.units)?d.units:[],
+          created:d.created||remoteRow.created_at,
+          updated:d.updated||remoteRow.updated_at
+        });
+      }
     }
+
+    // Pull again so newly created cloud lists and reconciled rows are available
+    // immediately on every device.
     const {data:latest,error:e2}=await client.from('saved_army_lists').select('id,name,faction,detachment,army_data,created_at,updated_at').order('updated_at',{ascending:false});
     if(e2)throw e2;
-    const locals=Array.isArray(state.savedArmyLists)?state.savedArmyLists:[];
+    const current=Array.isArray(state.savedArmyLists)?state.savedArmyLists:[];
     (latest||[]).forEach(r=>{
       const d=(r.army_data&&typeof r.army_data==='object')?JSON.parse(JSON.stringify(r.army_data)):{};
       const localId=d.id||d.localId||uid();
-      const existing=locals.find(x=>x.cloudId===r.id||x.id===localId);
-      const merged={...d,id:existing?.id||localId,cloudId:r.id,name:r.name||d.name||'Army List',faction:r.faction||d.faction||'',detachment:r.detachment||d.detachment||'',units:Array.isArray(d.units)?d.units:[],created:d.created||r.created_at,updated:r.updated||r.updated_at};
-      if(existing)Object.assign(existing,merged);else locals.push(merged);
+      const existing=current.find(x=>x.cloudId===r.id||String(x.id)===String(localId));
+      const merged={
+        ...d,
+        id:existing?.id||localId,
+        cloudId:r.id,
+        name:r.name||d.name||'Army List',
+        faction:r.faction||d.faction||'',
+        detachment:r.detachment||d.detachment||'',
+        units:Array.isArray(d.units)?d.units:[],
+        created:d.created||r.created_at,
+        updated:d.updated||r.updated_at
+      };
+      if(existing)Object.assign(existing,merged);else current.push(merged);
     });
-    state.savedArmyLists=locals;
-    state.cloud.lastSync=new Date().toISOString();state.cloud.status='Connected';state.cloud.error='';
+    state.savedArmyLists=current;
+    state.cloud.lastSync=new Date().toISOString();
+    state.cloud.status='Connected';state.cloud.error='';
     save();render();
   }catch(e){
     state.cloud.status='Error';state.cloud.error=e.message||String(e);save();render();
