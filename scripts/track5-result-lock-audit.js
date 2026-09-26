@@ -14,6 +14,15 @@ check('Secondary scoring is locked after completion',has("if(!battleMutationAllo
 check('Completed result retains deployment audit fields',has('deploymentReadyMy:')&&has('deploymentReadyOpp:')&&has('deploymentState:{'),'Result locking must preserve the deployment context captured at battle completion.');
 check('Completed result retains transport declarations',has('transportEmbarkations:JSON.parse(JSON.stringify(ensureTransportEmbarkations()))')&&has('tournamentResultIntegrityCheck'),'Locked results must preserve the transport formation declaration state.');
 check('Completed result retains explicit lifecycle state',has("tournamentLifecycle:'COMPLETED'")&&has('tournamentResultIntegrityCheck'),'Result locking must preserve the Completed lifecycle as part of authoritative verification.');
+check('Result verification covers scoring and final turn state',
+  has('primaryMyVP:')&&has('secondaryMyVP:')&&has('battleReadyMy:')&&has('firstTurn:')&&has('currentTurn:')&&has('phase:'),
+  'Locked verification must cover final scoring and authoritative turn state, not only total VP.');
+check('Result verification covers persisted timer state',
+  has('gameElapsedMs:')&&has('turnMyMs:')&&has('turnOppMs:'),
+  'Locked verification must detect post-completion timing drift.');
+check('Result verification compares structured state deterministically',
+  has('const comparable=(value)=>value&&typeof value===\\'object\\'?JSON.stringify(value):String(value??\\'\\');')&&has('comparable(r[k])!==comparable(expected[k])'),
+  'Structured transport and rules-pin data must be compared by value rather than object string coercion.');
 check('Tournament result export remains read-only',has('JSON.stringify(state.battleResult,null,2)')&&has('if(!state.battleEnded||!state.battleResult)'), 'Result export must consume the captured snapshot rather than recomputing mutable state.');
 const failures=checks.filter(x=>!x.pass);
 console.log(JSON.stringify({audit:'Track 5 result locking and lifecycle audit',checks:checks.length,passed:checks.length-failures.length,failed:failures.length,failures},null,2));
