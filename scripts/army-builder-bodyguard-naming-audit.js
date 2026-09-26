@@ -18,6 +18,7 @@ check('Leader attach scrubs stale reverse references',html.includes("Before atta
 check('Greek duplicate labels are defined',html.includes("const greek=['α','β','γ'"));
 check('Unit display uses Greek labels',html.includes("unitDisplayName(side,e)")&&html.includes("alphaLabel(idx+1)"));
 check('Greek labels support repeated groups beyond omega',html.includes("n=Math.floor(n/greek.length)"));
+check('My List displays attached Leader before Bodyguard',html.includes('function armyListDisplayEntries(side)')&&html.includes("bodyguardLeaders(side,body.uid).slice().sort(byName)")&&html.includes("armyListDisplayEntries('my').map(e=>unitRow('my',e,true))"));
 const failures=checks.filter(x=>!x.pass);
 console.log(JSON.stringify({audit:'Army Builder Bodyguard + duplicate naming audit',checks,failures},null,2));
 if(failures.length)process.exit(1);
