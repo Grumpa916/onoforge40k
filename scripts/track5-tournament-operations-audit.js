@@ -29,6 +29,12 @@ check('Turn time is finalized at transitions',
 check('Pause/resume is persisted',
   has(/function toggleTurnPause\(/)&&has(/save()/),
   'Pause/resume state must survive normal persistence.');
+check('Pause freezes the authoritative game clock',
+  has(/t\.elapsedMs=gameTimerElapsed\(\)/)&&has(/t\.running=false/)&&has(/t\.paused=true/)&&has(/clearInterval\(gameTimerInterval\)/),
+  'Pausing the tournament clock must stop elapsed wall-clock accumulation, not only the current player turn clock.');
+check('Resume restarts the authoritative game clock from the persisted snapshot',
+  has(/t\.startedAt=Date\.now\(\)/)&&has(/t\.running=true/)&&has(/t\.paused=false/)&&has(/t\.turnStartedGameMs=Number\(t\.elapsedMs\)\|\|0/),
+  'Resuming must restart from the frozen elapsed snapshot without counting the pause interval.');
 check('Timer persistence avoids counting closed-app time',
   has(/point-in-time timer snapshot/)&&has(/safeState.gameTimer={...safeState.gameTimer/),
   'Loading a saved battle must not retroactively count browser-closed time.');
