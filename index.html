@@ -4893,7 +4893,8 @@ function tournamentResultSnapshot(){
   deploymentReadyOpp:Object.values(ensureBattlefieldUnitPositions()).some(p=>p&&p.side==='opp'),
   reservesDeclaredMy:Object.keys(ensureReserveState().my||{}).length,
   reservesDeclaredOpp:Object.keys(ensureReserveState().opp||{}).length,
-  deploymentState:{mapPage:objectiveLayoutPage(),positions:JSON.parse(JSON.stringify(ensureBattlefieldUnitPositions())),plan:JSON.parse(JSON.stringify(deploymentPlanForCurrentMap())),reserves:JSON.parse(JSON.stringify(ensureReserveState()))},
+  transportEmbarkations:JSON.parse(JSON.stringify(ensureTransportEmbarkations())),
+  deploymentState:{mapPage:objectiveLayoutPage(),positions:JSON.parse(JSON.stringify(ensureBattlefieldUnitPositions())),plan:JSON.parse(JSON.stringify(deploymentPlanForCurrentMap())),reserves:JSON.parse(JSON.stringify(ensureReserveState())),transportEmbarkations:JSON.parse(JSON.stringify(ensureTransportEmbarkations()))},
   myName:state.myName,oppName:state.oppName,
   myVP:my,oppVP:opp,
   primaryMyVP:Number(state.primaryMyScoredVP)||0,
@@ -4938,7 +4939,7 @@ function tournamentResultIntegrityCheck(){
  const r=state.battleResult;
  const reserveState=ensureReserveState();
  const positions=ensureBattlefieldUnitPositions();
- const expected={tournamentLifecycle:'COMPLETED',myVP:scoreTotalForSide('my'),oppVP:scoreTotalForSide('opp'),round:Math.max(1,Number(state.round)||1),missionKey:state.objectiveMapMissionKey||objectiveMissionKey()||null,battlefieldLayout:state.objectiveMapLayout||null,deploymentReadyMy:Object.values(positions).some(p=>p&&p.side==='my'),deploymentReadyOpp:Object.values(positions).some(p=>p&&p.side==='opp'),reservesDeclaredMy:Object.keys(reserveState.my||{}).length,reservesDeclaredOpp:Object.keys(reserveState.opp||{}).length};
+ const expected={tournamentLifecycle:'COMPLETED',myVP:scoreTotalForSide('my'),oppVP:scoreTotalForSide('opp'),round:Math.max(1,Number(state.round)||1),missionKey:state.objectiveMapMissionKey||objectiveMissionKey()||null,battlefieldLayout:state.objectiveMapLayout||null,deploymentReadyMy:Object.values(positions).some(p=>p&&p.side==='my'),deploymentReadyOpp:Object.values(positions).some(p=>p&&p.side==='opp'),reservesDeclaredMy:Object.keys(reserveState.my||{}).length,reservesDeclaredOpp:Object.keys(reserveState.opp||{}).length,transportEmbarkations:JSON.parse(JSON.stringify(ensureTransportEmbarkations()))};
  const mismatches=Object.keys(expected).filter(k=>String(r[k]??'')!==String(expected[k]??''));
  return {ok:mismatches.length===0,mismatches};
 }
