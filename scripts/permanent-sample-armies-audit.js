@@ -4,7 +4,7 @@ const fs=require('fs');
 const html=fs.readFileSync('index.html','utf8');
 const checks=[];
 const check=(name,pass,detail)=>checks.push({name,pass:!!pass,detail});
-check('Permanent sample armies are seeded',/function ensurePermanentSampleArmies\(\)/.test(html)&&html.includes('sample-tyranid-skirmish')&&html.includes('sample-ultramarine-infantry')&&html.includes('sample-space-marine-test'),'Three stable test fixtures must exist.');
+check('Permanent sample armies are seeded',/function ensurePermanentSampleArmies\(\)/.test(html)&&html.includes('sample-tyranid-skirmish')&&html.includes('sample-ultramarine-infantry')&&html.includes('sample-tyranid-heavy'),'Three stable test fixtures must exist.');
 check('Sample armies are restored on every app load',/ensurePermanentSampleArmies\(\);/.test(html),'Seeding must run after persisted state is loaded.');
 check('Sample armies are protected from deletion',/function isPermanentSampleArmy\(id\)/.test(html)&&/Permanent test armies cannot be deleted/.test(html),'The fixtures must remain available for repeated testing.');
 check('Saved Lists identifies permanent fixtures',/Permanent Test/.test(html),'Test armies should be visually distinguishable from user-created lists.');
