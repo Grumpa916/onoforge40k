@@ -32,6 +32,24 @@ Verified path:
 
 The test exposed and fixed a model identity mismatch between persistent model-roster IDs and generic combat-snapshot IDs.
 
+## Development focus / anti-rabbit-hole rule
+
+This project should stay focused on product goals and usable gameplay. Do not let development sessions become dominated by audit minutia, implementation micro-steps, or historical task bookkeeping.
+
+Use this priority order:
+
+1. **Product objective / roadmap outcome**
+2. **User-visible behavior and gameplay**
+3. **Authoritative state, persistence, and rules correctness**
+4. **Targeted regression coverage**
+5. **Implementation details**
+
+When a problem is understood well enough to act, act. Do not create additional audits, helper layers, or investigation steps unless they materially reduce risk or unblock the current roadmap objective.
+
+Historical audits and diagnostics are evidence, not the product. Prefer one strong regression suite over many narrowly overlapping checks.
+
+At the beginning of a substantial development session, re-read the project objectives/roadmap and state the current objective before making changes. At natural checkpoints, compare the work completed against those objectives and stop or redirect work that is no longer advancing them.
+
 ## Where to start when making a future change
 
 1. Read `ARCHITECTURE_MAP.md`.
