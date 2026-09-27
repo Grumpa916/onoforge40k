@@ -66,8 +66,12 @@ check('Shooting Result renders the Pre-Roll component',
   /expected\+tacticalPreRollHtml\(\)/.test(html));
 check('Physical dice resolution entry point exists',
   /function tacticalPreRollOpenResolution\(/.test(html));
+const physicalStart = html.indexOf('function tacticalPreRoll');
+const physicalEnd = html.indexOf('function engineExpectedDice', physicalStart);
+const physicalDiceSurface = physicalStart >= 0 && physicalEnd > physicalStart ? html.slice(physicalStart, physicalEnd) : '';
 check('Physical dice resolution is not RNG-driven',
-  !(/function tacticalPreRoll[\s\S]*?Math\.random\(|function tacticalPreRoll[\s\S]*?crypto\.getRandomValues\(/i.test(html)));
+  !(/(Math\\.random\\(|crypto\\.getRandomValues\\()/i.test(physicalDiceSurface)),
+  'Random generation is allowed elsewhere for Mathhammer simulation but must not appear in the physical-dice resolution surface.');
 check('Combat snapshot layer exists',
   /function combatSnapshot\(/.test(html));
 check('Weapon availability checks model identity',
