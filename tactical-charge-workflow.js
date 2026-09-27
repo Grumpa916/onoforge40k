@@ -125,18 +125,19 @@
 
   // Keep one user-facing Tactical Advisor. The existing Advisor remains the
   // authoritative control surface; Tactical Impact is nested inside it.
-  // This bridge deliberately remains alive across every render() because the
-  // battle renderer replaces the DOM subtree containing both surfaces.
+  // The Battle renderer replaces this DOM subtree during render(), so the
+  // bridge intentionally re-evaluates the live nodes after every render.
   (function combineAdvisorSurfaces(){
     if(typeof global.document==='undefined')return;
     let observer=null;
     let timer=null;
 
-    function findAuthoritativePanel(){
-      const direct=global.document.querySelector('.tactical-advisor-card');
+    function findAuthoritativePanel(host){
+      const cards=Array.from(global.document.querySelectorAll('.tactical-advisor-card'));
+      const direct=cards.find(card=>card!==host&&!card.contains(host));
       if(direct)return direct;
-      const cards=Array.from(global.document.querySelectorAll('.card'));
-      return cards.find(card=>{
+      return Array.from(global.document.querySelectorAll('.card')).find(card=>{
+        if(card===host||card.contains(host))return false;
         const text=String(card.textContent||'');
         return /Tactical Advisor/.test(text)&&/Objective priorities/.test(text);
       })||null;
@@ -144,8 +145,9 @@
 
     function merge(){
       const host=global.document.getElementById('onoforge-advisor-render');
-      const panel=findAuthoritativePanel();
-      if(!host||!panel)return false;
+      if(!host)return false;
+      const panel=findAuthoritativePanel(host);
+      if(!panel)return false;
       if(panel.contains(host))return true;
 
       const title=host.querySelector('.ta-decision-title');
@@ -155,8 +157,6 @@
       host.style.padding='0';
       host.style.background='transparent';
 
-      // Move the rendered Tactical Impact analysis into the existing Advisor.
-      // Do not set a permanent "merged" flag: render() can replace this DOM.
       panel.insertBefore(host,panel.firstChild);
       return true;
     }
