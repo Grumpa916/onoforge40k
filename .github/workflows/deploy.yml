@@ -243,8 +243,8 @@ jobs:
             function pct(v){return Number.isFinite(Number(v))?Math.round(Math.max(0,Math.min(1,Number(v)))*100)+'%':'—'}
             function num(v,d=0){return Number.isFinite(Number(v))?Number(v).toFixed(d):'—'}
             function firstFriendly(){
-              const arr=Array.isArray(window.state?.my)?window.state.my:[];
-              const selected=window.state?.tactical?.selectedAttackerUid;
+              const arr=Array.isArray(state?.my)?state.my:[];
+              const selected=state?.tactical?.selectedAttackerUid;
               return arr.find(x=>x&&String(x.uid)===String(selected)&&!x.attachedTo&&!x.destroyed)||arr.find(x=>x&&x.uid&&!x.attachedTo&&x.alive!==false&&!x.destroyed&&!x.isDestroyed)||arr.find(x=>x&&x.uid)||null;
             }
             function extractTargets(result){
@@ -265,14 +265,14 @@ jobs:
             function renderAdvisor(){
               const host=document.getElementById('onoforge-advisor-render');
               if(!host)return;
-              if(window.state?.page!=='battle'){host.innerHTML='';return}
+              if(state?.page!=='battle'){host.innerHTML='';return}
               const a=firstFriendly();
               if(!a||typeof window.tacticalAdvisorV1!=='function'){
                 host.innerHTML='<div class="ta-decision-render"><div class="ta-decision-title">Tactical Advisor</div><div class="ta-unknown">Waiting for an active friendly unit and legal combat state.</div></div>';
                 return;
               }
               const stateSig=typeof window.tacticalAdvisorStateSignature==='function'?window.tacticalAdvisorStateSignature():'';
-              const sig=[stateSig,window.state.page,a.uid].join('|');
+              const sig=[stateSig,state.page,a.uid].join('|');
               if(sig===lastSig)return;
               lastSig=sig;
               if(busy)return;
@@ -328,7 +328,7 @@ jobs:
                   (String(baselineTop.entryUid||'')!==String(tacticalTop.entryUid||'')&&baselineTop.entryUid&&tacticalTop.entryUid?'<div class="ta-reason"><b>Comparison:</b> The new tactical layer would change the leading candidate; the existing Advisor ordering remains authoritative during this test.</div>':'')+
                   (tacticalReasons.length?'<div class="ta-reason"><b>Tactical layer:</b> '+tacticalReasons.map(String).join(' • ')+'</div>':'')+
                   (tacticalTop.requiresPhysicalConfirmation?'<div class="ta-foot">Execution note: physical measurement is still required; live-map geometry is not authoritative.</div>':'')+
-                  '<div class="ta-foot">Mission context: Round '+String(mc.round??window.state.round??'—')+' • VP '+String(mc.myVP??window.state.myVP??'—')+'–'+String(mc.oppVP??window.state.oppVP??'—')+' • Battlefield Layout '+String(mc.battlefield?.mapLayout||window.state.objectiveMapLayout||'—')+(mc.battlefield?.mapPage?' • Event Companion p.'+String(mc.battlefield.mapPage):'')+' • objective data is used only when known; unknown state is not guessed.</div>'+
+                  '<div class="ta-foot">Mission context: Round '+String(mc.round??state.round??'—')+' • VP '+String(mc.myVP??state.myVP??'—')+'–'+String(mc.oppVP??state.oppVP??'—')+' • Battlefield Layout '+String(mc.battlefield?.mapLayout||state.objectiveMapLayout||'—')+(mc.battlefield?.mapPage?' • Event Companion p.'+String(mc.battlefield.mapPage):'')+' • objective data is used only when known; unknown state is not guessed.</div>'+
                   '</div>';
               }catch(e){
                 host.innerHTML='<div class="ta-decision-render"><div class="ta-decision-title">Tactical Advisor</div><div class="ta-unknown">Decision analysis unavailable for this state.</div></div>';
@@ -346,9 +346,9 @@ jobs:
                 return '<div class="ta-reason"><b>Charge recorded:</b> '+outcome+(names?' • '+String(names):'')+'<br><button type="button" class="btn primary" style="margin-top:7px;width:100%" onclick="window.advancePhase();return false;">Continue to Fight</button></div>';
               }
               const rows=targets.filter(t=>t&&t.entryUid&&t.recommendationEligible!==false).map((t,i)=>{
-                const raw=window.state?.tactical?.pairs?.[String(attackerUid)+'>'+String(t.entryUid)]||{};
+                const raw=state?.tactical?.pairs?.[String(attackerUid)+'>'+String(t.entryUid)]||{};
                 const measured=Number.isFinite(Number(raw.distanceInches));
-                const checked=String(window.state?.tactical?.selectedTargetUid||'')===String(t.entryUid);
+                const checked=String(state?.tactical?.selectedTargetUid||'')===String(t.entryUid);
                 return '<label style="display:flex;gap:7px;align-items:center;margin-top:5px;font-size:10px"><input type="checkbox" data-onoforge-charge-target="'+String(t.entryUid).replace(/"/g,'&quot;')+'" '+(checked?'checked ':'')+'><span><b>'+String(t.name||('Target '+(i+1)))+'</b> • '+(measured?Number(raw.distanceInches).toFixed(1)+'" measured':'measure distance first')+'</span></label>';
               }).join('');
               return '<div class="ta-reason"><b>Charge execution</b><div class="tiny" style="margin-top:3px">Physically measure selected target distances, then record the 2D6 result. The app records success/failure; it does not require individual dice values.</div>'+(rows||'<div class="tiny" style="margin-top:6px">No currently eligible Charge targets.</div>')+
