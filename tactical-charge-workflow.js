@@ -125,12 +125,15 @@
 
   // Keep one user-facing Tactical Advisor. The existing Advisor remains the
   // authoritative control surface; Tactical Impact is physically mounted
-  // inside that panel so the Battle renderer owns its lifecycle.
+  // inside that panel and is re-mounted after every Battle renderer refresh.
   (function mountAdvisorSurface(){
     if(typeof global.document==='undefined')return;
     let observer=null;
+    let timer=null;
 
     function findAuthoritativePanel(host){
+      const battlePanel=global.document.querySelector('#battle-view .tactical-advisor-card');
+      if(battlePanel&&battlePanel!==host&&!battlePanel.contains(host))return battlePanel;
       const cards=Array.from(global.document.querySelectorAll('.tactical-advisor-card'));
       const direct=cards.find(card=>card!==host&&!card.contains(host));
       if(direct)return direct;
@@ -150,12 +153,17 @@
       const panel=findAuthoritativePanel(host);
       if(!panel)return false;
       if(host.parentElement!==panel){
-        host.style.margin='0 0 10px';
+        host.style.margin='10px 0';
         host.style.border='0';
         host.style.padding='0';
         host.style.background='transparent';
         host.style.boxShadow='none';
-        panel.insertBefore(host,panel.firstChild);
+        const summary=panel.querySelector(':scope > summary');
+        if(summary&&summary.parentElement===panel){
+          summary.insertAdjacentElement('afterend',host);
+        }else{
+          panel.insertBefore(host,panel.firstChild);
+        }
       }
       return true;
     }
@@ -165,6 +173,7 @@
       observer=new global.MutationObserver(function(){mount();});
       observer.observe(global.document.body,{childList:true,subtree:true});
       mount();
+      timer=global.setInterval(mount,250);
     }
 
     if(global.document.readyState==='loading')global.document.addEventListener('DOMContentLoaded',start,{once:true});
