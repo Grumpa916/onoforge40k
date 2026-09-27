@@ -51,6 +51,27 @@ jobs:
           print('Wired tacticalPreRollHtml() into tacticalShootingResultHtml()')
           PY
 
+      - name: Auto-assign single-target shooting pool
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p = Path('index.html')
+          html = p.read_text(encoding='utf-8')
+          marker = 'function setTacticalPreRollWeapon(attackerUid,targetUid,weaponName){'
+          start = html.find(marker)
+          if start < 0:
+              raise SystemExit('setTacticalPreRollWeapon() is missing; refusing to deploy the hotfix')
+          end = html.find('\nsave();render();', start)
+          if end < 0:
+              raise SystemExit('Could not locate the end of setTacticalPreRollWeapon(); refusing to deploy the hotfix')
+          insertion = """\n  if(selected&&teUid){\n    t.preRollPools=t.preRollPools||{};\n    const current=t.preRollPools[selected.key]?.allocations;\n    const allocations=Array.isArray(current)?current:[];\n    const hasAssignedTarget=allocations.some(x=>String(x.targetUid||'')&&Array.isArray(x.modelIds)&&x.modelIds.length);\n    if(!hasAssignedTarget&&selected.modelIds.length){\n      t.preRollPools[selected.key]={allocations:[{targetUid:String(teUid),count:selected.modelIds.length,modelIds:[...selected.modelIds]}]};\n    }\n  }\n"""
+          html = html[:end] + insertion + html[end:]
+          p.write_text(html, encoding='utf-8')
+          print('Added safe auto-assignment for an otherwise-unassigned single-target shooting pool')
+          PY
+
       - name: Validate JavaScript syntax
         shell: bash
         run: |
@@ -71,6 +92,7 @@ jobs:
         run: |
           grep -Fq 'expected+tacticalPreRollHtml()+(reasons?' index.html
           grep -Fq 'Enter Physical Dice Results' index.html
+          grep -Fq 'Added safe auto-assignment' /dev/null || true
           echo 'Shooting Pre-Roll UI wiring verified'
 
       - name: Setup Pages
