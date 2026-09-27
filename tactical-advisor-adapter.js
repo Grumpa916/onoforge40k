@@ -175,48 +175,57 @@
   }
 
   function projectFightExchange(attackerSide,attackerEntry,targetSide,targetEntry,chargeMade,samples){
-    const calcFn=global.calculateMathMixed;
-    const snapFn=global.combatSnapshot;
-    const unitFn=global.combatTargetUnit;
-    if(typeof calcFn!=='function'||typeof snapFn!=='function'||typeof unitFn!=='function'){
-      return {available:false,reason:'shared-combat-engine-unavailable'};
-    }
-    const attacker=unitFn(attackerSide,attackerEntry);
-    const target=unitFn(targetSide,targetEntry);
-    const targetSnap=snapFn(targetSide,targetEntry);
-    if(!attacker||!target||!targetSnap||targetSnap.survivingModels<=0){
-      return {available:false,reason:'combat-state-unavailable'};
-    }
-    const groups=projectedFightGroups(attackerSide,attackerEntry,targetEntry,target);
-    if(!groups.length){
-      return {available:false,reason:'no-melee-profiles-resolved'};
-    }
-    const math=mathDefenderState(targetSnap);
-    const result=calcFn(
-      attacker,
-      target,
-      groups,
-      {
-        ...math,
-        quickSamples:Math.max(1000,Number(samples)||1500),
-        attackerEngagedWithTarget:true,
-        attackerEngagedAny:true,
-        chargeMade:chargeMade===true,
-        _skipSim:false
+    try{
+      const calcFn=global.calculateMathMixed;
+      const snapFn=global.combatSnapshot;
+      const unitFn=global.combatTargetUnit;
+      if(typeof calcFn!=='function'||typeof snapFn!=='function'||typeof unitFn!=='function'){
+        return {available:false,reason:'shared-combat-engine-unavailable'};
       }
-    );
-    const normalized=projectionResult(result);
-    if(!normalized)return {available:false,reason:'combat-engine-returned-no-result'};
-    return {
-      available:true,
-      method:'shared-combat-engine',
-      attackerUnit:attacker.name,
-      defenderUnit:target.name,
-      chargeMade:chargeMade===true,
-      targetModels:Math.max(1,Number(targetSnap.targetModels)||Number(targetSnap.survivingModels)||1),
-      targetWoundsRemaining:Math.max(0,Number(targetSnap.targetWoundsRemaining)||Number(targetSnap.totalWounds)||0),
-      result:normalized
-    };
+      const attacker=unitFn(attackerSide,attackerEntry);
+      const target=unitFn(targetSide,targetEntry);
+      const targetSnap=snapFn(targetSide,targetEntry);
+      if(!attacker||!target||!targetSnap||targetSnap.survivingModels<=0){
+        return {available:false,reason:'combat-state-unavailable'};
+      }
+      const groups=projectedFightGroups(attackerSide,attackerEntry,targetEntry,target);
+      if(!groups.length){
+        return {available:false,reason:'no-melee-profiles-resolved'};
+      }
+      const math=mathDefenderState(targetSnap);
+      const result=calcFn(
+        attacker,
+        target,
+        groups,
+        {
+          ...math,
+          quickSamples:Math.max(1000,Number(samples)||1500),
+          attackerEngagedWithTarget:true,
+          attackerEngagedAny:true,
+          chargeMade:chargeMade===true,
+          _skipSim:false
+        }
+      );
+      const normalized=projectionResult(result);
+      if(!normalized)return {available:false,reason:'combat-engine-returned-no-result'};
+      return {
+        available:true,
+        method:'shared-combat-engine',
+        attackerUnit:attacker.name,
+        defenderUnit:target.name,
+        chargeMade:chargeMade===true,
+        targetModels:Math.max(1,Number(targetSnap.targetModels)||Number(targetSnap.survivingModels)||1),
+        targetWoundsRemaining:Math.max(0,Number(targetSnap.targetWoundsRemaining)||Number(targetSnap.totalWounds)||0),
+        result:normalized
+      };
+    }catch(error){
+      console.warn('OnoForge Tactical Impact projection fallback:',error);
+      return {
+        available:false,
+        reason:'impact-projection-error',
+        diagnostic:String(error?.message||error)
+      };
+    }
   }
 
   function chargeProjectionTacticalSignals(rec,advisor,projection,pairCtx,targetEntry,attackerEntry){
@@ -379,35 +388,64 @@
     const recommendations=Array.isArray(advisor.recommendations)?advisor.recommendations:[];
     const isCharge=advisor.chargeMode===true||String(advisor.phase||'')==='Charge'||String(advisor.decisionContext?.phase||'')==='Charge';
     recommendations.forEach(rec=>{
-      let projection=null;
-      let mapping;
-      if(isCharge){
-        projection=projectChargeEngagement(rec,advisor,{...options});
-        rec.projectedFight=projection;
-        if(projection?.outgoing?.result){
-          rec.expectedDamage=projection.outgoing.result.damage;
-          rec.modelsKilled=projection.outgoing.result.modelsKilled;
-          rec.wipeChance=projection.outgoing.result.wipeChance;
-          rec.killFraction=Math.max(0,Math.min(1,
-            Number(rec.modelsKilled)/Math.max(1,Number(rec.models)||1)
-          ));
+      try{
+        let projection=null;
+        let mapping;
+        if(isCharge){
+          try{
+            projection=projectChargeEngagement(rec,advisor,{...options});
+          }catch(error){
+            projection={available:false,reason:'impact-projection-error',diagnostic:String(error?.message||error)};
+          }
+          rec.projectedFight=projection;
+          if(projection?.outgoing?.result){
+            rec.expectedDamage=projection.outgoing.result.damage;
+            rec.modelsKilled=projection.outgoing.result.modelsKilled;
+            rec.wipeChance=projection.outgoing.result.wipeChance;
+            rec.killFraction=Math.max(0,Math.min(1,
+              Number(rec.modelsKilled)/Math.max(1,Number(rec.models)||1)
+            ));
+          }
+          if(projection?.incoming?.result){
+            rec.incomingThreat=projection.incoming.result.damage;
+          }
+          rec.opportunityCostKnown=false;
+          mapping=fromRecommendation(rec,advisor,projection);
+        }else{
+          mapping=fromRecommendation(rec,advisor);
         }
-        if(projection?.incoming?.result){
-          rec.incomingThreat=projection.incoming.result.damage;
+        const evaluation=engine.evaluateEngagement(mapping);
+        if(isCharge)evaluation.reasons=chargeReasonAugment(rec,projection,evaluation);
+        if(projection&&!projection.available){
+          evaluation.reasons=[...(evaluation.reasons||[]),'Impact projection incomplete; verify the affected unit profile.'].slice(0,4);
+          evaluation.projectionAvailable=false;
+          evaluation.projectionFailure=projection.reason||'unknown';
+          evaluation.projectionDiagnostic=projection.diagnostic||null;
         }
-        rec.opportunityCostKnown=false;
-        mapping=fromRecommendation(rec,advisor,projection);
-      }else{
-        mapping=fromRecommendation(rec,advisor);
+        rec.tacticalImpact=evaluation;
+        rec.tacticalImpactType=evaluation.engagementType;
+        rec.tacticalImpactScore=evaluation.score;
+        rec.tacticalImpactReasons=evaluation.reasons;
+        rec.executionConfidence=evaluation.executionConfidence;
+        rec.requiresPhysicalConfirmation=evaluation.requiresPhysicalConfirmation;
+      }catch(error){
+        console.warn('OnoForge Tactical Impact recommendation fallback:',error);
+        rec.tacticalImpact={
+          score:0,
+          engagementType:'VERIFY',
+          executionConfidence:isCharge?'context-only':'context-only',
+          components:{},
+          reasons:['Impact analysis incomplete; verify the unit profile and current combat state.'],
+          projectionAvailable:false,
+          projectionFailure:'advisor-recommendation-error',
+          projectionDiagnostic:String(error?.message||error)
+        };
+        rec.tacticalImpactType='VERIFY';
+        rec.tacticalImpactScore=0;
+        rec.tacticalImpactReasons=rec.tacticalImpact.reasons;
+        rec.executionConfidence=rec.tacticalImpact.executionConfidence;
+        rec.requiresPhysicalConfirmation=isCharge;
       }
-      const evaluation=engine.evaluateEngagement(mapping);
-      if(isCharge)evaluation.reasons=chargeReasonAugment(rec,projection,evaluation);
-      rec.tacticalImpact=evaluation;
-      rec.tacticalImpactType=evaluation.engagementType;
-      rec.tacticalImpactScore=evaluation.score;
-      rec.tacticalImpactReasons=evaluation.reasons;
-      rec.executionConfidence=evaluation.executionConfidence;
-      rec.requiresPhysicalConfirmation=evaluation.requiresPhysicalConfirmation;
     });
     recommendations.sort((a,b)=>{
       const sa=n(a.tacticalImpactScore,-1),sb=n(b.tacticalImpactScore,-1);
