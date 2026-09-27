@@ -133,7 +133,7 @@ A future chat or developer should be able to start from this file plus `ARCHITEC
 
 For cross-chat continuity, read CURRENT_SESSION_HANDOFF.md before resuming active gameplay work.
 
-The original project handoff document remains the product North Star. The current immediate objective is to complete a usable Charge phase and then move directly into Fight.
+The original project handoff document remains the product North Star. Its contents are preserved in `ORIGINAL_PROJECT_HANDOFF.md`. The current immediate objective is to complete a usable Charge phase and then move directly into Fight.
 
 The Charge Advisor is intended to support tactically significant engagement decisions, not merely maximize kills. Charge recommendations should consider the likely Fight-phase exchange, mission/objective impact, and current battle state.
 
