@@ -360,12 +360,27 @@ jobs:
             }
             function ensureHost(){
               let h=document.getElementById('onoforge-advisor-render');
+              const advisorCard=document.querySelector('#battle-view .tactical-advisor-card');
+              if(!advisorCard||!advisorCard.parentNode)return;
               if(!h){
-                const advisorCard=document.querySelector('.tactical-advisor-card');
-                if(!advisorCard||!advisorCard.parentNode)return;
                 h=document.createElement('div');
                 h.id='onoforge-advisor-render';
-                advisorCard.parentNode.insertBefore(h,advisorCard);
+              }
+              // The application render() creates this host before #battle-view.
+              // Always move the same host into the authoritative Tactical Advisor
+              // card before rendering the injected analysis.
+              if(h.parentElement!==advisorCard){
+                h.style.margin='10px 0';
+                h.style.border='0';
+                h.style.padding='0';
+                h.style.background='transparent';
+                h.style.boxShadow='none';
+                const summary=advisorCard.querySelector(':scope > summary');
+                if(summary&&summary.parentElement===advisorCard){
+                  summary.insertAdjacentElement('afterend',h);
+                }else{
+                  advisorCard.insertBefore(h,advisorCard.firstChild);
+                }
               }
               renderAdvisor();
             }
@@ -384,6 +399,22 @@ jobs:
           p.write_text(html, encoding="utf-8")
           print("Rendered Tactical Advisor decision surface into deploy artifact")
           PY
+
+      - name: Validate Tactical Advisor host placement
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          html = Path("index.html").read_text(encoding="utf-8")
+          render_js = "id=\"onoforge-advisor-render-js\""
+          if render_js not in html:
+              raise SystemExit("Missing Tactical Advisor render script")
+          # The runtime placement fix must move the injected host into the
+          # authoritative Battle Tactical Advisor card.
+          required = "document.querySelector('#battle-view .tactical-advisor-card')"
+          if required not in html:
+              raise SystemExit("Tactical Advisor host placement guard missing")
+          print("Tactical Advisor host placement guard validated")
 
       - name: Run runtime internal symbol audit
         shell: bash
