@@ -255,3 +255,11 @@ No merge to `main` is authorized unless the user explicitly requests it.
 
 ### User pause state
 The user is stopping for now because the repeated preview/debug cycle is tiring. Preserve the current branch and checkpoint; do not collapse or rewrite the Tactical Impact work. Resume from this checkpoint later.
+
+
+## New Chat Transfer — 2026-09-27
+The authoritative cross-chat transfer is now captured in NEXT_CHAT_HANDOFF.md. Read that file together with the project handoff documents before continuing.
+Current feature branch: feature/tactical-impact-layer @ 8f9495ec55a109e3556f1c04e55253d94231134c
+Current main: 664e515850ed05a896e92a60aea0e29453f782f8
+PR #1 remains open/draft/unmerged.
+Main has newer architecture/data-source governance than the feature branch. Reconcile before major further feature work.
