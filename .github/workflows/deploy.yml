@@ -159,6 +159,50 @@ jobs:
         shell: bash
         run: node scripts/architecture-map-audit.js
 
+
+      - name: Inject Tactical Advisor decision layer into deploy artifact
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("index.html")
+          html = p.read_text(encoding="utf-8")
+          layers = [
+              ("onoforge-tactical-advisor-engine", Path("tactical-advisor-engine.js")),
+              ("onoforge-tactical-advisor-adapter", Path("tactical-advisor-adapter.js")),
+          ]
+          for script_id, source_path in layers:
+              marker = f'id="{script_id}"'
+              if marker not in html:
+                  content = source_path.read_text(encoding="utf-8")
+                  tag = f'<script id="{script_id}">\n{content}\n</script>'
+                  html = html.replace("</head>", tag + "</head>", 1)
+          required = ['id="onoforge-tactical-advisor-engine"', 'id="onoforge-tactical-advisor-adapter"']
+          missing = [x for x in required if x not in html]
+          if missing:
+              raise SystemExit("Missing Tactical Advisor layer injection: " + ", ".join(missing))
+          p.write_text(html, encoding="utf-8")
+          print("Injected Tactical Advisor engagement engine and adapter into deploy artifact")
+          PY
+
+      - name: Validate Tactical Advisor decision-layer injection
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          html = Path("index.html").read_text(encoding="utf-8")
+          checks = [
+              ('onoforge-tactical-advisor-engine', 'ONOFORGE_TACTICAL_ADVISOR'),
+              ('onoforge-tactical-advisor-adapter', 'ONOFORGE_TACTICAL_ADVISOR_ADAPTER'),
+          ]
+          for script_id, symbol in checks:
+              if f'id="{script_id}"' not in html:
+                  raise SystemExit(f"Missing {script_id}")
+              if symbol not in html:
+                  raise SystemExit(f"Missing {symbol}")
+          print("Tactical Advisor decision-layer injection validated")
+          PY
+
       - name: Render Tactical Advisor decision surface
         shell: bash
         run: |
@@ -180,8 +224,13 @@ jobs:
           .ta-target{background:#0b1018;border:1px solid #2b3b4e;border-radius:8px;padding:9px}
           .ta-target-name{font-weight:800;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
           .ta-target-score{font-size:20px;font-weight:900;margin-top:3px}.ta-target-meta{font-size:9px;color:#8fa0b1;line-height:1.35;margin-top:3px}
+          .ta-compare{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+          .ta-compare-card{background:#0b1018;border:1px solid #2b3b4e;border-radius:8px;padding:9px}
+          .ta-compare-card span{display:block;color:#8798aa;font-size:9px;text-transform:uppercase;letter-spacing:.07em}
+          .ta-compare-card b{display:block;font-size:12px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+          .ta-compare-card small{display:block;color:#8fa0b1;font-size:9px;margin-top:3px}
           .ta-unknown{color:#9ca8b8;font-size:10px}.ta-foot{font-size:9px;color:#75879a;margin-top:9px}
-          @media(max-width:900px){.ta-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ta-targets{grid-template-columns:1fr}}
+          @media(max-width:900px){.ta-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ta-targets,.ta-compare{grid-template-columns:1fr}}
           </style>
           """
           js = r"""
@@ -230,12 +279,21 @@ jobs:
                 const r=(typeof window.getTacticalAdvisorResult==='function'
                   ?window.getTacticalAdvisorV2Result(a.uid,{samples:4000})
                   :window.tacticalAdvisorV2(a.uid,{samples:4000}))||{};
-                const targets=extractTargets(r).slice(0,3);
-                const top=targets[0]||{};
-                const dc=top.decisionComponents||{};
+                const baselineTargets=extractTargets(r).slice(0,3);
+                const baselineTop=baselineTargets[0]||{};
+                const compareBase={...r,recommendations:baselineTargets.map(x=>({...x}))};
+                const layerAdapter=window.ONOFORGE_TACTICAL_ADVISOR_ADAPTER;
+                const layerEngine=window.ONOFORGE_TACTICAL_ADVISOR;
+                const layered=layerAdapter&&layerEngine
+                  ?layerAdapter.enrichAdvisor(compareBase,layerEngine)
+                  :compareBase;
+                const tacticalTargets=Array.isArray(layered.recommendations)?layered.recommendations.slice(0,3):[];
+                const tacticalTop=tacticalTargets[0]||baselineTop;
+                const dc=baselineTop.decisionComponents||{};
                 const mc=r.missionDecisionContext||{};
-                const mode=top.decisionMode||dc.mode||'TACTICAL';
-                const interpretation=top.decisionInterpretation||dc.interpretation||'No single mission mode dominates the current exchange.';
+                const mode=baselineTop.decisionMode||dc.mode||'TACTICAL';
+                const interpretation=baselineTop.decisionInterpretation||dc.interpretation||'No single mission mode dominates the current exchange.';
+                const tacticalReasons=Array.isArray(tacticalTop.tacticalImpactReasons)?tacticalTop.tacticalImpactReasons:[];
                 host.innerHTML=
                   '<div class="ta-decision-render">'+
                   '<div class="ta-decision-head"><div><div class="ta-decision-title">Tactical Advisor</div><div class="ta-decision-sub">8-factor mission-aware decision model • active combat recommendation</div></div>'+
@@ -251,7 +309,11 @@ jobs:
                   '<div class="ta-metric"><b>'+pct(top.decisionConfidence)+'</b><span>Confidence</span></div>'+
                   '</div>'+
                   '<div class="ta-reason"><b>Why:</b> '+String(interpretation)+'</div>'+
-                  (targets.length?'<div class="ta-targets">'+targets.map((t,i)=>'<div class="ta-target"><div class="ta-target-name">'+String(t.targetName||t.name||t.defenderName||'Target '+(i+1))+'</div><div class="ta-target-score">'+pct(t.decisionScore)+'</div><div class="ta-target-meta">'+modeLabel(t.decisionMode||'TACTICAL')+' • damage '+num(t.expectedDamage,1)+' • kill '+pct(t.killFraction||t.wipeChance)+'</div></div>').join('')+'</div>':'<div class="ta-unknown" style="margin-top:10px">No legal target recommendation is available from the current state.</div>')+
+                  (baselineTargets.length?'<div class="ta-targets">'+baselineTargets.map((t,i)=>'<div class="ta-target"><div class="ta-target-name">'+String(t.targetName||t.name||t.defenderName||'Target '+(i+1))+'</div><div class="ta-target-score">'+pct(t.decisionScore)+'</div><div class="ta-target-meta">Existing '+modeLabel(t.decisionMode||'TACTICAL')+' • damage '+num(t.expectedDamage,1)+' • kill '+pct(t.killFraction||t.wipeChance)+'</div></div>').join('')+'</div>':'<div class="ta-unknown" style="margin-top:10px">No legal target recommendation is available from the current state.</div>')+
+                  '<div class="ta-compare"><div class="ta-compare-card"><span>Existing Advisor</span><b>'+String(baselineTop.name||baselineTop.targetName||'—')+'</b><small>'+num(baselineTop.decisionScore,2)+' current decision score</small></div><div class="ta-compare-card"><span>Tactical Impact Layer</span><b>'+String(tacticalTop.name||tacticalTop.targetName||'—')+'</b><small>'+num(tacticalTop.tacticalImpactScore,2)+' • '+String(tacticalTop.tacticalImpactType||'TACTICAL')+'</small></div></div>'+
+                  (String(baselineTop.entryUid||'')!==String(tacticalTop.entryUid||'')&&baselineTop.entryUid&&tacticalTop.entryUid?'<div class="ta-reason"><b>Comparison:</b> The new tactical layer would change the leading candidate; the existing Advisor ordering remains authoritative during this test.</div>':'')+
+                  (tacticalReasons.length?'<div class="ta-reason"><b>Tactical layer:</b> '+tacticalReasons.map(String).join(' • ')+'</div>':'')+
+                  (tacticalTop.requiresPhysicalConfirmation?'<div class="ta-foot">Execution note: physical measurement is still required; live-map geometry is not authoritative.</div>':'')+
                   '<div class="ta-foot">Mission context: Round '+String(mc.round??window.state.round??'—')+' • VP '+String(mc.myVP??window.state.myVP??'—')+'–'+String(mc.oppVP??window.state.oppVP??'—')+' • Battlefield Layout '+String(mc.battlefield?.mapLayout||window.state.objectiveMapLayout||'—')+(mc.battlefield?.mapPage?' • Event Companion p.'+String(mc.battlefield.mapPage):'')+' • objective data is used only when known; unknown state is not guessed.</div>'+
                   '</div>';
               }catch(e){
