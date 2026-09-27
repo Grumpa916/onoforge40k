@@ -39,16 +39,16 @@ jobs:
           html = p.read_text(encoding='utf-8')
           if 'expected+tacticalPreRollHtml()+' in html:
               print('Shooting Pre-Roll Check is already wired')
-              raise SystemExit(0)
-          if 'function tacticalPreRollHtml()' not in html:
-              raise SystemExit('tacticalPreRollHtml() is missing; refusing to deploy the hotfix')
-          pattern = r'expected\s*\+\s*\(reasons\?'
-          matches = list(re.finditer(pattern, html))
-          if len(matches) != 1:
-              raise SystemExit(f'Expected exactly one Shooting Result render marker, found {len(matches)}')
-          html = re.sub(pattern, 'expected+tacticalPreRollHtml()+(reasons?', html, count=1)
-          p.write_text(html, encoding='utf-8')
-          print('Wired tacticalPreRollHtml() into tacticalShootingResultHtml()')
+          else:
+              if 'function tacticalPreRollHtml()' not in html:
+                  raise SystemExit('tacticalPreRollHtml() is missing; refusing to deploy the hotfix')
+              pattern = r'expected\s*\+\s*\(reasons\?'
+              matches = list(re.finditer(pattern, html))
+              if len(matches) != 1:
+                  raise SystemExit(f'Expected exactly one Shooting Result render marker, found {len(matches)}')
+              html = re.sub(pattern, 'expected+tacticalPreRollHtml()+(reasons?', html, count=1)
+              p.write_text(html, encoding='utf-8')
+              print('Wired tacticalPreRollHtml() into tacticalShootingResultHtml()')
           PY
 
       - name: Auto-assign single-target shooting pool
@@ -56,22 +56,29 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
           p = Path('index.html')
           html = p.read_text(encoding='utf-8')
           if 'const singleTargetAutoAssignHotfix=true;' in html:
               print('Single-target shooting allocation hotfix is already applied')
-              raise SystemExit(0)
-          marker = 'function setTacticalPreRollWeapon(weaponName){'
-          start = html.find(marker)
-          if start < 0:
-              raise SystemExit('setTacticalPreRollWeapon(weaponName) is missing; refusing to deploy the hotfix')
-          end = html.find('\nsave();render();', start)
-          if end < 0:
-              raise SystemExit('Could not locate the end of setTacticalPreRollWeapon(); refusing to deploy the hotfix')
-          insertion = """\n  const singleTargetAutoAssignHotfix=true;\n  if(singleTargetAutoAssignHotfix&&selected&&teUid&&manifest.length===1){\n    t.preRollPools=t.preRollPools||{};\n    const current=t.preRollPools[selected.key]?.allocations;\n    const allocations=Array.isArray(current)?current:[];\n    const hasAssignedTarget=allocations.some(x=>String(x.targetUid||'')===String(teUid)&&Array.isArray(x.modelIds)&&x.modelIds.length);\n    if(!hasAssignedTarget&&selected.modelIds.length){\n      t.preRollPools[selected.key]={allocations:[{targetUid:String(teUid),count:selected.modelIds.length,modelIds:[...selected.modelIds]}]};\n    }\n  }\n"""
-          html = html[:end] + insertion + html[end:]
-          p.write_text(html, encoding='utf-8')
-          print('Added safe auto-assignment for the single-target shooting pool')
+          else:
+              marker = 'function setTacticalPreRollWeapon(weaponName){'
+              start = html.find(marker)
+              if start < 0:
+                  raise SystemExit('setTacticalPreRollWeapon(weaponName) is missing; refusing to deploy the hotfix')
+              next_fn = html.find('\nfunction ', start + len(marker))
+              if next_fn < 0:
+                  next_fn = html.find('<script', start + len(marker))
+              if next_fn < 0:
+                  raise SystemExit('Could not locate the end of setTacticalPreRollWeapon(); refusing to deploy the hotfix')
+              segment = html[start:next_fn]
+              if 'save();render();' not in segment:
+                  raise SystemExit('setTacticalPreRollWeapon() does not contain the expected save/render boundary; refusing to deploy the hotfix')
+              insertion = """\n  const singleTargetAutoAssignHotfix=true;\n  if(singleTargetAutoAssignHotfix&&selected&&teUid&&manifest.length===1){\n    t.preRollPools=t.preRollPools||{};\n    const current=t.preRollPools[selected.key]?.allocations;\n    const allocations=Array.isArray(current)?current:[];\n    const hasAssignedTarget=allocations.some(x=>String(x.targetUid||'')===String(teUid)&&Array.isArray(x.modelIds)&&x.modelIds.length);\n    if(!hasAssignedTarget&&selected.modelIds.length){\n      t.preRollPools[selected.key]={allocations:[{targetUid:String(teUid),count:selected.modelIds.length,modelIds:[...selected.modelIds]}]};\n    }\n  }\n"""
+              pos = start + segment.find('save();render();')
+              html = html[:pos] + insertion + html[pos:]
+              p.write_text(html, encoding='utf-8')
+              print('Added safe auto-assignment for the single-target shooting pool')
           PY
 
       - name: Validate JavaScript syntax
