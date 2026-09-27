@@ -115,7 +115,7 @@
     if(behind){w.mission+=0.07;w.combat-=0.02;w.opportunity-=0.03;w.tactical-=0.02;}
     if(ahead){w.counter+=0.04;w.opportunity+=0.03;w.combat-=0.03;w.tactical-=0.04;}
     if(x.mission.isCriticalObjective){w.mission+=0.06;w.combat-=0.02;w.opportunity-=0.02;w.tactical-=0.02;}
-    if(urgency>=0.75){w.mission+=0.05;w.futureSetup-=0;w.combat-=0.02;w.opportunity-=0.03;}
+    if(urgency>=0.75){w.mission+=0.05;w.combat-=0.02;w.opportunity-=0.03;}
     const total=Object.values(w).reduce((a,b)=>a+b,0);
     Object.keys(w).forEach(k=>w[k]=w[k]/total);
     return w;
@@ -145,46 +145,20 @@
     const opportunity=100-x.tactical.opportunityCost;
     const counterRisk=100-x.tactical.counterattackRisk;
     const weights=decisionWeights(x);
-
-    // Mission/tactical value deliberately outweighs raw lethality. Combat is
-    // still important, but it cannot dominate the decision by itself.
     let score=(mission*weights.mission)+(tactical*weights.tactical)+(combat*weights.combat)+(opportunity*weights.opportunity)+(counterRisk*weights.counter);
-
-    // Approximate map distance may identify a candidate, but never grants an
-    // execution bonus. Exact charge/shooting probabilities belong downstream.
     if(executionConfidence==='tactical-only')score*=0.94;
     if(executionConfidence==='context-only')score*=0.90;
-
     const parts={
-      combat:round1(combat),
-      mission:round1(mission),
-      missionObjective:round1(x.mission.objectiveSwing),
-      scoringDenial:round1(x.mission.scoringDenial),
-      threat:round1(x.tactical.threatSuppression),
-      board:round1(x.tactical.boardPosition),
-      future:round1(x.tactical.futureSetup),
-      counterRisk:round1(counterRisk),
-      opportunity:round1(opportunity),
+      combat:round1(combat),mission:round1(mission),missionObjective:round1(x.mission.objectiveSwing),scoringDenial:round1(x.mission.scoringDenial),
+      threat:round1(x.tactical.threatSuppression),board:round1(x.tactical.boardPosition),future:round1(x.tactical.futureSetup),counterRisk:round1(counterRisk),opportunity:round1(opportunity),
       weights:Object.fromEntries(Object.entries(weights).map(([k,v])=>[k,round1(v*100)]))
     };
-
     return {
-      score:round1(clamp(score)),
-      engagementType:engagementType(x),
-      executionConfidence,
-      components:parts,
-      reasons:buildReasons(parts),
-      mapGeometryAuthoritative:false,
-      requiresPhysicalConfirmation:!x.execution.physicalDistanceConfirmed,
-      combat:{...x.combat},
-      mission:{...x.mission},
-      tactical:{...x.tactical}
+      score:round1(clamp(score)),engagementType:engagementType(x),executionConfidence,components:parts,reasons:buildReasons(parts),
+      mapGeometryAuthoritative:false,requiresPhysicalConfirmation:!x.execution.physicalDistanceConfirmed,
+      combat:{...x.combat},mission:{...x.mission},tactical:{...x.tactical}
     };
   }
 
-  global.ONOFORGE_TACTICAL_ADVISOR = Object.freeze({
-    normalizeContext,
-    evaluateEngagement,
-    clamp
-  });
+  global.ONOFORGE_TACTICAL_ADVISOR=Object.freeze({normalizeContext,evaluateEngagement,clamp});
 })(window);
