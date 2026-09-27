@@ -194,3 +194,64 @@ It:
 The deploy-time Tactical Advisor surface now shows the projected Charge → Fight exchange, including outgoing damage, expected return damage, projected casualties, charge probability, and whether the distance is physically confirmed.
 
 The existing Advisor ordering remains authoritative; the tactical layer is not yet allowed to replace it.
+
+## Session Pause Checkpoint — 2026-09-27
+
+### Repository checkpoint
+- Repository: `Grumpa916/onoforge40k`
+- Active branch: `feature/tactical-impact-layer`
+- Latest checkpoint commit: `2427d96088052d9b5144f3adfd78de2412f9dd26`
+- Draft PR remains open; nothing has been merged to `main`.
+- Latest Tactical Advisor Tests: PASS.
+- Latest Tactical Advisor Preview Validation: PASS.
+
+### Data-source correction completed
+- Removed the unrelated `data/40kapp-source.json` manifest from the feature branch.
+- Removed the app's runtime dependency on that manifest.
+- Updated OnoForge source labels/policy to treat BSData 11e as the structured community source and the embedded catalogue as local bootstrap data.
+- Kept `data/warhammer-event-companion-v1.2.json` as a separate official reference/data source.
+- Preview packaging now includes the Event Companion JSON so the local preview can load its reference/geometry data.
+- Important follow-up: the app currently has live BSData refresh feeds configured for Tyranids and Ultramarines; Space Marines is not yet included as a live refresh feed and should be reconciled against current official Games Workshop material before being treated as canonical.
+
+### Tactical Impact / Charge preview debugging completed
+The following integration issues were found and fixed during live preview testing:
+1. Preview script-injection newline bug.
+2. Renderer incorrectly referenced `window.state` instead of OnoForge's shared `state`.
+3. Charge phase detection incorrectly read `r.phase` instead of `r.decisionContext.phase`.
+4. Charge adapter incorrectly relied on direct global state access; a read-only `ONOFORGE_APP_STATE` runtime bridge was added.
+5. Charge execution renderer referenced out-of-scope `isCharge`; removed.
+6. Preview diagnostic path was added temporarily to surface runtime exceptions.
+
+Current exact live-test state:
+- The Tactical Impact Layer is visible at the top of Battle Mode.
+- Existing Tactical Advisor remains below it.
+- Existing Advisor target selection works.
+- Latest diagnostic build exposed this runtime error before the last scope fix: `isCharge is not defined`.
+- The `isCharge` scope fix is now committed and both CI checks pass.
+- The newest preview artifact was produced by run `36304860113` / artifact `10927021617`.
+- Recommended next live test is to re-run the same scenario with the newest preview:
+  `Battle Mode → Charge → Exocrine → Aggressor Squad → Select`
+- Do not make a Charge success/failure entry until the projected Fight exchange panel is confirmed.
+- If the projected Fight exchange still does not appear, the next diagnostic step is to inspect the new panel's explicit error text rather than making another blind UI change.
+
+### Current local test scenario
+The user's local test battle is:
+- Round 1
+- Charge phase
+- Friendly attacker: Exocrine
+- Existing Advisor target: Aggressor Squad
+- Target selected in the existing Advisor
+- Tactical Context: distance band Under 6", exact distance currently shown as 4, LOS Unknown, already engaged = No
+- New Tactical Impact Layer is visible at the top of the Battle page.
+- User's last reported state showed the new layer at the top with "Decision analysis unavailable for this state"; the diagnostic build then showed `isCharge is not defined`.
+
+### Resume instruction
+When resuming, do not restart architecture/planning. Start from the latest feature branch checkpoint above, read `DEVELOPMENT_GUIDE.md`, this handoff, and the relevant roadmap section, then continue the Charge live validation.
+
+The immediate product goal remains:
+`Tactical Advisor → physical distance → projected Charge/Fight consequence → Charge result → successful target state → Fight`
+
+No merge to `main` is authorized unless the user explicitly requests it.
+
+### User pause state
+The user is stopping for now because the repeated preview/debug cycle is tiring. Preserve the current branch and checkpoint; do not collapse or rewrite the Tactical Impact work. Resume from this checkpoint later.
