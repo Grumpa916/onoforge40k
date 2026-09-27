@@ -1,0 +1,85 @@
+name: Render Shooting Pre-Roll UI Hotfix
+
+on:
+  workflow_run:
+    workflows:
+      - Deploy to GitHub Pages
+    types:
+      - completed
+
+concurrency:
+  group: github-pages-shooting-ui-hotfix
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout deployed revision
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Wire Shooting Pre-Roll Check into Shooting Result
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          html = p.read_text(encoding='utf-8')
+          if 'expected+tacticalPreRollHtml()+(reasons?' in html:
+              print('Shooting Pre-Roll Check is already wired')
+              raise SystemExit(0)
+          marker = 'expected+(reasons?'
+          count = html.count(marker)
+          if count != 1:
+              raise SystemExit(f'Expected exactly one Shooting Result render marker, found {count}')
+          if 'function tacticalPreRollHtml()' not in html:
+              raise SystemExit('tacticalPreRollHtml() is missing; refusing to deploy the hotfix')
+          html = html.replace(marker, 'expected+tacticalPreRollHtml()+(reasons?', 1)
+          p.write_text(html, encoding='utf-8')
+          print('Wired tacticalPreRollHtml() into tacticalShootingResultHtml()')
+          PY
+
+      - name: Validate JavaScript syntax
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          html = Path('index.html').read_text(encoding='utf-8')
+          scripts = re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>', html, flags=re.S|re.I)
+          if not scripts:
+              raise SystemExit('No script blocks found')
+          Path('/tmp/onoforge.js').write_text('\n\n'.join(scripts), encoding='utf-8')
+          print(f'Collected {len(scripts)} script block(s)')
+          PY
+          node --check /tmp/onoforge.js
+
+      - name: Verify Shooting Pre-Roll wiring
+        shell: bash
+        run: |
+          grep -Fq 'expected+tacticalPreRollHtml()+(reasons?' index.html
+          grep -Fq 'Enter Physical Dice Results' index.html
+          echo 'Shooting Pre-Roll UI wiring verified'
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload patched Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - name: Deploy patched Pages artifact
+        id: deployment
+        uses: actions/deploy-pages@v4
