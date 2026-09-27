@@ -41,10 +41,10 @@ vm.runInNewContext(code,context);
 
 let result=context.recordTacticalChargeResult('success','charger',['targetA']);
 assert.strictEqual(result.ok,true);
-assert.deepStrictEqual(result.targetUids,['targetA']);
+assert.deepStrictEqual(Array.from(result.targetUids),['targetA']);
 assert.strictEqual(context.state.tactical.unitActions.charger.chargeDone,true);
 assert.strictEqual(context.state.tactical.unitActions.charger.chargeMade,true);
-assert.deepStrictEqual(context.state.tactical.unitActions.charger.chargeTargets,['targetA']);
+assert.deepStrictEqual(Array.from(context.state.tactical.unitActions.charger.chargeTargets),['targetA']);
 assert.strictEqual(context.state.tactical.pairs['charger>targetA'].engagement,'engaged');
 assert.strictEqual(context.state.tactical.fightPhase.units.charger.engagedAtFightStart,true);
 assert.strictEqual(context.state.tactical.fightPhase.units.charger.becameEngagedDuringFight,true);
@@ -63,7 +63,7 @@ result=context.recordTacticalChargeResult('failed','charger',['targetB']);
 assert.strictEqual(result.ok,true);
 assert.strictEqual(context.state.tactical.unitActions.charger.chargeDone,true);
 assert.strictEqual(context.state.tactical.unitActions.charger.chargeMade,false);
-assert.deepStrictEqual(context.state.tactical.unitActions.charger.chargeTargets,['targetB']);
+assert.deepStrictEqual(Array.from(context.state.tactical.unitActions.charger.chargeTargets),['targetB']);
 assert.strictEqual(context.state.tactical.pairs['charger>targetB'].engagement,'notEngaged');
 assert.strictEqual(events.at(-1).payload.outcome,'failed');
 
