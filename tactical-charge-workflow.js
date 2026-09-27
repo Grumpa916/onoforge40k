@@ -165,7 +165,12 @@
       if(!panel)return false;
       const mount=ensureMount(panel);
       const source=host.innerHTML;
-      if(mount.dataset.onoforgeLastSource===source)return true;
+      if(mount.dataset.onoforgeLastSource===source){
+        host.style.display='none';
+        host.hidden=true;
+        host.setAttribute('aria-hidden','true');
+        return true;
+      }
       const template=global.document.createElement('div');
       template.innerHTML=source;
       const title=template.querySelector('.ta-decision-title');
@@ -185,6 +190,8 @@
       host.style.width='1px';
       host.style.height='1px';
       host.style.overflow='hidden';
+      host.style.display='none';
+      host.hidden=true;
       host.setAttribute('aria-hidden','true');
       return true;
     }
