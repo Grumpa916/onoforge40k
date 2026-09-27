@@ -108,6 +108,10 @@ jobs:
               raise SystemExit('Charge adapter is not using the OnoForge runtime-state bridge')
           if "function rosterEntry(side,id,unitId,name)" not in adapter:
               raise SystemExit('Charge adapter is missing roster entry resolver')
+          if "rawName==='Range'?'rng'" not in html:
+              raise SystemExit('BSData Range field is not normalized to OnoForge rng')
+          if "const currentBase=canonicalUnitDatabase()||bootstrapUnitDatabase();" not in html:
+              raise SystemExit('Refreshed BSData is not overlaid onto the bootstrap catalogue')
           if "attackerResolved" not in adapter or "requestedTargetUid" not in adapter:
               raise SystemExit('Charge entry diagnostics are missing')
           if "attackerEntry:a" not in workflow:
