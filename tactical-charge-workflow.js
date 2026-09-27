@@ -125,8 +125,9 @@
 
   // Keep one user-facing Tactical Advisor. The existing Advisor remains the
   // authoritative control surface; Tactical Impact is nested inside it.
-  // The Battle renderer replaces this DOM subtree during render(), so the
-  // bridge intentionally re-evaluates the live nodes after every render.
+  // The Battle renderer replaces the battle subtree during render(), so the
+  // bridge keeps the renderer host outside that subtree and mirrors its
+  // contents into the existing Advisor panel after every render.
   (function combineAdvisorSurfaces(){
     if(typeof global.document==='undefined')return;
     let observer=null;
@@ -136,37 +137,64 @@
       const cards=Array.from(global.document.querySelectorAll('.tactical-advisor-card'));
       const direct=cards.find(card=>card!==host&&!card.contains(host));
       if(direct)return direct;
-      return Array.from(global.document.querySelectorAll('.card')).find(card=>{
-        if(card===host||card.contains(host))return false;
-        const text=String(card.textContent||'');
-        return /Tactical Advisor/.test(text)&&/Objective priorities/.test(text);
-      })||null;
+      const candidates=Array.from(global.document.querySelectorAll('div,section,details'));
+      return candidates
+        .filter(el=>el!==host&&!el.contains(host))
+        .filter(el=>{
+          const text=String(el.textContent||'');
+          return /Tactical Advisor/.test(text)&&/Objective priorities/.test(text);
+        })
+        .sort((a,b)=>String(a.textContent||'').length-String(b.textContent||'').length)[0]||null;
     }
 
-    function merge(){
+    function ensureMount(panel){
+      let mount=panel.querySelector('[data-onoforge-tactical-impact-mount]');
+      if(!mount){
+        mount=global.document.createElement('div');
+        mount.setAttribute('data-onoforge-tactical-impact-mount','true');
+        mount.style.margin='0 0 10px';
+        panel.insertBefore(mount,panel.firstChild);
+      }
+      return mount;
+    }
+
+    function sync(){
       const host=global.document.getElementById('onoforge-advisor-render');
       if(!host)return false;
       const panel=findAuthoritativePanel(host);
       if(!panel)return false;
-      if(panel.contains(host))return true;
-
-      const title=host.querySelector('.ta-decision-title');
-      if(title)title.textContent='Tactical Advisor';
-      host.style.margin='0 0 10px';
-      host.style.border='0';
-      host.style.padding='0';
-      host.style.background='transparent';
-
-      panel.insertBefore(host,panel.firstChild);
+      const mount=ensureMount(panel);
+      const source=host.innerHTML;
+      if(mount.dataset.onoforgeLastSource===source)return true;
+      const template=global.document.createElement('div');
+      template.innerHTML=source;
+      const title=template.querySelector('.ta-decision-title');
+      if(title)title.textContent='Tactical Impact Analysis';
+      const render=template.querySelector('.ta-decision-render');
+      if(render){
+        render.style.margin='0';
+        render.style.border='0';
+        render.style.padding='0';
+        render.style.background='transparent';
+        render.style.boxShadow='none';
+      }
+      mount.innerHTML=template.innerHTML;
+      mount.dataset.onoforgeLastSource=source;
+      host.style.position='absolute';
+      host.style.left='-100000px';
+      host.style.width='1px';
+      host.style.height='1px';
+      host.style.overflow='hidden';
+      host.setAttribute('aria-hidden','true');
       return true;
     }
 
     function start(){
       if(observer)return;
-      observer=new global.MutationObserver(function(){merge();});
-      observer.observe(global.document.body,{childList:true,subtree:true});
-      merge();
-      timer=setInterval(merge,500);
+      observer=new global.MutationObserver(function(){sync();});
+      observer.observe(global.document.body,{childList:true,subtree:true,characterData:true});
+      sync();
+      timer=setInterval(sync,500);
     }
 
     if(global.document.readyState==='loading')global.document.addEventListener('DOMContentLoaded',start,{once:true});
