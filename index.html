@@ -9253,6 +9253,10 @@ function tacticalAdvisorStateSignature(){
     mathRules:state.mathRules||{},
     my:entrySignature('my'),
     opp:entrySignature('opp'),
+    // Tactical recommendations and legality depend on the authoritative live map.
+    // Include battlefield positions in the cache signature so moving a unit cannot
+    // leave stale charge distances, eligibility, or recommendations on screen.
+    battlefieldUnitPositions:state.battlefieldUnitPositions||{},
     tactical:{
       pairs:t.pairs||{},
       unitUse:t.unitUse||{},
