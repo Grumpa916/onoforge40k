@@ -305,7 +305,11 @@ jobs:
                 const chargeMeasurement=projected.distanceEvidence||{};
                 const chargePanel=isCharge&&projected.available
                   ?'<div class="ta-reason"><b>Projected Fight exchange:</b> '+num(projectedOut.damage,1)+' damage / '+num(projectedOut.modelsKilled,1)+' models from the charge, versus '+num(projectedIn.damage,1)+' expected return damage. Charge success '+pct(tacticalTop.chargeSuccessChance)+' • '+(chargeMeasurement.physicalDistanceConfirmed?'measured distance confirmed':'physical distance still required')+'.</div>'
-                  :isCharge?'<div class="ta-reason"><b>Projected Fight:</b> incomplete for this candidate; verify the target profile before relying on the tactical comparison.</div>':'';
+                  :isCharge?'<div class="ta-reason"><b>Projected Fight:</b> incomplete for this candidate.'+
+                    (projected?.reason?' '+String(projected.reason)+'.':'')+
+                    ((projected?.outgoing?.available===false&&projected?.outgoing?.reason)?' Outgoing: '+String(projected.outgoing.reason)+'.':'')+
+                    ((projected?.incoming?.available===false&&projected?.incoming?.reason)?' Return: '+String(projected.incoming.reason)+'.':'')+
+                    '</div>':'';
                 host.innerHTML=
                   '<div class="ta-decision-render">'+
                   '<div class="ta-decision-head"><div><div class="ta-decision-title">Tactical Advisor</div><div class="ta-decision-sub">8-factor mission-aware decision model • active combat recommendation</div></div>'+
