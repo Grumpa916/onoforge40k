@@ -34,18 +34,19 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
           p = Path('index.html')
           html = p.read_text(encoding='utf-8')
-          if 'expected+tacticalPreRollHtml()+(reasons?' in html:
+          if 'expected+tacticalPreRollHtml()+' in html:
               print('Shooting Pre-Roll Check is already wired')
               raise SystemExit(0)
-          marker = 'expected+(reasons?'
-          count = html.count(marker)
-          if count != 1:
-              raise SystemExit(f'Expected exactly one Shooting Result render marker, found {count}')
           if 'function tacticalPreRollHtml()' not in html:
               raise SystemExit('tacticalPreRollHtml() is missing; refusing to deploy the hotfix')
-          html = html.replace(marker, 'expected+tacticalPreRollHtml()+(reasons?', 1)
+          pattern = r'expected\s*\+\s*\(reasons\?'
+          matches = list(re.finditer(pattern, html))
+          if len(matches) != 1:
+              raise SystemExit(f'Expected exactly one Shooting Result render marker, found {len(matches)}')
+          html = re.sub(pattern, 'expected+tacticalPreRollHtml()+(reasons?', html, count=1)
           p.write_text(html, encoding='utf-8')
           print('Wired tacticalPreRollHtml() into tacticalShootingResultHtml()')
           PY
