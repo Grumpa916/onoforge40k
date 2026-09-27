@@ -335,7 +335,8 @@ jobs:
                   '<div class="ta-foot">Mission context: Round '+String(mc.round??state.round??'—')+' • VP '+String(mc.myVP??state.myVP??'—')+'–'+String(mc.oppVP??state.oppVP??'—')+' • Battlefield Layout '+String(mc.battlefield?.mapLayout||state.objectiveMapLayout||'—')+(mc.battlefield?.mapPage?' • Event Companion p.'+String(mc.battlefield.mapPage):'')+' • objective data is used only when known; unknown state is not guessed.</div>'+
                   '</div>';
               }catch(e){
-                host.innerHTML='<div class="ta-decision-render"><div class="ta-decision-title">Tactical Advisor</div><div class="ta-unknown">Decision analysis unavailable for this state.</div></div>';
+                console.error('OnoForge Tactical Impact render error',e);
+                host.innerHTML='<div class="ta-decision-render"><div class="ta-decision-title">Tactical Advisor</div><div class="ta-unknown">Decision analysis unavailable for this state.<br><span style="opacity:.8">Diagnostic: '+String(e?.message||e).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</span></div></div>';
               }finally{busy=false}
             }
             function chargeExecutionPanel(attackerUid,targets,actionState){
