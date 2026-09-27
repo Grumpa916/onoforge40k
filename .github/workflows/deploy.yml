@@ -274,6 +274,10 @@ jobs:
           print("Rendered Tactical Advisor decision surface into deploy artifact")
           PY
 
+      - name: Run architecture map audit
+        shell: bash
+        run: node scripts/architecture-map-audit.js
+
       - name: Run runtime internal symbol audit
         shell: bash
         run: node scripts/runtime-internal-symbol-audit.js
