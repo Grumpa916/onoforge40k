@@ -41,7 +41,7 @@ jobs:
               'onoforge-tactical-advisor-engine',
               'onoforge-tactical-advisor-adapter',
               'Validate Tactical Advisor decision-layer injection',
-              'const compareBase={...r,recommendations:baselineTargets.map(x=>({...x}))};',
+              'const allBaselineTargets=extractTargets(r);',
               'The new tactical layer would change the leading candidate'
           ]
           for marker in required_workflow:
