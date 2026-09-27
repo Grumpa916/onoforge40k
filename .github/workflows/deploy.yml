@@ -340,7 +340,6 @@ jobs:
               }finally{busy=false}
             }
             function chargeExecutionPanel(attackerUid,targets,actionState){
-              if(!isCharge)return '';
               const selectedTargets=Array.isArray(actionState?.chargeTargets)?actionState.chargeTargets.map(String):[];
               if(actionState?.chargeDone){
                 const outcome=actionState.chargeMade?'Successful':'Failed';
