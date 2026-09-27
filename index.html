@@ -9032,7 +9032,11 @@ function tacticalAdvisorHtml(){
             ' • '+(projection?.distanceEvidence?.physicalDistanceConfirmed?'measured distance confirmed':'physical distance not yet confirmed')+
             (projection?.outgoing?.result? ' • projected '+Number(projection.outgoing.result.damage||0).toFixed(1)+'W outgoing':'')+
             (projection?.incoming?.result? ' • '+Number(projection.incoming.result.damage||0).toFixed(1)+'W return':'')+
-            '</div>':'')+
+            '</div>'+
+          '<div class="status" style="margin-top:8px"><b>Charge Execution</b><div class="tiny" style="margin-top:3px">Select the target(s) you actually declared against, then record whether the physical 2D6 charge succeeded.</div>'+
+            '<label style="display:flex;gap:7px;align-items:center;margin-top:6px;font-size:10px"><input type="checkbox" data-onoforge-charge-target="'+esc(r.entryUid).replace(/"/g,'&quot;')+'" '+(state.tactical?.selectedTargetUid===r.entryUid?'checked':'')+'><span><b>'+esc(r.name||'Target')+'</b> • '+(Number.isFinite(Number(r.distance))?Number(r.distance).toFixed(1)+'" measured':(projection?.distanceEvidence?.physicalDistanceConfirmed?'Measured distance recorded':'Measure distance first'))+'</span></label>'+
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px"><button type="button" class="btn primary" onclick="window.recordTacticalChargeResult(\'success\',\''+String(ae.uid).replace(/'/g,"\\'")+'\');return false;">Charge Successful</button><button type="button" class="btn" onclick="window.recordTacticalChargeResult(\'failed\',\''+String(ae.uid).replace(/'/g,"\\'")+'\');return false;">Charge Failed</button></div></div>'
+          : '')+
       '</div>'+
       (changes.length?'<div style="margin-top:7px"><b>What could change it:</b><ul style="margin:3px 0 0 18px">'+changes.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul></div>':'')+
       '<button type="button" class="btn primary" style="width:100%;margin-top:8px" onclick="ensureTacticalState().selectedTargetUid=\''+esc(r.entryUid).replace(/'/g,"\\'")+'\';save();render()">Select '+esc(r.name||'Target')+'</button>'+
