@@ -153,6 +153,12 @@ jobs:
           out = Path("preview-site")
           out.mkdir(parents=True, exist_ok=True)
           (out / "index.html").write_text(html, encoding="utf-8")
+          data_out = out / "data"
+          data_out.mkdir(parents=True, exist_ok=True)
+          companion = Path("data/warhammer-event-companion-v1.2.json")
+          if not companion.exists():
+              raise SystemExit("Required Event Companion reference data is missing")
+          (data_out / companion.name).write_text(companion.read_text(encoding="utf-8"), encoding="utf-8")
           (out / "README.txt").write_text(
               "OnoForge 40K Tactical Advisor feature preview\\n\\n"
               "This build contains the feature-branch Tactical Advisor and Charge workflow injected "
