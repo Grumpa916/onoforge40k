@@ -255,11 +255,27 @@
 
   function projectChargeEngagement(rec={},advisor={},options={}){
     const attackerEntry=options.attackerEntry||resolveAttackerEntry(advisor);
+    const targetCandidates=Array.isArray(runtimeState()?.opp)?runtimeState().opp:[];
     const targetEntry=options.targetEntry
       ||(typeof global.entry==='function'?global.entry('opp',rec.entryUid):null)
-      ||((runtimeState()?.opp||[]).find(x=>x&&String(x.uid)===String(rec.entryUid)));
+      ||targetCandidates.find(x=>x&&String(x.uid)===String(rec.entryUid))
+      ||targetCandidates.find(x=>{
+        if(!x)return false;
+        if(String(x.unitId||'')===String(rec.unitId||''))return true;
+        const u=typeof global.get==='function'?global.get(x.unitId):null;
+        return String(u?.name||x.name||'')===String(rec.name||rec.targetName||'');
+      });
     if(!attackerEntry||!targetEntry){
-      return {available:false,reason:'charge-entry-context-unavailable'};
+      return {
+        available:false,
+        reason:'charge-entry-context-unavailable',
+        attackerResolved:!!attackerEntry,
+        attackerUid:attackerEntry?.uid||null,
+        targetResolved:!!targetEntry,
+        targetUid:targetEntry?.uid||null,
+        requestedTargetUid:rec.entryUid||null,
+        requestedTargetUnitId:rec.unitId||null
+      };
     }
     const pairCtx=typeof global.tacticalPairState==='function'
       ?global.tacticalPairState(attackerEntry.uid,targetEntry.uid)
