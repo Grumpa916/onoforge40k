@@ -109,5 +109,68 @@ jobs:
           PY
           node --check /tmp/onoforge-preview.js
 
+      - name: Build downloadable Tactical Advisor preview
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          html = Path("index.html").read_text(encoding="utf-8")
+          workflow = Path(".github/workflows/deploy.yml").read_text(encoding="utf-8")
+
+          layers = [
+              ("onoforge-tactical-advisor-engine", Path("tactical-advisor-engine.js")),
+              ("onoforge-tactical-advisor-adapter", Path("tactical-advisor-adapter.js")),
+              ("onoforge-tactical-charge-workflow", Path("tactical-charge-workflow.js")),
+          ]
+          for script_id, source_path in layers:
+              if f'id="{script_id}"' not in html:
+                  html = html.replace(
+                      "</head>",
+                      f'<script id="{script_id}">\\n{source_path.read_text(encoding="utf-8")}\\n</script></head>',
+                      1
+                  )
+
+          def extract_raw_string(name):
+              start_marker = f'{name} = r"""'
+              start = workflow.find(start_marker)
+              if start < 0:
+                  raise SystemExit(f"Could not locate {name} renderer source in deploy workflow")
+              start += len(start_marker)
+              end = workflow.find('"""', start)
+              if end < 0:
+                  raise SystemExit(f"Could not terminate {name} renderer source in deploy workflow")
+              return workflow[start:end]
+
+          css = extract_raw_string("css")
+          js = extract_raw_string("js")
+
+          if 'id="onoforge-advisor-render-css"' not in html:
+              html = html.replace("</head>", css + "</head>", 1)
+          if 'id="onoforge-advisor-render-js"' not in html:
+              html = html.replace("</body>", js + "</body>", 1)
+
+          out = Path("preview-site")
+          out.mkdir(parents=True, exist_ok=True)
+          (out / "index.html").write_text(html, encoding="utf-8")
+          (out / "README.txt").write_text(
+              "OnoForge 40K Tactical Advisor feature preview\\n\\n"
+              "This build contains the feature-branch Tactical Advisor and Charge workflow injected "
+              "into the deployment artifact. Serve this folder with a local HTTP server before opening "
+              "index.html in a browser. On Windows with Python installed: python -m http.server 8080\\n"
+              "then open http://localhost:8080/\\n",
+              encoding="utf-8"
+          )
+          print("Built preview-site/index.html")
+          PY
+
+      - name: Upload downloadable Tactical Advisor preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: onoforge40k-tactical-advisor-preview
+          path: preview-site
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Report
         run: echo "Tactical Advisor comparison-layer validation passed"
