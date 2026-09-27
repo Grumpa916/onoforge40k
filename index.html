@@ -8019,6 +8019,17 @@ function setTacticalPreRollWeapon(weaponName){
     t.preRollPools=t.preRollPools||{};
     t.preRollPools[selected.key]={allocations:[{targetUid:String(teUid),count:selected.modelIds.length,modelIds:[...selected.modelIds]}]};
   }
+  const singleTargetAutoAssignHotfix=true;
+  if(singleTargetAutoAssignHotfix&&selected&&teUid&&manifest.length===1){
+    t.preRollPools=t.preRollPools||{};
+    const current=t.preRollPools[selected.key]?.allocations;
+    const allocations=Array.isArray(current)?current:[];
+    const hasAssignedTarget=allocations.some(x=>String(x.targetUid||'')===String(teUid)&&Array.isArray(x.modelIds)&&x.modelIds.length);
+    if(!hasAssignedTarget&&selected.modelIds.length){
+      t.preRollPools[selected.key]={allocations:[{targetUid:String(teUid),count:selected.modelIds.length,modelIds:[...selected.modelIds]}]};
+    }
+  }
+
   save();render();
 }
 function tacticalPreRollCheck(attackerUid,targetUid,weaponName){
