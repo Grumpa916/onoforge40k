@@ -151,3 +151,43 @@ When a new chat starts:
 - state the immediate product objective before making changes
 
 Do not restart planning from scratch and do not turn the session into an audit project.
+
+
+## Tactical Advisor Engagement Layer — Current Session Update
+
+### Completed in this session
+- Added `tactical-advisor-engine.js` as an isolated pure engagement evaluator.
+- Added `tactical-advisor-adapter.js` to translate existing Advisor recommendations into evaluator inputs.
+- Added evaluator and adapter regression tests.
+- Added explicit separation between approximate map geometry and authoritative physical measurement.
+- Added context-derived turn urgency; no manual urgency input is required by the integration layer.
+- Added non-mutating comparison mode: the existing Advisor recommendation order remains authoritative while the new Tactical Impact Layer evaluates the same candidate set separately.
+- Added deployment-pipeline injection so the evaluator and adapter are available to the battle-page comparison surface without modifying the 1 MB `index.html` source directly.
+- Added a deployment-preview validation workflow.
+- CI validation for the evaluator and adapter passes.
+- Deployment-preview static validation passed on the latest completed preview run.
+- Corrected a renderer variable regression during integration before release.
+
+### Current comparison behavior
+The battle-page comparison surface is designed to show:
+1. Existing Tactical Advisor leader and score.
+2. Tactical Impact Layer leader and tactical-impact score/type.
+3. Tactical-layer reasons.
+4. A clear notice when the new layer would change the leading candidate.
+5. A physical-measurement warning when execution geometry is not authoritative.
+
+The comparison layer does NOT replace the existing Advisor ranking yet.
+
+### Important constraint
+For Charge, the current existing Advisor candidate records do not yet contain a full projected Fight exchange in the same way Shooting/Fight recommendations do. Therefore the Tactical Impact Layer should not be treated as authoritative for Charge ranking until Charge candidates are enriched with projected Fight output using the existing combat engine.
+
+### Next exact step
+Build the Charge engagement adapter that:
+- derives candidate-level projected Fight output using the existing combat engine,
+- includes expected outgoing damage and expected incoming return,
+- preserves existing Charge legality and distance logic,
+- treats map distance as tactical context only,
+- uses physical measurement as the execution gate,
+- then feeds the complete Charge engagement into the Tactical Impact evaluator.
+
+After that, compare the existing Charge ordering against the new tactical ordering in the live Charge workflow before allowing the new layer to control ranking.
