@@ -35,10 +35,12 @@
   }
 
   function rawPairFor(attackerUid,targetUid){
-    const pairs=global.state?.tactical?.pairs;
+    const pairs=runtimeState()?.tactical?.pairs;
     const raw=pairs&&pairs[pairKey(attackerUid,targetUid)];
     return raw&&typeof raw==='object'?raw:null;
   }
+
+  function runtimeState(){return global.ONOFORGE_APP_STATE||global.state||{};}
 
   function resolveDistanceEvidence(rec,attackerUid,targetUid){
     if(rec?.physicalDistanceConfirmed===true){
@@ -55,7 +57,7 @@
   }
 
   function resolveAttackerEntry(advisor){
-    const state=global.state||{};
+    const state=runtimeState();
     const my=Array.isArray(state.my)?state.my:[];
     const selected=state.tactical?.selectedAttackerUid;
     if(selected){
@@ -245,7 +247,7 @@
   function projectChargeEngagement(rec={},advisor={},options={}){
     const attackerEntry=options.attackerEntry||resolveAttackerEntry(advisor);
     const targetEntry=options.targetEntry
-      ||((global.state?.opp||[]).find(x=>x&&String(x.uid)===String(rec.entryUid)));
+      ||((runtimeState()?.opp||[]).find(x=>x&&String(x.uid)===String(rec.entryUid)));
     if(!attackerEntry||!targetEntry){
       return {available:false,reason:'charge-entry-context-unavailable'};
     }
@@ -339,7 +341,7 @@
   function enrichAdvisor(advisor,engine,options={}){
     if(!advisor||!engine||typeof engine.evaluateEngagement!=='function')return advisor;
     const recommendations=Array.isArray(advisor.recommendations)?advisor.recommendations:[];
-    const isCharge=advisor.chargeMode===true||String(advisor.phase||'')==='Charge';
+    const isCharge=advisor.chargeMode===true||String(advisor.phase||'')==='Charge'||String(advisor.decisionContext?.phase||'')==='Charge';
     recommendations.forEach(rec=>{
       let projection=null;
       let mapping;
