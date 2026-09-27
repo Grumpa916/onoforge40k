@@ -170,6 +170,7 @@ jobs:
           layers = [
               ("onoforge-tactical-advisor-engine", Path("tactical-advisor-engine.js")),
               ("onoforge-tactical-advisor-adapter", Path("tactical-advisor-adapter.js")),
+              ("onoforge-tactical-charge-workflow", Path("tactical-charge-workflow.js")),
           ]
           for script_id, source_path in layers:
               marker = f'id="{script_id}"'
@@ -177,7 +178,7 @@ jobs:
                   content = source_path.read_text(encoding="utf-8")
                   tag = f'<script id="{script_id}">\n{content}\n</script>'
                   html = html.replace("</head>", tag + "</head>", 1)
-          required = ['id="onoforge-tactical-advisor-engine"', 'id="onoforge-tactical-advisor-adapter"']
+          required = ['id="onoforge-tactical-advisor-engine"', 'id="onoforge-tactical-advisor-adapter"', 'id="onoforge-tactical-charge-workflow"']
           missing = [x for x in required if x not in html]
           if missing:
               raise SystemExit("Missing Tactical Advisor layer injection: " + ", ".join(missing))
@@ -194,6 +195,7 @@ jobs:
           checks = [
               ('onoforge-tactical-advisor-engine', 'ONOFORGE_TACTICAL_ADVISOR'),
               ('onoforge-tactical-advisor-adapter', 'ONOFORGE_TACTICAL_ADVISOR_ADAPTER'),
+              ('onoforge-tactical-charge-workflow', 'ONOFORGE_TACTICAL_CHARGE_WORKFLOW'),
           ]
           for script_id, symbol in checks:
               if f'id="{script_id}"' not in html:
@@ -296,6 +298,7 @@ jobs:
                 const interpretation=baselineTop.decisionInterpretation||dc.interpretation||'No single mission mode dominates the current exchange.';
                 const tacticalReasons=Array.isArray(tacticalTop.tacticalImpactReasons)?tacticalTop.tacticalImpactReasons:[];
                 const isCharge=r.chargeMode===true||String(r.phase||'')==='Charge';
+                const chargeActionState=typeof window.tacticalAdvisorActionState==='function'?window.tacticalAdvisorActionState(a.uid):null;
                 const projected=tacticalTop.projectedFight||{};
                 const projectedOut=projected.outgoing?.result||{};
                 const projectedIn=projected.incoming?.result||{};
@@ -319,6 +322,7 @@ jobs:
                   '</div>'+
                   '<div class="ta-reason"><b>Why:</b> '+String(interpretation)+'</div>'+
                   chargePanel+
+                  (isCharge?chargeExecutionPanel(a.uid,allBaselineTargets,chargeActionState):'')+
                   (baselineTargets.length?'<div class="ta-targets">'+baselineTargets.map((t,i)=>'<div class="ta-target"><div class="ta-target-name">'+String(t.targetName||t.name||t.defenderName||'Target '+(i+1))+'</div><div class="ta-target-score">'+pct(t.decisionScore)+'</div><div class="ta-target-meta">Existing '+modeLabel(t.decisionMode||'TACTICAL')+''+(isCharge&&t.projectedFight?.outgoing?.result ? ' • projected '+num(t.projectedFight.outgoing.result.damage,1)+'W / return '+num(t.projectedFight.incoming?.result?.damage,1)+'W' : ' • damage '+num(t.expectedDamage,1)+' • kill '+pct(t.killFraction||t.wipeChance))+'</div></div>').join('')+'</div>':'<div class="ta-unknown" style="margin-top:10px">No legal target recommendation is available from the current state.</div>')+
                   '<div class="ta-compare"><div class="ta-compare-card"><span>Existing Advisor</span><b>'+String(baselineTop.name||baselineTop.targetName||'—')+'</b><small>'+num(baselineTop.decisionScore,2)+' current decision score</small></div><div class="ta-compare-card"><span>Tactical Impact Layer</span><b>'+String(tacticalTop.name||tacticalTop.targetName||'—')+'</b><small>'+num(tacticalTop.tacticalImpactScore,2)+' • '+String(tacticalTop.tacticalImpactType||'TACTICAL')+'</small></div></div>'+
                   (String(baselineTop.entryUid||'')!==String(tacticalTop.entryUid||'')&&baselineTop.entryUid&&tacticalTop.entryUid?'<div class="ta-reason"><b>Comparison:</b> The new tactical layer would change the leading candidate; the existing Advisor ordering remains authoritative during this test.</div>':'')+
@@ -329,6 +333,26 @@ jobs:
               }catch(e){
                 host.innerHTML='<div class="ta-decision-render"><div class="ta-decision-title">Tactical Advisor</div><div class="ta-unknown">Decision analysis unavailable for this state.</div></div>';
               }finally{busy=false}
+            }
+            function chargeExecutionPanel(attackerUid,targets,actionState){
+              if(!isCharge)return '';
+              const selectedTargets=Array.isArray(actionState?.chargeTargets)?actionState.chargeTargets.map(String):[];
+              if(actionState?.chargeDone){
+                const outcome=actionState.chargeMade?'Successful':'Failed';
+                const names=selectedTargets.map(uid=>{
+                  const hit=targets.find(t=>String(t.entryUid)===uid);
+                  return hit?.name||uid;
+                }).join(', ');
+                return '<div class="ta-reason"><b>Charge recorded:</b> '+outcome+(names?' • '+String(names):'')+'<br><button type="button" class="btn primary" style="margin-top:7px;width:100%" onclick="window.advancePhase();return false;">Continue to Fight</button></div>';
+              }
+              const rows=targets.filter(t=>t&&t.entryUid&&t.recommendationEligible!==false).map((t,i)=>{
+                const raw=window.state?.tactical?.pairs?.[String(attackerUid)+'>'+String(t.entryUid)]||{};
+                const measured=Number.isFinite(Number(raw.distanceInches));
+                const checked=String(window.state?.tactical?.selectedTargetUid||'')===String(t.entryUid);
+                return '<label style="display:flex;gap:7px;align-items:center;margin-top:5px;font-size:10px"><input type="checkbox" data-onoforge-charge-target="'+String(t.entryUid).replace(/"/g,'&quot;')+'" '+(checked?'checked ':'')+'><span><b>'+String(t.name||('Target '+(i+1)))+'</b> • '+(measured?Number(raw.distanceInches).toFixed(1)+'" measured':'measure distance first')+'</span></label>';
+              }).join('');
+              return '<div class="ta-reason"><b>Charge execution</b><div class="tiny" style="margin-top:3px">Physically measure selected target distances, then record the 2D6 result. The app records success/failure; it does not require individual dice values.</div>'+(rows||'<div class="tiny" style="margin-top:6px">No currently eligible Charge targets.</div>')+
+                '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px"><button type="button" class="btn primary" onclick="window.recordTacticalChargeResult(\'success\',\''+String(attackerUid).replace(/'/g,"\\'")+'\');return false;">Charge Successful</button><button type="button" class="btn" onclick="window.recordTacticalChargeResult(\'failed\',\''+String(attackerUid).replace(/'/g,"\\'")+'\');return false;">Charge Failed</button></div></div>';
             }
             function ensureHost(){
               let h=document.getElementById('onoforge-advisor-render');
