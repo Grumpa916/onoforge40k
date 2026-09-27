@@ -2,7 +2,7 @@
 
 Updated: 2026-09-26
 Repository: Grumpa916/onoforge40k
-Branch: main
+Branch: feature/tactical-impact-layer
 
 ## North Star
 
@@ -179,15 +179,18 @@ The battle-page comparison surface is designed to show:
 The comparison layer does NOT replace the existing Advisor ranking yet.
 
 ### Important constraint
-For Charge, the current existing Advisor candidate records do not yet contain a full projected Fight exchange in the same way Shooting/Fight recommendations do. Therefore the Tactical Impact Layer should not be treated as authoritative for Charge ranking until Charge candidates are enriched with projected Fight output using the existing combat engine.
+Charge legality and charge-distance logic remain authoritative in the existing Advisor. The Tactical Impact Layer is still comparison-only for Charge until live validation is complete.
 
-### Next exact step
-Build the Charge engagement adapter that:
-- derives candidate-level projected Fight output using the existing combat engine,
-- includes expected outgoing damage and expected incoming return,
-- preserves existing Charge legality and distance logic,
-- treats map distance as tactical context only,
-- uses physical measurement as the execution gate,
-- then feeds the complete Charge engagement into the Tactical Impact evaluator.
+### Charge engagement adapter status
+The Charge engagement adapter is now implemented in `tactical-advisor-adapter.js`.
+It:
+- projects the charging unit's Fight output through the existing `calculateMathMixed` engine,
+- projects the target's reciprocal melee output separately without inheriting Charge/Lance state,
+- preserves current model/wound state, including attached-unit target state where the shared engine exposes it,
+- derives mission/objective impact from the existing Tactical Advisor objective helpers,
+- keeps map geometry non-authoritative and carries physical measurement as the execution gate,
+- attaches the projected exchange to each Charge candidate for comparison and UI testing.
 
-After that, compare the existing Charge ordering against the new tactical ordering in the live Charge workflow before allowing the new layer to control ranking.
+The deploy-time Tactical Advisor surface now shows the projected Charge → Fight exchange, including outgoing damage, expected return damage, projected casualties, charge probability, and whether the distance is physically confirmed.
+
+The existing Advisor ordering remains authoritative; the tactical layer is not yet allowed to replace it.
