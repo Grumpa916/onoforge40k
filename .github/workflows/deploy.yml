@@ -307,7 +307,7 @@ jobs:
                   '<div class="ta-metric"><b>'+pct(top.tradeValue)+'</b><span>Trade</span></div>'+
                   '<div class="ta-metric"><b>'+pct(top.objectiveValue)+'</b><span>Objective</span></div>'+
                   '<div class="ta-metric"><b>'+pct(top.futureScoringValue)+'</b><span>Future score</span></div>'+
-                  '<div class="ta-metric"><b>'+pct(top.decisionConfidence)+'</b><span>Confidence</span></div>'+
+                  '<div class="ta-metric"><b>'+pct(baselineTop.decisionConfidence)+'</b><span>Confidence</span></div>'+
                   '</div>'+
                   '<div class="ta-reason"><b>Why:</b> '+String(interpretation)+'</div>'+
                   (baselineTargets.length?'<div class="ta-targets">'+baselineTargets.map((t,i)=>'<div class="ta-target"><div class="ta-target-name">'+String(t.targetName||t.name||t.defenderName||'Target '+(i+1))+'</div><div class="ta-target-score">'+pct(t.decisionScore)+'</div><div class="ta-target-meta">Existing '+modeLabel(t.decisionMode||'TACTICAL')+' • damage '+num(t.expectedDamage,1)+' • kill '+pct(t.killFraction||t.wipeChance)+'</div></div>').join('')+'</div>':'<div class="ta-unknown" style="margin-top:10px">No legal target recommendation is available from the current state.</div>')+
