@@ -11283,7 +11283,7 @@ function render(){
   }
   app.innerHTML=`<div class="top"><div class="brand">ONOFORGE 40K</div><div class="sub">11th Edition • v337 • BSData 11e data source • Army-linked Mathhammer Engine</div></div>${nav()}<main class="wrap">
   
-${state.page!=='battle'?'<div class="status">✓ Browser app loaded locally • Source: '+esc(state.source)+' • '+esc(state.revision)+'</div>'+dataSyncStatusHtml()+'<div style="height:12px"></div>':''}<div id="onoforge-advisor-render"></div>${state.page==='battle'?'<div id="battle-view">'+pages.battle()+'</div>':(pages[state.page]||builder)()}${'<div id="secondary-plan-modal-root">'+secondaryPlanEditorModal()+'</div>'}</main></div>`;
+${state.page!=='battle'?'<div class="status">✓ Browser app loaded locally • Source: '+esc(state.source)+' • '+esc(state.revision)+'</div>'+dataSyncStatusHtml()+'<div style="height:12px"></div>':''}${state.page==='battle'?'<div id="battle-view">'+pages.battle()+'</div>':(pages[state.page]||builder)()}${'<div id="secondary-plan-modal-root">'+secondaryPlanEditorModal()+'</div>'}</main></div>`;
   ensureLiveGameTimerDisplay();
 }
 
