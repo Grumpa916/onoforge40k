@@ -7322,9 +7322,19 @@ function tacticalWeaponModelWeaponInstanceCount(entryUid,modelId,weaponName,side
   if(!entryUid||!modelId||!weaponName)return 0;
   const e=entry(side==='opp'?'opp':'my',entryUid),u=e?get(e.unitId):null;
   const roster=e&&u?ensureModelRoster(e,u):[];
-  const model=roster.find(x=>String(x.id)===String(modelId));
+  let model=roster.find(x=>String(x.id)===String(modelId));
+  // Generic combat snapshots use UID-model-N ids while the persistent model roster
+  // uses UID-mN ids. Map by model ordinal so weapon availability is not lost.
+  if(!model){
+    const match=String(modelId).match(/-(?:model-|m)(\d+)$/);
+    if(match){
+      const index=Math.max(0,Number(match[1])-1);
+      model=roster[index];
+    }
+  }
   return model?(Array.isArray(model.weapons)?model.weapons:[]).filter(x=>String(x)===String(weaponName)).length:0;
 }
+
 function tacticalWeaponModelUseCount(entryUid,modelId,weaponName,round=state.round,phase=state.phase,side='my'){
   const wanted=String(modelId);
   return tacticalWeaponModelUseEvents(entryUid,round,phase,side).reduce((n,e)=>{
