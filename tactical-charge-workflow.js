@@ -124,14 +124,11 @@
   })();
 
   // Keep one user-facing Tactical Advisor. The existing Advisor remains the
-  // authoritative control surface; Tactical Impact is nested inside it.
-  // The Battle renderer replaces the battle subtree during render(), so the
-  // bridge keeps the renderer host outside that subtree and mirrors its
-  // contents into the existing Advisor panel after every render.
-  (function combineAdvisorSurfaces(){
+  // authoritative control surface; Tactical Impact is physically mounted
+  // inside that panel so the Battle renderer owns its lifecycle.
+  (function mountAdvisorSurface(){
     if(typeof global.document==='undefined')return;
     let observer=null;
-    let timer=null;
 
     function findAuthoritativePanel(host){
       const cards=Array.from(global.document.querySelectorAll('.tactical-advisor-card'));
@@ -147,61 +144,27 @@
         .sort((a,b)=>String(a.textContent||'').length-String(b.textContent||'').length)[0]||null;
     }
 
-    function ensureMount(panel){
-      let mount=panel.querySelector('[data-onoforge-tactical-impact-mount]');
-      if(!mount){
-        mount=global.document.createElement('div');
-        mount.setAttribute('data-onoforge-tactical-impact-mount','true');
-        mount.style.margin='0 0 10px';
-        panel.insertBefore(mount,panel.firstChild);
-      }
-      return mount;
-    }
-
-    function sync(){
+    function mount(){
       const host=global.document.getElementById('onoforge-advisor-render');
       if(!host)return false;
       const panel=findAuthoritativePanel(host);
       if(!panel)return false;
-      const mount=ensureMount(panel);
-      const source=host.innerHTML;
-      if(mount.dataset.onoforgeLastSource===source){
-        host.style.display='none';
-        host.hidden=true;
-        host.setAttribute('aria-hidden','true');
-        return true;
+      if(host.parentElement!==panel){
+        host.style.margin='0 0 10px';
+        host.style.border='0';
+        host.style.padding='0';
+        host.style.background='transparent';
+        host.style.boxShadow='none';
+        panel.insertBefore(host,panel.firstChild);
       }
-      const template=global.document.createElement('div');
-      template.innerHTML=source;
-      const title=template.querySelector('.ta-decision-title');
-      if(title)title.textContent='Tactical Impact Analysis';
-      const render=template.querySelector('.ta-decision-render');
-      if(render){
-        render.style.margin='0';
-        render.style.border='0';
-        render.style.padding='0';
-        render.style.background='transparent';
-        render.style.boxShadow='none';
-      }
-      mount.innerHTML=template.innerHTML;
-      mount.dataset.onoforgeLastSource=source;
-      host.style.position='absolute';
-      host.style.left='-100000px';
-      host.style.width='1px';
-      host.style.height='1px';
-      host.style.overflow='hidden';
-      host.style.display='none';
-      host.hidden=true;
-      host.setAttribute('aria-hidden','true');
       return true;
     }
 
     function start(){
       if(observer)return;
-      observer=new global.MutationObserver(function(){sync();});
-      observer.observe(global.document.body,{childList:true,subtree:true,characterData:true});
-      sync();
-      timer=setInterval(sync,500);
+      observer=new global.MutationObserver(function(){mount();});
+      observer.observe(global.document.body,{childList:true,subtree:true});
+      mount();
     }
 
     if(global.document.readyState==='loading')global.document.addEventListener('DOMContentLoaded',start,{once:true});
