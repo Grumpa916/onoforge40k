@@ -70,7 +70,7 @@ const physicalStart = html.indexOf('function tacticalPreRoll');
 const physicalEnd = html.indexOf('function engineExpectedDice', physicalStart);
 const physicalDiceSurface = physicalStart >= 0 && physicalEnd > physicalStart ? html.slice(physicalStart, physicalEnd) : '';
 check('Physical dice resolution is not RNG-driven',
-  !(/(Math\\.random\\(|crypto\\.getRandomValues\\()/i.test(physicalDiceSurface)),
+  !(/Math\\.random\\(|crypto\\.getRandomValues\\(/i.test(physicalDiceSurface)),
   'Random generation is allowed elsewhere for Mathhammer simulation but must not appear in the physical-dice resolution surface.');
 check('Combat snapshot layer exists',
   /function combatSnapshot\(/.test(html));
