@@ -255,7 +255,7 @@ jobs:
                   if(Array.isArray(v)&&v.some(x=>x&&typeof x==='object'&&('decisionScore' in x||'decisionMode' in x))) candidates.push(...v);
                 }
               }
-              return candidates.filter(x=>x&&typeof x==='object').sort((a,b)=>(Number(b.decisionScore)||-1)-(Number(a.decisionScore)||-1));
+              return candidates.filter(x=>x&&typeof x==='object');
             }
             function modeLabel(m){
               return ({SCORE_NOW:'SCORE NOW',DENY_SCORE:'DENY SCORE',PRESERVE_UNIT:'PRESERVE UNIT',TRADE_UP:'TRADE UP',SET_UP_FUTURE_SCORE:'SET UP FUTURE SCORE',TACTICAL:'TACTICAL',LOW_CONFIDENCE:'LOW CONFIDENCE'})[m]||'TACTICAL';
@@ -279,9 +279,10 @@ jobs:
                 const r=(typeof window.getTacticalAdvisorResult==='function'
                   ?window.getTacticalAdvisorV2Result(a.uid,{samples:4000})
                   :window.tacticalAdvisorV2(a.uid,{samples:4000}))||{};
-                const baselineTargets=extractTargets(r).slice(0,3);
+                const allBaselineTargets=extractTargets(r);
+                const baselineTargets=allBaselineTargets.slice(0,3);
                 const baselineTop=baselineTargets[0]||{};
-                const compareBase={...r,recommendations:baselineTargets.map(x=>({...x}))};
+                const compareBase={...r,recommendations:allBaselineTargets.map(x=>({...x}))};
                 const layerAdapter=window.ONOFORGE_TACTICAL_ADVISOR_ADAPTER;
                 const layerEngine=window.ONOFORGE_TACTICAL_ADVISOR;
                 const layered=layerAdapter&&layerEngine
