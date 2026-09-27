@@ -9002,9 +9002,19 @@ function tacticalAdvisorHtml(){
       (result.status==='no-eligible-charge-targets'?'<div class="tiny" style="margin-top:8px">Choose another attacker above, or evaluate a different target in Tactical Context below.</div>':'')+
       '</div>';
   }
-  const recs=Array.isArray(result.recommendations)?result.recommendations:[],confidenceClass=v=>v==='High'?'ok':v==='Medium'?'status':'warn';
+  const impactAdapter=window.ONOFORGE_TACTICAL_ADVISOR_ADAPTER;
+  const impactEngine=window.ONOFORGE_TACTICAL_ADVISOR;
+  const enrichedAdvisor=(impactAdapter&&impactEngine&&typeof impactAdapter.enrichAdvisor==='function')
+    ?impactAdapter.enrichAdvisor({
+        ...result,
+        recommendations:(Array.isArray(result.recommendations)?result.recommendations:[]).map(x=>({...x}))
+      },impactEngine,{attackerEntry:ae,samples:1500})
+    :result;
+  const recs=Array.isArray(enrichedAdvisor.recommendations)?enrichedAdvisor.recommendations:[],confidenceClass=v=>v==='High'?'ok':v==='Medium'?'status':'warn';
   const recCard=r=>{
     const e=r.recommendationExplanation||{},expected=e.expected||{},risk=e.risk||{},conf=e.confidence||{},changes=Array.isArray(e.whatCouldChange)?e.whatCouldChange:[];
+    const impact=r.tacticalImpact||{},projection=r.projectedFight||{};
+    const impactReasons=Array.isArray(impact.reasons)?impact.reasons:[];
     const selected=state.tactical?.selectedTargetUid===r.entryUid;
     return '<details class="tactical-recommendation-card" style="margin-top:6px" '+(selected?'open':'')+'>'+
       '<summary style="cursor:pointer;list-style:none"><div class="split"><div><b>#'+esc(e.rank||'')+' '+esc(r.name||'Target')+'</b><div class="tiny">'+Number(expected.damage||0).toFixed(1)+'W • '+Number(expected.modelsKilled||0).toFixed(1)+' models • '+(Number(expected.wipeChance||0)*100).toFixed(0)+'% wipe</div></div><span class="pill '+(selected?'ok':'')+'">'+(selected?'Selected':(e.confidence?.label==='Limited'?'Verify context':'Select'))+'</span></div></summary>'+
@@ -9015,6 +9025,15 @@ function tacticalAdvisorHtml(){
         (Number(e.missionImpact.ownPrimaryOpportunity||0)>0?' • linked to your Primary scoring':'')+
         '</div>':'')+
       '<div style="margin-top:7px"><b>Risk:</b> '+esc(String(risk.band||'unknown'))+' • '+Number(risk.incomingThreat||0).toFixed(1)+' incoming W • '+Number(risk.pointsAtRisk||0).toFixed(0)+' pts at risk</div>'+
+      '<div class="status" style="margin-top:8px"><div class="split"><div><b>Tactical Impact Analysis</b><div class="tiny">Shared combat + mission impact model</div></div><span class="pill">'+Number(impact.score||0).toFixed(0)+'/100 • '+esc(String(impact.engagementType||'TACTICAL'))+'</span></div>'+
+        (impactReasons.length?'<div style="margin-top:6px">'+impactReasons.map(x=>'<span class="pill" style="margin:2px">'+esc(x)+'</span>').join('')+'</div>':'<div class="muted small" style="margin-top:6px">No additional impact reasons were resolved from the current state.</div>')+
+        (String(state.phase||'')==='Charge'
+          ?'<div style="margin-top:7px"><b>Charge analysis:</b> '+(r.chargeSuccessChance==null?'Success chance requires measured distance':'2D6 success chance '+(Number(r.chargeSuccessChance)*100).toFixed(0)+'%')+
+            ' • '+(projection?.distanceEvidence?.physicalDistanceConfirmed?'measured distance confirmed':'physical distance not yet confirmed')+
+            (projection?.outgoing?.result? ' • projected '+Number(projection.outgoing.result.damage||0).toFixed(1)+'W outgoing':'')+
+            (projection?.incoming?.result? ' • '+Number(projection.incoming.result.damage||0).toFixed(1)+'W return':'')+
+            '</div>':'')+
+      '</div>'+
       (changes.length?'<div style="margin-top:7px"><b>What could change it:</b><ul style="margin:3px 0 0 18px">'+changes.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul></div>':'')+
       '<button type="button" class="btn primary" style="width:100%;margin-top:8px" onclick="ensureTacticalState().selectedTargetUid=\''+esc(r.entryUid).replace(/'/g,"\\'")+'\';save();render()">Select '+esc(r.name||'Target')+'</button>'+
     '</details>';
@@ -9028,7 +9047,7 @@ function tacticalAdvisorHtml(){
       '<div class="status" style="margin-bottom:8px"><div class="muted small">Recommended targets</div><div class="tiny" style="margin-top:2px">Compare expected damage and wipe chance. Unknown battlefield facts lower confidence but do not hide valid target candidates.</div></div>'+
       (recs.slice(0,3).map(recCard).join('')||'<div class="empty">No eligible target recommendations for the current phase.</div>')+
       '<div class="grid2" style="margin-top:8px"><div class="status"><b>Natural targets</b><div style="margin-top:4px">'+(natural||'<span class="muted">None</span>')+'</div></div><div class="status"><b>Avoid / high-risk</b><div style="margin-top:4px">'+(avoidTargets||'<span class="muted">None</span>')+'</div></div></div>'+
-      '<div class="muted small" style="margin-top:8px">Recommendations update from current army roster, weapon availability, battlefield context, objectives, and tracked game state.</div>'+
+      '<div class="muted small" style="margin-top:8px">Recommendations and Tactical Impact analysis update from the authoritative army roster, weapon availability, battlefield context, objectives, and tracked game state.</div>'+
     '</div></details>';
 }
 
@@ -11410,6 +11429,7 @@ document.addEventListener('click',function(ev){
   const c=ev.target.closest('[data-battle-control]');
   if(c){ev.preventDefault();const action=c.dataset.battleControl;if(action==='phase')advancePhase();else if(action==='round')nextRound();else if(action==='previous-phase')previousPhase();else if(action==='round')nextRound();else if(action==='previous-round')previousRound();return;}
 });
+window.ONOFORGE_TACTICAL_ADVISOR_CANONICAL_SURFACE=true;
 load();loadStratagems();
 refreshCurrentUnitDatabase(false);
 render();
