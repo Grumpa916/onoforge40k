@@ -246,26 +246,69 @@
     }
   })();
 
-  // The injected comparison surface is distinct from the authoritative
-  // existing Advisor. Give it a unique heading so live testing is unambiguous.
-  (function labelTacticalImpactSurface(){
+  // Present one user-facing Tactical Advisor while keeping the authoritative
+  // Advisor and Tactical Impact analysis as separate underlying layers.
+  (function combineAdvisorSurfaces(){
     if(typeof global.document==='undefined')return;
-    const rename=function(){
+    let observer=null;
+    let attempts=0;
+    let merged=false;
+
+    function findAuthoritativePanel(){
       const host=global.document.getElementById('onoforge-advisor-render');
-      const title=host&&host.querySelector('.ta-decision-title');
-      if(title&&title.textContent.trim()==='Tactical Advisor'){
-        title.textContent='Tactical Impact Layer';
-      }
-    };
-    const hostReady=function(){
-      rename();
+      if(!host)return null;
+      const cards=Array.from(global.document.querySelectorAll('.card'));
+      return cards.find(card=>{
+        if(card===host||card.contains(host))return false;
+        const text=String(card.textContent||'');
+        return /Tactical Advisor/.test(text)&&/Objective priorities/.test(text);
+      })||null;
+    }
+
+    function merge(){
+      if(merged)return true;
       const host=global.document.getElementById('onoforge-advisor-render');
-      if(host&&typeof global.MutationObserver==='function'){
-        new global.MutationObserver(rename).observe(host,{childList:true,subtree:true});
+      const panel=findAuthoritativePanel();
+      if(!host||!panel)return false;
+      if(panel.contains(host)){
+        merged=true;
+        return true;
       }
-    };
-    if(global.document.readyState==='loading')global.document.addEventListener('DOMContentLoaded',hostReady,{once:true});
-    else hostReady();
+
+      const title=host.querySelector('.ta-decision-title');
+      if(title)title.textContent='Tactical Advisor';
+      host.style.margin='0 0 10px';
+      host.style.border='0';
+      host.style.padding='0';
+      host.style.background='transparent';
+
+      // The existing Advisor remains the authoritative control surface.
+      // The Tactical Impact output is moved into it as its analysis section.
+      panel.insertBefore(host,panel.firstChild);
+      merged=true;
+      return true;
+    }
+
+    function start(){
+      if(merge())return;
+      if(observer)return;
+      observer=new global.MutationObserver(function(){
+        if(merge()||++attempts>40){
+          observer.disconnect();
+          observer=null;
+        }
+      });
+      observer.observe(global.document.body,{childList:true,subtree:true});
+      const timer=setInterval(function(){
+        if(merge()||++attempts>40){
+          clearInterval(timer);
+          if(observer){observer.disconnect();observer=null;}
+        }
+      },250);
+    }
+
+    if(global.document.readyState==='loading')global.document.addEventListener('DOMContentLoaded',start,{once:true});
+    else start();
   })();
 
   global.ONOFORGE_TACTICAL_CHARGE_WORKFLOW=Object.freeze({
