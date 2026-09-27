@@ -48,7 +48,19 @@
     }
     const raw=rawPairFor(attackerUid,targetUid);
     if(Number.isFinite(Number(raw?.distanceInches))){
-      return {distanceSource:'physical-measurement',physicalDistanceConfirmed:true};
+      return {distanceSource:'physical-measurement',physicalDistanceConfirmed:true,distanceInches:Math.max(0,Number(raw.distanceInches))};
+    }
+    // The canonical Tactical Context is authoritative for manually entered
+    // measured distance. Use its resolved pair state as a second direct source
+    // so the impact layer cannot incorrectly downgrade an already-entered 5"
+    // measurement to "not confirmed" because of a stale adapter cache.
+    if(typeof global.tacticalPairState==='function'){
+      try{
+        const pair=global.tacticalPairState(attackerUid,targetUid);
+        if(Number.isFinite(Number(pair?.distanceInches))){
+          return {distanceSource:'physical-measurement',physicalDistanceConfirmed:true,distanceInches:Math.max(0,Number(pair.distanceInches))};
+        }
+      }catch(_e){}
     }
     if(rec?.distanceKnown===true){
       return {distanceSource:'map-estimate',physicalDistanceConfirmed:false};
