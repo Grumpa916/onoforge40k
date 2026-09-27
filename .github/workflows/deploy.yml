@@ -288,7 +288,7 @@ jobs:
                 const layerAdapter=window.ONOFORGE_TACTICAL_ADVISOR_ADAPTER;
                 const layerEngine=window.ONOFORGE_TACTICAL_ADVISOR;
                 const layered=layerAdapter&&layerEngine
-                  ?layerAdapter.enrichAdvisor(compareBase,layerEngine)
+                  ?layerAdapter.enrichAdvisor(compareBase,layerEngine,{attackerEntry:a,samples:1500})
                   :compareBase;
                 const tacticalTargets=Array.isArray(layered.recommendations)?layered.recommendations.slice(0,3):[];
                 const tacticalTop=tacticalTargets[0]||baselineTop;
