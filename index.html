@@ -994,9 +994,9 @@ const CURRENT_11E_DATA_SOURCES={
   Ultramarines:'https://raw.githubusercontent.com/BSData/wh40k-11e/main/Imperium%20-%20Ultramarines.json'
 };
 const ONOFORGE_SOURCE_POLICY_11E={
-  canonical:{name:'40k.app',manifest:'data/40kapp-source.json',role:'authoritative'},
-  supplemental:[{name:'BSData 11e',role:'supplemental'}],
-  bootstrap:[{name:'Embedded catalogue',variable:'EXPANDED_CATALOGUE',role:'fallback-only'}]
+  canonical:{name:'BSData 11e',role:'structured-community-data'},
+  supplemental:[],
+  bootstrap:[{name:'Embedded catalogue',variable:'EXPANDED_CATALOGUE',role:'local-bootstrap'}]
 };
 window.ONOFORGE_SOURCE_POLICY_11E=ONOFORGE_SOURCE_POLICY_11E;
 
@@ -2335,10 +2335,10 @@ function stratagemsUI(){
  };
  return '<details class="card" '+(state.stratagemsOpen===true?'open':'')+' ontoggle="state.stratagemsOpen=this.open;save()"><summary class="sectionTitle">Stratagems <span class="pill">11th Edition</span></summary><div class="muted small" style="margin-top:8px">Army and Core stratagems, grouped by phase.</div><div class="grid two" style="margin-top:10px">'+army('my','My Army')+army('opp','Opponent Army')+'</div></details>';
 }
-const ONOFORGE_RULES_DATA_PIN={schema:'onoforge.rules-data-pin.v1',unitSource:'40k.app',unitRevision:925,unitRevisionDate:'2026-08-11',eventCompanion:'Warhammer Event Companion',eventCompanionVersion:'1.2',eventCompanionRevision:'1.2'};
+const ONOFORGE_RULES_DATA_PIN={schema:'onoforge.rules-data-pin.v1',unitSource:'BSData 11e',unitRevision:'current',unitRevisionDate:'',eventCompanion:'Warhammer Event Companion',eventCompanionVersion:'1.2',eventCompanionRevision:'1.2'};
 let state={
   savedArmyLists:[],tournamentLifecycle:'SETUP',battleResultLocked:false,battleResultVerified:false,battleResultVerifiedAt:null,
-  stratagemsMy:[], stratagemsOpp:[], stratagemsOpen:false,primaryMissionsOpen:false,secondaryMissionsOpen:false,page:'builder',myName:'My Army',oppName:'Opponent Army',faction:'Tyranids',detachment:'Invasion Fleet',detachmentSelections:['Invasion Fleet'],oppFaction:'Ultramarines',oppDetachment:'Gladius Task Force',oppDetachmentSelections:['Gladius Task Force'],limit:2000,my:[],opp:[],searchMy:'',searchOpp:'',configure:null,attacker:'norn',weapon:'Rupture Cannon',target:'marine',round:1,phase:'Command',myVP:0,oppVP:0,myCP:0,oppCP:0,phaseCP:{},battleReadyMy:false,battleReadyOpp:false,secondaryMy:'tactical',secondaryOpp:'tactical',secondaryMyCards:[],secondaryOppCards:[],secondaryMyDeck:[],secondaryOppDeck:[],secondaryMyDeckInitialized:false,secondaryOppDeckInitialized:false,secondaryMyDiscard:[],secondaryOppDiscard:[],newOrdersCompletedMy:false,newOrdersCompletedOpp:false,secondaryMyScored:[],secondaryOppScored:[],secondaryMyScoredVP:{},secondaryOppScoredVP:{},secondaryMyScoredVPByRound:{},secondaryOppScoredVPByRound:{},secondaryMyScoredRound:{},secondaryOppScoredRound:{},secondaryNewOrdersUsedMy:false,secondaryNewOrdersUsedOpp:false,secondaryPersonalPlans:{},secondaryPlanEdit:'',secondaryDetailSide:'',secondaryDetailName:'',gameReferencePersonal:{},rulesDataPin:null,myForceDisposition:'',oppForceDisposition:'',attackerSide:'my',firstTurn:'my',currentTurn:'my',objectives:{},objectiveMapLayout:'A',objectiveMapMissionKey:'',terrainSetupComplete:false,deletedSavedArmyLists:[],objectiveControlHistory:{},objectiveControlSources:{},objectiveMeta:{},deploymentTrackingSide:'my',battlefieldUnitPositions:{},deploymentMapPlacement:null,battlefieldMapPlacement:null,reserveDeclarations:{my:{},opp:{}},events:[],gameAssistantChecks:{},gameAssistantNotes:'',personalArmyNotes:'',lists:[],activeRosterId:'',activeOpponentRosterId:'',dataStatus:'40k.app canonical manifest • embedded catalogue bootstrap fallback • BSData supplemental',source:'40k.app',revision:'925',cloud:{email:'',userId:'',status:'Not connected',lastSync:'',error:''},cloudBattles:[],rulesLog:[],mathRules:{},gameTimer:{elapsedMs:0,running:false,paused:false,startedAt:0,pausedAt:0,finishedAt:0,turnMyMs:0,turnOppMs:0,turnStartedGameMs:0,turnPaused:false},cloudPasswordRecovery:false,localSavedAt:''};
+  stratagemsMy:[], stratagemsOpp:[], stratagemsOpen:false,primaryMissionsOpen:false,secondaryMissionsOpen:false,page:'builder',myName:'My Army',oppName:'Opponent Army',faction:'Tyranids',detachment:'Invasion Fleet',detachmentSelections:['Invasion Fleet'],oppFaction:'Ultramarines',oppDetachment:'Gladius Task Force',oppDetachmentSelections:['Gladius Task Force'],limit:2000,my:[],opp:[],searchMy:'',searchOpp:'',configure:null,attacker:'norn',weapon:'Rupture Cannon',target:'marine',round:1,phase:'Command',myVP:0,oppVP:0,myCP:0,oppCP:0,phaseCP:{},battleReadyMy:false,battleReadyOpp:false,secondaryMy:'tactical',secondaryOpp:'tactical',secondaryMyCards:[],secondaryOppCards:[],secondaryMyDeck:[],secondaryOppDeck:[],secondaryMyDeckInitialized:false,secondaryOppDeckInitialized:false,secondaryMyDiscard:[],secondaryOppDiscard:[],newOrdersCompletedMy:false,newOrdersCompletedOpp:false,secondaryMyScored:[],secondaryOppScored:[],secondaryMyScoredVP:{},secondaryOppScoredVP:{},secondaryMyScoredVPByRound:{},secondaryOppScoredVPByRound:{},secondaryMyScoredRound:{},secondaryOppScoredRound:{},secondaryNewOrdersUsedMy:false,secondaryNewOrdersUsedOpp:false,secondaryPersonalPlans:{},secondaryPlanEdit:'',secondaryDetailSide:'',secondaryDetailName:'',gameReferencePersonal:{},rulesDataPin:null,myForceDisposition:'',oppForceDisposition:'',attackerSide:'my',firstTurn:'my',currentTurn:'my',objectives:{},objectiveMapLayout:'A',objectiveMapMissionKey:'',terrainSetupComplete:false,deletedSavedArmyLists:[],objectiveControlHistory:{},objectiveControlSources:{},objectiveMeta:{},deploymentTrackingSide:'my',battlefieldUnitPositions:{},deploymentMapPlacement:null,battlefieldMapPlacement:null,reserveDeclarations:{my:{},opp:{}},events:[],gameAssistantChecks:{},gameAssistantNotes:'',personalArmyNotes:'',lists:[],activeRosterId:'',activeOpponentRosterId:'',dataStatus:'BSData 11e structured source • embedded catalogue bootstrap fallback',source:'BSData 11e',revision:'current',cloud:{email:'',userId:'',status:'Not connected',lastSync:'',error:''},cloudBattles:[],rulesLog:[],mathRules:{},gameTimer:{elapsedMs:0,running:false,paused:false,startedAt:0,pausedAt:0,finishedAt:0,turnMyMs:0,turnOppMs:0,turnStartedGameMs:0,turnPaused:false},cloudPasswordRecovery:false,localSavedAt:''};
 
 const GAME_REFERENCE_PHASES={Command:[],Movement:[],Shooting:[],Charge:[],Fight:[],End:[]};
 const GAME_REFERENCE_QUICK=[];
@@ -11190,7 +11190,7 @@ function eventCompanionGeometryAuditHtml(){
     '<div class="tiny" style="margin-top:8px">Coordinate system: origin bottom-left • 60″ × 44″ • objective, deployment-zone, territory and terrain geometry remain blocked until verified.</div>'+
     '<details style="margin-top:10px"><summary style="cursor:pointer;color:#9ecbff">Show layout verification queue</summary><div style="margin-top:8px">'+rows+(layouts.length>15?'<div class="tiny">Showing first 15 of '+layouts.length+' layouts.</div>':'')+'</div></details></div>';
 }
-function dataPage(){return `<div class="card"><h2>Data Sources</h2><div class="status">${esc(state.dataStatus)} • ${esc(state.revision)}</div>${weaponDataIntegrityAuditHtml()}${eventCompanionGeometryAuditHtml()}${eventCompanionGeometryVerificationConsoleHtml()}<p class="muted">The standalone prototype keeps source data separate from saved rosters and personal notes.</p><div class="card" style="margin-top:12px"><h3 style="margin-top:0">Reference Sources</h3><div class="unit"><strong>40k.app</strong><div class="muted">Primary structured source • Revision ${esc(String(ONOFORGE_40KAPP_SOURCE?.source?.revision||'925'))}</div></div><div class="unit"><strong>Warhammer Event Companion v1.2</strong><div class="muted">Official event procedures, CP/VP limits, missions, terrain and base-size reference • v1.2</div></div><div class="unit"><strong>MathHammer</strong><div class="muted">11th Edition combat calculator • v2.1.17 (Sep 18, 2026) • unit and weapon-profile reference</div><div class="tiny" style="margin-top:4px">Candidate supplemental source for weapon-profile enrichment and Mathhammer validation. Verify against authoritative 40K sources before treating values as canonical.</div></div></div><label class="btn">Import JSON<input type="file" accept=".json,application/json" style="display:none" onchange="importJSON(this)"></label><button class="btn" onclick="exportJSON()">Export Catalogue</button><div class="card"><h3>Normalized Catalogue</h3>${DEMO.map(u=>`<div class="unit"><strong>${esc(u.name)}</strong><div class="muted">${u.faction} • ${u.points} pts • ${u.weapons.length} weapons • ${u.abilities.length} abilities</div></div>`).join('')}</div></div>`}
+function dataPage(){return `<div class="card"><h2>Data Sources</h2><div class="status">${esc(state.dataStatus)} • ${esc(state.revision)}</div>${weaponDataIntegrityAuditHtml()}${eventCompanionGeometryAuditHtml()}${eventCompanionGeometryVerificationConsoleHtml()}<p class="muted">The standalone prototype keeps source data separate from saved rosters and personal notes.</p><div class="card" style="margin-top:12px"><h3 style="margin-top:0">Reference Sources</h3><div class="unit"><strong>BSData 11e</strong><div class="muted">Structured community unit-data source used for current catalogue refreshes</div></div><div class="unit"><strong>Warhammer Event Companion v1.2</strong><div class="muted">Official event procedures, CP/VP limits, missions, terrain and base-size reference • v1.2</div></div><div class="unit"><strong>MathHammer</strong><div class="muted">11th Edition combat calculator • v2.1.17 (Sep 18, 2026) • unit and weapon-profile reference</div><div class="tiny" style="margin-top:4px">Candidate supplemental source for weapon-profile enrichment and Mathhammer validation. Verify against authoritative 40K sources before treating values as canonical.</div></div></div><label class="btn">Import JSON<input type="file" accept=".json,application/json" style="display:none" onchange="importJSON(this)"></label><button class="btn" onclick="exportJSON()">Export Catalogue</button><div class="card"><h3>Normalized Catalogue</h3>${DEMO.map(u=>`<div class="unit"><strong>${esc(u.name)}</strong><div class="muted">${u.faction} • ${u.points} pts • ${u.weapons.length} weapons • ${u.abilities.length} abilities</div></div>`).join('')}</div></div>`}
 function importJSON(inp){const f=inp.files?.[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const raw=JSON.parse(rd.result);const arr=Array.isArray(raw)?raw:(raw.units||raw.catalogue?.units||[]);if(!arr.length)throw new Error('No normalized units found');DEMO.splice(0,DEMO.length,...arr);state.source=f.name;state.revision='imported';state.dataStatus='Imported normalized catalogue';save();render()}catch(e){alert('Import failed: '+e.message)}};rd.readAsText(f)}
 function exportJSON(){const blob=new Blob([JSON.stringify({schema:'battleforge.11e.v57',source:state.source,revision:state.revision,units:DEMO},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='battleforge-v46-catalogue.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
 function actionLogFiltersHtml(){
@@ -11254,18 +11254,8 @@ function resetAllSecondaryMissions(side){
   render();
 }
 
-let ONOFORGE_40KAPP_SOURCE=null;
 let ONOFORGE_EVENT_COMPANION=null;
-async function load40kAppSourceManifest(){
-  try{
-    const r=await fetch('./data/40kapp-source.json',{cache:'no-store'});
-    if(!r.ok)throw new Error('Source manifest HTTP '+r.status);
-    ONOFORGE_40KAPP_SOURCE=await r.json();
-  }catch(e){
-    ONOFORGE_40KAPP_SOURCE=null;
-  }
-  render();
-}async function loadEventCompanionData(){
+async function loadEventCompanionData(){
   try{
     const r=await fetch('./data/warhammer-event-companion-v1.2.json',{cache:'no-store'});
     if(!r.ok)throw new Error('Event Companion HTTP '+r.status);
@@ -11294,7 +11284,7 @@ function render(){
   }
   app.innerHTML=`<div class="top"><div class="brand">ONOFORGE 40K</div><div class="sub">11th Edition • v337 • 40k.app v925 data source • Army-linked Mathhammer Engine</div></div>${nav()}<main class="wrap">
   
-${state.page!=='battle'?'<div class="status">✓ Browser app loaded locally • Source: '+esc(state.source)+' • '+esc(state.revision)+' • 40k.app v'+esc(String(ONOFORGE_40KAPP_SOURCE?.source?.revision||'925'))+'</div>'+dataSyncStatusHtml()+'<div style="height:12px"></div>':''}<div id="onoforge-advisor-render"></div>${state.page==='battle'?'<div id="battle-view">'+pages.battle()+'</div>':(pages[state.page]||builder)()}${'<div id="secondary-plan-modal-root">'+secondaryPlanEditorModal()+'</div>'}</main></div>`;
+${state.page!=='battle'?'<div class="status">✓ Browser app loaded locally • Source: '+esc(state.source)+' • '+esc(state.revision)+'</div>'+dataSyncStatusHtml()+'<div style="height:12px"></div>':''}<div id="onoforge-advisor-render"></div>${state.page==='battle'?'<div id="battle-view">'+pages.battle()+'</div>':(pages[state.page]||builder)()}${'<div id="secondary-plan-modal-root">'+secondaryPlanEditorModal()+'</div>'}</main></div>`;
   ensureLiveGameTimerDisplay();
 }
 
@@ -11424,7 +11414,6 @@ document.addEventListener('click',function(ev){
 load();loadStratagems();
 refreshCurrentUnitDatabase(false);
 render();
-load40kAppSourceManifest();
 loadEventCompanionData();
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./service-worker.js?v=360',{updateViaCache:'none'}).catch(()=>{});});}
 setTimeout(()=>initCloudOnLoad(),0);
