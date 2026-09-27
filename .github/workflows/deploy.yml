@@ -297,7 +297,7 @@ jobs:
                 const mode=baselineTop.decisionMode||dc.mode||'TACTICAL';
                 const interpretation=baselineTop.decisionInterpretation||dc.interpretation||'No single mission mode dominates the current exchange.';
                 const tacticalReasons=Array.isArray(tacticalTop.tacticalImpactReasons)?tacticalTop.tacticalImpactReasons:[];
-                const isCharge=r.chargeMode===true||String(r.phase||'')==='Charge';
+                const isCharge=r.chargeMode===true||String(r.phase||'')==='Charge'||String(r.decisionContext?.phase||'')==='Charge';
                 const chargeActionState=typeof window.tacticalAdvisorActionState==='function'?window.tacticalAdvisorActionState(a.uid):null;
                 const projected=tacticalTop.projectedFight||{};
                 const projectedOut=projected.outgoing?.result||{};
