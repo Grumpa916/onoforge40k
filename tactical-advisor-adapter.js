@@ -117,16 +117,16 @@
     return w?.WS!=null&&w?.BS==null;
   }
 
-  function projectedFightGroups(side,entry,target){
+  function projectedFightGroups(side,entry,targetEntry,targetUnit){
     const fn=typeof global.tacticalAdvisorWeaponGroups==='function'
       ?global.tacticalAdvisorWeaponGroups
       :global.attachedCombatWeaponGroups;
-    if(typeof fn!=='function'||!entry||!target)return [];
-    const raw=fn(side,entry,target)||[];
+    if(typeof fn!=='function'||!entry||!targetUnit)return [];
+    const raw=fn(side,entry,targetUnit)||[];
     return raw.filter(g=>{
       if(!g||Number(g.count||0)<=0)return false;
       if(typeof global.tacticalWeaponPhaseEligible==='function'){
-        return global.tacticalWeaponPhaseEligible(g.weapon,'Fight',entry,target);
+        return global.tacticalWeaponPhaseEligible(g.weapon,'Fight',entry,targetEntry);
       }
       return isMeleeWeapon(g.weapon);
     });
@@ -158,7 +158,7 @@
     if(!attacker||!target||!targetSnap||targetSnap.survivingModels<=0){
       return {available:false,reason:'combat-state-unavailable'};
     }
-    const groups=projectedFightGroups(attackerSide,attackerEntry,target);
+    const groups=projectedFightGroups(attackerSide,attackerEntry,targetEntry,target);
     if(!groups.length){
       return {available:false,reason:'no-melee-profiles-resolved'};
     }
