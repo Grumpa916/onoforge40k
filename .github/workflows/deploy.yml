@@ -331,8 +331,15 @@ jobs:
               }finally{busy=false}
             }
             function ensureHost(){
-              const h=document.getElementById('onoforge-advisor-render');
-              if(h)renderAdvisor();
+              let h=document.getElementById('onoforge-advisor-render');
+              if(!h){
+                const advisorCard=document.querySelector('.tactical-advisor-card');
+                if(!advisorCard||!advisorCard.parentNode)return;
+                h=document.createElement('div');
+                h.id='onoforge-advisor-render';
+                advisorCard.parentNode.insertBefore(h,advisorCard);
+              }
+              renderAdvisor();
             }
             window.addEventListener('load',function(){setTimeout(ensureHost,500)});
             const oldRender=window.render;
