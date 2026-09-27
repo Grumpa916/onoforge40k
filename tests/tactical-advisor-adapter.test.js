@@ -37,8 +37,14 @@ assert(adapter.deriveTurnUrgency(baseAdvisor.missionDecisionContext,baseAdvisor.
 
 const mapped=adapter.fromRecommendation(baseAdvisor.recommendations[0],baseAdvisor);
 assert(mapped.mission.turnUrgency>=75);
+assert.strictEqual(mapped.execution.distanceSource,'unknown');
 assert.strictEqual(mapped.execution.physicalDistanceConfirmed,false);
 assert.strictEqual(mapped.execution.legalityConfirmed,true);
+
+const mapEstimate=adapter.fromRecommendation({...baseAdvisor.recommendations[0],distanceKnown:true},baseAdvisor);
+assert.strictEqual(mapEstimate.execution.distanceSource,'map-estimate');
+assert.strictEqual(mapEstimate.execution.physicalDistanceConfirmed,false);
+assert.strictEqual(engine.evaluateEngagement(mapEstimate).executionConfidence,'tactical-only','Map geometry must remain tactical-only until physical distance is confirmed');
 
 adapter.enrichAdvisor(baseAdvisor,engine);
 const rec=baseAdvisor.recommendations[0];
