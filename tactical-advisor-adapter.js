@@ -388,6 +388,9 @@
   global.ONOFORGE_TACTICAL_ADVISOR_ADAPTER=Object.freeze({
     deriveTurnUrgency,
     fromRecommendation,
-    enrichAdvisor
+    projectFightExchange,
+    projectChargeEngagement,
+    enrichAdvisor,
+    enrichChargeAdvisor
   });
 })(window);
