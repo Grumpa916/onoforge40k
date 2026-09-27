@@ -202,6 +202,57 @@
     return global.recordTacticalChargeResult('failed',attackerUid,selectedChargeTargetsFromDom());
   };
 
+  /*
+   * Compatibility guard for the injected Tactical Impact renderer.
+   * The authoritative baseline Advisor already works against the live runtime
+   * state. If the optional v2/enrichment layer encounters a roster/profile
+   * mismatch, do not let that optional analysis suppress the actual Charge
+   * execution controls. The Charge workflow remains authoritative.
+   */
+  (function installAdvisorCompatibilityGuards(){
+    const originalV2=global.getTacticalAdvisorV2Result;
+    if(typeof originalV2==='function'&&!originalV2.__onoforgeChargeGuard){
+      const guardedV2=function(attackerUid,options){
+        try{
+          return originalV2.call(this,attackerUid,options);
+        }catch(error){
+          console.warn('OnoForge Tactical Advisor v2 fallback:',error);
+          const fallback=typeof global.getTacticalAdvisorResult==='function'
+            ?global.getTacticalAdvisorResult(attackerUid,options||{})
+            :typeof global.tacticalAdvisorV1==='function'
+              ?global.tacticalAdvisorV1(attackerUid,options||{})
+              :null;
+          if(fallback&&typeof fallback==='object'){
+            fallback.tacticalImpactFallback=true;
+            fallback.tacticalImpactFallbackReason=String(error?.message||error);
+          }
+          return fallback;
+        }
+      };
+      guardedV2.__onoforgeChargeGuard=true;
+      global.getTacticalAdvisorV2Result=guardedV2;
+    }
+
+    const adapter=global.ONOFORGE_TACTICAL_ADVISOR_ADAPTER;
+    if(adapter&&typeof adapter.enrichAdvisor==='function'&&!adapter.enrichAdvisor.__onoforgeChargeGuard){
+      const originalEnrich=adapter.enrichAdvisor;
+      const guardedEnrich=function(advisor,engine,options){
+        try{
+          return originalEnrich.call(this,advisor,engine,options||{});
+        }catch(error){
+          console.warn('OnoForge Tactical Impact enrichment fallback:',error);
+          if(advisor&&typeof advisor==='object'){
+            advisor.tacticalImpactFallback=true;
+            advisor.tacticalImpactFallbackReason=String(error?.message||error);
+          }
+          return advisor;
+        }
+      };
+      guardedEnrich.__onoforgeChargeGuard=true;
+      adapter.enrichAdvisor=guardedEnrich;
+    }
+  })();
+
   global.ONOFORGE_TACTICAL_CHARGE_WORKFLOW=Object.freeze({
     recordChargeResult,
     physicallyMeasured,
