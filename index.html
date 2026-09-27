@@ -7494,7 +7494,7 @@ function tacticalWeaponPhaseEligible(w,phase,attackerEntry,targetEntry){
     if(tacticalUnitIsEngagedAny(attackerEntry?.uid))return false;
     return true;
   }
-  if(p==='Fight')return raw==='MELEE';
+  if(p==='Fight')return raw==='MELEE'||(w.WS!=null&&w.BS==null);
   return true;
 }
 function tacticalWeaponRange(w){
