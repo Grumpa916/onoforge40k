@@ -34,6 +34,7 @@ jobs:
           from pathlib import Path
           import re
           workflow = Path('.github/workflows/deploy.yml').read_text(encoding='utf-8')
+          adapter = Path('tactical-advisor-adapter.js').read_text(encoding='utf-8')
           html = Path('index.html').read_text(encoding='utf-8')
 
           required_workflow = [
@@ -51,12 +52,23 @@ jobs:
           for marker in [
               'function tacticalAdvisorV1(',
               'function getTacticalAdvisorResult(',
-              'calculateMathMixed',
-              'projectChargeEngagement',
-              'Projected Fight exchange'
+              'calculateMathMixed'
           ]:
               if marker not in html:
                   raise SystemExit(f'Missing existing Advisor marker: {marker}')
+          for marker in [
+              'projectChargeEngagement',
+              'projectFightExchange',
+              'shared-combat-engine'
+          ]:
+              if marker not in adapter:
+                  raise SystemExit(f'Missing Charge adapter marker: {marker}')
+          for marker in [
+              'Projected Fight exchange',
+              'chargePanel'
+          ]:
+              if marker not in workflow:
+                  raise SystemExit(f'Missing Charge renderer marker: {marker}')
 
           # Reproduce the deploy-time script injection against a temporary copy.
           preview = html
