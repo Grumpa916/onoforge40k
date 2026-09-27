@@ -104,6 +104,8 @@ jobs:
               raise SystemExit('Tactical Impact renderer is missing state.page access')
           if "r.decisionContext?.phase" not in workflow:
               raise SystemExit('Tactical Impact renderer is not reading the authoritative Advisor v2 phase context')
+          if "global.ONOFORGE_APP_STATE" not in adapter:
+              raise SystemExit('Charge adapter is not using the OnoForge runtime-state bridge')
           if "pct(top." in workflow:
               raise SystemExit('Stale top variable reference remains in the comparison renderer')
           if "pct(baselineTop." not in workflow:
