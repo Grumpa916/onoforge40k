@@ -168,12 +168,31 @@
       return true;
     }
 
+    function installRenderHook(){
+      const original=global.render;
+      if(typeof original!=='function'||original.__onoforgeAdvisorMountGuard)return;
+      const wrapped=function(){
+        const out=original.apply(this,arguments);
+        global.setTimeout(mount,0);
+        return out;
+      };
+      wrapped.__onoforgeAdvisorMountGuard=true;
+      global.render=wrapped;
+    }
+
     function start(){
       if(observer)return;
       observer=new global.MutationObserver(function(){mount();});
       observer.observe(global.document.body,{childList:true,subtree:true});
       mount();
       timer=global.setInterval(mount,250);
+      // The Tactical Advisor renderer is installed by a later inline script.
+      // Hook it after the current script stack so every Battle re-render
+      // deterministically re-mounts the host inside the authoritative card.
+      global.setTimeout(function(){
+        installRenderHook();
+        mount();
+      },0);
     }
 
     if(global.document.readyState==='loading')global.document.addEventListener('DOMContentLoaded',start,{once:true});
