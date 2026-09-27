@@ -56,33 +56,51 @@
     return {distanceSource:'unknown',physicalDistanceConfirmed:false};
   }
 
+  function rosterEntry(side,id,unitId,name){
+    const state=runtimeState();
+    const list=Array.isArray(state?.[side])?state[side]:[];
+    const wantedId=id==null?'':String(id);
+    const wantedUnitId=unitId==null?'':String(unitId);
+    const wantedName=name==null?'':String(name);
+    if(wantedId){
+      const direct=list.find(x=>x&&String(x.uid)===wantedId);
+      if(direct)return direct;
+    }
+    if(wantedUnitId){
+      const byUnit=list.find(x=>x&&String(x.unitId||'')===wantedUnitId);
+      if(byUnit)return byUnit;
+    }
+    if(wantedName){
+      const byName=list.find(x=>{
+        if(!x)return false;
+        const u=typeof global.get==='function'?global.get(x.unitId):null;
+        return String(u?.name||x.name||'')===wantedName;
+      });
+      if(byName)return byName;
+    }
+    if(wantedId&&typeof global.entry==='function'){
+      try{
+        const resolved=global.entry(side,list.find(x=>x&&String(x.uid)===wantedId)?.uid||wantedId);
+        if(resolved)return resolved;
+      }catch(_e){}
+    }
+    return null;
+  }
+
   function resolveAttackerEntry(advisor){
     const state=runtimeState();
     const my=Array.isArray(state.my)?state.my:[];
     const selected=state.tactical?.selectedAttackerUid;
     if(selected){
-      const byResolver=typeof global.entry==='function'?global.entry('my',selected):null;
-      if(byResolver&&!byResolver.attachedTo)return byResolver;
-      const hit=my.find(x=>x&&String(x.uid)===String(selected)&&!x.attachedTo);
-      if(hit)return hit;
+      const resolved=rosterEntry('my',selected,'','');
+      if(resolved&&!resolved.attachedTo)return resolved;
       const any=my.find(x=>x&&String(x.uid)===String(selected));
       if(any)return any;
     }
     const name=typeof advisor?.attacker==='string'?advisor.attacker:String(advisor?.attacker?.name||'');
     if(name){
-      const byName=typeof global.entry==='function'
-        ?my.map(x=>x&&String(x.uid)).filter(Boolean).map(uid=>global.entry('my',uid)).find(x=>{
-            const unit=typeof global.get==='function'?global.get(x?.unitId):null;
-            return x&&!x.attachedTo&&String(unit?.name||x.name||'')===name;
-          })
-        :null;
-      if(byName)return byName;
-      const hit=my.find(x=>{
-        if(!x)return false;
-        const unit=typeof global.get==='function'?global.get(x.unitId):null;
-        return String(unit?.name||x.name||'')===name;
-      });
-      if(hit)return hit;
+      const byName=rosterEntry('my','','',name);
+      if(byName&&!byName.attachedTo)return byName;
     }
     return my.find(x=>x&&!x.attachedTo)||null;
   }
@@ -255,16 +273,8 @@
 
   function projectChargeEngagement(rec={},advisor={},options={}){
     const attackerEntry=options.attackerEntry||resolveAttackerEntry(advisor);
-    const targetCandidates=Array.isArray(runtimeState()?.opp)?runtimeState().opp:[];
     const targetEntry=options.targetEntry
-      ||(typeof global.entry==='function'?global.entry('opp',rec.entryUid):null)
-      ||targetCandidates.find(x=>x&&String(x.uid)===String(rec.entryUid))
-      ||targetCandidates.find(x=>{
-        if(!x)return false;
-        if(String(x.unitId||'')===String(rec.unitId||''))return true;
-        const u=typeof global.get==='function'?global.get(x.unitId):null;
-        return String(u?.name||x.name||'')===String(rec.name||rec.targetName||'');
-      });
+      ||rosterEntry('opp',rec.entryUid,rec.unitId,rec.name||rec.targetName);
     if(!attackerEntry||!targetEntry){
       return {
         available:false,
