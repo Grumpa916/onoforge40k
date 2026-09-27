@@ -50,7 +50,10 @@ jobs:
 
           for marker in [
               'function tacticalAdvisorV1(',
-              'function getTacticalAdvisorResult('
+              'function getTacticalAdvisorResult(',
+              'calculateMathMixed',
+              'projectChargeEngagement',
+              'Projected Fight exchange'
           ]:
               if marker not in html:
                   raise SystemExit(f'Missing existing Advisor marker: {marker}')
