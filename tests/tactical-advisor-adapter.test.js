@@ -104,9 +104,9 @@ context.window.combatTargetUnit=(side,entry)=>{
       :null;
 };
 context.window.tacticalAdvisorWeaponGroups=(side,entry,target)=>[
-  {count:5,weapon:{name:side==='my'?'Charge Blades':'Counter Claws',rng:'MELEE',A:'2',S:'6',AP:'-2',D:'2'},attacker:side==='my'?{name:'Charger Unit'}:{name:'Target Unit'}}
+  {count:5,weapon:{name:side==='my'?'Charge Blades':'Counter Claws',A:'2',S:'6',AP:'-2',D:'2',WS:'3+'},attacker:side==='my'?{name:'Charger Unit'}:{name:'Target Unit'}}
 ];
-context.window.tacticalWeaponPhaseEligible=(weapon,phase)=>phase==='Fight'&&weapon.rng==='MELEE';
+context.window.tacticalWeaponPhaseEligible=(weapon,phase)=>phase==='Fight'&&(String(weapon.rng||'').toUpperCase()==='MELEE'||(weapon.WS!=null&&weapon.BS==null));
 context.window.tacticalPairState=()=>({distanceInches:8.5,distanceBand:'6-12',engagement:'notEngaged',objective:'Midfield'});
 context.window.tacticalPrimaryTargetImpact=()=>({objective:'Midfield',ownScoringValue:.2,denyScoringValue:.9,status:'enemy-controlled'});
 context.window.calculateMathMixed=(attacker,target,groups,math)=>{
