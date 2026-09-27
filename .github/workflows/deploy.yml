@@ -263,12 +263,23 @@ jobs:
               return ({SCORE_NOW:'SCORE NOW',DENY_SCORE:'DENY SCORE',PRESERVE_UNIT:'PRESERVE UNIT',TRADE_UP:'TRADE UP',SET_UP_FUTURE_SCORE:'SET UP FUTURE SCORE',TACTICAL:'TACTICAL',LOW_CONFIDENCE:'LOW CONFIDENCE'})[m]||'TACTICAL';
             }
             function renderAdvisor(){
-              const host=document.getElementById('onoforge-advisor-render');
-              if(!host)return;
-              if(state?.page!=='battle'){host.innerHTML='';return}
+              if(state?.page!=='battle')return;
+              const advisorCard=document.querySelector('#battle-view .tactical-advisor-card');
+              if(!advisorCard)return;
+              let host=advisorCard.querySelector('[data-onoforge-tactical-impact-inline]');
+              if(!host){
+                host=document.createElement('div');
+                host.id='onoforge-tactical-impact-render';
+                host.className='onoforge-tactical-impact-inline';
+                host.setAttribute('data-onoforge-tactical-impact-inline','true');
+                host.style.margin='10px 0';
+                const summary=advisorCard.querySelector(':scope > summary');
+                if(summary&&summary.parentElement===advisorCard) summary.insertAdjacentElement('afterend',host);
+                else advisorCard.insertBefore(host,advisorCard.firstChild);
+              }
               const a=firstFriendly();
               if(!a||typeof window.tacticalAdvisorV1!=='function'){
-                host.innerHTML='<div class="ta-decision-render"><div class="ta-decision-title">Tactical Advisor</div><div class="ta-unknown">Waiting for an active friendly unit and legal combat state.</div></div>';
+                host.innerHTML='<div class="ta-decision-render"><div class="ta-decision-title">Tactical Impact Analysis</div><div class="ta-unknown">Waiting for an active friendly unit and legal combat state.</div></div>';
                 return;
               }
               const stateSig=typeof window.tacticalAdvisorStateSignature==='function'?window.tacticalAdvisorStateSignature():'';
@@ -312,7 +323,7 @@ jobs:
                     '</div>':'';
                 host.innerHTML=
                   '<div class="ta-decision-render">'+
-                  '<div class="ta-decision-head"><div><div class="ta-decision-title">Tactical Advisor</div><div class="ta-decision-sub">8-factor mission-aware decision model • active combat recommendation</div></div>'+
+                  '<div class="ta-decision-head"><div><div class="ta-decision-title">Tactical Impact Analysis</div><div class="ta-decision-sub">8-factor mission-aware decision model • active combat recommendation</div></div>'+
                   '<div class="ta-mode">'+modeLabel(mode)+'</div></div>'+
                   '<div class="ta-grid">'+
                   '<div class="ta-metric"><b>'+pct(baselineTop.lethality)+'</b><span>Lethality</span></div>'+
@@ -336,7 +347,7 @@ jobs:
                   '</div>';
               }catch(e){
                 console.error('OnoForge Tactical Impact render error',e);
-                host.innerHTML='<div class="ta-decision-render"><div class="ta-decision-title">Tactical Advisor</div><div class="ta-unknown">Decision analysis unavailable for this state.<br><span style="opacity:.8">Diagnostic: '+String(e?.message||e).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</span></div></div>';
+                host.innerHTML='<div class="ta-decision-render"><div class="ta-decision-title">Tactical Impact Analysis</div><div class="ta-unknown">Decision analysis unavailable for this state.<br><span style="opacity:.8">Diagnostic: '+String(e?.message||e).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</span></div></div>';
               }finally{busy=false}
             }
             function chargeExecutionPanel(attackerUid,targets,actionState){
@@ -358,40 +369,20 @@ jobs:
               return '<div class="ta-reason"><b>Charge execution</b><div class="tiny" style="margin-top:3px">Physically measure selected target distances, then record the 2D6 result. The app records success/failure; it does not require individual dice values.</div>'+(rows||'<div class="tiny" style="margin-top:6px">No currently eligible Charge targets.</div>')+
                 '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px"><button type="button" class="btn primary" onclick="window.recordTacticalChargeResult(\'success\',\''+String(attackerUid).replace(/'/g,"\\'")+'\');return false;">Charge Successful</button><button type="button" class="btn" onclick="window.recordTacticalChargeResult(\'failed\',\''+String(attackerUid).replace(/'/g,"\\'")+'\');return false;">Charge Failed</button></div></div>';
             }
-            function ensureHost(){
-              let h=document.getElementById('onoforge-advisor-render');
-              const advisorCard=document.querySelector('#battle-view .tactical-advisor-card');
-              if(!advisorCard||!advisorCard.parentNode)return;
-              if(!h){
-                h=document.createElement('div');
-                h.id='onoforge-advisor-render';
-              }
-              // The application render() creates this host before #battle-view.
-              // Always move the same host into the authoritative Tactical Advisor
-              // card before rendering the injected analysis.
-              if(h.parentElement!==advisorCard){
-                h.style.margin='10px 0';
-                h.style.border='0';
-                h.style.padding='0';
-                h.style.background='transparent';
-                h.style.boxShadow='none';
-                const summary=advisorCard.querySelector(':scope > summary');
-                if(summary&&summary.parentElement===advisorCard){
-                  summary.insertAdjacentElement('afterend',h);
-                }else{
-                  advisorCard.insertBefore(h,advisorCard.firstChild);
-                }
-              }
+            function ensureInlineAdvisor(){
               renderAdvisor();
             }
-            window.addEventListener('load',function(){setTimeout(ensureHost,500)});
+            window.addEventListener('load',function(){setTimeout(ensureInlineAdvisor,250)});
             const oldRender=window.render;
-            if(typeof oldRender==='function'){
-              window.render=function(){const out=oldRender.apply(this,arguments);ensureHost();return out}
+            if(typeof oldRender==='function'&&!oldRender.__onoforgeInlineAdvisor){
+              const wrappedRender=function(){
+                const out=oldRender.apply(this,arguments);
+                setTimeout(ensureInlineAdvisor,0);
+                return out;
+              };
+              wrappedRender.__onoforgeInlineAdvisor=true;
+              window.render=wrappedRender;
             }
-          })();
-          </script>
-          """
           if 'id="onoforge-advisor-render-css"' not in html:
               html = html.replace('</head>', css + '</head>', 1)
           if 'id="onoforge-advisor-render-js"' not in html:
@@ -415,6 +406,26 @@ jobs:
           if required not in html:
               raise SystemExit("Tactical Advisor host placement guard missing")
           print("Tactical Advisor host placement guard validated")
+
+      - name: Validate Tactical Advisor inline surface architecture
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          workflow = Path(".github/workflows/deploy.yml").read_text(encoding="utf-8")
+          start = workflow.find('js = r"""')
+          end = workflow.find('"""', start + 10)
+          if start < 0 or end < 0:
+              raise SystemExit("Could not locate Tactical Advisor preview renderer")
+          js = workflow[start:end]
+          if "document.getElementById('onoforge-advisor-render')" in js:
+              raise SystemExit("External Tactical Advisor render host remains")
+          if "data-onoforge-tactical-impact-inline" not in js:
+              raise SystemExit("Inline Tactical Impact mount is missing")
+          if "#battle-view .tactical-advisor-card" not in js:
+              raise SystemExit("Authoritative Tactical Advisor target card is missing")
+          print("Tactical Advisor inline surface architecture validated")
+          PY
 
       - name: Run runtime internal symbol audit
         shell: bash
