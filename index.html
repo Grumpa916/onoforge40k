@@ -7856,8 +7856,8 @@ function weaponDataIntegrityScan(){
       const missingCore=['A','S','AP','D'].filter(k=>w?.[k]==null||String(w[k]).trim()==='');
       if(missingCore.length)push(errors,'WEAPON_CORE_STAT_MISSING',u,name+' missing '+missingCore.join(', ')+'.');
       if(isRanged&&resolvedRange===null){
-        if(sourceRole==='canonical')push(errors,'RANGED_RANGE_UNRESOLVED',u,name+' is ranged but 40k.app-canonical data does not resolve a numeric range.');
-        else push(warnings,'BOOTSTRAP_RANGED_RANGE_MISSING',u,name+' lacks a direct range in the embedded bootstrap catalogue; this must be resolved from the canonical 40k.app source before promotion.');
+        if(sourceRole==='canonical')push(errors,'RANGED_RANGE_UNRESOLVED',u,name+' is ranged but the active BSData 11e source does not resolve a numeric range.');
+        else push(warnings,'BOOTSTRAP_RANGED_RANGE_MISSING',u,name+' lacks a direct range in the embedded bootstrap catalogue; resolve it from the current structured BSData 11e source before promotion.');
       }
     }
 
@@ -7899,7 +7899,7 @@ function weaponDataIntegrityScan(){
   return {
     generatedAt:new Date().toISOString(),
     sourcePolicy:ONOFORGE_SOURCE_POLICY_11E,
-    activeSource:sourceRole==='canonical'?'40k.app canonical':'Embedded bootstrap fallback — canonical 40k.app dataset not loaded',
+    activeSource:sourceRole==='canonical'?'BSData 11e structured source':'Embedded bootstrap catalogue',
     totalUnits:units.length,
     errorCount:errors.length,
     warningCount:warnings.length,
@@ -11282,7 +11282,7 @@ function render(){
     renderBattleOnly();
     return;
   }
-  app.innerHTML=`<div class="top"><div class="brand">ONOFORGE 40K</div><div class="sub">11th Edition • v337 • 40k.app v925 data source • Army-linked Mathhammer Engine</div></div>${nav()}<main class="wrap">
+  app.innerHTML=`<div class="top"><div class="brand">ONOFORGE 40K</div><div class="sub">11th Edition • v337 • BSData 11e data source • Army-linked Mathhammer Engine</div></div>${nav()}<main class="wrap">
   
 ${state.page!=='battle'?'<div class="status">✓ Browser app loaded locally • Source: '+esc(state.source)+' • '+esc(state.revision)+'</div>'+dataSyncStatusHtml()+'<div style="height:12px"></div>':''}<div id="onoforge-advisor-render"></div>${state.page==='battle'?'<div id="battle-view">'+pages.battle()+'</div>':(pages[state.page]||builder)()}${'<div id="secondary-plan-modal-root">'+secondaryPlanEditorModal()+'</div>'}</main></div>`;
   ensureLiveGameTimerDisplay();
