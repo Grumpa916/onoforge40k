@@ -8906,7 +8906,7 @@ function tacticalShootingResultHtml(){
         '<div class="status"><div class="muted small">Target</div><b>'+esc(unitDisplayName('opp',te))+'</b></div>'+
       '</div>'+
       '<div style="margin-top:10px"><div class="muted small" style="margin-bottom:5px">Ranged weapons</div><div style="display:grid;gap:6px">'+(weaponRows||'<div class="status">No ranged weapons found on this unit.</div>')+'</div></div>'+
-      expected+
+      expected+tacticalPreRollHtml()+
       (reasons?'<div class="warn" style="margin-top:10px"><b>Target check</b><ul style="margin:5px 0 0 18px">'+reasons+'</ul></div>':'')+
       '<div class="tiny" style="margin-top:8px">Expected values use the same combat engine as the Tactical Advisor. The app does not roll your physical dice.</div>'+
     '</div>'+
