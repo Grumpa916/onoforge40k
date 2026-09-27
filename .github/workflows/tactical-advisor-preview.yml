@@ -1,0 +1,83 @@
+name: Tactical Advisor Preview Validation
+
+on:
+  push:
+    branches:
+      - feature/tactical-impact-layer
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'tactical-advisor-engine.js'
+      - 'tactical-advisor-adapter.js'
+      - 'tests/tactical-advisor-*.test.js'
+      - '.github/workflows/deploy.yml'
+      - '.github/workflows/tactical-advisor-preview.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Run engagement evaluator tests
+        run: node tests/tactical-advisor-engine.test.js
+
+      - name: Run adapter tests
+        run: node tests/tactical-advisor-adapter.test.js
+
+      - name: Validate deployment injection and comparison surface
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          workflow = Path('.github/workflows/deploy.yml').read_text(encoding='utf-8')
+          html = Path('index.html').read_text(encoding='utf-8')
+
+          required_workflow = [
+              'Inject Tactical Advisor decision layer into deploy artifact',
+              'onoforge-tactical-advisor-engine',
+              'onoforge-tactical-advisor-adapter',
+              'Validate Tactical Advisor decision-layer injection',
+              'const compareBase={...r,recommendations:baselineTargets.map(x=>({...x}))};',
+              'The new tactical layer would change the leading candidate'
+          ]
+          for marker in required_workflow:
+              if marker not in workflow:
+                  raise SystemExit(f'Missing deployment integration marker: {marker}')
+
+          for marker in [
+              'function tacticalAdvisorV1(',
+              'function getTacticalAdvisorResult('
+          ]:
+              if marker not in html:
+                  raise SystemExit(f'Missing existing Advisor marker: {marker}')
+
+          # Reproduce the deploy-time script injection against a temporary copy.
+          preview = html
+          for sid, fn in [
+              ('onoforge-tactical-advisor-engine', 'tactical-advisor-engine.js'),
+              ('onoforge-tactical-advisor-adapter', 'tactical-advisor-adapter.js')
+          ]:
+              if f'id="{sid}"' not in preview:
+                  preview = preview.replace(
+                      '</head>',
+                      f'<script id="{sid}">\n{Path(fn).read_text(encoding="utf-8")}\n</script></head>',
+                      1
+                  )
+
+          if 'id="onoforge-tactical-advisor-engine"' not in preview:
+              raise SystemExit('Engine was not injectable into deploy artifact')
+          if 'id="onoforge-tactical-advisor-adapter"' not in preview:
+              raise SystemExit('Adapter was not injectable into deploy artifact')
+
+          scripts = re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>', preview, flags=re.S|re.I)
+          Path('/tmp/onoforge-preview.js').write_text('\n\n'.join(scripts), encoding='utf-8')
+          print(f'Prepared {len(scripts)} script blocks for syntax validation')
+          PY
+          node --check /tmp/onoforge-preview.js
+
+      - name: Report
+        run: echo "Tactical Advisor comparison-layer validation passed"
