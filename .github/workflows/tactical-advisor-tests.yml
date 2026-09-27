@@ -8,7 +8,9 @@ on:
     paths:
       - 'tactical-advisor-engine.js'
       - 'tactical-advisor-adapter.js'
+      - 'tactical-charge-workflow.js'
       - 'tests/tactical-advisor-*.test.js'
+      - 'tests/tactical-charge-workflow.test.js'
       - '.github/workflows/tactical-advisor-tests.yml'
 
 jobs:
@@ -23,3 +25,6 @@ jobs:
 
       - name: Run existing Advisor adapter tests
         run: node tests/tactical-advisor-adapter.test.js
+
+      - name: Run Charge workflow tests
+        run: node tests/tactical-charge-workflow.test.js
