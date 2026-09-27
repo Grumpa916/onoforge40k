@@ -295,6 +295,14 @@ jobs:
                 const mode=baselineTop.decisionMode||dc.mode||'TACTICAL';
                 const interpretation=baselineTop.decisionInterpretation||dc.interpretation||'No single mission mode dominates the current exchange.';
                 const tacticalReasons=Array.isArray(tacticalTop.tacticalImpactReasons)?tacticalTop.tacticalImpactReasons:[];
+                const isCharge=r.chargeMode===true||String(r.phase||'')==='Charge';
+                const projected=tacticalTop.projectedFight||{};
+                const projectedOut=projected.outgoing?.result||{};
+                const projectedIn=projected.incoming?.result||{};
+                const chargeMeasurement=projected.distanceEvidence||{};
+                const chargePanel=isCharge&&projected.available
+                  ?'<div class="ta-reason"><b>Projected Fight exchange:</b> '+num(projectedOut.damage,1)+' damage / '+num(projectedOut.modelsKilled,1)+' models from the charge, versus '+num(projectedIn.damage,1)+' expected return damage. Charge success '+pct(tacticalTop.chargeSuccessChance)+' • '+(chargeMeasurement.physicalDistanceConfirmed?'measured distance confirmed':'physical distance still required')+'.</div>'
+                  :isCharge?'<div class="ta-reason"><b>Projected Fight:</b> incomplete for this candidate; verify the target profile before relying on the tactical comparison.</div>':'';
                 host.innerHTML=
                   '<div class="ta-decision-render">'+
                   '<div class="ta-decision-head"><div><div class="ta-decision-title">Tactical Advisor</div><div class="ta-decision-sub">8-factor mission-aware decision model • active combat recommendation</div></div>'+
@@ -310,7 +318,8 @@ jobs:
                   '<div class="ta-metric"><b>'+pct(baselineTop.decisionConfidence)+'</b><span>Confidence</span></div>'+
                   '</div>'+
                   '<div class="ta-reason"><b>Why:</b> '+String(interpretation)+'</div>'+
-                  (baselineTargets.length?'<div class="ta-targets">'+baselineTargets.map((t,i)=>'<div class="ta-target"><div class="ta-target-name">'+String(t.targetName||t.name||t.defenderName||'Target '+(i+1))+'</div><div class="ta-target-score">'+pct(t.decisionScore)+'</div><div class="ta-target-meta">Existing '+modeLabel(t.decisionMode||'TACTICAL')+' • damage '+num(t.expectedDamage,1)+' • kill '+pct(t.killFraction||t.wipeChance)+'</div></div>').join('')+'</div>':'<div class="ta-unknown" style="margin-top:10px">No legal target recommendation is available from the current state.</div>')+
+                  chargePanel+
+                  (baselineTargets.length?'<div class="ta-targets">'+baselineTargets.map((t,i)=>'<div class="ta-target"><div class="ta-target-name">'+String(t.targetName||t.name||t.defenderName||'Target '+(i+1))+'</div><div class="ta-target-score">'+pct(t.decisionScore)+'</div><div class="ta-target-meta">Existing '+modeLabel(t.decisionMode||'TACTICAL')+''+(isCharge&&t.projectedFight?.outgoing?.result ? ' • projected '+num(t.projectedFight.outgoing.result.damage,1)+'W / return '+num(t.projectedFight.incoming?.result?.damage,1)+'W' : ' • damage '+num(t.expectedDamage,1)+' • kill '+pct(t.killFraction||t.wipeChance))+'</div></div>').join('')+'</div>':'<div class="ta-unknown" style="margin-top:10px">No legal target recommendation is available from the current state.</div>')+
                   '<div class="ta-compare"><div class="ta-compare-card"><span>Existing Advisor</span><b>'+String(baselineTop.name||baselineTop.targetName||'—')+'</b><small>'+num(baselineTop.decisionScore,2)+' current decision score</small></div><div class="ta-compare-card"><span>Tactical Impact Layer</span><b>'+String(tacticalTop.name||tacticalTop.targetName||'—')+'</b><small>'+num(tacticalTop.tacticalImpactScore,2)+' • '+String(tacticalTop.tacticalImpactType||'TACTICAL')+'</small></div></div>'+
                   (String(baselineTop.entryUid||'')!==String(tacticalTop.entryUid||'')&&baselineTop.entryUid&&tacticalTop.entryUid?'<div class="ta-reason"><b>Comparison:</b> The new tactical layer would change the leading candidate; the existing Advisor ordering remains authoritative during this test.</div>':'')+
                   (tacticalReasons.length?'<div class="ta-reason"><b>Tactical layer:</b> '+tacticalReasons.map(String).join(' • ')+'</div>':'')+
