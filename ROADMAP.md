@@ -259,6 +259,7 @@ Current layer: tablet dashboard, sticky command rail, responsive touch controls,
 8. Physical-dice entry is authoritative for real-game resolution; simulation/random Mathhammer code must remain isolated.
 9. Prefer tablet/tournament usability over adding unnecessary UI density.
 10. When a numbered task is completed, update this roadmap if the feature-level status changed.
+10a. Keep development focused on the product objective. Do not let audit minutia, historical task bookkeeping, or overly granular diagnostics displace feature delivery or live usability work. Use the smallest amount of verification needed to establish confidence.
 11. Before starting a new numbered task, identify which roadmap feature/track it advances.
 12. Do not invent a numbered task when the existing roadmap or feature work provides a more appropriate next action.
 13. Database/rules-data changes must be versioned, provenance-backed, audited, and deployment-gated; active tournament state must remain pinned to its rules-data version.
