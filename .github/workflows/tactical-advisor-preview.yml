@@ -108,6 +108,10 @@ jobs:
               raise SystemExit('Charge adapter is not using the OnoForge runtime-state bridge')
           if "global.entry('opp',rec.entryUid)" not in adapter:
               raise SystemExit('Charge adapter is not using OnoForge entry resolver for targets')
+          if "attackerResolved" not in adapter or "requestedTargetUid" not in adapter:
+              raise SystemExit('Charge entry diagnostics are missing')
+          if "attackerEntry:a" not in workflow:
+              raise SystemExit('Preview renderer is not passing the selected attacker entry')
           if "function chargeExecutionPanel(attackerUid,targets,actionState){" not in workflow:
               raise SystemExit('Charge execution renderer is missing')
           if "if(!isCharge)return ''" in workflow:
