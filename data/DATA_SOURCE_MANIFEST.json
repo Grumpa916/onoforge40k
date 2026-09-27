@@ -1,0 +1,41 @@
+{
+  "schema": "onoforge40k.data-source-manifest.v1",
+  "purpose": "Canonical provenance manifest for rules and game-data sources. This manifest records source authority and version identity; it does not itself contain authoritative datasheet or rules values.",
+  "sourcePolicy": "DATA_SOURCE_POLICY.md",
+  "authority": {
+    "officialGamesWorkshop": {"role":"authoritative"},
+    "bsdata11e": {"role":"structured-cross-check","overrideOfficial":false},
+    "eventCompanion": {"role":"event-reference","overrideCoreRules":false},
+    "secondarySources": {"role":"discovery-and-cross-check","overrideOfficial":false}
+  },
+  "datasets": {
+    "coreRules": {"sourceType":"official","version":null,"publicationDate":null,"retrievedAt":null,"sourceUrl":null,"verificationStatus":"pending"},
+    "factionRules": {"sourceType":"official","version":null,"publicationDate":null,"retrievedAt":null,"sourceUrl":null,"verificationStatus":"pending"},
+    "datasheets": {
+      "official": {"sourceType":"official","version":null,"publicationDate":null,"retrievedAt":null,"sourceUrl":null,"verificationStatus":"pending"},
+      "bsdata11e": {"sourceType":"bsdata","repository":null,"branchOrRelease":null,"commitRevision":null,"retrievedAt":null,"verificationStatus":"pending"}
+    },
+    "points": {"sourceType":"official","sourceName":"Munitorum Field Manual","version":null,"publicationDate":null,"retrievedAt":null,"sourceUrl":null,"verificationStatus":"pending"},
+    "balanceDataslate": {"sourceType":"official","version":null,"publicationDate":null,"retrievedAt":null,"sourceUrl":null,"verificationStatus":"pending"},
+    "faqErrata": {"sourceType":"official","version":null,"publicationDate":null,"retrievedAt":null,"sourceUrl":null,"verificationStatus":"pending"},
+    "eventCompanion": {"sourceType":"event-reference","currentRepositoryFile":"data/warhammer-event-companion-v1.2.json","version":"1.2","verificationStatus":"repository-file-present"}
+  },
+  "legacySources": {
+    "40kapp": {
+      "status":"removed-from-feature-runtime-and-not-canonical",
+      "repositoryFile":"data/40kapp-source.json",
+      "replacement":"data/DATA_SOURCE_MANIFEST.json",
+      "removalCondition":"Already removed from this feature branch; retain only historical references explicitly marked legacy."
+    }
+  },
+  "updateContract": [
+    "Identify the official publication or correction.",
+    "Record source version and publication date.",
+    "Identify affected faction/data domains.",
+    "Cross-check BSData where useful.",
+    "Record conflicts instead of silently resolving them.",
+    "Update canonical data only after verification.",
+    "Preserve provenance for historical reproducibility.",
+    "Run applicable QA gates."
+  ]
+}
