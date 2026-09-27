@@ -1,0 +1,25 @@
+name: Tactical Advisor Tests
+
+on:
+  push:
+    branches:
+      - feature/tactical-impact-layer
+  pull_request:
+    paths:
+      - 'tactical-advisor-engine.js'
+      - 'tactical-advisor-adapter.js'
+      - 'tests/tactical-advisor-*.test.js'
+      - '.github/workflows/tactical-advisor-tests.yml'
+
+jobs:
+  tactical-advisor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Run engagement evaluator tests
+        run: node tests/tactical-advisor-engine.test.js
+
+      - name: Run existing Advisor adapter tests
+        run: node tests/tactical-advisor-adapter.test.js
