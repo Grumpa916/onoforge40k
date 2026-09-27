@@ -155,6 +155,10 @@ jobs:
         shell: bash
         run: node scripts/reserve-map-integrity-audit.js
 
+      - name: Run architecture map audit
+        shell: bash
+        run: node scripts/architecture-map-audit.js
+
       - name: Render Tactical Advisor decision surface
         shell: bash
         run: |
@@ -273,10 +277,6 @@ jobs:
           p.write_text(html, encoding="utf-8")
           print("Rendered Tactical Advisor decision surface into deploy artifact")
           PY
-
-      - name: Run architecture map audit
-        shell: bash
-        run: node scripts/architecture-map-audit.js
 
       - name: Run runtime internal symbol audit
         shell: bash
