@@ -13,9 +13,10 @@
   }
 
   function key(attackerUid,targetUid){return String(attackerUid||'')+'>'+String(targetUid||'');}
-  function currentRound(){return Math.max(1,Number(global.state?.round)||1);}
-  function currentTurn(){return global.state?.currentTurn==='opp'?'opp':'my';}
-  function targetEntry(targetUid){return (global.state?.opp||[]).find(e=>e&&String(e.uid)===String(targetUid))||null;}
+  function appState(){return global.ONOFORGE_APP_STATE||global.state||{};}
+  function currentRound(){return Math.max(1,Number(appState()?.round)||1);}
+  function currentTurn(){return appState()?.currentTurn==='opp'?'opp':'my';}
+  function targetEntry(targetUid){return (appState()?.opp||[]).find(e=>e&&String(e.uid)===String(targetUid))||null;}
   function pairRecord(attackerUid,targetUid){const t=tacticalState();const raw=t.pairs[key(attackerUid,targetUid)];return raw&&typeof raw==='object'?raw:null;}
   function physicallyMeasured(attackerUid,targetUid){const d=Number(pairRecord(attackerUid,targetUid)?.distanceInches);return Number.isFinite(d)&&d>=0;}
 
@@ -69,9 +70,9 @@
     return {ok:true,targetUids:unique};
   }
   function recordChargeResult(attackerUid,outcome,targetUids){
-    if(currentTurn()!=='my'||String(global.state?.phase||'')!=='Charge')return {ok:false,reason:'Charge results can only be recorded during your Charge phase.'};
+    if(currentTurn()!=='my'||String(appState()?.phase||'')!=='Charge')return {ok:false,reason:'Charge results can only be recorded during your Charge phase.'};
     const before=snapshot();
-    const uid=String(attackerUid||global.state?.tactical?.selectedAttackerUid||'');
+    const uid=String(attackerUid||appState()?.tactical?.selectedAttackerUid||'');
     if(!uid)return {ok:false,reason:'No friendly Charge attacker is selected.'};
     if(outcome==='success'){
       const checked=validateTargets(uid,targetUids,true);if(!checked.ok)return checked;
