@@ -300,13 +300,13 @@ jobs:
                   '<div class="ta-decision-head"><div><div class="ta-decision-title">Tactical Advisor</div><div class="ta-decision-sub">8-factor mission-aware decision model • active combat recommendation</div></div>'+
                   '<div class="ta-mode">'+modeLabel(mode)+'</div></div>'+
                   '<div class="ta-grid">'+
-                  '<div class="ta-metric"><b>'+pct(top.lethality)+'</b><span>Lethality</span></div>'+
-                  '<div class="ta-metric"><b>'+pct(top.scoreNow)+'</b><span>Score now</span></div>'+
-                  '<div class="ta-metric"><b>'+pct(top.denyOpponentScore)+'</b><span>Deny score</span></div>'+
-                  '<div class="ta-metric"><b>'+pct(top.preserveFriendlyUnit)+'</b><span>Preserve</span></div>'+
-                  '<div class="ta-metric"><b>'+pct(top.tradeValue)+'</b><span>Trade</span></div>'+
-                  '<div class="ta-metric"><b>'+pct(top.objectiveValue)+'</b><span>Objective</span></div>'+
-                  '<div class="ta-metric"><b>'+pct(top.futureScoringValue)+'</b><span>Future score</span></div>'+
+                  '<div class="ta-metric"><b>'+pct(baselineTop.lethality)+'</b><span>Lethality</span></div>'+
+                  '<div class="ta-metric"><b>'+pct(baselineTop.scoreNow)+'</b><span>Score now</span></div>'+
+                  '<div class="ta-metric"><b>'+pct(baselineTop.denyOpponentScore)+'</b><span>Deny score</span></div>'+
+                  '<div class="ta-metric"><b>'+pct(baselineTop.preserveFriendlyUnit)+'</b><span>Preserve</span></div>'+
+                  '<div class="ta-metric"><b>'+pct(baselineTop.tradeValue)+'</b><span>Trade</span></div>'+
+                  '<div class="ta-metric"><b>'+pct(baselineTop.objectiveValue)+'</b><span>Objective</span></div>'+
+                  '<div class="ta-metric"><b>'+pct(baselineTop.futureScoringValue)+'</b><span>Future score</span></div>'+
                   '<div class="ta-metric"><b>'+pct(baselineTop.decisionConfidence)+'</b><span>Confidence</span></div>'+
                   '</div>'+
                   '<div class="ta-reason"><b>Why:</b> '+String(interpretation)+'</div>'+
