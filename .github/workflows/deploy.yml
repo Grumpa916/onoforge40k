@@ -263,6 +263,7 @@ jobs:
               return ({SCORE_NOW:'SCORE NOW',DENY_SCORE:'DENY SCORE',PRESERVE_UNIT:'PRESERVE UNIT',TRADE_UP:'TRADE UP',SET_UP_FUTURE_SCORE:'SET UP FUTURE SCORE',TACTICAL:'TACTICAL',LOW_CONFIDENCE:'LOW CONFIDENCE'})[m]||'TACTICAL';
             }
             function renderAdvisor(){
+              if(window.ONOFORGE_TACTICAL_ADVISOR_CANONICAL_SURFACE)return;
               if(state?.page!=='battle')return;
               const advisorCard=document.querySelector('#battle-view .tactical-advisor-card');
               if(!advisorCard)return;
