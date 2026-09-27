@@ -127,7 +127,7 @@ jobs:
               if f'id="{script_id}"' not in html:
                   html = html.replace(
                       "</head>",
-                      f'<script id="{script_id}">\\n{source_path.read_text(encoding="utf-8")}\\n</script></head>',
+                      f'<script id="{script_id}">\n{source_path.read_text(encoding="utf-8")}\n</script></head>',
                       1
                   )
 
