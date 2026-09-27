@@ -106,8 +106,8 @@ jobs:
               raise SystemExit('Tactical Impact renderer is not reading the authoritative Advisor v2 phase context')
           if "global.ONOFORGE_APP_STATE" not in adapter:
               raise SystemExit('Charge adapter is not using the OnoForge runtime-state bridge')
-          if "global.entry('opp',rec.entryUid)" not in adapter:
-              raise SystemExit('Charge adapter is not using OnoForge entry resolver for targets')
+          if "function rosterEntry(side,id,unitId,name)" not in adapter:
+              raise SystemExit('Charge adapter is missing roster entry resolver')
           if "attackerResolved" not in adapter or "requestedTargetUid" not in adapter:
               raise SystemExit('Charge entry diagnostics are missing')
           if "attackerEntry:a" not in workflow:
