@@ -202,13 +202,6 @@
     return global.recordTacticalChargeResult('failed',attackerUid,selectedChargeTargetsFromDom());
   };
 
-  /*
-   * Compatibility guard for the injected Tactical Impact renderer.
-   * The authoritative baseline Advisor already works against the live runtime
-   * state. If the optional v2/enrichment layer encounters a roster/profile
-   * mismatch, do not let that optional analysis suppress the actual Charge
-   * execution controls. The Charge workflow remains authoritative.
-   */
   (function installAdvisorCompatibilityGuards(){
     const originalV2=global.getTacticalAdvisorV2Result;
     if(typeof originalV2==='function'&&!originalV2.__onoforgeChargeGuard){
@@ -251,6 +244,28 @@
       guardedEnrich.__onoforgeChargeGuard=true;
       adapter.enrichAdvisor=guardedEnrich;
     }
+  })();
+
+  // The injected comparison surface is distinct from the authoritative
+  // existing Advisor. Give it a unique heading so live testing is unambiguous.
+  (function labelTacticalImpactSurface(){
+    if(typeof global.document==='undefined')return;
+    const rename=function(){
+      const host=global.document.getElementById('onoforge-advisor-render');
+      const title=host&&host.querySelector('.ta-decision-title');
+      if(title&&title.textContent.trim()==='Tactical Advisor'){
+        title.textContent='Tactical Impact Layer';
+      }
+    };
+    const hostReady=function(){
+      rename();
+      const host=global.document.getElementById('onoforge-advisor-render');
+      if(host&&typeof global.MutationObserver==='function'){
+        new global.MutationObserver(rename).observe(host,{childList:true,subtree:true});
+      }
+    };
+    if(global.document.readyState==='loading')global.document.addEventListener('DOMContentLoaded',hostReady,{once:true});
+    else hostReady();
   })();
 
   global.ONOFORGE_TACTICAL_CHARGE_WORKFLOW=Object.freeze({
