@@ -1,18 +1,19 @@
 {
   "schema":"onoforge40k.rules-coverage.v1",
   "edition":"11th",
-  "canonicalSource":"40k.app",
-  "supplementalSources":["Warhammer Event Companion v1.2","BSData 11e"],
+  "canonicalSource":"Games Workshop official sources",
+  "supplementalSources":["BSData 11e","Warhammer Event Companion v1.2"],
   "coverage":[
-    {"area":"datasheets","source":"40k.app","runtime":"unitDatabase/canonicalUnitDatabase","audit":"track6-rules-data-integrity-audit.js"},
-    {"area":"unit profiles and weapons","source":"40k.app","runtime":"unitDatabase","audit":"catalogue-audit.js"},
-    {"area":"abilities and wargear","source":"40k.app","runtime":"unitDatabase","audit":"catalogue-audit.js"},
-    {"area":"army rules and detachments","source":"40k.app","runtime":"unitDatabase","audit":"track6-rules-data-integrity-audit.js"},
-    {"area":"enhancements and stratagems","source":"40k.app","runtime":"stratagem state/catalogue","audit":"track6-rules-data-integrity-audit.js"},
-    {"area":"core phases and attack sequence","source":"40k.app","runtime":"battle phase/combat engine","audit":"track6-rules-coverage-audit.js"},
-    {"area":"objectives and missions","source":"40k.app","runtime":"primary/secondary/objective state","audit":"track3-mission-system-audit.js"},
+    {"area":"datasheets","source":"Games Workshop official sources","runtime":"unitDatabase/canonicalUnitDatabase","audit":"track6-rules-data-integrity-audit.js"},
+    {"area":"unit profiles and weapons","source":"Games Workshop official sources","runtime":"unitDatabase","audit":"catalogue-audit.js"},
+    {"area":"abilities and wargear","source":"Games Workshop official sources","runtime":"unitDatabase","audit":"catalogue-audit.js"},
+    {"area":"army rules and detachments","source":"Games Workshop official sources","runtime":"unitDatabase","audit":"track6-rules-data-integrity-audit.js"},
+    {"area":"enhancements and stratagems","source":"Games Workshop official sources","runtime":"stratagem state/catalogue","audit":"track6-rules-data-integrity-audit.js"},
+    {"area":"core phases and attack sequence","source":"Games Workshop official sources","runtime":"battle phase/combat engine","audit":"track6-rules-coverage-audit.js"},
+    {"area":"objectives and missions","source":"Games Workshop official sources","runtime":"primary/secondary/objective state","audit":"track3-mission-system-audit.js"},
     {"area":"event procedures and mission layouts","source":"Warhammer Event Companion v1.2","runtime":"objectiveBattlefieldGeometry/mission catalogue","audit":"track6-rules-coverage-audit.js"},
-    {"area":"strategic reserves","source":"40k.app","runtime":"reserveDeclarations/reserve map","audit":"reserve-map-integrity-audit.js"},
-    {"area":"tournament result provenance","source":"runtime rulesDataPin","runtime":"tournamentResultSnapshot/export","audit":"track5-result-lock-audit.js"}
-  ]
+    {"area":"strategic reserves","source":"Games Workshop official sources","runtime":"reserveDeclarations/reserve map","audit":"reserve-map-integrity-audit.js"},
+    {"area":"tournament result provenance","source":"Games Workshop official sources","runtime":"tournamentResultSnapshot/export","audit":"track5-result-lock-audit.js"}
+  ],
+  "legacySourceNote":"The former 40k.app source has been removed from this feature branch and is not a runtime or canonical data source. Historical references must remain explicitly marked as legacy."
 }
