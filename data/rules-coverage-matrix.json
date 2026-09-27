@@ -13,7 +13,7 @@
     {"area":"objectives and missions","source":"Games Workshop official sources","runtime":"primary/secondary/objective state","audit":"track3-mission-system-audit.js"},
     {"area":"event procedures and mission layouts","source":"Warhammer Event Companion v1.2","runtime":"objectiveBattlefieldGeometry/mission catalogue","audit":"track6-rules-coverage-audit.js"},
     {"area":"strategic reserves","source":"Games Workshop official sources","runtime":"reserveDeclarations/reserve map","audit":"reserve-map-integrity-audit.js"},
-    {"area":"tournament result provenance","source":"runtime rulesDataPin","runtime":"tournamentResultSnapshot/export","audit":"track5-result-lock-audit.js"}
+    {"area":"tournament result provenance","source":"Games Workshop official sources","runtime":"tournamentResultSnapshot/export","audit":"track5-result-lock-audit.js"}
   ],
   "legacySourceNote":"The repository still contains data/40kapp-source.json as a historical legacy source manifest. It must not be treated as the current canonical authority and must not be deleted until runtime loader references are verified."
 }
