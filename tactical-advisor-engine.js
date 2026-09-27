@@ -105,6 +105,22 @@
     return 'context-only';
   }
 
+  function decisionWeights(x){
+    // Baseline is intentionally mission/tactical-heavy. The weights then move
+    // with game context rather than acting as a universal permanent ranking.
+    let w={mission:0.34,tactical:0.31,combat:0.20,opportunity:0.10,counter:0.05};
+    const behind=x.mission.vpDifferential<0;
+    const ahead=x.mission.vpDifferential>0;
+    const urgency=x.mission.turnUrgency/100;
+    if(behind){w.mission+=0.07;w.combat-=0.02;w.opportunity-=0.03;w.tactical-=0.02;}
+    if(ahead){w.counter+=0.04;w.opportunity+=0.03;w.combat-=0.03;w.tactical-=0.04;}
+    if(x.mission.isCriticalObjective){w.mission+=0.06;w.combat-=0.02;w.opportunity-=0.02;w.tactical-=0.02;}
+    if(urgency>=0.75){w.mission+=0.05;w.futureSetup-=0;w.combat-=0.02;w.opportunity-=0.03;}
+    const total=Object.values(w).reduce((a,b)=>a+b,0);
+    Object.keys(w).forEach(k=>w[k]=w[k]/total);
+    return w;
+  }
+
   function buildReasons(parts){
     const reasons=[];
     if(parts.mission>=70)reasons.push('High mission impact');
@@ -128,10 +144,11 @@
     const executionConfidence=confidence(x.execution);
     const opportunity=100-x.tactical.opportunityCost;
     const counterRisk=100-x.tactical.counterattackRisk;
+    const weights=decisionWeights(x);
 
     // Mission/tactical value deliberately outweighs raw lethality. Combat is
     // still important, but it cannot dominate the decision by itself.
-    let score=(mission*0.34)+(tactical*0.31)+(combat*0.20)+(opportunity*0.10)+(counterRisk*0.05);
+    let score=(mission*weights.mission)+(tactical*weights.tactical)+(combat*weights.combat)+(opportunity*weights.opportunity)+(counterRisk*weights.counter);
 
     // Approximate map distance may identify a candidate, but never grants an
     // execution bonus. Exact charge/shooting probabilities belong downstream.
@@ -147,7 +164,8 @@
       board:round1(x.tactical.boardPosition),
       future:round1(x.tactical.futureSetup),
       counterRisk:round1(counterRisk),
-      opportunity:round1(opportunity)
+      opportunity:round1(opportunity),
+      weights:Object.fromEntries(Object.entries(weights).map(([k,v])=>[k,round1(v*100)]))
     };
 
     return {
