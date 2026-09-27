@@ -61,6 +61,8 @@
     const my=Array.isArray(state.my)?state.my:[];
     const selected=state.tactical?.selectedAttackerUid;
     if(selected){
+      const byResolver=typeof global.entry==='function'?global.entry('my',selected):null;
+      if(byResolver&&!byResolver.attachedTo)return byResolver;
       const hit=my.find(x=>x&&String(x.uid)===String(selected)&&!x.attachedTo);
       if(hit)return hit;
       const any=my.find(x=>x&&String(x.uid)===String(selected));
@@ -68,6 +70,13 @@
     }
     const name=typeof advisor?.attacker==='string'?advisor.attacker:String(advisor?.attacker?.name||'');
     if(name){
+      const byName=typeof global.entry==='function'
+        ?my.map(x=>x&&String(x.uid)).filter(Boolean).map(uid=>global.entry('my',uid)).find(x=>{
+            const unit=typeof global.get==='function'?global.get(x?.unitId):null;
+            return x&&!x.attachedTo&&String(unit?.name||x.name||'')===name;
+          })
+        :null;
+      if(byName)return byName;
       const hit=my.find(x=>{
         if(!x)return false;
         const unit=typeof global.get==='function'?global.get(x.unitId):null;
@@ -247,6 +256,7 @@
   function projectChargeEngagement(rec={},advisor={},options={}){
     const attackerEntry=options.attackerEntry||resolveAttackerEntry(advisor);
     const targetEntry=options.targetEntry
+      ||(typeof global.entry==='function'?global.entry('opp',rec.entryUid):null)
       ||((runtimeState()?.opp||[]).find(x=>x&&String(x.uid)===String(rec.entryUid)));
     if(!attackerEntry||!targetEntry){
       return {available:false,reason:'charge-entry-context-unavailable'};
