@@ -95,15 +95,15 @@
     };
   }
 
-  function setFightState(attackerUid,targetUids){
+  function setFightState(attackerUid,targetUids,engaged){
     const t=tacticalState(),raw=t.fightPhase&&typeof t.fightPhase==='object'?t.fightPhase:{};
     const phase=(typeof global.tacticalFightPhaseState==='function'?global.tacticalFightPhaseState():{});
     const units={...(phase.units||raw.units||{})};
     const cur=units[String(attackerUid)]&&typeof units[String(attackerUid)]==='object'?units[String(attackerUid)]:{};
     units[String(attackerUid)]={
       ...cur,
-      engagedAtFightStart:true,
-      becameEngagedDuringFight:true,
+      engagedAtFightStart:engaged===true,
+      becameEngagedDuringFight:engaged===true,
       pileInDone:false,
       consolidationDone:false
     };
@@ -145,7 +145,7 @@
       if(!checked.ok)return checked;
       checked.targetUids.forEach(targetUid=>setPairEngaged(uid,targetUid,true));
       recordAction(uid,true,checked.targetUids);
-      setFightState(uid,checked.targetUids);
+      setFightState(uid,checked.targetUids,true);
       emit('CHARGE_RESULT',{
         entryUid:uid,
         outcome:'success',
@@ -163,7 +163,7 @@
       if(!checked.ok)return checked;
       checked.targetUids.forEach(targetUid=>setPairEngaged(uid,targetUid,false));
       recordAction(uid,false,checked.targetUids);
-      setFightState(uid,[]);
+      setFightState(uid,[],false);
       emit('CHARGE_RESULT',{
         entryUid:uid,
         outcome:'failed',
