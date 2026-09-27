@@ -110,8 +110,10 @@ jobs:
               raise SystemExit('Charge adapter is missing roster entry resolver')
           if "rawName==='Range'?'rng'" not in html:
               raise SystemExit('BSData Range field is not normalized to OnoForge rng')
-          if "const currentBase=canonicalUnitDatabase()||bootstrapUnitDatabase();" not in html:
-              raise SystemExit('Refreshed BSData is not overlaid onto the bootstrap catalogue')
+          if "const supplemental=all.map(u=>({...u,sourceRole:'supplemental'}));" not in html:
+              raise SystemExit('BSData refresh is not retained as supplemental data')
+          if "window.CURRENT_UNIT_DATABASE=mergeSupplementalUnits" in html:
+              raise SystemExit('BSData refresh must not silently overwrite canonical runtime data')
           if "attackerResolved" not in adapter or "requestedTargetUid" not in adapter:
               raise SystemExit('Charge entry diagnostics are missing')
           if "attackerEntry:a" not in workflow:
