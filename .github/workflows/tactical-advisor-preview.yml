@@ -94,6 +94,10 @@ jobs:
               raise SystemExit('Engine was not injectable into deploy artifact')
           if 'id="onoforge-tactical-advisor-adapter"' not in preview:
               raise SystemExit('Adapter was not injectable into deploy artifact')
+          if 'id="onoforge-tactical-charge-workflow"' not in preview:
+              raise SystemExit('Charge workflow was not injectable into deploy artifact')
+          if 'ONOFORGE_TACTICAL_CHARGE_WORKFLOW' not in preview:
+              raise SystemExit('Charge workflow symbol was not present in deploy artifact')
           if "pct(top." in workflow:
               raise SystemExit('Stale top variable reference remains in the comparison renderer')
           if "pct(baselineTop." not in workflow:
