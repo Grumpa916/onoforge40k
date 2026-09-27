@@ -9,7 +9,9 @@ on:
       - 'index.html'
       - 'tactical-advisor-engine.js'
       - 'tactical-advisor-adapter.js'
+      - 'tactical-charge-workflow.js'
       - 'tests/tactical-advisor-*.test.js'
+      - 'tests/tactical-charge-workflow.test.js'
       - '.github/workflows/deploy.yml'
       - '.github/workflows/tactical-advisor-preview.yml'
   workflow_dispatch:
@@ -27,6 +29,9 @@ jobs:
       - name: Run adapter tests
         run: node tests/tactical-advisor-adapter.test.js
 
+      - name: Run Charge workflow tests
+        run: node tests/tactical-charge-workflow.test.js
+
       - name: Validate deployment injection and comparison surface
         shell: bash
         run: |
@@ -35,6 +40,7 @@ jobs:
           import re
           workflow = Path('.github/workflows/deploy.yml').read_text(encoding='utf-8')
           adapter = Path('tactical-advisor-adapter.js').read_text(encoding='utf-8')
+          charge_workflow = Path('tactical-charge-workflow.js').read_text(encoding='utf-8')
           html = Path('index.html').read_text(encoding='utf-8')
 
           required_workflow = [
@@ -74,7 +80,8 @@ jobs:
           preview = html
           for sid, fn in [
               ('onoforge-tactical-advisor-engine', 'tactical-advisor-engine.js'),
-              ('onoforge-tactical-advisor-adapter', 'tactical-advisor-adapter.js')
+              ('onoforge-tactical-advisor-adapter', 'tactical-advisor-adapter.js'),
+              ('onoforge-tactical-charge-workflow', 'tactical-charge-workflow.js')
           ]:
               if f'id="{sid}"' not in preview:
                   preview = preview.replace(
