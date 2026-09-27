@@ -38,7 +38,6 @@ These currently expose diagnostic functions through `window.OnoForgeDebug`. They
 
 The `data/` directory contains versioned/provenance-oriented rules and event-companion data, including:
 
-- `40kapp-source.json`
 - `rules-coverage-matrix.json`
 - `warhammer-event-companion-v1.1.json`
 - `warhammer-event-companion-v1.2.json`

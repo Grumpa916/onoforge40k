@@ -1,0 +1,210 @@
+(function(global){
+  'use strict';
+
+  function tacticalState(){
+    if(typeof global.ensureTacticalState==='function')return global.ensureTacticalState();
+    global.state=global.state||{};
+    global.state.tactical=global.state.tactical||{};
+    const t=global.state.tactical;
+    if(!t.unitActions||typeof t.unitActions!=='object')t.unitActions={};
+    if(!t.pairs||typeof t.pairs!=='object')t.pairs={};
+    if(!t.fightPhase||typeof t.fightPhase!=='object')t.fightPhase={};
+    return t;
+  }
+
+  function key(attackerUid,targetUid){
+    return String(attackerUid||'')+'>'+String(targetUid||'');
+  }
+
+  function currentRound(){
+    return Math.max(1,Number(global.state?.round)||1);
+  }
+
+  function currentTurn(){
+    return global.state?.currentTurn==='opp'?'opp':'my';
+  }
+
+  function targetEntry(targetUid){
+    return (global.state?.opp||[]).find(e=>e&&String(e.uid)===String(targetUid))||null;
+  }
+
+  function pairRecord(attackerUid,targetUid){
+    const t=tacticalState();
+    const raw=t.pairs[key(attackerUid,targetUid)];
+    return raw&&typeof raw==='object'?raw:null;
+  }
+
+  function physicallyMeasured(attackerUid,targetUid){
+    const d=Number(pairRecord(attackerUid,targetUid)?.distanceInches);
+    return Number.isFinite(d)&&d>=0;
+  }
+
+  function legalChargeTarget(attackerUid,targetUid){
+    if(typeof global.getTacticalTargetLegalityCached==='function'){
+      const e=(global.state?.opp||[]).find(x=>x&&String(x.uid)===String(targetUid));
+      const a=(global.state?.my||[]).find(x=>x&&String(x.uid)===String(attackerUid));
+      if(a&&e)return global.getTacticalTargetLegalityCached(a,e,'Charge');
+    }
+    if(typeof global.tacticalTargetLegality==='function'){
+      const e=(global.state?.opp||[]).find(x=>x&&String(x.uid)===String(targetUid));
+      const a=(global.state?.my||[]).find(x=>x&&String(x.uid)===String(attackerUid));
+      if(a&&e)return global.tacticalTargetLegality(a,e,'Charge');
+    }
+    return {canTarget:null,reasons:['charge legality could not be re-evaluated']};
+  }
+
+  function snapshot(){
+    if(typeof global.snapshotForUndo==='function')return global.snapshotForUndo();
+    try{return JSON.parse(JSON.stringify(global.state||{}));}catch(e){return null;}
+  }
+
+  function persist(){
+    if(typeof global.save==='function')global.save();
+    if(typeof global.render==='function')global.render();
+  }
+
+  function emit(kind,payload,before){
+    if(typeof global.event==='function')global.event(kind,payload,before);
+  }
+
+  function setPairEngaged(attackerUid,targetUid,engaged){
+    const t=tacticalState(),k=key(attackerUid,targetUid),cur=t.pairs[k]&&typeof t.pairs[k]==='object'?t.pairs[k]:{};
+    t.pairs[k]={
+      attackerUid,
+      targetUid,
+      distanceInches:cur.distanceInches,
+      distanceBand:cur.distanceBand,
+      los:cur.los,
+      engagement:engaged?'engaged':'notEngaged',
+      objective:cur.objective,
+      notes:cur.notes
+    };
+  }
+
+  function recordAction(attackerUid,chargeMade,targetUids){
+    const t=tacticalState(),uid=String(attackerUid),round=currentRound(),turn=currentTurn();
+    const cur=t.unitActions[uid]&&typeof t.unitActions[uid]==='object'?t.unitActions[uid]:{};
+    t.unitActions[uid]={
+      ...cur,
+      entryUid:uid,
+      round,
+      playerTurn:turn,
+      chargeDone:true,
+      chargeMade:chargeMade===true,
+      chargeTargets:targetUids.map(String)
+    };
+  }
+
+  function setFightState(attackerUid,targetUids,engaged){
+    const t=tacticalState(),raw=t.fightPhase&&typeof t.fightPhase==='object'?t.fightPhase:{};
+    const phase=(typeof global.tacticalFightPhaseState==='function'?global.tacticalFightPhaseState():{});
+    const units={...(phase.units||raw.units||{})};
+    const cur=units[String(attackerUid)]&&typeof units[String(attackerUid)]==='object'?units[String(attackerUid)]:{};
+    units[String(attackerUid)]={
+      ...cur,
+      engagedAtFightStart:engaged===true,
+      becameEngagedDuringFight:engaged===true,
+      pileInDone:false,
+      consolidationDone:false
+    };
+    t.fightPhase={
+      ...phase,
+      round:currentRound(),
+      playerTurn:currentTurn(),
+      step:phase.step||'unknown',
+      selected:Array.isArray(phase.selected)?phase.selected.map(String):[],
+      nextSide:phase.nextSide||currentTurn(),
+      units,
+      chargeTargets:targetUids.map(String)
+    };
+  }
+
+  function validateTargets(attackerUid,targetUids,requireMeasured){
+    const unique=[...new Set((targetUids||[]).map(String).filter(Boolean))];
+    if(!unique.length)return {ok:false,reason:'Select at least one actual charge target.'};
+    for(const uid of unique){
+      if(!targetEntry(uid))return {ok:false,reason:'A selected charge target no longer exists.'};
+      const legality=legalChargeTarget(attackerUid,uid);
+      if(legality?.canTarget!==true)return {ok:false,reason:'Charge target '+uid+' is not currently established as legal.'};
+      if(requireMeasured&&!physicallyMeasured(attackerUid,uid)){
+        return {ok:false,reason:'Record the physically measured charge distance for every selected target before recording success.'};
+      }
+    }
+    return {ok:true,targetUids:unique};
+  }
+
+  function recordChargeResult(attackerUid,outcome,targetUids){
+    if(currentTurn()!=='my'||String(global.state?.phase||'')!=='Charge'){
+      return {ok:false,reason:'Charge results can only be recorded during your Charge phase.'};
+    }
+    const before=snapshot();
+    const uid=String(attackerUid||global.state?.tactical?.selectedAttackerUid||'');
+    if(!uid)return {ok:false,reason:'No friendly Charge attacker is selected.'};
+    if(outcome==='success'){
+      const checked=validateTargets(uid,targetUids,true);
+      if(!checked.ok)return checked;
+      checked.targetUids.forEach(targetUid=>setPairEngaged(uid,targetUid,true));
+      recordAction(uid,true,checked.targetUids);
+      setFightState(uid,checked.targetUids,true);
+      emit('CHARGE_RESULT',{
+        entryUid:uid,
+        outcome:'success',
+        chargeMade:true,
+        targetUids:checked.targetUids,
+        round:currentRound()
+      },before);
+      persist();
+      return {ok:true,outcome:'success',targetUids:checked.targetUids};
+    }
+    if(outcome==='failed'){
+      const checked=(targetUids||[]).length
+        ?validateTargets(uid,targetUids,false)
+        :{ok:true,targetUids:[]};
+      if(!checked.ok)return checked;
+      checked.targetUids.forEach(targetUid=>setPairEngaged(uid,targetUid,false));
+      recordAction(uid,false,checked.targetUids);
+      setFightState(uid,[],false);
+      emit('CHARGE_RESULT',{
+        entryUid:uid,
+        outcome:'failed',
+        chargeMade:false,
+        targetUids:checked.targetUids,
+        round:currentRound()
+      },before);
+      persist();
+      return {ok:true,outcome:'failed',targetUids:checked.targetUids};
+    }
+    return {ok:false,reason:'Unknown Charge result.'};
+  }
+
+  function selectedChargeTargetsFromDom(){
+    if(typeof global.document==='undefined')return [];
+    return Array.from(global.document.querySelectorAll('input[data-onoforge-charge-target]:checked'))
+      .map(x=>String(x.getAttribute('data-onoforge-charge-target')||''))
+      .filter(Boolean);
+  }
+
+  function userFacingResult(result){
+    if(!result?.ok&&result?.reason&&typeof global.alert==='function')global.alert(result.reason);
+    return result;
+  }
+
+  global.recordTacticalChargeResult=function(outcome,attackerUid,targetUids){
+    const selected=(targetUids&&targetUids.length)?targetUids:selectedChargeTargetsFromDom();
+    return userFacingResult(recordChargeResult(attackerUid,outcome,selected));
+  };
+
+  global.confirmTacticalChargeSuccess=function(attackerUid){
+    return global.recordTacticalChargeResult('success',attackerUid,selectedChargeTargetsFromDom());
+  };
+
+  global.recordTacticalChargeFailure=function(attackerUid){
+    return global.recordTacticalChargeResult('failed',attackerUid,selectedChargeTargetsFromDom());
+  };
+
+  global.ONOFORGE_TACTICAL_CHARGE_WORKFLOW=Object.freeze({
+    recordChargeResult,
+    physicallyMeasured,
+    validateTargets
+  });
+})(window);

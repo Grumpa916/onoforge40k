@@ -159,6 +159,52 @@ jobs:
         shell: bash
         run: node scripts/architecture-map-audit.js
 
+
+      - name: Inject Tactical Advisor decision layer into deploy artifact
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("index.html")
+          html = p.read_text(encoding="utf-8")
+          layers = [
+              ("onoforge-tactical-advisor-engine", Path("tactical-advisor-engine.js")),
+              ("onoforge-tactical-advisor-adapter", Path("tactical-advisor-adapter.js")),
+              ("onoforge-tactical-charge-workflow", Path("tactical-charge-workflow.js")),
+          ]
+          for script_id, source_path in layers:
+              marker = f'id="{script_id}"'
+              if marker not in html:
+                  content = source_path.read_text(encoding="utf-8")
+                  tag = f'<script id="{script_id}">\n{content}\n</script>'
+                  html = html.replace("</head>", tag + "</head>", 1)
+          required = ['id="onoforge-tactical-advisor-engine"', 'id="onoforge-tactical-advisor-adapter"', 'id="onoforge-tactical-charge-workflow"']
+          missing = [x for x in required if x not in html]
+          if missing:
+              raise SystemExit("Missing Tactical Advisor layer injection: " + ", ".join(missing))
+          p.write_text(html, encoding="utf-8")
+          print("Injected Tactical Advisor engagement engine and adapter into deploy artifact")
+          PY
+
+      - name: Validate Tactical Advisor decision-layer injection
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          html = Path("index.html").read_text(encoding="utf-8")
+          checks = [
+              ('onoforge-tactical-advisor-engine', 'ONOFORGE_TACTICAL_ADVISOR'),
+              ('onoforge-tactical-advisor-adapter', 'ONOFORGE_TACTICAL_ADVISOR_ADAPTER'),
+              ('onoforge-tactical-charge-workflow', 'ONOFORGE_TACTICAL_CHARGE_WORKFLOW'),
+          ]
+          for script_id, symbol in checks:
+              if f'id="{script_id}"' not in html:
+                  raise SystemExit(f"Missing {script_id}")
+              if symbol not in html:
+                  raise SystemExit(f"Missing {symbol}")
+          print("Tactical Advisor decision-layer injection validated")
+          PY
+
       - name: Render Tactical Advisor decision surface
         shell: bash
         run: |
@@ -180,8 +226,13 @@ jobs:
           .ta-target{background:#0b1018;border:1px solid #2b3b4e;border-radius:8px;padding:9px}
           .ta-target-name{font-weight:800;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
           .ta-target-score{font-size:20px;font-weight:900;margin-top:3px}.ta-target-meta{font-size:9px;color:#8fa0b1;line-height:1.35;margin-top:3px}
+          .ta-compare{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+          .ta-compare-card{background:#0b1018;border:1px solid #2b3b4e;border-radius:8px;padding:9px}
+          .ta-compare-card span{display:block;color:#8798aa;font-size:9px;text-transform:uppercase;letter-spacing:.07em}
+          .ta-compare-card b{display:block;font-size:12px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+          .ta-compare-card small{display:block;color:#8fa0b1;font-size:9px;margin-top:3px}
           .ta-unknown{color:#9ca8b8;font-size:10px}.ta-foot{font-size:9px;color:#75879a;margin-top:9px}
-          @media(max-width:900px){.ta-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ta-targets{grid-template-columns:1fr}}
+          @media(max-width:900px){.ta-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ta-targets,.ta-compare{grid-template-columns:1fr}}
           </style>
           """
           js = r"""
@@ -192,8 +243,8 @@ jobs:
             function pct(v){return Number.isFinite(Number(v))?Math.round(Math.max(0,Math.min(1,Number(v)))*100)+'%':'—'}
             function num(v,d=0){return Number.isFinite(Number(v))?Number(v).toFixed(d):'—'}
             function firstFriendly(){
-              const arr=Array.isArray(window.state?.my)?window.state.my:[];
-              const selected=window.state?.tactical?.selectedAttackerUid;
+              const arr=Array.isArray(state?.my)?state.my:[];
+              const selected=state?.tactical?.selectedAttackerUid;
               return arr.find(x=>x&&String(x.uid)===String(selected)&&!x.attachedTo&&!x.destroyed)||arr.find(x=>x&&x.uid&&!x.attachedTo&&x.alive!==false&&!x.destroyed&&!x.isDestroyed)||arr.find(x=>x&&x.uid)||null;
             }
             function extractTargets(result){
@@ -206,7 +257,7 @@ jobs:
                   if(Array.isArray(v)&&v.some(x=>x&&typeof x==='object'&&('decisionScore' in x||'decisionMode' in x))) candidates.push(...v);
                 }
               }
-              return candidates.filter(x=>x&&typeof x==='object').sort((a,b)=>(Number(b.decisionScore)||-1)-(Number(a.decisionScore)||-1));
+              return candidates.filter(x=>x&&typeof x==='object');
             }
             function modeLabel(m){
               return ({SCORE_NOW:'SCORE NOW',DENY_SCORE:'DENY SCORE',PRESERVE_UNIT:'PRESERVE UNIT',TRADE_UP:'TRADE UP',SET_UP_FUTURE_SCORE:'SET UP FUTURE SCORE',TACTICAL:'TACTICAL',LOW_CONFIDENCE:'LOW CONFIDENCE'})[m]||'TACTICAL';
@@ -214,14 +265,14 @@ jobs:
             function renderAdvisor(){
               const host=document.getElementById('onoforge-advisor-render');
               if(!host)return;
-              if(window.state?.page!=='battle'){host.innerHTML='';return}
+              if(state?.page!=='battle'){host.innerHTML='';return}
               const a=firstFriendly();
               if(!a||typeof window.tacticalAdvisorV1!=='function'){
                 host.innerHTML='<div class="ta-decision-render"><div class="ta-decision-title">Tactical Advisor</div><div class="ta-unknown">Waiting for an active friendly unit and legal combat state.</div></div>';
                 return;
               }
               const stateSig=typeof window.tacticalAdvisorStateSignature==='function'?window.tacticalAdvisorStateSignature():'';
-              const sig=[stateSig,window.state.page,a.uid].join('|');
+              const sig=[stateSig,state.page,a.uid].join('|');
               if(sig===lastSig)return;
               lastSig=sig;
               if(busy)return;
@@ -230,37 +281,93 @@ jobs:
                 const r=(typeof window.getTacticalAdvisorResult==='function'
                   ?window.getTacticalAdvisorV2Result(a.uid,{samples:4000})
                   :window.tacticalAdvisorV2(a.uid,{samples:4000}))||{};
-                const targets=extractTargets(r).slice(0,3);
-                const top=targets[0]||{};
-                const dc=top.decisionComponents||{};
+                const allBaselineTargets=extractTargets(r);
+                const baselineTargets=allBaselineTargets.slice(0,3);
+                const baselineTop=baselineTargets[0]||{};
+                const compareBase={...r,recommendations:allBaselineTargets.map(x=>({...x}))};
+                const layerAdapter=window.ONOFORGE_TACTICAL_ADVISOR_ADAPTER;
+                const layerEngine=window.ONOFORGE_TACTICAL_ADVISOR;
+                const layered=layerAdapter&&layerEngine
+                  ?layerAdapter.enrichAdvisor(compareBase,layerEngine,{attackerEntry:a,samples:1500})
+                  :compareBase;
+                const tacticalTargets=Array.isArray(layered.recommendations)?layered.recommendations.slice(0,3):[];
+                const tacticalTop=tacticalTargets[0]||baselineTop;
+                const dc=baselineTop.decisionComponents||{};
                 const mc=r.missionDecisionContext||{};
-                const mode=top.decisionMode||dc.mode||'TACTICAL';
-                const interpretation=top.decisionInterpretation||dc.interpretation||'No single mission mode dominates the current exchange.';
+                const mode=baselineTop.decisionMode||dc.mode||'TACTICAL';
+                const interpretation=baselineTop.decisionInterpretation||dc.interpretation||'No single mission mode dominates the current exchange.';
+                const tacticalReasons=Array.isArray(tacticalTop.tacticalImpactReasons)?tacticalTop.tacticalImpactReasons:[];
+                const isCharge=r.chargeMode===true||String(r.phase||'')==='Charge'||String(r.decisionContext?.phase||'')==='Charge';
+                const chargeActionState=typeof window.tacticalAdvisorActionState==='function'?window.tacticalAdvisorActionState(a.uid):null;
+                const projected=tacticalTop.projectedFight||{};
+                const projectedOut=projected.outgoing?.result||{};
+                const projectedIn=projected.incoming?.result||{};
+                const chargeMeasurement=projected.distanceEvidence||{};
+                const chargePanel=isCharge&&projected.available
+                  ?'<div class="ta-reason"><b>Projected Fight exchange:</b> '+num(projectedOut.damage,1)+' damage / '+num(projectedOut.modelsKilled,1)+' models from the charge, versus '+num(projectedIn.damage,1)+' expected return damage. Charge success '+pct(tacticalTop.chargeSuccessChance)+' • '+(chargeMeasurement.physicalDistanceConfirmed?'measured distance confirmed':'physical distance still required')+'.</div>'
+                  :isCharge?'<div class="ta-reason"><b>Projected Fight:</b> incomplete for this candidate.'+
+                    (projected?.reason?' '+String(projected.reason)+'.':'')+
+                    ((projected?.outgoing?.available===false&&projected?.outgoing?.reason)?' Outgoing: '+String(projected.outgoing.reason)+'.':'')+
+                    ((projected?.incoming?.available===false&&projected?.incoming?.reason)?' Return: '+String(projected.incoming.reason)+'.':'')+
+                    '</div>':'';
                 host.innerHTML=
                   '<div class="ta-decision-render">'+
                   '<div class="ta-decision-head"><div><div class="ta-decision-title">Tactical Advisor</div><div class="ta-decision-sub">8-factor mission-aware decision model • active combat recommendation</div></div>'+
                   '<div class="ta-mode">'+modeLabel(mode)+'</div></div>'+
                   '<div class="ta-grid">'+
-                  '<div class="ta-metric"><b>'+pct(top.lethality)+'</b><span>Lethality</span></div>'+
-                  '<div class="ta-metric"><b>'+pct(top.scoreNow)+'</b><span>Score now</span></div>'+
-                  '<div class="ta-metric"><b>'+pct(top.denyOpponentScore)+'</b><span>Deny score</span></div>'+
-                  '<div class="ta-metric"><b>'+pct(top.preserveFriendlyUnit)+'</b><span>Preserve</span></div>'+
-                  '<div class="ta-metric"><b>'+pct(top.tradeValue)+'</b><span>Trade</span></div>'+
-                  '<div class="ta-metric"><b>'+pct(top.objectiveValue)+'</b><span>Objective</span></div>'+
-                  '<div class="ta-metric"><b>'+pct(top.futureScoringValue)+'</b><span>Future score</span></div>'+
-                  '<div class="ta-metric"><b>'+pct(top.decisionConfidence)+'</b><span>Confidence</span></div>'+
+                  '<div class="ta-metric"><b>'+pct(baselineTop.lethality)+'</b><span>Lethality</span></div>'+
+                  '<div class="ta-metric"><b>'+pct(baselineTop.scoreNow)+'</b><span>Score now</span></div>'+
+                  '<div class="ta-metric"><b>'+pct(baselineTop.denyOpponentScore)+'</b><span>Deny score</span></div>'+
+                  '<div class="ta-metric"><b>'+pct(baselineTop.preserveFriendlyUnit)+'</b><span>Preserve</span></div>'+
+                  '<div class="ta-metric"><b>'+pct(baselineTop.tradeValue)+'</b><span>Trade</span></div>'+
+                  '<div class="ta-metric"><b>'+pct(baselineTop.objectiveValue)+'</b><span>Objective</span></div>'+
+                  '<div class="ta-metric"><b>'+pct(baselineTop.futureScoringValue)+'</b><span>Future score</span></div>'+
+                  '<div class="ta-metric"><b>'+pct(baselineTop.decisionConfidence)+'</b><span>Confidence</span></div>'+
                   '</div>'+
                   '<div class="ta-reason"><b>Why:</b> '+String(interpretation)+'</div>'+
-                  (targets.length?'<div class="ta-targets">'+targets.map((t,i)=>'<div class="ta-target"><div class="ta-target-name">'+String(t.targetName||t.name||t.defenderName||'Target '+(i+1))+'</div><div class="ta-target-score">'+pct(t.decisionScore)+'</div><div class="ta-target-meta">'+modeLabel(t.decisionMode||'TACTICAL')+' • damage '+num(t.expectedDamage,1)+' • kill '+pct(t.killFraction||t.wipeChance)+'</div></div>').join('')+'</div>':'<div class="ta-unknown" style="margin-top:10px">No legal target recommendation is available from the current state.</div>')+
-                  '<div class="ta-foot">Mission context: Round '+String(mc.round??window.state.round??'—')+' • VP '+String(mc.myVP??window.state.myVP??'—')+'–'+String(mc.oppVP??window.state.oppVP??'—')+' • Battlefield Layout '+String(mc.battlefield?.mapLayout||window.state.objectiveMapLayout||'—')+(mc.battlefield?.mapPage?' • Event Companion p.'+String(mc.battlefield.mapPage):'')+' • objective data is used only when known; unknown state is not guessed.</div>'+
+                  chargePanel+
+                  (isCharge?chargeExecutionPanel(a.uid,allBaselineTargets,chargeActionState):'')+
+                  (baselineTargets.length?'<div class="ta-targets">'+baselineTargets.map((t,i)=>'<div class="ta-target"><div class="ta-target-name">'+String(t.targetName||t.name||t.defenderName||'Target '+(i+1))+'</div><div class="ta-target-score">'+pct(t.decisionScore)+'</div><div class="ta-target-meta">Existing '+modeLabel(t.decisionMode||'TACTICAL')+''+(isCharge&&t.projectedFight?.outgoing?.result ? ' • projected '+num(t.projectedFight.outgoing.result.damage,1)+'W / return '+num(t.projectedFight.incoming?.result?.damage,1)+'W' : ' • damage '+num(t.expectedDamage,1)+' • kill '+pct(t.killFraction||t.wipeChance))+'</div></div>').join('')+'</div>':'<div class="ta-unknown" style="margin-top:10px">No legal target recommendation is available from the current state.</div>')+
+                  '<div class="ta-compare"><div class="ta-compare-card"><span>Existing Advisor</span><b>'+String(baselineTop.name||baselineTop.targetName||'—')+'</b><small>'+num(baselineTop.decisionScore,2)+' current decision score</small></div><div class="ta-compare-card"><span>Tactical Impact Layer</span><b>'+String(tacticalTop.name||tacticalTop.targetName||'—')+'</b><small>'+num(tacticalTop.tacticalImpactScore,2)+' • '+String(tacticalTop.tacticalImpactType||'TACTICAL')+'</small></div></div>'+
+                  (String(baselineTop.entryUid||'')!==String(tacticalTop.entryUid||'')&&baselineTop.entryUid&&tacticalTop.entryUid?'<div class="ta-reason"><b>Comparison:</b> The new tactical layer would change the leading candidate; the existing Advisor ordering remains authoritative during this test.</div>':'')+
+                  (tacticalReasons.length?'<div class="ta-reason"><b>Tactical layer:</b> '+tacticalReasons.map(String).join(' • ')+'</div>':'')+
+                  (tacticalTop.requiresPhysicalConfirmation?'<div class="ta-foot">Execution note: physical measurement is still required; live-map geometry is not authoritative.</div>':'')+
+                  '<div class="ta-foot">Mission context: Round '+String(mc.round??state.round??'—')+' • VP '+String(mc.myVP??state.myVP??'—')+'–'+String(mc.oppVP??state.oppVP??'—')+' • Battlefield Layout '+String(mc.battlefield?.mapLayout||state.objectiveMapLayout||'—')+(mc.battlefield?.mapPage?' • Event Companion p.'+String(mc.battlefield.mapPage):'')+' • objective data is used only when known; unknown state is not guessed.</div>'+
                   '</div>';
               }catch(e){
-                host.innerHTML='<div class="ta-decision-render"><div class="ta-decision-title">Tactical Advisor</div><div class="ta-unknown">Decision analysis unavailable for this state.</div></div>';
+                console.error('OnoForge Tactical Impact render error',e);
+                host.innerHTML='<div class="ta-decision-render"><div class="ta-decision-title">Tactical Advisor</div><div class="ta-unknown">Decision analysis unavailable for this state.<br><span style="opacity:.8">Diagnostic: '+String(e?.message||e).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</span></div></div>';
               }finally{busy=false}
             }
+            function chargeExecutionPanel(attackerUid,targets,actionState){
+              const selectedTargets=Array.isArray(actionState?.chargeTargets)?actionState.chargeTargets.map(String):[];
+              if(actionState?.chargeDone){
+                const outcome=actionState.chargeMade?'Successful':'Failed';
+                const names=selectedTargets.map(uid=>{
+                  const hit=targets.find(t=>String(t.entryUid)===uid);
+                  return hit?.name||uid;
+                }).join(', ');
+                return '<div class="ta-reason"><b>Charge recorded:</b> '+outcome+(names?' • '+String(names):'')+'<br><button type="button" class="btn primary" style="margin-top:7px;width:100%" onclick="window.advancePhase();return false;">Continue to Fight</button></div>';
+              }
+              const rows=targets.filter(t=>t&&t.entryUid&&t.recommendationEligible!==false).map((t,i)=>{
+                const raw=state?.tactical?.pairs?.[String(attackerUid)+'>'+String(t.entryUid)]||{};
+                const measured=Number.isFinite(Number(raw.distanceInches));
+                const checked=String(state?.tactical?.selectedTargetUid||'')===String(t.entryUid);
+                return '<label style="display:flex;gap:7px;align-items:center;margin-top:5px;font-size:10px"><input type="checkbox" data-onoforge-charge-target="'+String(t.entryUid).replace(/"/g,'&quot;')+'" '+(checked?'checked ':'')+'><span><b>'+String(t.name||('Target '+(i+1)))+'</b> • '+(measured?Number(raw.distanceInches).toFixed(1)+'" measured':'measure distance first')+'</span></label>';
+              }).join('');
+              return '<div class="ta-reason"><b>Charge execution</b><div class="tiny" style="margin-top:3px">Physically measure selected target distances, then record the 2D6 result. The app records success/failure; it does not require individual dice values.</div>'+(rows||'<div class="tiny" style="margin-top:6px">No currently eligible Charge targets.</div>')+
+                '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px"><button type="button" class="btn primary" onclick="window.recordTacticalChargeResult(\'success\',\''+String(attackerUid).replace(/'/g,"\\'")+'\');return false;">Charge Successful</button><button type="button" class="btn" onclick="window.recordTacticalChargeResult(\'failed\',\''+String(attackerUid).replace(/'/g,"\\'")+'\');return false;">Charge Failed</button></div></div>';
+            }
             function ensureHost(){
-              const h=document.getElementById('onoforge-advisor-render');
-              if(h)renderAdvisor();
+              let h=document.getElementById('onoforge-advisor-render');
+              if(!h){
+                const advisorCard=document.querySelector('.tactical-advisor-card');
+                if(!advisorCard||!advisorCard.parentNode)return;
+                h=document.createElement('div');
+                h.id='onoforge-advisor-render';
+                advisorCard.parentNode.insertBefore(h,advisorCard);
+              }
+              renderAdvisor();
             }
             window.addEventListener('load',function(){setTimeout(ensureHost,500)});
             const oldRender=window.render;

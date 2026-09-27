@@ -1,0 +1,206 @@
+name: Tactical Advisor Preview Validation
+
+on:
+  push:
+    branches:
+      - feature/tactical-impact-layer
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'tactical-advisor-engine.js'
+      - 'tactical-advisor-adapter.js'
+      - 'tactical-charge-workflow.js'
+      - 'tests/tactical-advisor-*.test.js'
+      - 'tests/tactical-charge-workflow.test.js'
+      - '.github/workflows/deploy.yml'
+      - '.github/workflows/tactical-advisor-preview.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Run engagement evaluator tests
+        run: node tests/tactical-advisor-engine.test.js
+
+      - name: Run adapter tests
+        run: node tests/tactical-advisor-adapter.test.js
+
+      - name: Run Charge workflow tests
+        run: node tests/tactical-charge-workflow.test.js
+
+      - name: Validate deployment injection and comparison surface
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          workflow = Path('.github/workflows/deploy.yml').read_text(encoding='utf-8')
+          adapter = Path('tactical-advisor-adapter.js').read_text(encoding='utf-8')
+          charge_workflow = Path('tactical-charge-workflow.js').read_text(encoding='utf-8')
+          html = Path('index.html').read_text(encoding='utf-8')
+
+          required_workflow = [
+              'Inject Tactical Advisor decision layer into deploy artifact',
+              'onoforge-tactical-advisor-engine',
+              'onoforge-tactical-advisor-adapter',
+              'Validate Tactical Advisor decision-layer injection',
+              'const allBaselineTargets=extractTargets(r);',
+              'The new tactical layer would change the leading candidate'
+          ]
+          for marker in required_workflow:
+              if marker not in workflow:
+                  raise SystemExit(f'Missing deployment integration marker: {marker}')
+
+          for marker in [
+              'function tacticalAdvisorV1(',
+              'function getTacticalAdvisorResult(',
+              'calculateMathMixed'
+          ]:
+              if marker not in html:
+                  raise SystemExit(f'Missing existing Advisor marker: {marker}')
+          for marker in [
+              'projectChargeEngagement',
+              'projectFightExchange',
+              'shared-combat-engine'
+          ]:
+              if marker not in adapter:
+                  raise SystemExit(f'Missing Charge adapter marker: {marker}')
+          for marker in [
+              'Projected Fight exchange',
+              'chargePanel'
+          ]:
+              if marker not in workflow:
+                  raise SystemExit(f'Missing Charge renderer marker: {marker}')
+
+          # Reproduce the deploy-time script injection against a temporary copy.
+          preview = html
+          for sid, fn in [
+              ('onoforge-tactical-advisor-engine', 'tactical-advisor-engine.js'),
+              ('onoforge-tactical-advisor-adapter', 'tactical-advisor-adapter.js'),
+              ('onoforge-tactical-charge-workflow', 'tactical-charge-workflow.js')
+          ]:
+              if f'id="{sid}"' not in preview:
+                  preview = preview.replace(
+                      '</head>',
+                      f'<script id="{sid}">\n{Path(fn).read_text(encoding="utf-8")}\n</script></head>',
+                      1
+                  )
+
+          if 'id="onoforge-tactical-advisor-engine"' not in preview:
+              raise SystemExit('Engine was not injectable into deploy artifact')
+          if 'id="onoforge-tactical-advisor-adapter"' not in preview:
+              raise SystemExit('Adapter was not injectable into deploy artifact')
+          if 'id="onoforge-tactical-charge-workflow"' not in preview:
+              raise SystemExit('Charge workflow was not injectable into deploy artifact')
+          if 'ONOFORGE_TACTICAL_CHARGE_WORKFLOW' not in preview:
+              raise SystemExit('Charge workflow symbol was not present in deploy artifact')
+          if "window.state" in workflow:
+              raise SystemExit('Tactical Impact renderer must use the shared state binding, not window.state')
+          if "state.page" not in workflow:
+              raise SystemExit('Tactical Impact renderer is missing state.page access')
+          if "r.decisionContext?.phase" not in workflow:
+              raise SystemExit('Tactical Impact renderer is not reading the authoritative Advisor v2 phase context')
+          if "global.ONOFORGE_APP_STATE" not in adapter:
+              raise SystemExit('Charge adapter is not using the OnoForge runtime-state bridge')
+          if "function rosterEntry(side,id,unitId,name)" not in adapter:
+              raise SystemExit('Charge adapter is missing roster entry resolver')
+          if "rawName==='Range'?'rng'" not in html:
+              raise SystemExit('BSData Range field is not normalized to OnoForge rng')
+          if "const supplemental=all.map(u=>({...u,sourceRole:'supplemental'}));" not in html:
+              raise SystemExit('BSData refresh is not retained as supplemental data')
+          if "window.CURRENT_UNIT_DATABASE=mergeSupplementalUnits" in html:
+              raise SystemExit('BSData refresh must not silently overwrite canonical runtime data')
+          if "attackerResolved" not in adapter or "requestedTargetUid" not in adapter:
+              raise SystemExit('Charge entry diagnostics are missing')
+          if "attackerEntry:a" not in workflow:
+              raise SystemExit('Preview renderer is not passing the selected attacker entry')
+          if "function chargeExecutionPanel(attackerUid,targets,actionState){" not in workflow:
+              raise SystemExit('Charge execution renderer is missing')
+          if "if(!isCharge)return ''" in workflow:
+              raise SystemExit('Charge execution renderer has an out-of-scope isCharge dependency')
+          if "pct(top." in workflow:
+              raise SystemExit('Stale top variable reference remains in the comparison renderer')
+          if "pct(baselineTop." not in workflow:
+              raise SystemExit('Baseline metrics are not bound to baselineTop')
+
+          scripts = re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>', preview, flags=re.S|re.I)
+          Path('/tmp/onoforge-preview.js').write_text('\n\n'.join(scripts), encoding='utf-8')
+          print(f'Prepared {len(scripts)} script blocks for syntax validation')
+          PY
+          node --check /tmp/onoforge-preview.js
+
+      - name: Build downloadable Tactical Advisor preview
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          html = Path("index.html").read_text(encoding="utf-8")
+          workflow = Path(".github/workflows/deploy.yml").read_text(encoding="utf-8")
+
+          layers = [
+              ("onoforge-tactical-advisor-engine", Path("tactical-advisor-engine.js")),
+              ("onoforge-tactical-advisor-adapter", Path("tactical-advisor-adapter.js")),
+              ("onoforge-tactical-charge-workflow", Path("tactical-charge-workflow.js")),
+          ]
+          for script_id, source_path in layers:
+              if f'id="{script_id}"' not in html:
+                  html = html.replace(
+                      "</head>",
+                      f'<script id="{script_id}">\n{source_path.read_text(encoding="utf-8")}\n</script></head>',
+                      1
+                  )
+
+          def extract_raw_string(name):
+              start_marker = f'{name} = r"""'
+              start = workflow.find(start_marker)
+              if start < 0:
+                  raise SystemExit(f"Could not locate {name} renderer source in deploy workflow")
+              start += len(start_marker)
+              end = workflow.find('"""', start)
+              if end < 0:
+                  raise SystemExit(f"Could not terminate {name} renderer source in deploy workflow")
+              return workflow[start:end]
+
+          css = extract_raw_string("css")
+          js = extract_raw_string("js")
+
+          if 'id="onoforge-advisor-render-css"' not in html:
+              html = html.replace("</head>", css + "</head>", 1)
+          if 'id="onoforge-advisor-render-js"' not in html:
+              html = html.replace("</body>", js + "</body>", 1)
+
+          out = Path("preview-site")
+          out.mkdir(parents=True, exist_ok=True)
+          (out / "index.html").write_text(html, encoding="utf-8")
+          data_out = out / "data"
+          data_out.mkdir(parents=True, exist_ok=True)
+          companion = Path("data/warhammer-event-companion-v1.2.json")
+          if not companion.exists():
+              raise SystemExit("Required Event Companion reference data is missing")
+          (data_out / companion.name).write_text(companion.read_text(encoding="utf-8"), encoding="utf-8")
+          (out / "README.txt").write_text(
+              "OnoForge 40K Tactical Advisor feature preview\\n\\n"
+              "This build contains the feature-branch Tactical Advisor and Charge workflow injected "
+              "into the deployment artifact. Serve this folder with a local HTTP server before opening "
+              "index.html in a browser. On Windows with Python installed: python -m http.server 8080\\n"
+              "then open http://localhost:8080/\\n",
+              encoding="utf-8"
+          )
+          print("Built preview-site/index.html")
+          PY
+
+      - name: Upload downloadable Tactical Advisor preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: onoforge40k-tactical-advisor-preview
+          path: preview-site
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Report
+        run: echo "Tactical Advisor comparison-layer validation passed"
