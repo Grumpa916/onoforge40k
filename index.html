@@ -994,9 +994,9 @@ const CURRENT_11E_DATA_SOURCES={
   Ultramarines:'https://raw.githubusercontent.com/BSData/wh40k-11e/main/Imperium%20-%20Ultramarines.json'
 };
 const ONOFORGE_SOURCE_POLICY_11E={
-  canonical:{name:'BSData 11e',role:'structured-community-data'},
-  supplemental:[],
-  bootstrap:[{name:'Embedded catalogue',variable:'EXPANDED_CATALOGUE',role:'local-bootstrap'}]
+  canonical:{name:'OnoForge verified runtime snapshot',role:'authoritative-verified'},
+  supplemental:[{name:'BSData 11e',role:'structured-cross-check'}],
+  bootstrap:[{name:'Embedded catalogue',variable:'EXPANDED_CATALOGUE',role:'bootstrap'}]
 };
 window.ONOFORGE_SOURCE_POLICY_11E=ONOFORGE_SOURCE_POLICY_11E;
 
@@ -1168,7 +1168,8 @@ function bsUnitFromEntry(entry,faction){
     weapons,
     weaponOptions:bsWargearOptions(entry),
     dataSource:'BSData 11e',
-    dataVersion:'current'
+    dataVersion:'current',
+    sourceRole:'supplemental'
   };
 }
 
@@ -1193,15 +1194,12 @@ async function refreshCurrentUnitDatabase(showMessage=true){
     }
 
     if(!all.length)throw new Error('No unit data was found.');
-    const currentBase=canonicalUnitDatabase()||bootstrapUnitDatabase();
-    const refreshed=all.map(u=>({...u,sourceRole:'canonical'}));
-    window.SUPPLEMENTAL_UNIT_DATABASE=refreshed;
-    window.CURRENT_UNIT_DATABASE=mergeSupplementalUnits(currentBase,refreshed);
-    DEMO.splice(0,DEMO.length,...window.CURRENT_UNIT_DATABASE);
-    state.dataUpdatedAt=new Date().toISOString();
+    const supplemental=all.map(u=>({...u,sourceRole:'supplemental'}));
+    window.SUPPLEMENTAL_UNIT_DATABASE=supplemental;
+    state.bsDataCrossCheckUpdatedAt=new Date().toISOString();
     save();
     render();
-    if(showMessage)alert(`Updated ${all.length} units from current 11th-edition data.`);
+    if(showMessage)alert(`Refreshed ${all.length} BSData 11e units for cross-checking. Verified runtime data was not overwritten.`);
   }catch(err){
     console.error(err);
     if(showMessage)alert('Unit database update failed: '+(err.message||err));
@@ -7857,7 +7855,7 @@ function weaponDataIntegrityScan(){
       const missingCore=['A','S','AP','D'].filter(k=>w?.[k]==null||String(w[k]).trim()==='');
       if(missingCore.length)push(errors,'WEAPON_CORE_STAT_MISSING',u,name+' missing '+missingCore.join(', ')+'.');
       if(isRanged&&resolvedRange===null){
-        if(sourceRole==='canonical')push(errors,'RANGED_RANGE_UNRESOLVED',u,name+' is ranged but the active BSData 11e source does not resolve a numeric range.');
+        if(sourceRole==='canonical')push(errors,'RANGED_RANGE_UNRESOLVED',u,name+' is ranged but the verified runtime source does not resolve a numeric range.');
         else push(warnings,'BOOTSTRAP_RANGED_RANGE_MISSING',u,name+' lacks a direct range in the embedded bootstrap catalogue; resolve it from the current structured BSData 11e source before promotion.');
       }
     }
@@ -7900,7 +7898,7 @@ function weaponDataIntegrityScan(){
   return {
     generatedAt:new Date().toISOString(),
     sourcePolicy:ONOFORGE_SOURCE_POLICY_11E,
-    activeSource:sourceRole==='canonical'?'BSData 11e structured source':'Embedded bootstrap catalogue',
+    activeSource:sourceRole==='canonical'?'OnoForge verified runtime snapshot':'Embedded bootstrap catalogue',
     totalUnits:units.length,
     errorCount:errors.length,
     warningCount:warnings.length,
