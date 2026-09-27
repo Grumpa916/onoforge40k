@@ -1,0 +1,224 @@
+{
+  "project": "OnoForge 40K Tactical Advisor",
+  "repository": "Grumpa916/onoforge40k",
+  "branch": "main",
+  "architectureMap": "ARCHITECTURE_MAP.md",
+  "developmentGuide": "DEVELOPMENT_GUIDE.md",
+  "roadmap": "ROADMAP.md",
+  "baselineBeforeArchitectureRefactor": "0603fb8de11ba5e83c0fb0ac7c9fd585fbb11cbc",
+  "entryPoint": "index.html",
+  "currentEntryPointStats": {
+    "approxBytes": 1034863,
+    "inlineScriptBlocks": 1,
+    "inlineScriptApproxBytes": 938147,
+    "externalScriptImports": 0,
+    "namedFunctionsApprox": 708
+  },
+  "subsystems": {
+    "statePersistence": {
+      "stateRoots": [
+        "state"
+      ],
+      "entryFunctions": [
+        "save",
+        "load",
+        "snapshotForUndo",
+        "undoLastAction"
+      ],
+      "keyFamilies": [
+        "round",
+        "phase",
+        "currentTurn",
+        "events",
+        "cloud",
+        "gameTimer",
+        "rulesDataPin"
+      ]
+    },
+    "armyRosterIdentity": {
+      "entryFunctions": [
+        "buildModelRoster",
+        "ensureModelRoster",
+        "modelRosterRule",
+        "modelRosterWeaponCounts",
+        "survivingModelRoster"
+      ],
+      "identityContract": "Canonical physical model identity must remain stable across deployment, movement, combat, damage, and casualty state."
+    },
+    "deployment": {
+      "entryFunctions": [
+        "ensureDeploymentPlans",
+        "deploymentPlanForCurrentMap",
+        "setDeploymentPlanPosition",
+        "saveDeploymentPlan",
+        "loadDeploymentPlan"
+      ],
+      "stateKeys": [
+        "deploymentPlans",
+        "deploymentMapPlacement",
+        "deploymentTrackingSide"
+      ],
+      "boundary": "Planning/reference state; separate from live battlefield positions."
+    },
+    "reserves": {
+      "entryFunctions": [
+        "ensureReserveState",
+        "setReserveDeclaration",
+        "deployReserveByMap"
+      ],
+      "stateKeys": [
+        "reserveDeclarations"
+      ],
+      "boundary": "Reserved units are not ordinary live map positions until deployed from reserve."
+    },
+    "battlefieldMap": {
+      "entryFunctions": [
+        "ensureBattlefieldUnitPositions",
+        "battlefieldUnitPosition",
+        "setBattlefieldUnitPosition",
+        "clearBattlefieldUnitPosition",
+        "battlefieldDistanceBetween",
+        "battlefieldTerrainPathIntersections"
+      ],
+      "stateKeys": [
+        "battlefieldUnitPositions",
+        "objectiveMapLayout",
+        "terrainSetupComplete"
+      ],
+      "boundary": "Authoritative live battlefield position state."
+    },
+    "tacticalContext": {
+      "entryFunctions": [
+        "tacticalPairState",
+        "setTacticalPairField",
+        "tacticalAdvisorActionState"
+      ],
+      "stateKeys": [
+        "tactical"
+      ],
+      "boundary": "Context and advisor inputs; should not directly author physical combat outcomes."
+    },
+    "combat": {
+      "snapshotFunctions": [
+        "combatModelSnapshot",
+        "combatSnapshot",
+        "combatTargetUnit"
+      ],
+      "eligibilityFunctions": [
+        "tacticalWeaponPhaseEligible",
+        "tacticalWeaponModelAvailable",
+        "tacticalWeaponModelUseCount"
+      ],
+      "groupFunctions": [
+        "attachedCombatWeaponGroups",
+        "engineWeaponPoolKey"
+      ],
+      "resolutionFunctions": [
+        "engineOneAttack",
+        "tacticalPreRollCheck",
+        "tacticalPreRollResolutionPlan",
+        "tacticalPreRollOpenResolution"
+      ],
+      "boundary": "Real-game physical dice are authoritative. Mathhammer simulation remains separate."
+    },
+    "missionsScoring": {
+      "entryFunctions": [
+        "scorePrimary",
+        "objectiveCountsForSide",
+        "primaryObjectiveScoreSnapshot",
+        "secondaryScoringHtml",
+        "changeVP",
+        "changeCP"
+      ],
+      "stateKeys": [
+        "objectives",
+        "objectiveControlHistory",
+        "myVP",
+        "oppVP",
+        "myCP",
+        "oppCP",
+        "secondaryMy",
+        "secondaryOpp"
+      ]
+    },
+    "turnLifecycle": {
+      "stateKeys": [
+        "tournamentLifecycle",
+        "round",
+        "phase",
+        "currentTurn",
+        "battleEnded",
+        "battleResultLocked"
+      ],
+      "lifecycle": [
+        "SETUP",
+        "DEPLOYMENT",
+        "LIVE",
+        "COMPLETED"
+      ],
+      "timerFunctions": [
+        "ensureGameTimer",
+        "startGameTimer",
+        "toggleGameTimer",
+        "finishGameTimer"
+      ]
+    },
+    "rendering": {
+      "entryPoint": "render",
+      "majorRenderFunctions": [
+        "objectiveMapRendererHtml",
+        "tacticalAdvisorHtml",
+        "tacticalContextHtml",
+        "tacticalShootingResultHtml",
+        "tacticalPreRollHtml",
+        "secondaryMissionsHtml",
+        "primaryMissionPanel"
+      ]
+    }
+  },
+  "criticalCrossSubsystemFlows": [
+    "Army roster → model identity → deployment/reserve state → live position → tactical context → weapon eligibility → physical dice → damage/casualty → scoring/log",
+    "Deployment plans ↔ live battlefield positions (must remain separate)",
+    "Persistent model roster IDs ↔ combat snapshot model IDs (must resolve to the same physical model)",
+    "Physical dice resolution → authoritative ATTACK_RESOLUTION event → model state",
+    "Rules-data pin → battle state → rules/math calculations"
+  ],
+  "supportingModules": {
+    "diagnosticOnly": [
+      "battleCheckpoint.js",
+      "battleCheckpointAdapter.js",
+      "battleCheckpointMapper.js",
+      "battleStateInspector.js",
+      "checkpointIntegrationPlan.js",
+      "checkpointLoader.js"
+    ],
+    "runtimeImportedByIndex": false
+  },
+  "qa": {
+    "deploymentWorkflow": ".github/workflows/deploy.yml",
+    "architectureAudit": "scripts/architecture-map-audit.js",
+    "existingRelevantAudits": [
+      "scripts/deployment-map-integrity-audit.js",
+      "scripts/live-deployment-map-audit.js",
+      "scripts/reserve-map-integrity-audit.js",
+      "scripts/dice-entry-architecture-audit.js",
+      "scripts/track2-combat-regression-audit.js",
+      "scripts/runtime-internal-symbol-audit.js"
+    ]
+  },
+  "refactorOrder": [
+    "shared identity/state contracts",
+    "deployment/reserves/battlefield",
+    "combat/physical dice",
+    "missions/objectives/scoring",
+    "tactical advisor",
+    "UI shell"
+  ],
+  "rules": [
+    "No gameplay changes during structural extraction batches.",
+    "One subsystem at a time.",
+    "Preserve public behavior first; introduce explicit module APIs gradually.",
+    "Do not reintroduce post-build hotfixes for application code.",
+    "Every extraction batch must keep the existing regression/deployment gates green."
+  ]
+}
