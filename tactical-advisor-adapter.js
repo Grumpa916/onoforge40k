@@ -36,9 +36,14 @@
     const mission=advisor.missionDecisionContext||{};
     const evaluatedAt=advisor.evaluatedAt||{};
 
+    // A known map distance is still only an approximate tactical signal. It
+    // must never be mislabeled as a measured/authoritative distance.
+    const distanceSource=rec.distanceSource||(
+      rec.distanceKnown===true?'map-estimate':'unknown'
+    );
     const execution={
-      distanceSource:rec.distanceKnown===true?'battle-state-estimate':'unknown',
-      physicalDistanceConfirmed:false,
+      distanceSource,
+      physicalDistanceConfirmed:rec.physicalDistanceConfirmed===true,
       legalityConfirmed:rec.tacticalLegality?.canTarget===true,
       reliability:score01(rec.decisionComponents?.decisionConfidence)
     };
@@ -66,7 +71,11 @@
         threatSuppression:score01(e.threatSuppression),
         boardPosition:score01(d.objectiveValue),
         futureSetup:score01(d.futureScoringValue),
-        opportunityCost:score01(d.pointRiskFraction),
+        // pointRiskFraction is a risk signal, not a true opportunity-cost
+        // measurement. Only use it when explicitly supplied as such.
+        opportunityCost:rec.opportunityCostKnown===true
+          ?score01(rec.opportunityCost)
+          :50,
         counterattackRisk:score01(e.exposure),
         targetThreat:score01(e.threatSuppression),
         protectsFriendlyAsset:score01(d.preserveFriendlyUnit)
