@@ -5,10 +5,13 @@ const check=(name,condition,detail='')=>checks.push({name,pass:!!condition,detai
 
 check('Opponent event layer exists',s.includes('ONOFORGE_OPPONENT_EVENT_CAPTURE'));
 check('Capture is opponent-turn gated',s.includes("if(currentTurn()!=='opp')return null"));
-check('Shooting capture requires explicit attacker and target',s.includes("attackerSide!=='opp'||targetSide!=='my")&&s.includes('if(!attackerUid||!targetUid)return null'));
-check('Fight capture requires explicit attacker and target',s.includes("kind:phase==='shooting'?'opponent-shooting':'opponent-fight'"));
-check('Charge capture requires explicit attacker and target',s.includes("attackerSide!=='opp'||targetSide!=='my")&&s.includes("kind:'opponent-charge'"));
+check('Shared attack capture uses explicit attacker identity',s.includes('p.attackerUid||p.attackerEntryUid||p.sourceUid'));
+check('Shared attack capture uses explicit target identity',s.includes('p.targetUid||p.targetEntryUid||p.defenderUid'));
+check('Attack identities are resolved against the authoritative roster',s.includes('uniqueSideEntry(attackerUid,\'opp\')')&&s.includes('uniqueSideEntry(targetUid,\'my\')'));
+check('Shooting and Fight are separated by authoritative phase',s.includes("phase!=='shooting'&&phase!=='fight'")&&s.includes("kind:phase==='shooting'?'opponent-shooting':'opponent-fight'"));
+check('Opponent Charge requires explicit attacker and target',s.includes("attackerSide!=='opp'||targetSide!=='my")&&s.includes('if(!attackerUid||!targetUid)return null'));
 check('Charge outcome is recorded only when explicitly successful or failed',s.includes('if(!success&&!failed)return null'));
+check('Manual opponent capture event types are supported',s.includes("OPPONENT_SHOOTING_CAPTURE")&&s.includes("OPPONENT_CHARGE_CAPTURE")&&s.includes("OPPONENT_FIGHT_CAPTURE"));
 check('No exact movement is invented',!s.includes('movementDistance')&&!s.includes('Math.max(0,Number(p.movement')));
 check('Actual attack result fields are preserved when present',s.includes('damage:finite(p.damage??p.appliedDamage??p.totalDamage)')&&s.includes('casualties:finite(p.casualties??p.modelsLost??p.kills)'));
 check('Post-resolution target state is read from existing model state',s.includes('targetState:survivingState(targetUid,\'my\')'));
