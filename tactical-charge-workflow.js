@@ -22,8 +22,8 @@
 
   function legalChargeTarget(attackerUid,targetUid){
     if(typeof global.getTacticalTargetLegalityCached==='function'){
-      const e=(global.state?.opp||[]).find(x=>x&&String(x.uid)===String(targetUid));
-      const a=(global.state?.my||[]).find(x=>x&&String(x.uid)===String(attackerUid));
+      const e=(appState()?.opp||[]).find(x=>x&&String(x.uid)===String(targetUid));
+      const a=(appState()?.my||[]).find(x=>x&&String(x.uid)===String(attackerUid));
       if(a&&e)return global.getTacticalTargetLegalityCached(a,e,'Charge');
     }
     if(typeof global.tacticalTargetLegality==='function'){
@@ -36,7 +36,7 @@
 
   function snapshot(){
     if(typeof global.snapshotForUndo==='function')return global.snapshotForUndo();
-    try{return JSON.parse(JSON.stringify(global.state||{}));}catch(e){return null;}
+    try{return JSON.parse(JSON.stringify(appState()||{}));}catch(e){return null;}
   }
   function persist(){if(typeof global.save==='function')global.save();if(typeof global.render==='function')global.render();}
   function emit(kind,payload,before){if(typeof global.event==='function')global.event(kind,payload,before);}
