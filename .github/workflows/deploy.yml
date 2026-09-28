@@ -384,6 +384,7 @@ jobs:
               wrappedRender.__onoforgeInlineAdvisor=true;
               window.render=wrappedRender;
             }
+          })();
           if 'id="onoforge-advisor-render-css"' not in html:
               html = html.replace('</head>', css + '</head>', 1)
           if 'id="onoforge-advisor-render-js"' not in html:
