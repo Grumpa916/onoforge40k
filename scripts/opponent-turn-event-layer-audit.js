@@ -5,7 +5,7 @@ const checks=[];
 const check=(name,condition,detail='')=>checks.push({name,pass:!!condition,detail});
 
 check('Opponent event layer exists',s.includes('ONOFORGE_OPPONENT_EVENT_CAPTURE'));
-check('Capture is opponent-turn gated',s.includes("if(currentTurn()!=='opp')return null"));
+check('History adapter is read-only',!s.includes('s.combatHistory=')&&!s.includes('s.events.push('));
 check('Shared attack capture uses explicit attacker identity',s.includes('p.attackerUid||p.attackerEntryUid||p.sourceUid'));
 check('Shared attack capture uses explicit target identity',s.includes('p.targetUid||p.targetEntryUid||p.defenderUid'));
 check('Attack identities are resolved against the authoritative roster',s.includes('uniqueSideEntry(attackerUid,\'opp\')')&&s.includes('uniqueSideEntry(targetUid,\'my\')'));
