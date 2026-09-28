@@ -1,4 +1,5 @@
 const assert = require('assert');
+const fs = require('fs');
 
 // Regression harness for the shared pre-roll target-allocation contract.
 // The production index currently contains the same helper bodies. Keep this
@@ -76,6 +77,18 @@ assert.deepStrictEqual(
   tacticalPreRollNormalizePoolAllocations(pool, allocation),
   [{ targetUid: '', count: 2, modelIds: ['m1', 'm2'] }],
   'default target side remains opponent-compatible'
+);
+
+// Regression for the live casualty failure found in Test 1: after a model
+// roster is mutated, synchronization must consume that already-mutated
+// e.modelRoster rather than rehydrate stale state from e.game.modelRoster.
+const html = fs.readFileSync('index.html', 'utf8');
+const syncStart = html.indexOf('function syncModelRosterBattleState');
+assert(syncStart >= 0, 'syncModelRosterBattleState must exist');
+const syncBody = html.slice(syncStart, html.indexOf('\n}', syncStart) + 2);
+assert(
+  syncBody.includes('Array.isArray(e.modelRoster)?e.modelRoster:ensureModelRoster(e,u)'),
+  'model roster synchronization must preserve the already-mutated e.modelRoster'
 );
 
 console.log('Bidirectional combat edge-case regression passed');
