@@ -30,6 +30,24 @@ jobs:
       - name: Validate capture UI syntax
         run: node --check opponent-turn-capture.js
 
+      - name: Validate inline JavaScript in index.html
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          html=Path('index.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script(?:\\s[^>]*)?>(.*?)</script>',html,re.I|re.S)
+          if not scripts:
+              raise SystemExit('No inline script blocks found in index.html')
+          for i,src in enumerate(scripts,1):
+              Path(f'/tmp/onoforge-inline-{i}.js').write_text(src,encoding='utf-8')
+          print(f'Extracted {len(scripts)} inline script block(s)')
+          PY
+          for f in /tmp/onoforge-inline-*.js; do
+            node --check "$f"
+          done
+
       - name: Build opponent-turn preview artifact
         shell: bash
         run: |
