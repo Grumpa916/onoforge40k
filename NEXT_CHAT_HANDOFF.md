@@ -1,3 +1,17 @@
+<!-- LATEST CHAT TRANSFER NOTICE -->
+
+## Latest authoritative chat-transition checkpoint
+
+Use `CHAT_SAVEPOINT_2026-09-27_BIDIRECTIONAL_COMBAT.md` as the primary resume document.
+
+Current development branch: `feature/opponent-turn-history`
+Current HEAD: `132551b340bdff635eeb9b193470f2c1a8e46ccd`
+Known-good baseline: `6969ac316727c100c1092c1724f33a81a016dc18`
+Draft PR: #2, open/draft/unmerged
+Latest three validation lanes for current HEAD: all successful.
+
+Do not assume the older checkpoint described later in this document is the current code state.
+
 # NEXT_CHAT_HANDOFF
 
 ## OnoForge 40K — Tactical Advisor / Charge / Fight Save Point
