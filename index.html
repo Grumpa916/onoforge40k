@@ -7753,7 +7753,7 @@ function tacticalContextHtmlBody(){
       '<div class="grid2" style="margin-top:8px">'+
         '<div class="field"><label>Pile-in completed?</label><select onchange="setTacticalFightUnitState(\''+ae.uid+'\',\'pileInDone\',this.value)"><option value="false" '+(fu.pileInDone!==true?'selected':'')+'>No / unresolved</option><option value="true" '+(fu.pileInDone===true?'selected':'')+'>Yes</option></select></div>'+
         '<div class="field"><label>Consolidation completed?</label><select onchange="setTacticalFightUnitState(\''+ae.uid+'\',\'consolidationDone\',this.value)"><option value="false" '+(fu.consolidationDone!==true?'selected':'')+'>No / unresolved</option><option value="true" '+(fu.consolidationDone===true?'selected':'')+'>Yes</option></select></div>'+
-      '</div>';
+      '</div>';  }
 
   return '<div class="tactical-context-body">'+
     '<div class="split" style="margin-bottom:8px"><div class="muted small">'+esc(phaseLabel)+' • '+esc(status)+'</div><span class="tiny">Enter only battlefield facts</span></div>'+
