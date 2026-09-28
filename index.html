@@ -7141,31 +7141,23 @@ function battlefieldTerrainContextBetweenUnits(attackerSide,attackerUid,targetSi
   if(!geometry.verified||!a||!b)return {verified:false,distanceInches:null,terrainIntersections:[],losInference:'blocked'};
   return {verified:true,distanceInches:battlefieldDistanceBetween(a,b),terrainIntersections:battlefieldTerrainPathIntersections(a,b),losInference:'not-inferred'};
 }
-function tacticalPairState(attackerUid,targetUid){
-  const t=ensureTacticalState(),key=tacticalPairKey(attackerUid,targetUid);
-  const raw=t.pairs[key]&&typeof t.pairs[key]==='object'?t.pairs[key]:{};
+function tacticalCombatPairState(attackerSide,targetSide,attackerUid,targetUid){
+  const as=attackerSide==='opp'?'opp':'my',ts=targetSide==='my'?'my':'opp';
+  const t=ensureTacticalState(),key=tacticalPairKey(attackerUid,targetUid),raw=t.pairs[key]&&typeof t.pairs[key]==='object'?t.pairs[key]:{};
   const exact=Number.isFinite(Number(raw.distanceInches))?Math.max(0,Number(raw.distanceInches)):null;
-  const geometryContext=battlefieldTerrainContextBetweenUnits('my',attackerUid,'opp',targetUid);
-  const resolvedDistance=exact!==null?exact:geometryContext.distanceInches;
+  const geometryContext=battlefieldTerrainContextBetweenUnits(as,attackerUid,ts,targetUid);
+  const resolvedDistance=exact!==null?exact:(geometryContext?.verified===true?geometryContext.distanceInches:null);
   const distanceBand=['unknown','<6','6-12','12-18','18-24','24+'].includes(raw.distanceBand)?raw.distanceBand:tacticalDistanceBandFromInches(resolvedDistance);
-  const objectiveName=raw.objective==null?'':String(raw.objective);
-  const objectiveMeta=objectiveName?objectiveStateRecord(objectiveName):null;
-  const layoutInfo=ensureObjectiveLayoutForMission();
-  return {key,attackerUid:attackerUid||null,targetUid:targetUid||null,
-    distanceInches:resolvedDistance,distanceBand,
+  const objectiveName=raw.objective==null?'':String(raw.objective),objectiveMeta=objectiveName?objectiveStateRecord(objectiveName):null,layoutInfo=ensureObjectiveLayoutForMission();
+  return {key,attackerUid:attackerUid||null,targetUid:targetUid||null,distanceInches:resolvedDistance,distanceBand,
     los:['yes','no','unknown'].includes(raw.los)?raw.los:'unknown',
     engagement:['engaged','notEngaged','unknown'].includes(raw.engagement)?raw.engagement:(String(state.phase||'')==='Charge'?'notEngaged':'unknown'),
     objective:objectiveName,
-    objectiveContext:objectiveMeta?{
-      owner:objectiveMeta.owner,type:objectiveMeta.type,territory:objectiveMeta.territory,
-      deploymentZone:objectiveMeta.deploymentZone,changedThisTurn:objectiveMeta.changedThisTurn,
-      mapLayout:objectiveMeta.mapLayout,mapPage:objectiveMeta.mapLayoutPage
-    }:null,
+    objectiveContext:objectiveMeta?{owner:objectiveMeta.owner,type:objectiveMeta.type,territory:objectiveMeta.territory,deploymentZone:objectiveMeta.deploymentZone,changedThisTurn:objectiveMeta.changedThisTurn,mapLayout:objectiveMeta.mapLayout,mapPage:objectiveMeta.mapLayoutPage}:null,
     battlefieldLayout:{layout:state.objectiveMapLayout||'A',missionKey:state.objectiveMapMissionKey||objectiveMissionKey(),page:layoutInfo?objectiveLayoutPage():null},
-    battlefieldGeometry:objectiveBattlefieldGeometry(),
-    terrainContext:geometryContext,
-    notes:raw.notes==null?'':String(raw.notes)};
+    battlefieldGeometry:objectiveBattlefieldGeometry(),terrainContext:geometryContext,notes:raw.notes==null?'':String(raw.notes)};
 }
+function tacticalPairState(attackerUid,targetUid){return tacticalCombatPairState('my','opp',attackerUid,targetUid);}
 function setTacticalPairField(attackerUid,targetUid,field,value){
   if(!attackerUid||!targetUid)return;
   const before=snapshotForUndo(),t=ensureTacticalState(),key=tacticalPairKey(attackerUid,targetUid);
@@ -7463,7 +7455,7 @@ function tacticalUnitIsEngagedAny(entryUid){
     String(v.targetUid||'')===String(entryUid)
   ));
 }
-function tacticalWeaponPhaseEligible(w,phase,attackerEntry,targetEntry){
+function tacticalWeaponPhaseEligible(w,phase,attackerEntry,targetEntry,attackerSide='my',targetSide='opp'){
   if(!w)return false;
   const p=String(phase||state.phase||'Command');
   const raw=String(w.rng??w.range??'').trim().toUpperCase();
@@ -7471,9 +7463,9 @@ function tacticalWeaponPhaseEligible(w,phase,attackerEntry,targetEntry){
   const blast=tacticalWeaponIsBlast(w);
   const assault=tacticalWeaponIsAssault(w);
   const monsterVehicle=tacticalUnitIsMonsterVehicle(attackerEntry);
-  const ctx=attackerEntry&&targetEntry?tacticalPairState(attackerEntry.uid,targetEntry.uid):null;
+  const ctx=attackerEntry&&targetEntry?tacticalCombatPairState(attackerSide,targetSide,attackerEntry.uid,targetEntry.uid):null;
   const targetEngaged=!!targetEntry&&ctx?.engagement==='engaged';
-  const movementEntry=attackerEntry?combatRootEntry('my',attackerEntry):null;
+  const movementEntry=attackerEntry?combatRootEntry(attackerSide,attackerEntry):null;
   const movementType=tacticalUnitMovementType(movementEntry?.uid||attackerEntry?.uid);
   const advanced=movementType==='advance';
   if(p==='Shooting'){
@@ -7581,9 +7573,9 @@ function tacticalMeltaThreats(targetEntry,distanceInches){
     return {...melta,weapon:w};
   }).filter(x=>x.melta>0&&x.range!==null);
 }
-function tacticalTargetLegality(attackerEntry,targetEntry,phase){
+function tacticalTargetLegality(attackerEntry,targetEntry,phase,attackerSide='my',targetSide='opp'){
   if(!attackerEntry||!targetEntry)return {status:'unknown',known:false,canTarget:null,reasons:['missing-unit']};
-  const ctx=tacticalPairState(attackerEntry.uid,targetEntry.uid),p=String(phase||state.phase||'Command');
+  const ctx=tacticalCombatPairState(attackerSide,targetSide,attackerEntry.uid,targetEntry.uid),p=String(phase||state.phase||'Command');
   const reasons=[];
   if(p==='Shooting'){
     const engaged=tacticalUnitIsEngagedAny(attackerEntry.uid);
@@ -7594,10 +7586,10 @@ function tacticalTargetLegality(attackerEntry,targetEntry,phase){
     // A target being engaged with some other friendly unit does not by itself prevent shooting.
     const targetEngaged=ctx.engagement==='engaged';
     const attackerMV=tacticalUnitIsMonsterVehicle(attackerEntry);
-    const targetCombatUnit=combatTargetUnit('opp',targetEntry)||get(targetEntry.unitId);
+    const targetCombatUnit=combatTargetUnit(targetSide,targetEntry)||get(targetEntry.unitId);
     const targetIsMonsterVehicle=!!targetCombatUnit&&((targetCombatUnit.keywords||[]).map(k=>String(k||'').toUpperCase().trim()).some(k=>k==='MONSTER'||k==='VEHICLE'));
     const loneRange=tacticalLoneOperativeRange(targetCombatUnit);
-    const targetAttached=tacticalTargetIsAttached('opp',targetEntry);
+    const targetAttached=tacticalTargetIsAttached(targetSide,targetEntry);
     if(loneRange!==null&&!targetAttached){
       if(ctx.distanceInches===null)reasons.push('Lone Operative range unknown');
       else if(ctx.distanceInches>loneRange)return {status:'known',known:true,canTarget:false,reasons:['Lone Operative: attacker is '+String(ctx.distanceInches)+'" away; target must be within '+loneRange+'".'],context:ctx};
@@ -7612,7 +7604,7 @@ function tacticalTargetLegality(attackerEntry,targetEntry,phase){
       }
     }
     // A target's engagement with a different friendly unit does not by itself make it illegal to shoot.
-    const groups=tacticalAdvisorWeaponGroups('my',attackerEntry,targetEntry).filter(g=>tacticalWeaponPhaseEligible(g.weapon,'Shooting',attackerEntry,targetEntry));
+    const groups=tacticalAdvisorWeaponGroups(attackerSide,attackerEntry,targetEntry).filter(g=>tacticalWeaponPhaseEligible(g.weapon,'Shooting',attackerEntry,targetEntry,attackerSide,targetSide));
     const hasIndirect=groups.some(g=>tacticalWeaponIsIndirect(g.weapon));
     if(ctx.los==='no'&&!hasIndirect){
       return {status:'known',known:true,canTarget:false,reasons:['line of sight confirmed unavailable and no Indirect Fire weapon is eligible'],context:ctx};
@@ -7629,7 +7621,7 @@ function tacticalTargetLegality(attackerEntry,targetEntry,phase){
   }
   if(p==='Charge'){
     if(!tacticalPhaseActionAvailable(attackerEntry.uid,'Charge'))return {status:'known',known:true,canTarget:false,reasons:['attacker has already completed its Charge action'],context:ctx};
-    const movementType=tacticalUnitMovementType(combatRootEntry('my',attackerEntry)?.uid||attackerEntry.uid);
+    const movementType=tacticalUnitMovementType(combatRootEntry(attackerSide,attackerEntry)?.uid||attackerEntry.uid);
     if(tacticalUnitHasKeyword(attackerEntry,'AIRCRAFT'))reasons.push('AIRCRAFT units cannot declare charges');
     if(tacticalUnitHasKeyword(targetEntry,'AIRCRAFT')&&!tacticalUnitCanFly(attackerEntry))reasons.push('only FLYING units can select AIRCRAFT units as charge targets');
     if(movementType==='advance')reasons.push('attacker advanced and cannot declare a charge');
@@ -8009,15 +8001,15 @@ function tacticalPreRollNormalizePoolAllocations(pool,raw){
   if(unassigned.length)out.push({targetUid:'',count:unassigned.length,modelIds:unassigned});
   return out;
 }
-function tacticalPreRollPoolAvailableModelIds(g){
+function tacticalPreRollPoolAvailableModelIds(g,side='my'){
   const ids=Array.isArray(g?.modelIds)?g.modelIds.map(String):[],uid=g?.entry?.uid;
-  return ids.filter(id=>uid&&tacticalWeaponModelAvailable(uid,id,g.weapon,state.round,state.phase,'my')&&!tacticalWeaponModelModeConflict(uid,id,g.weapon,g.entry,state.round,state.phase,'my'));
+  return ids.filter(id=>uid&&tacticalWeaponModelAvailable(uid,id,g.weapon,state.round,state.phase,side)&&!tacticalWeaponModelModeConflict(uid,id,g.weapon,g.entry,state.round,state.phase,side));
 }
-function tacticalPreRollPoolManifest(ae){
-  const phase=String(state.phase||'Shooting'),groups=attachedCombatWeaponGroups('my',ae,null).filter(g=>tacticalWeaponPhaseEligible(g.weapon,phase,g.entry,null));
+function tacticalPreRollPoolManifest(ae,attackerSide='my'){
+  const phase=String(state.phase||'Shooting'),groups=attachedCombatWeaponGroups(attackerSide,ae,null).filter(g=>tacticalWeaponPhaseEligible(g.weapon,phase,g.entry,null,attackerSide,'opp'));
   const t=ensureTacticalState(),saved=t.preRollPools&&typeof t.preRollPools==='object'?t.preRollPools:{};
   return groups.filter(g=>g.weapon?.name).map(g=>{
-    const modelIds=tacticalPreRollPoolAvailableModelIds(g),pool={...g,modelIds,count:modelIds.length},key=tacticalPreRollPoolIdentity(pool),raw=saved[key]||{},allocations=tacticalPreRollNormalizePoolAllocations(pool,raw);
+    const modelIds=tacticalPreRollPoolAvailableModelIds(g,attackerSide),pool={...g,modelIds,count:modelIds.length},key=tacticalPreRollPoolIdentity(pool),raw=saved[key]||{},allocations=tacticalPreRollNormalizePoolAllocations(pool,raw);
     return {...pool,key,allocations,targetUid:allocations.find(x=>x.targetUid)?.targetUid||null};
   }).filter(p=>p.modelIds.length);
 }
@@ -8058,7 +8050,7 @@ function setTacticalPreRollPoolAllocation(poolId,index,field,value){
   event('TACTICAL_PREROLL_POOL_CHANGED',{poolId:key,index:i,field,value:row[field],action:'Pre-roll pool allocation changed',before:allocations,after:normalized},before);
   save();render();
 }
-function tacticalPreRollWeaponState(attackerUid,targetUid){
+function tacticalPreRollWeaponState(attackerUid,targetUid,attackerSide='my',targetSide='opp'){
   const t=ensureTacticalState(),raw=t.preRoll?.[tacticalPairKey(attackerUid,targetUid)];
   return raw&&typeof raw==='object'?{weaponName:String(raw.weaponName||''),poolId:String(raw.poolId||'')}:{weaponName:'',poolId:''};
 }
@@ -8088,10 +8080,10 @@ function setTacticalPreRollWeapon(weaponName){
 
   save();render();
 }
-function tacticalPreRollCheck(attackerUid,targetUid,weaponName){
-  const ae=entry('my',attackerUid),te=entry('opp',targetUid),name=String(weaponName||''),empty={status:'check-required',weapon:name,warnings:[],steps:[],hitBase:null,hitFinal:null,woundFinal:null,save:null,modifiers:[]};
+function tacticalPreRollCheck(attackerUid,targetUid,weaponName,attackerSide='my',targetSide='opp'){
+  const ae=entry(attackerSide,attackerUid),te=entry(targetSide,targetUid),name=String(weaponName||''),empty={status:'check-required',weapon:name,warnings:[],steps:[],hitBase:null,hitFinal:null,woundFinal:null,save:null,modifiers:[]};
   if(!ae||!te||!name)return empty;
-  const poolState=tacticalPreRollWeaponState(ae.uid,te.uid),manifest=tacticalPreRollPoolManifest(ae);
+  const poolState=tacticalPreRollWeaponState(ae.uid,te.uid,attackerSide,targetSide),manifest=tacticalPreRollPoolManifest(ae,attackerSide);
   let pool=manifest.find(p=>p.key===String(poolState.poolId)&&String(p.weapon?.name||'')===name);
   if(!pool)pool=manifest.find(p=>String(p.weapon?.name||'')===name&&p.allocations.some(x=>String(x.targetUid)===String(te.uid)&&x.modelIds.length));
   if(!pool)pool=manifest.find(p=>String(p.weapon?.name||'')===name);
@@ -8100,8 +8092,8 @@ function tacticalPreRollCheck(attackerUid,targetUid,weaponName){
   const unassigned=pool.allocations.filter(x=>!x.targetUid).reduce((n,x)=>n+x.modelIds.length,0);
   const assignedCount=targetAlloc.reduce((n,x)=>n+x.modelIds.length,0);
   const allAssigned=pool.allocations.reduce((n,x)=>n+x.modelIds.length,0)===pool.modelIds.length&&unassigned===0;
-  const ctx=tacticalPairState(ae.uid,te.uid),leg=tacticalTargetLegality(ae,te,state.phase),warnings=[];
-  const w=pool.weapon,targetUnit=combatTargetUnit('opp',te)||get(te.unitId),movement=tacticalAdvisorActionState(combatRootEntry('my',ae)?.uid||ae.uid);
+  const ctx=tacticalCombatPairState(attackerSide,targetSide,ae.uid,te.uid),leg=tacticalTargetLegality(ae,te,state.phase,attackerSide,targetSide),warnings=[];
+  const w=pool.weapon,targetUnit=combatTargetUnit(targetSide,te)||get(te.unitId),movement=tacticalAdvisorActionState(combatRootEntry(attackerSide,ae)?.uid||ae.uid);
   const halfRangeState=tacticalHalfRangeState(w,ctx.distanceInches);
   const breakpointWeapon=tacticalRapidFireValue(w)>0||tacticalMeltaValue(w)>0;
   if(breakpointWeapon&&halfRangeState.active===null)warnings.push('Measure the distance to the target before rolling: Rapid Fire/Melta depends on half range.');
@@ -8110,7 +8102,7 @@ function tacticalPreRollCheck(attackerUid,targetUid,weaponName){
   if(leg.canTarget===false||leg.canTarget===null)warnings.push(...(leg.reasons||[]));
   const c=engineContext(get(ae.unitId),w,targetUnit,{...(state.mathRules||{}),halfRange:halfRangeState.active===true,chargeMade:!!movement?.chargeMade,attackerEngagedWithTarget:ctx.engagement==='engaged',attackerEngagedAny:tacticalUnitIsEngagedAny(ae.uid),attackerMonsterVehicle:tacticalUnitIsMonsterVehicle(ae),engagedTargetMonsterVehicle:ctx.engagement==='engaged'&&tacticalUnitIsMonsterVehicle(te),movementDistanceInches:movement?.movementDistanceInches,heavyEligible:movement?.movement==='remained'&&movement?.setUpThisTurn!==true&&Number(movement?.movementDistanceInches||0)<=3});
   const precisionWeapon=(w.abilities||[]).some(a=>String(a||'').toUpperCase().includes('PRECISION'));
-  const precisionSnap=combatSnapshot('opp',te),precisionCharacters=(precisionSnap?.characterModels||[]).filter(m=>m.alive!==false),precisionTargetId=String((state.mathRules||{}).precisionTargetModelId||''),precisionTarget=precisionCharacters.find(m=>String(m.id)===precisionTargetId),precisionVisible=(state.mathRules||{}).precisionTargetVisible===true;
+  const precisionSnap=combatSnapshot(targetSide,te),precisionCharacters=(precisionSnap?.characterModels||[]).filter(m=>m.alive!==false),precisionTargetId=String((state.mathRules||{}).precisionTargetModelId||''),precisionTarget=precisionCharacters.find(m=>String(m.id)===precisionTargetId),precisionVisible=(state.mathRules||{}).precisionTargetVisible===true;
   if(precisionWeapon&&(!precisionTarget||!precisionVisible))warnings.push('Precision requires a selected visible CHARACTER allocation group before rolling.');
   const save=engineSaveDistribution(targetUnit,w,c,{...(state.mathRules||{})}),modifiers=[];
   if(c.closeQuartersHitPenalty)modifiers.push('-1 to Hit: close-quarters shooting condition');
@@ -8126,20 +8118,21 @@ function tacticalPreRollCheck(attackerUid,targetUid,weaponName){
   const precisionReady=!precisionWeapon||(!!precisionTarget&&precisionVisible); const status=leg.canTarget===false?'blocked':(!allAssigned||assignedCount<=0||leg.canTarget===null||(breakpointWeapon&&halfRangeState.active===null)||!precisionReady?'check-required':'ready');
   return {status,weapon:name,poolId:pool.key,poolModelIds:pool.modelIds,targetModelIds:targetAlloc.flatMap(x=>x.modelIds),attackerModelIds:targetAlloc.flatMap(x=>x.modelIds),modelCount:assignedCount,hitBase,hitFinal,woundFinal,save,modifiers,warnings,steps,context:ctx,torrent:!!c.torrent,lethal:!!c.lethal,sustained:Number(c.sustained)||0,devastating:!!c.devastating,precision:precisionWeapon,precisionTargetModelId:precisionTarget?.id||null,precisionTargetVisible:precisionVisible&&!!precisionTarget,hitCritThreshold:c.critHitThreshold||6,woundCritThreshold:c.critWoundThreshold||6};
 }
-function tacticalPreRollSessionKey(attackerEntryUid,targetEntryUid,weaponName,poolId=null){
-  return String(attackerEntryUid||'')+'>'+String(targetEntryUid||'')+'|'+String(weaponName||'')+'|'+String(poolId||'');
+function tacticalPreRollSessionKey(attackerEntryUid,targetEntryUid,weaponName,poolId=null,attackerSide='my',targetSide='opp'){
+  const as=attackerSide==='opp'?'opp':'my',ts=targetSide==='my'?'my':'opp';
+  return as+':'+String(attackerEntryUid||'')+'>'+ts+':'+String(targetEntryUid||'')+'|'+String(weaponName||'')+'|'+String(poolId||'');
 }
-function tacticalPreRollContextSignature(attackerEntryUid,targetEntryUid,weaponName,result){
-  const ae=entry('my',attackerEntryUid),te=entry('opp',targetEntryUid);
+function tacticalPreRollContextSignature(attackerEntryUid,targetEntryUid,weaponName,result,attackerSide='my',targetSide='opp'){
+  const ae=entry(attackerSide,attackerEntryUid),te=entry(targetSide,targetEntryUid);
   const phase=String(state.phase||'Command'),round=Math.max(1,Number(state.round)||1),turn=state.currentTurn==='opp'?'opp':'my';
-  const pair=ae&&te?tacticalPairState(ae.uid,te.uid):null;
-  const action=ae?tacticalAdvisorActionState(combatRootEntry('my',ae)?.uid||ae.uid):null;
-  const weaponUse=ae&&weaponName?tacticalWeaponUseState(ae.uid,weaponName,'my'):null;
-  const atkSnap=ae?combatSnapshot('my',ae):null,defSnap=te?combatSnapshot('opp',te):null;
+  const pair=ae&&te?tacticalCombatPairState(attackerSide,targetSide,ae.uid,te.uid):null;
+  const action=ae?tacticalAdvisorActionState(combatRootEntry(attackerSide,ae)?.uid||ae.uid):null;
+  const weaponUse=ae&&weaponName?tacticalWeaponUseState(ae.uid,weaponName,attackerSide):null;
+  const atkSnap=ae?combatSnapshot(attackerSide,ae):null,defSnap=te?combatSnapshot(targetSide,te):null;
   return JSON.stringify({
     phase,round,turn,attackerEntryUid,targetEntryUid,weaponName,
     pair,action,weaponUse,
-    weaponProfile:(ae&&te?attachedCombatWeaponGroups('my',ae,te).map(g=>g.weapon).find(x=>String(x.name)===String(weaponName)):null)?(()=>{const p=attachedCombatWeaponGroups('my',ae,te).map(g=>g.weapon).find(x=>String(x.name)===String(weaponName))||{};return {name:String(p.name||''),A:String(p.A??''),BS:String(p.BS??''),WS:String(p.WS??''),S:String(p.S??''),AP:String(p.AP??''),D:String(p.D??''),rng:String(p.rng??p.range??''),abilities:Array.isArray(p.abilities)?p.abilities.map(String).sort():[]};})():null,
+    weaponProfile:(ae&&te?attachedCombatWeaponGroups(attackerSide,ae,te).map(g=>g.weapon).find(x=>String(x.name)===String(weaponName)):null)?(()=>{const p=attachedCombatWeaponGroups('my',ae,te).map(g=>g.weapon).find(x=>String(x.name)===String(weaponName))||{};return {name:String(p.name||''),A:String(p.A??''),BS:String(p.BS??''),WS:String(p.WS??''),S:String(p.S??''),AP:String(p.AP??''),D:String(p.D??''),rng:String(p.rng??p.range??''),abilities:Array.isArray(p.abilities)?p.abilities.map(String).sort():[]};})():null,
     hitBase:result?.hitBase,hitFinal:result?.hitFinal,woundFinal:result?.woundFinal,
     save:result?.save||null,modifiers:result?.modifiers||[],
     attackCount:result?.modelCount||0,hitCritThreshold:result?.hitCritThreshold||6,woundCritThreshold:result?.woundCritThreshold||6,
@@ -8160,19 +8153,19 @@ function tacticalPreRollResolutionState(){
   return t.preRollResolution;
 }
 function tacticalPreRollResolutionCurrent(){
-  const ae=tacticalAdvisorAttackerEntry(),teUid=state.tactical?.selectedTargetUid,te=teUid?entry('opp',teUid):null;
+  const t=ensureTacticalState(),map=tacticalPreRollResolutionState(),key=String(t.preRollResolutionOpen||''),raw=key?map[key]:null;
+  if(!raw)return null;
+  const attackerSide=raw.attackerSide==='opp'?'opp':'my',targetSide=raw.targetSide==='my'?'my':'opp',ae=entry(attackerSide,raw.attackerEntryUid),te=entry(targetSide,raw.targetEntryUid);
   if(!ae||!te)return null;
-  const storedState=tacticalPreRollWeaponState(ae.uid,te.uid),stored=storedState.weaponName;
-  if(!stored)return null;
-  const r=tacticalPreRollCheck(ae.uid,te.uid,stored);
+  const stored=String(raw.weaponName||'');if(!stored)return null;
+  const r=tacticalPreRollCheck(ae.uid,te.uid,stored,attackerSide,targetSide);
   if(!r||!['ready','ready-with-warnings'].includes(r.status))return null;
-  const poolId=String(r.poolId||storedState.poolId||''),key=tacticalPreRollSessionKey(ae.uid,te.uid,stored,poolId),signature=tacticalPreRollContextSignature(ae.uid,te.uid,stored,r);
-  const map=tacticalPreRollResolutionState(),raw=map[key];
-  if(!raw||raw.signature!==signature)return null;
-  return {...raw,key,signature,poolId:raw.poolId||poolId||null,result:r,attackerEntryUid:ae.uid,targetEntryUid:te.uid,weaponName:stored};
+  const poolId=String(r.poolId||raw.poolId||''),signature=tacticalPreRollContextSignature(ae.uid,te.uid,stored,r,attackerSide,targetSide);
+  if(raw.signature!==signature)return null;
+  return {...raw,key,signature,poolId:raw.poolId||poolId||null,result:r,attackerEntryUid:ae.uid,targetEntryUid:te.uid,weaponName:stored,attackerSide,targetSide};
 }
-function tacticalPreRollSaveGroups(te,provisionalStates=null){
-  const snap=combatSnapshot('opp',te);
+function tacticalPreRollSaveGroups(te,provisionalStates=null,targetSide='opp'){
+  const snap=combatSnapshot(targetSide,te);
   const rawModels=(snap?.models||[]).map(m=>({...m}));
   const overrides=new Map();
   if(provisionalStates instanceof Map){
@@ -8269,24 +8262,24 @@ function tacticalPreRollApplyMixedSaveRolls(current,rolls){
   const modelStates=Array.from(states.values());
   return {failedSaves:failed,damage,normalDamage:Math.max(0,damage-(plan.devastating?Math.min(criticalWounds*normalDamage,damage):0)),mortalDamage:plan.devastating?Math.min(criticalWounds*normalDamage,damage):0,resolution,modelStates,variableDamage,damageInstances:variableDamage?resolution.filter(x=>!x.saveSucceeds).map(x=>({kind:'failedSave',modelId:x.modelId,groupId:x.groupId})):[],devastatingInstances:variableDamage&&plan.devastating?devastatingInstances:[]};
 }
-function tacticalPreRollResolutionPlan(ae,te,w,r,poolId=null){
+function tacticalPreRollResolutionPlan(ae,te,w,r,poolId=null,attackerSide='my',targetSide='opp'){
   const ctx=r?.context||{};
-  const groups=attachedCombatWeaponGroups('my',ae,te).filter(g=>{if(String(g.weapon?.name||'')!==String(w.name))return false;return !poolId||tacticalPreRollPoolIdentity(g)===String(poolId);});
-  const selectedPool=poolId?tacticalPreRollPoolManifest(ae).find(p=>p.key===String(poolId)):null;
+  const groups=attachedCombatWeaponGroups(attackerSide,ae,te).filter(g=>{if(String(g.weapon?.name||'')!==String(w.name))return false;return !poolId||tacticalPreRollPoolIdentity(g)===String(poolId);});
+  const selectedPool=poolId?tacticalPreRollPoolManifest(ae,attackerSide).find(p=>p.key===String(poolId)):null;
   const targetModelIds=new Set((selectedPool?.allocations||[]).filter(a=>String(a.targetUid)===String(te.uid)).flatMap(a=>a.modelIds||[]).map(String));
   const eligibleGroups=groups.map(g=>selectedPool?{...g,modelIds:(g.modelIds||[]).map(String).filter(id=>targetModelIds.has(String(id))),count:(g.modelIds||[]).filter(id=>targetModelIds.has(String(id))).length}:g).filter(g=>{
     const ids=Array.isArray(g.modelIds)?g.modelIds:[];
     if(!ids.length)return true;
-    return ids.some(id=>tacticalWeaponModelAvailable(g.entry?.uid,id,w,state.round,state.phase,'my')&&!tacticalWeaponModelModeConflict(g.entry?.uid,id,w,g.entry,state.round,state.phase,'my'));
+    return ids.some(id=>tacticalWeaponModelAvailable(g.entry?.uid,id,w,state.round,state.phase,attackerSide)&&!tacticalWeaponModelModeConflict(g.entry?.uid,id,w,g.entry,state.round,state.phase,attackerSide));
   });
   const modelIds=Array.from(new Set(eligibleGroups.flatMap(g=>Array.isArray(g.modelIds)?g.modelIds.map(String):[])));
   const models=modelIds.length;
-  const targetSnap=combatSnapshot('opp',te);
-  const targetModels=Math.max(1,Number(targetSnap?.targetModels)||Number(targetSnap?.survivingModels)||Number(combatTargetUnit('opp',te)?.models)||1);
-  const c=engineContext(combatTargetUnit('my',ae)||get(ae.unitId),w,combatTargetUnit('opp',te)||get(te.unitId),{
+  const targetSnap=combatSnapshot(targetSide,te);
+  const targetModels=Math.max(1,Number(targetSnap?.targetModels)||Number(targetSnap?.survivingModels)||Number(combatTargetUnit(targetSide,te)?.models)||1);
+  const c=engineContext(combatTargetUnit(attackerSide,ae)||get(ae.unitId),w,combatTargetUnit('opp',te)||get(te.unitId),{
     ...(state.mathRules||{}),
     halfRange:tacticalHalfRangeState(w,ctx.distanceInches).active===true,
-    chargeMade:!!tacticalAdvisorActionState(combatRootEntry('my',ae)?.uid||ae.uid)?.chargeMade
+    chargeMade:!!tacticalAdvisorActionState(combatRootEntry(attackerSide,ae)?.uid||ae.uid)?.chargeMade
   });
   const half=tacticalHalfRangeState(w,ctx.distanceInches);
   const basePer=engineExpectedDice(w.A);
@@ -8295,7 +8288,7 @@ function tacticalPreRollResolutionPlan(ae,te,w,r,poolId=null){
   const cleave=c.cleave?c.cleave*Math.floor(targetModels/5):0;
   const attacks=Math.max(0,models*(basePer+rapid)+blast+cleave);
   const attached=!!(targetSnap&&targetSnap.components?.length>1&&targetSnap.components.some(x=>x.role==='bodyguard')&&targetSnap.components.some(x=>x.role==='leader'||x.role==='support'));
-  const targetSaveGroups=tacticalPreRollSaveGroups(te);
+  const targetSaveGroups=tacticalPreRollSaveGroups(te,null,targetSide);
   const profiles=new Set((targetSnap?.models||[]).filter(m=>m.alive!==false).map(m=>JSON.stringify({T:m.profile?.T,Sv:m.profile?.Sv,InSv:m.profile?.InSv,W:m.profile?.W,character:!!m.character})));
   const precisionTargetModelId=r?.precisionTargetModelId||null,precision=!!r?.precision,precisionTargetVisible=r?.precisionTargetVisible===true;
   const mixedSaveGroups=targetSaveGroups.length>1||precision||!!engineFnp(c)||!!c.devastating||(targetSnap?.models||[]).some(m=>engineFnp(m));
@@ -8316,30 +8309,30 @@ function tacticalPreRollResolutionPlan(ae,te,w,r,poolId=null){
     precision:!!c.precision,precisionTargetModelId,precisionTargetVisible,fnpNeed:engineFnp(c)||null
   };
 }
+function tacticalPreRollOpenResolutionForSides(attackerSide,targetSide,attackerUid,targetUid,weaponName,poolId=null){
+  const as=attackerSide==='opp'?'opp':'my',ts=targetSide==='my'?'my':'opp',ae=entry(as,attackerUid),te=entry(ts,targetUid),stored=String(weaponName||'');
+  if(!ae||!te||!stored)return false;
+  const manifest=tacticalPreRollPoolManifest(ae,as);
+  const selectedPool=(poolId?manifest.find(p=>p.key===String(poolId)):null)||manifest.find(p=>String(p.weapon?.name||'')===stored&&p.modelIds?.length);
+  if(!selectedPool)return false;
+  const chosenPoolId=String(selectedPool.key),t=ensureTacticalState();t.preRollPools=t.preRollPools||{};
+  const existing=t.preRollPools[chosenPoolId]?.allocations,hasTarget=Array.isArray(existing)&&existing.some(x=>String(x.targetUid||'')===String(te.uid)&&Array.isArray(x.modelIds)&&x.modelIds.length);
+  if(!hasTarget)t.preRollPools[chosenPoolId]={allocations:[{targetUid:String(te.uid),count:selectedPool.modelIds.length,modelIds:[...selectedPool.modelIds]}]};
+  t.preRoll=t.preRoll||{};t.preRoll[tacticalPairKey(ae.uid,te.uid)]={weaponName:stored,poolId:chosenPoolId};
+  const r=tacticalPreRollCheck(ae.uid,te.uid,stored,as,ts);if(!['ready','ready-with-warnings'].includes(r.status))return false;
+  const w=attachedCombatWeaponGroups(as,ae,te).map(g=>g.weapon).find(x=>String(x.name)===stored);if(!w)return false;
+  const signature=tacticalPreRollContextSignature(ae.uid,te.uid,stored,r,as,ts),key=tacticalPreRollSessionKey(ae.uid,te.uid,stored,chosenPoolId,as,ts);
+  const plan=tacticalPreRollResolutionPlan(ae,te,w,r,chosenPoolId,as,ts),map=tacticalPreRollResolutionState(),old=map[key];
+  const session=(old&&old.signature===signature)?old:{key,signature,poolId:chosenPoolId,stage:plan.torrent?'wounds':'hits',counts:{},specials:{},plan,startedAt:new Date().toISOString()};
+  session.key=key;session.attackerEntryUid=ae.uid;session.targetEntryUid=te.uid;session.weaponName=stored;session.attackerSide=as;session.targetSide=ts;session.poolId=chosenPoolId;session.plan=plan;session.signature=signature;
+  if(plan.torrent&&session.counts.hits==null)session.counts.hits=plan.attacks;
+  map[key]=session;t.preRollResolutionOpen=key;save();render();return true;
+}
 function tacticalPreRollOpenResolution(){
   const ae=tacticalAdvisorAttackerEntry(),teUid=state.tactical?.selectedTargetUid,te=teUid?entry('opp',teUid):null;
   if(!ae||!te)return;
-  const stored=tacticalPreRollWeaponState(ae.uid,te.uid).weaponName;
-  if(!stored)return;
-  const r=tacticalPreRollCheck(ae.uid,te.uid,stored);
-  if(!['ready','ready-with-warnings'].includes(r.status)){alert('Pre-Roll Check must be valid before entering dice results.');return;}
-  const w=(attachedCombatWeaponGroups('my',ae,te).map(g=>g.weapon).find(x=>String(x.name)===String(stored)));
-  if(!w)return;
-  const signature=tacticalPreRollContextSignature(ae.uid,te.uid,stored,r);
-  const poolId=tacticalPreRollWeaponState(ae.uid,te.uid).poolId;
-  const key=tacticalPreRollSessionKey(ae.uid,te.uid,stored,poolId);
-  const plan=tacticalPreRollResolutionPlan(ae,te,w,r,poolId);
-  const map=tacticalPreRollResolutionState();
-  const old=map[key];
-  const session=(old&&old.signature===signature)?old:{
-    key,signature,poolId:poolId||null,stage:plan.torrent?'wounds':'hits',
-    counts:{},specials:{},plan,startedAt:new Date().toISOString()
-  };
-  if(plan.torrent && session.counts.hits==null) session.counts.hits=plan.attacks;
-  session.plan=plan;session.signature=signature;
-  map[key]=session;
-  ensureTacticalState().preRollResolutionOpen=key;
-  save();render();
+  const stored=tacticalPreRollWeaponState(ae.uid,te.uid).weaponName;if(!stored)return;
+  if(!tacticalPreRollOpenResolutionForSides('my','opp',ae.uid,te.uid,stored))alert('Pre-Roll Check must be valid before entering dice results.');
 }
 function tacticalPreRollCloseResolution(){
   const t=ensureTacticalState();
