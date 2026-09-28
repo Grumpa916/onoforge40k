@@ -7701,11 +7701,15 @@ function tacticalContextHtmlBody(){
       '</div>'+
       '<div class="muted small" style="margin-top:7px">Movement distance is read from the selected unit when available; no manual maximum-movement entry is required.</div>';
   }else if(phase==='Fight'){
-    const fs=tacticalFightPhaseState();
+    const fs=tacticalFightPhaseState(),fu=tacticalFightUnitState(ae.uid);
     phaseSpecific=
       '<div class="grid2" style="margin-top:8px">'+
       '<div class="field"><label>Fight step</label><select onchange="setTacticalFightPhase(\'step\',this.value)"><option value="unknown" '+(fs.step==='unknown'?'selected':'')+'>Unknown</option><option value="fightsFirst" '+(fs.step==='fightsFirst'?'selected':'')+'>Fights First</option><option value="remaining" '+(fs.step==='remaining'?'selected':'')+'>Remaining Combats</option></select></div>'+
       '<div class="field"><label>Next</label><select onchange="setTacticalFightPhase(\'nextSide\',this.value)"><option value="my" '+(fs.nextSide==='my'?'selected':'')+'>My army</option><option value="opp" '+(fs.nextSide==='opp'?'selected':'')+'>Opponent</option></select></div>'+
+      '</div>'+
+      '<div class="grid2" style="margin-top:8px">'+
+      '<div class="field"><label>Pile-in completed?</label><select onchange="setTacticalFightUnitState(\''+ae.uid+'\',\'pileInDone\',this.value)"><option value="false" '+(fu.pileInDone!==true?'selected':'')+'>No / unresolved</option><option value="true" '+(fu.pileInDone===true?'selected':'')+'>Yes</option></select></div>'+
+      '<div class="field"><label>Consolidation completed?</label><select onchange="setTacticalFightUnitState(\''+ae.uid+'\',\'consolidationDone\',this.value)"><option value="false" '+(fu.consolidationDone!==true?'selected':'')+'>No / unresolved</option><option value="true" '+(fu.consolidationDone===true?'selected':'')+'>Yes</option></select></div>'+
       '</div>';
   }
   return '<div class="tactical-context-body">'+
