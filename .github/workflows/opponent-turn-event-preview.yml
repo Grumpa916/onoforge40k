@@ -10,6 +10,7 @@ on:
       - 'opponent-turn-capture.js'
       - 'scripts/opponent-turn-event-layer-audit.js'
       - 'tests/opponent-turn-event-layer.test.js'
+      - 'tests/bidirectional-combat-edge-cases.test.js'
       - '.github/workflows/opponent-turn-event-preview.yml'
       - 'index.html'
   workflow_dispatch:
@@ -23,6 +24,9 @@ jobs:
 
       - name: Run opponent-turn event layer unit tests
         run: node tests/opponent-turn-event-layer.test.js
+
+      - name: Run bidirectional combat edge-case regression
+        run: node tests/bidirectional-combat-edge-cases.test.js
 
       - name: Run opponent-turn event layer architecture audit
         run: node scripts/opponent-turn-event-layer-audit.js
