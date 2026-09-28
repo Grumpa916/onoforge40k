@@ -8760,7 +8760,7 @@ function tacticalPreRollResolutionSet(field,value){
       const saveWeapon=attachedCombatWeaponGroups(current.attackerSide,entry(current.attackerSide,current.attackerEntryUid),entry(current.targetSide,current.targetEntryUid)).map(g=>g.weapon).find(x=>String(x.name)===String(current.weaponName));
       if(!saveWeapon)throw new Error('Weapon profile is no longer available.');
       s.mixedVariableWeapon=saveWeapon;
-      if(plan.variableDamage||rolls.some(v=>Number(v)===1&&((combatSnapshot('opp',entry(current.targetSide,current.targetEntryUid))?.models||[]).some(m=>m.rerollSave1)))||((combatSnapshot('opp',entry(current.targetSide,current.targetEntryUid))?.models||[]).some(m=>engineFnp(m)))){if(rolls.length!==saveable)throw new Error('Enter exactly '+saveable+' save results.');tacticalPreRollInitMixedVariable(s,rolls);}
+      if(plan.variableDamage||rolls.some(v=>Number(v)===1&&((combatSnapshot(current.targetSide,entry(current.targetSide,current.targetEntryUid))?.models||[]).some(m=>m.rerollSave1)))||((combatSnapshot(current.targetSide,entry(current.targetSide,current.targetEntryUid))?.models||[]).some(m=>engineFnp(m)))){if(rolls.length!==saveable)throw new Error('Enter exactly '+saveable+' save results.');tacticalPreRollInitMixedVariable(s,rolls);}
       else{
         const resolved=tacticalPreRollApplyMixedSaveRolls({state:s,session:s,plan,saveable,targetEntryUid:current.targetEntryUid,weapon:saveWeapon},rolls);
         s.counts.failedSaves=resolved.failedSaves;s.counts.damage=resolved.damage;s.mixedResolution=resolved;s.stage='review';
@@ -8804,7 +8804,7 @@ function tacticalPreRollResolutionBack(){
   s.stage=order[i-1];save();render();
 }
 function tacticalPreRollBuildPrecisionMixedResolution(s){
-  const te=entry('opp',s.targetEntryUid),groups=tacticalPreRollSaveGroups(te,s.precisionTargetState?[s.precisionTargetState]:null),snap=combatSnapshot(s.targetSide==='my'?'my':'opp',te);
+  const targetSide=s.targetSide==='my'?'my':'opp',te=entry(targetSide,s.targetEntryUid),groups=tacticalPreRollSaveGroups(te,s.precisionTargetState?[s.precisionTargetState]:null,targetSide),snap=combatSnapshot(targetSide,te);
   const states=(snap?.models||[]).filter(m=>m.alive!==false).map(m=>({id:m.id,sourceEntryUid:m.sourceEntryUid,sourceUnitId:m.sourceUnitId,groupId:(groups.find(g=>(g.modelIds||[]).some(id=>String(id)===String(m.id)))||{}).id||null,groupCharacter:!!m.character,character:!!m.character,profile:m.profile||{},maxWounds:Number(m.maxWounds||m.profile?.W||1)||1,alive:m.alive!==false,woundsRemaining:Math.max(0,Number(m.woundsRemaining)||0)}));
   if(s.precisionTargetState){const ps=s.precisionTargetState,pm=states.find(x=>String(x.id)===String(ps.modelId));if(pm){pm.alive=ps.alive!==false;pm.woundsRemaining=Math.max(0,Number(ps.woundsRemaining)||0);}}
   s.mixedResolution={failedSaves:Number(s.counts.failedSaves)||0,damage:Number(s.counts.damage)||0,normalDamage:Number(s.counts.damage)||0,mortalDamage:0,resolution:s.precisionResolution||[],modelStates:states,variableDamage:false,damageInstances:[],devastatingInstances:[]};
