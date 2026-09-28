@@ -1,0 +1,20 @@
+const fs=require('fs');
+const s=fs.readFileSync('opponent-turn-event-layer.js','utf8');
+const checks=[];
+const check=(name,condition,detail='')=>checks.push({name,pass:!!condition,detail});
+
+check('Opponent event layer exists',s.includes('ONOFORGE_OPPONENT_EVENT_CAPTURE'));
+check('Capture is opponent-turn gated',s.includes("if(currentTurn()!=='opp')return null"));
+check('Shooting capture requires explicit attacker and target',s.includes("attackerSide!=='opp'||targetSide!=='my")&&s.includes('if(!attackerUid||!targetUid)return null'));
+check('Fight capture requires explicit attacker and target',s.includes("kind:phase==='shooting'?'opponent-shooting':'opponent-fight'"));
+check('Charge capture requires explicit attacker and target',s.includes("attackerSide!=='opp'||targetSide!=='my")&&s.includes("kind:'opponent-charge'"));
+check('Charge outcome is recorded only when explicitly successful or failed',s.includes('if(!success&&!failed)return null'));
+check('No exact movement is invented',!s.includes('movementDistance')&&!s.includes('Math.max(0,Number(p.movement')));
+check('Actual attack result fields are preserved when present',s.includes('damage:finite(p.damage??p.appliedDamage??p.totalDamage)')&&s.includes('casualties:finite(p.casualties??p.modelsLost??p.kills)'));
+check('Post-resolution target state is read from existing model state',s.includes('targetState:survivingState(targetUid,\'my\')'));
+check('History persists under shared battle state',s.includes('s.combatHistory={version:VERSION,events:[]}'));
+check('Existing event logger is wrapped rather than replaced',s.includes('const original=global.event')&&s.includes('original.apply(this,arguments)'));
+check('Layer does not resolve combat',!s.includes('Math.random')&&!s.includes('tacticalPreRollApplyResolution')&&!s.includes('calculateMathMixed'));
+const failures=checks.filter(x=>!x.pass);
+console.log(JSON.stringify({audit:'Opponent-turn event capture layer',checks:checks.length,passed:checks.length-failures.length,failed:failures.length,failures},null,2));
+if(failures.length)process.exit(1);
