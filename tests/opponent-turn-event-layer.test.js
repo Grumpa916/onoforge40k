@@ -48,8 +48,9 @@ assert.strictEqual(normalized.damage,8);
 state.events.push({id:'my-e',round:2,phase:'Fight',playerTurn:'my',kind:'ATTACK_RESOLUTION',payload:{
   side:'my',attackerEntryUid:'myTarget',targetEntryUid:'oppAttacker',damage:8
 }});
-assert.strictEqual(api.getHistory().length,3,'My-side history must remain available to the app but not be misclassified as opponent history');
-assert.strictEqual(api.getHistory().every(x=>x.attackerSide==='opp'),true);
+assert.strictEqual(api.getHistory().length,4,'Combat History is intentionally bidirectional');
+assert.strictEqual(api.getHistory().some(x=>x.attackerSide==='my'),true);
+assert.strictEqual(api.getHistory().some(x=>x.attackerSide==='opp'),true);
 
 state.events.push({id:'bad',round:2,phase:'Fight',playerTurn:'opp',kind:'ATTACK_RESOLUTION',payload:{
   side:'opp',attackerEntryUid:'oppAttacker',targetEntryUid:'unknown',damage:9
