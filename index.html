@@ -5643,7 +5643,7 @@ function gameRow(side,e){
 function syncModelRosterBattleState(e,u){
   if(!e||!u)return;
   if(!e.game)e.game={entryId:e.uid,models:e.models,wounds:e.models*Math.max(1,Number(u.wounds)||1),status:'Alive',battleshocked:false};
-  const roster=ensureModelRoster(e,u);
+  const roster=Array.isArray(e.modelRoster)?e.modelRoster:ensureModelRoster(e,u);
   const maxWounds=Math.max(0,e.models*Math.max(1,Number(u.wounds)||1));
   const alive=roster.filter(m=>m.alive!==false);
   const wounds=alive.reduce((sum,m)=>sum+Math.max(0,Number(m.woundsRemaining)||0),0);
