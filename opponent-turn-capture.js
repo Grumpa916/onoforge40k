@@ -17,32 +17,32 @@ function panel(){
   if(phase==='Shooting'){
     body='<div class="grid2">'+
       '<div class="field"><label>Enemy shooter</label>'+selectHtml('of-opp-attacker',opp,'Select enemy unit')+'</div>'+
-      '<div class="field"><label>My targeted unit</label>'+selectHtml('of-my-target',my,'Select my unit')+'</div>'+\
+      '<div class="field"><label>My targeted unit</label>'+selectHtml('of-my-target',my,'Select my unit')+'</div>'+ 
       '</div><div class="grid3" style="margin-top:8px">'+
-      '<div class="field"><label>Damage actually applied</label><input id="of-damage" type="number" min="0" step="0.1" placeholder="Unknown allowed"></div>'+
-      '<div class="field"><label>Wounds actually lost</label><input id="of-wounds" type="number" min="0" step="1" placeholder="Unknown allowed"></div>'+
-      '<div class="field"><label>Models actually lost</label><input id="of-casualties" type="number" min="0" step="1" placeholder="Unknown allowed"></div>'+
-      '</div><div class="field" style="margin-top:8px"><label>Affected model IDs (optional, comma-separated)</label><input id="of-models" type="text" placeholder="Only enter models you can identify"></div>'+
+      '<div class="field"><label>Damage actually applied</label><input id="of-damage" type="number" min="0" step="0.1" placeholder="Unknown allowed"></div>'+ 
+      '<div class="field"><label>Wounds actually lost</label><input id="of-wounds" type="number" min="0" step="1" placeholder="Unknown allowed"></div>'+ 
+      '<div class="field"><label>Models actually lost</label><input id="of-casualties" type="number" min="0" step="1" placeholder="Unknown allowed"></div>'+ 
+      '</div><div class="field" style="margin-top:8px"><label>Affected model IDs (optional, comma-separated)</label><input id="of-models" type="text" placeholder="Only enter models you can identify"></div>'+ 
       '<button class="btn primary" style="margin-top:8px" onclick="window.captureOpponentTurnEvent(\'shooting\');return false">Record opponent Shooting result</button>';
   }else if(phase==='Charge'){
     body='<div class="grid2">'+
       '<div class="field"><label>Enemy charging unit</label>'+selectHtml('of-opp-attacker',opp,'Select enemy unit')+'</div>'+
-      '<div class="field"><label>My charged unit</label>'+selectHtml('of-my-target',my,'Select my unit')+'</div>'+\
+      '<div class="field"><label>My charged unit</label>'+selectHtml('of-my-target',my,'Select my unit')+'</div>'+ 
       '</div><div class="grid3" style="margin-top:8px">'+
-      '<div class="field"><label>Charge result</label><select id="of-result"><option value="Successful">Successful</option><option value="Failed">Failed</option></select></div>'+
-      '<div class="field"><label>Measured charge distance (optional)</label><input id="of-distance" type="number" min="0" step="0.1" placeholder="Leave blank if unknown"></div>'+
-      '<div class="field"><label>Engagement state</label><select id="of-engagement"><option value="unknown">Unknown</option><option value="engaged">Engaged</option><option value="notEngaged">Not engaged</option></select></div>'+
+      '<div class="field"><label>Charge result</label><select id="of-result"><option value="Successful">Successful</option><option value="Failed">Failed</option></select></div>'+ 
+      '<div class="field"><label>Measured charge distance (optional)</label><input id="of-distance" type="number" min="0" step="0.1" placeholder="Leave blank if unknown"></div>'+ 
+      '<div class="field"><label>Engagement state</label><select id="of-engagement"><option value="unknown">Unknown</option><option value="engaged">Engaged</option><option value="notEngaged">Not engaged</option></select></div>'+ 
       '</div><button class="btn primary" style="margin-top:8px" onclick="window.captureOpponentTurnEvent(\'charge\');return false">Record opponent Charge</button>';
   }else{
     body='<div class="grid2">'+
       '<div class="field"><label>Enemy fighting unit</label>'+selectHtml('of-opp-attacker',opp,'Select enemy unit')+'</div>'+
-      '<div class="field"><label>My unit fought</label>'+selectHtml('of-my-target',my,'Select my unit')+'</div>'+\
+      '<div class="field"><label>My unit fought</label>'+selectHtml('of-my-target',my,'Select my unit')+'</div>'+ 
       '</div><div class="grid3" style="margin-top:8px">'+
-      '<div class="field"><label>Damage actually applied</label><input id="of-damage" type="number" min="0" step="0.1" placeholder="Unknown allowed"></div>'+
-      '<div class="field"><label>Wounds actually lost</label><input id="of-wounds" type="number" min="0" step="1" placeholder="Unknown allowed"></div>'+
-      '<div class="field"><label>Models actually lost</label><input id="of-casualties" type="number" min="0" step="1" placeholder="Unknown allowed"></div>'+
-      '</div><div class="field" style="margin-top:8px"><label>Affected model IDs (optional, comma-separated)</label><input id="of-models" type="text" placeholder="Only enter models you can identify"></div>'+
-      '<div class="grid2" style="margin-top:8px"><div class="field"><label>Pile-in</label><select id="of-pile"><option value="unknown">Unknown</option><option value="completed">Completed</option><option value="notCompleted">Not completed</option></select></div><div class="field"><label>Consolidation</label><select id="of-consolidation"><option value="unknown">Unknown</option><option value="completed">Completed</option><option value="notCompleted">Not completed</option></select></div></div>'+
+      '<div class="field"><label>Damage actually applied</label><input id="of-damage" type="number" min="0" step="0.1" placeholder="Unknown allowed"></div>'+ 
+      '<div class="field"><label>Wounds actually lost</label><input id="of-wounds" type="number" min="0" step="1" placeholder="Unknown allowed"></div>'+ 
+      '<div class="field"><label>Models actually lost</label><input id="of-casualties" type="number" min="0" step="1" placeholder="Unknown allowed"></div>'+ 
+      '</div><div class="field" style="margin-top:8px"><label>Affected model IDs (optional, comma-separated)</label><input id="of-models" type="text" placeholder="Only enter models you can identify"></div>'+ 
+      '<div class="grid2" style="margin-top:8px"><div class="field"><label>Pile-in</label><select id="of-pile"><option value="unknown">Unknown</option><option value="completed">Completed</option><option value="notCompleted">Not completed</option></select></div><div class="field"><label>Consolidation</label><select id="of-consolidation"><option value="unknown">Unknown</option><option value="completed">Completed</option><option value="notCompleted">Not completed</option></select></div></div>'+ 
       '<button class="btn primary" style="margin-top:8px" onclick="window.captureOpponentTurnEvent(\'fight\');return false">Record opponent Fight result</button>';
   }
   return '<div id="onoforge-opponent-turn-capture" class="card" style="border-color:#6b4c54"><div class="split"><div><h3 style="margin:0">Opponent '+esc(phase)+' Capture</h3><div class="muted">Record only facts actually established during the opponent turn.</div></div><span class="pill">Authoritative event capture</span></div>'+body+'<div class="tiny" style="margin-top:8px">Unknown values remain unknown. This panel does not resolve combat or infer movement.</div></div>';
