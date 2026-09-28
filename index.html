@@ -7188,7 +7188,7 @@ function clearTacticalPair(attackerUid,targetUid){
   save();render();
 }
 function tacticalAdvisorActionState(entryUid){
-  if(!entryUid)return {movement:'unknown',movementDistanceInches:null,setUpThisTurn:null,shootingDone:false,chargeDone:false,chargeMade:false,fightDone:false,round:Math.max(1,Number(state.round)||1),playerTurn:state.currentTurn};
+  if(!entryUid)return {movement:'unknown',movementDistanceInches:null,setUpThisTurn:null,shootingDone:false,chargeDone:false,chargeMade:false,fightDone:false,enemyFightBackDone:false,round:Math.max(1,Number(state.round)||1),playerTurn:state.currentTurn};
   const t=ensureTacticalState(),raw=t.unitActions[String(entryUid)];
   if(!raw||raw.round!==Math.max(1,Number(state.round)||1)||raw.playerTurn!==state.currentTurn){
     return {movement:'unknown',movementDistanceInches:null,setUpThisTurn:null,shootingDone:false,chargeDone:false,chargeMade:false,fightDone:false,round:Math.max(1,Number(state.round)||1),playerTurn:state.currentTurn};
@@ -7201,6 +7201,8 @@ function tacticalAdvisorActionState(entryUid){
     chargeDone:!!raw.chargeDone,
     chargeMade:!!raw.chargeMade,
     fightDone:!!raw.fightDone,
+    enemyFightBackDone:!!raw.enemyFightBackDone,
+    fightTargetUid:raw.fightTargetUid==null?'':String(raw.fightTargetUid),
     round:raw.round,playerTurn:raw.playerTurn
   };
 }
@@ -7232,8 +7234,10 @@ function setTacticalUnitAction(entryUid,field,value){
     next.movementDistanceInches=Number.isFinite(n)&&n>=0?Math.min(60,Math.round(n*10)/10):null;
   }else if(field==='setUpThisTurn'){
     next.setUpThisTurn=value===true||value==='true'?true:(value===false||value==='false'?false:null);
-  }else if(field==='shootingDone'||field==='chargeDone'||field==='chargeMade'||field==='fightDone'){
+  }else if(field==='shootingDone'||field==='chargeDone'||field==='chargeMade'||field==='fightDone'||field==='enemyFightBackDone'){
     next[field]=!!value;
+  }else if(field==='fightTargetUid'){
+    next.fightTargetUid=value==null?'':String(value);
   }else return;
   t.unitActions[key]=next;
   event('TACTICAL_ACTION_STATE_CHANGED',{entryUid,field,value:next[field]??next.movement,action:'Unit '+field+' changed',before:old,after:next},before);
@@ -7701,17 +7705,56 @@ function tacticalContextHtmlBody(){
       '</div>'+
       '<div class="muted small" style="margin-top:7px">Movement distance is read from the selected unit when available; no manual maximum-movement entry is required.</div>';
   }else if(phase==='Fight'){
-    const fs=tacticalFightPhaseState(),fu=tacticalFightUnitState(ae.uid);
+    const fs=tacticalFightPhaseState(),fu=tacticalFightUnitState(ae.uid),actions=tacticalAdvisorActionState(ae.uid);
+    const targetUid=String(ensureTacticalState().selectedTargetUid||'');
+    const te=targetUid?entry('opp',targetUid):null;
+    let ownDamage=null,enemyDamage=null,ownWeapons=[],enemyWeapons=[];
+    try{
+      if(te){
+        const ownGroups=attachedCombatWeaponGroups('my',ae,te).filter(g=>tacticalWeaponPhaseEligible(g.weapon,'Fight',ae,te));
+        ownWeapons=[...new Set(ownGroups.map(g=>String(g.weapon?.name||'')).filter(Boolean))];
+        if(ownGroups.length){
+          const aUnit=combatTargetUnit('my',ae)||get(ae.unitId),tUnit=combatTargetUnit('opp',te)||get(te.unitId),snap=combatSnapshot('opp',te);
+          if(aUnit&&tUnit&&snap){
+            const plan=ownGroups.map(g=>({...g,count:Math.max(0,Number(g.count)||0)})).filter(g=>g.count>0);
+            const calc=calculateMathMixed(aUnit,tUnit,plan,{...(state.mathRules||{}),defenderModels:Math.max(1,Number(snap.survivingModels)||Number(tUnit.models)||1),defenderWoundsRemaining:Math.max(1,Number(snap.totalWounds)||Number(tUnit.profile?.W)||1),quickSamples:1000,_skipSim:false});
+            ownDamage=Math.max(0,Number(calc.damage)||0);
+          }
+        }
+        const enemyGroups=attachedCombatWeaponGroups('opp',te,ae).filter(g=>tacticalWeaponPhaseEligible(g.weapon,'Fight',te,ae));
+        enemyWeapons=[...new Set(enemyGroups.map(g=>String(g.weapon?.name||'')).filter(Boolean))];
+        if(enemyGroups.length){
+          const eUnit=combatTargetUnit('opp',te)||get(te.unitId),aTarget=combatTargetUnit('my',ae)||get(ae.unitId),asnap=combatSnapshot('my',ae);
+          if(eUnit&&aTarget&&asnap){
+            const plan=enemyGroups.map(g=>({...g,count:Math.max(0,Number(g.count)||0)})).filter(g=>g.count>0);
+            const calc=calculateMathMixed(eUnit,aTarget,plan,{...(state.mathRules||{}),defenderModels:Math.max(1,Number(asnap.survivingModels)||Number(aTarget.models)||1),defenderWoundsRemaining:Math.max(1,Number(asnap.totalWounds)||Number(aTarget.profile?.W)||1),quickSamples:1000,_skipSim:false});
+            enemyDamage=Math.max(0,Number(calc.damage)||0);
+          }
+        }
+      }
+    }catch(_e){
+      ownDamage=null;enemyDamage=null;
+    }
+    const targetLabel=te?unitDisplayName('opp',te):'Select the enemy unit actually fought above';
     phaseSpecific=
       '<div class="grid2" style="margin-top:8px">'+
       '<div class="field"><label>Fight step</label><select onchange="setTacticalFightPhase(\'step\',this.value)"><option value="unknown" '+(fs.step==='unknown'?'selected':'')+'>Unknown</option><option value="fightsFirst" '+(fs.step==='fightsFirst'?'selected':'')+'>Fights First</option><option value="remaining" '+(fs.step==='remaining'?'selected':'')+'>Remaining Combats</option></select></div>'+
       '<div class="field"><label>Next</label><select onchange="setTacticalFightPhase(\'nextSide\',this.value)"><option value="my" '+(fs.nextSide==='my'?'selected':'')+'>My army</option><option value="opp" '+(fs.nextSide==='opp'?'selected':'')+'>Opponent</option></select></div>'+
       '</div>'+
+      '<div class="status" style="margin-top:8px"><b>Fight Execution</b><div class="tiny" style="margin-top:3px">Resolve the selected melee exchange, then record the enemy fight back before closing the combat.</div>'+
+        '<div class="grid2" style="margin-top:8px">'+
+          '<div class="status"><div class="muted small">Friendly fight → '+esc(targetLabel)+'</div><b>'+(ownDamage===null?'Projection unavailable':ownDamage.toFixed(1)+'W expected')+'</b><div class="tiny">'+(ownWeapons.length?esc(ownWeapons.join(' • ')):'No melee weapons resolved')+'</div>'+
+            '<button type="button" class="btn '+(actions.fightDone?'ok':'primary')+'" style="width:100%;margin-top:6px" onclick="setTacticalUnitAction(\''+ae.uid+'\',\'fightDone\','+(actions.fightDone?'false':'true')+');return false;">'+(actions.fightDone?'Fight Resolved':'Mark Friendly Fight Resolved')+'</button></div>'+
+          '<div class="status"><div class="muted small">Enemy fight back</div><b>'+(enemyDamage===null?'Projection unavailable':enemyDamage.toFixed(1)+'W expected return')+'</b><div class="tiny">'+(enemyWeapons.length?esc(enemyWeapons.join(' • ')):'No enemy melee weapons resolved')+'</div>'+
+            '<button type="button" class="btn '+(actions.enemyFightBackDone?'ok':'primary')+'" style="width:100%;margin-top:6px" onclick="setTacticalUnitAction(\''+ae.uid+'\',\'enemyFightBackDone\','+(actions.enemyFightBackDone?'false':'true')+');return false;">'+(actions.enemyFightBackDone?'Enemy Fight Back Recorded':'Record Enemy Fight Back')+'</button></div>'+
+        '</div>'+
+        '<div class="tiny" style="margin-top:8px">Damage projections are guidance. Apply actual melee results using the existing model/wound controls, then mark each side resolved.</div>'+
+      '</div>'+
       '<div class="grid2" style="margin-top:8px">'+
-      '<div class="field"><label>Pile-in completed?</label><select onchange="setTacticalFightUnitState(\''+ae.uid+'\',\'pileInDone\',this.value)"><option value="false" '+(fu.pileInDone!==true?'selected':'')+'>No / unresolved</option><option value="true" '+(fu.pileInDone===true?'selected':'')+'>Yes</option></select></div>'+
-      '<div class="field"><label>Consolidation completed?</label><select onchange="setTacticalFightUnitState(\''+ae.uid+'\',\'consolidationDone\',this.value)"><option value="false" '+(fu.consolidationDone!==true?'selected':'')+'>No / unresolved</option><option value="true" '+(fu.consolidationDone===true?'selected':'')+'>Yes</option></select></div>'+
+        '<div class="field"><label>Pile-in completed?</label><select onchange="setTacticalFightUnitState(\''+ae.uid+'\',\'pileInDone\',this.value)"><option value="false" '+(fu.pileInDone!==true?'selected':'')+'>No / unresolved</option><option value="true" '+(fu.pileInDone===true?'selected':'')+'>Yes</option></select></div>'+
+        '<div class="field"><label>Consolidation completed?</label><select onchange="setTacticalFightUnitState(\''+ae.uid+'\',\'consolidationDone\',this.value)"><option value="false" '+(fu.consolidationDone!==true?'selected':'')+'>No / unresolved</option><option value="true" '+(fu.consolidationDone===true?'selected':'')+'>Yes</option></select></div>'+
       '</div>';
-  }
+
   return '<div class="tactical-context-body">'+
     '<div class="split" style="margin-bottom:8px"><div class="muted small">'+esc(phaseLabel)+' • '+esc(status)+'</div><span class="tiny">Enter only battlefield facts</span></div>'+
     '<div class="grid2">'+
