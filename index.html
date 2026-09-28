@@ -5484,6 +5484,28 @@ function undoLastAction(){
   render();
 }
 
+function combatHistoryEvents(){
+  return (state.events||[]).filter(e=>e&&(
+    e.kind==='ATTACK_RESOLUTION'||e.kind==='CHARGE_RESOLUTION'||e.kind==='CHARGE_RESULT'
+  ));
+}
+function combatHistoryLine(e){
+  const p=e?.payload||{},phase=e?.phase||p.phase||'Unknown',side=String(p.attackerSide||p.side||e?.playerTurn||'').toLowerCase();
+  const attacker=String(p.attacker||p.unit||p.attackerEntryUid||'Unknown attacker');
+  const target=Array.isArray(p.targetEntryUids)?p.targetEntryUids.map(String).join(', '):String(p.target||p.targetEntryUid||'Unknown target');
+  let result='';
+  if(e.kind==='ATTACK_RESOLUTION'){
+    const parts=[];if(p.hits!=null)parts.push(String(p.hits)+' hits');if(p.wounds!=null)parts.push(String(p.wounds)+' wounds');if(p.saved!=null)parts.push(String(p.saved)+' saves');if(p.damage!=null)parts.push(String(p.damage)+' dmg');if(Array.isArray(p.modelIds)&&p.modelIds.length)parts.push(String(p.modelIds.length)+' model IDs');result=parts.join(' • ');
+  }else{
+    const parts=[String(p.result||'Outcome unknown')];if(p.rolledTotal!=null)parts.push('roll '+String(p.rolledTotal));if(p.measuredDistance!=null)parts.push(String(p.measuredDistance)+'"');if(p.engagementState)parts.push(String(p.engagementState));result=parts.join(' • ');
+  }
+  const time=e?.at?new Date(e.at).toLocaleTimeString():'',army=side==='my'?state.myName:side==='opp'?state.oppName:'Unknown side';
+  return '<div class="action-line"><span class="action-turn">'+esc(army)+'</span><span class="action-phase">'+esc(phase)+'</span><span class="action-round">R'+esc(String(e?.round||state.round||1))+'</span><span class="action-time">'+esc(time)+'</span><span class="action-unit">'+esc(attacker)+'</span><span class="action-action">'+esc(phase==='Charge'?'Charge':phase+' attack')+' → '+esc(target)+'</span><span class="action-result">'+esc(result)+'</span></div>';
+}
+function combatHistoryHtml(){
+  const events=combatHistoryEvents().slice(0,24);
+  return '<details class="card" style="margin-top:12px"><summary style="cursor:pointer;list-style:none"><div class="split"><div><h3 style="margin:0">Combat History</h3><div class="muted">Bidirectional shooting, charges, and melee from the authoritative Action Log</div></div><span class="pill">'+events.length+' entries</span></div></summary><div style="margin-top:10px">'+(events.length?events.map(combatHistoryLine).join(''):'<div class="empty">No combat results recorded yet.</div>')+'</div></details>';
+}
 function battle(){const recent=state.events.slice(0,12);return `${gameTimerHtml()}<div class="battle-layout"><div>
 <div class="card">
   <div class="split"><div><h2 style="margin-bottom:4px">Battle Mode</h2><div class="muted">Live game control center</div></div><div class="battle-army-vs">${esc(state.myName)} vs ${esc(state.oppName)}</div></div>
@@ -5543,6 +5565,7 @@ ${objectiveControlTrackerHtml()}${battleNotesHtml()}${state.currentTurn==='opp'?
 </div>${objectiveMapRendererHtml("battle")}<div class="battle-state-column"><div class="army-state-grid"><div>${armyStateCard('my','My Army State')}</div><div>${armyStateCard('opp','Opponent Army State')}</div></div></div>
 <div class="battle-log card"><div class="split"><div><h3>Action Log</h3><div class="muted">Latest actions</div></div></div>${recent.length?recent.map((e,i)=>actionLogLine(e,i)).join(''):'<div class="empty">No actions yet.</div>'}</div>
 </div>
+${combatHistoryHtml()}
 ${currentArmyDisplay()}
 `}
 function armyStateCard(side,title){const units=side==='my'?state.my:state.opp;const empty=side==='my'?'<div class="empty">No army. Go to List Builder to add units, then Start / Reset Battle.</div>':'<div class="empty">No army.</div>';return `<div class="card army-state-card"><h3>${esc(title)}</h3>${(units||[]).map(e=>gameRow(side,e)).join('')||empty}</div>`}
