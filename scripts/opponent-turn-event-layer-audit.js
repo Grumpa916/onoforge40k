@@ -13,7 +13,7 @@ check('Shooting and Fight are separated by authoritative phase',s.includes("phas
 check('Opponent Charge requires explicit attacker and target',s.includes("attackerSide!=='opp'||targetSide!=='my")&&s.includes('if(!attackerUid||!targetUid)return null'));
 check('Charge outcome is recorded only when explicitly successful or failed',s.includes('if(!success&&!failed)return null'));
 check('Manual opponent capture event types are supported',s.includes("OPPONENT_SHOOTING_CAPTURE")&&s.includes("OPPONENT_CHARGE_CAPTURE")&&s.includes("OPPONENT_FIGHT_CAPTURE"));
-check('No exact movement is invented',!s.includes('movementDistance')&&!s.includes('Math.max(0,Number(p.movement')));
+check('No exact movement is invented',!s.includes('movementDistance') && !s.includes('Math.max(0,Number(p.movement')));
 check('Actual attack result fields are preserved when present',s.includes('damage:finite(p.damage??p.appliedDamage??p.totalDamage)')&&s.includes('casualties:finite(p.casualties??p.modelsLost??p.kills)'));
 check('Post-resolution target state is read from existing model state',s.includes('targetState:survivingState(targetUid,\'my\')'));
 check('History persists under shared battle state',s.includes('s.combatHistory={version:VERSION,events:[]}'));
