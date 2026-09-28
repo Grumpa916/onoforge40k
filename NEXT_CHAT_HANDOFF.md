@@ -1,142 +1,170 @@
 # NEXT_CHAT_HANDOFF
 
-## OnoForge 40K — UI / Tactical Advisor Save Point
+## OnoForge 40K — Tactical Advisor / Charge / Fight Save Point
 Date: 2026-09-27
 
 ### Current branch
 `feature/tactical-impact-layer`
 
-### Current purpose
-Resume the Tactical Advisor / Charge workflow integration without losing the current debugging state.
+### Stable checkpoint
+Latest tested code commit:
+`6969ac31` — **Close Fight Tactical Context branch**
 
-### Major UI milestone reached
-The duplicate Tactical Advisor problem is resolved in the latest tested preview.
+All three validation workflows for this commit passed:
+- Tactical Advisor Preview Validation **#148**
+- Tactical Advisor Tests **#158**
+- Tactical Advisor Surface Fix Preview **#22**
 
-The Battle UI now presents **one visible Tactical Advisor** rather than:
-1. a separate top-level Tactical Impact/Tactical Advisor renderer, and
-2. the authoritative Tactical Advisor card.
+This is the current **known-good UI testing checkpoint**.
 
-This was achieved by moving the Tactical Impact rendering into the canonical Advisor surface rather than trying to hide a duplicate renderer.
+### Major milestones verified by user
 
-### Current integrated UI
-Inside the single Tactical Advisor, the preview now shows:
-- Objective priorities
-- Recommended target
-- Expected damage / models killed / confidence
-- Tactical Impact Analysis
-- Charge analysis
-- 2D6 charge success probability
-- Physical-distance confirmation
-- Charge execution controls
+#### Tactical Advisor consolidation
+The Battle UI now presents **one visible Tactical Advisor**. Tactical Impact is integrated into the canonical Advisor surface.
 
-### Verified by user
-Using the preview generated from the earlier validated commits:
-- Single Tactical Advisor display: **confirmed**
-- Tactical Impact Analysis appears inside the Advisor: **confirmed**
-- Charge-specific analysis appears inside the Advisor: **confirmed**
-- 5" measured distance in Tactical Context feeds Tactical Impact correctly: **confirmed**
-- Display changed to **“physical distance confirmed”**
-- 2D6 success chance for the 5" example displayed as **83%**
-- Charge execution buttons (**Charge Successful / Charge Failed**) are now visible
+Do not revert to the old sibling/staging renderer architecture.
 
-### Last observed failure
-When the user clicked **Charge Successful**, the UI reported:
+#### Charge workflow
+Verified end-to-end with:
+- Exocrine → Aggressor Squad
+- Tactical Context measured distance = **5"**
+- Tactical Impact reads **physical distance confirmed**
+- Charge probability displayed as **83%**
+- Charge execution controls visible
+- **Charge Successful** records successfully
+- Action Log contains a **CHARGE RESULT**
+- Returning to the Advisor shows:
+  - **Charge result recorded**
+  - **Charge recorded: Successful**
+  - **Charge complete**
+- Tactical Context then correctly shows the attacker has completed its Charge action.
 
-> Charge results can only be recorded during your Charge phase.
+Important bugs already fixed:
+- Charge workflow phase validation was reading stale/wrong state.
+- Charge legality lookup was also reading stale/wrong state.
+- Canonical app-state bridge was changed to remain synchronized when the application replaces the state object.
 
-The user was visibly in the Charge phase.
+#### Fight setup and execution
+Verified in Fight phase:
+- Exocrine remains the active attacker
+- Aggressor Squad remains the engaged target
+- Fight step can be set to **Remaining Combats**
+- Pile-in status can be set to **Yes**
+- Consolidation status can be set to **Yes**
+- The unresolved pile-in warning clears after selecting Yes
 
-### Root cause found
-The Charge workflow was reading `global.state` directly while the application’s authoritative runtime state is `global.ONOFORGE_APP_STATE`.
+Verified Fight Execution UI:
+- **Friendly Fight → Aggressor Squad**
+- Friendly projection displayed (or gracefully reports projection unavailable)
+- **Mark Friendly Fight Resolved** changes to **Fight Resolved**
+- **Enemy Fight Back** panel appears
+- Enemy return projection displayed; example showed **2.7W expected return**
+- **Record Enemy Fight Back** changes to **Enemy Fight Back Recorded**
+- No error occurred
 
-The visible UI was in Charge, but the workflow gate could see the wrong/empty phase.
+Verified Action Log:
+- `Unit fightDone changed`
+- `Unit enemyFightBackDone changed`
+- Both logged under Fight / Round 1 / Game
 
-### Latest code fix
-Commit:
-`9ff959806f0f14aa0b1a4be4b890445ee6e96a18`
+#### Full turn / round transition
+Verified:
+- My turn: Command → Movement → Shooting → Charge → Fight
+- End Turn → Opponent works
+- Opponent turn: Command → Movement → Shooting → Charge → Fight
+- No Tactical Advisor is incorrectly shown during opponent turn
+- Opponent Fight ends with **End Turn → Next**
+- Next transition correctly produces:
+  - **Round 2**
+  - **Command**
+  - **My turn / Triple norm list**
 
-Message:
-**Use canonical app state for Charge result validation**
+This confirms the phase and player-turn transition path through the tested cycle.
 
-This changed the Charge workflow to use:
-`global.ONOFORGE_APP_STATE || global.state`
+### Current known limitation / next development target
 
-for:
-- phase
-- current turn
-- tactical selected attacker
-- target lookup
-- current round
+The Fight Execution UI currently records **resolution state**, but it does not yet perform a complete actual melee dice/wound transaction for both sides.
 
-### Latest validation status
-At save-point creation, the following workflows were queued for commit `9ff95980`:
-- Tactical Advisor Preview Validation **#140**
-- Tactical Advisor Tests **#150**
-- Tactical Advisor Surface Fix Preview **#14**
+Current Fight Execution behavior:
+- Displays projected friendly melee damage
+- Displays projected enemy return damage
+- Allows the user to mark friendly Fight resolved
+- Allows the user to record enemy Fight Back
+- Existing model/wound controls remain the authoritative place for actual damage application
 
-Do NOT reuse an older preview artifact for Charge-result testing.
+### Next major task
+Build the **actual melee resolution workflow** into Fight Execution, using the existing shared combat / model-level damage system.
 
-### Immediate next step
-Wait for Preview Validation **#140** to complete successfully.
+Desired complete exchange:
+1. Select the enemy unit actually fought.
+2. Resolve friendly melee attacks with the existing attack/wound/save/damage engine.
+3. Apply actual damage to the affected enemy models.
+4. Record friendly Fight completion.
+5. Resolve the enemy Fight Back using the same authoritative combat engine in the opposite direction.
+6. Apply actual damage to friendly models.
+7. Record enemy Fight Back completion.
+8. Close the combat exchange only when both sides are resolved.
+9. Preserve Action Log, undo, and tactical state consistency.
+10. Continue to Consolidation/next combat/next phase according to the existing battle flow.
 
-Then download that run’s `onoforge40k-tactical-advisor-preview` artifact and test:
+Important design goal:
+**Do not create a separate parallel melee engine.** Reuse the existing shared combat and model-level resolution machinery already used elsewhere in OnoForge.
 
-1. Confirm Battle loads without an error.
-2. Confirm one Tactical Advisor is visible.
-3. Confirm Tactical Impact Analysis is inside it.
-4. Confirm 5" still shows **physical distance confirmed**.
-5. Confirm Charge execution controls appear.
-6. Check **Aggressor Squad**.
-7. Click **Charge Successful**.
-8. STOP and inspect the resulting Advisor state before advancing to Fight.
+### Current UI architecture
+Canonical Tactical Advisor owns the main Advisor surface.
 
-### Expected result after Charge Successful
-The Advisor should replace the unrecorded Charge execution controls with a recorded-state message equivalent to:
+Tactical Context provides explicit battlefield facts and fight-state facts; unknowns are never guessed.
 
-**Charge recorded: Successful — Aggressor Squad**
+Fight-state tracking currently includes:
+- `fightPhase.step`
+- `fightPhase.nextSide`
+- `fightPhase.units[uid].engagedAtFightStart`
+- `fightPhase.units[uid].becameEngagedDuringFight`
+- `fightPhase.units[uid].pileInDone`
+- `fightPhase.units[uid].consolidationDone`
 
-The unit’s tactical action state should reflect:
-- `chargeDone: true`
-- `chargeMade: true`
-- selected target recorded
-- engagement state updated for the selected target
-- Fight-phase state initialized for the charged unit
+Tactical action state includes:
+- `fightDone`
+- `enemyFightBackDone`
+- `chargeDone`
+- `chargeMade`
 
-### Do not do yet
-Do not:
-- merge the feature branch to `main`
-- deploy to production
-- redesign the Advisor layout again
-- remove the Tactical Context section
-- advance to Fight testing until Charge result recording is verified
-
-### Known non-blocking issue
-For the Aggressor Squad example, Tactical Impact currently reports incomplete projected Fight output / incomplete unit-profile information for that candidate. This is being handled as a graceful fallback rather than a page-breaking error.
-
-Important distinction:
-- Charge probability + measured-distance flow is working.
-- Deep projected Fight damage/return-damage completeness is a separate issue.
-
-### Important architecture lesson
-The earlier duplicate-display attempts failed because a separate injected renderer host was repeatedly recreated by the Battle renderer. The stable solution is:
-
-**canonical Tactical Advisor owns the surface; Tactical Impact augments that surface directly.**
-
-Do not revert to sibling/staging-host architecture.
-
-### Useful recent commits
+### Important recent commits
+- `6969ac31` — Close Fight Tactical Context branch (**current known-good checkpoint**)
+- `05729e7b` — Close Tactical Advisor preview renderer script
+- `f45420e6` — Expose Fight pile-in and consolidation state controls
+- `afdd4295` — Add complete Fight execution and enemy fight-back workflow
+- `95881789` — Show recorded Charge result in canonical Advisor
+- `b1b04b83` — Keep canonical app state bridge synchronized across state replacement
+- `7e4624ea` — Use live canonical state for Charge target legality
+- `9ff95980` — Use canonical app state for Charge result validation
 - `0300c7fb` — Honor canonical measured charge distance in Tactical Impact
 - `55a394e3` — Add Charge execution controls to canonical Advisor
 - `3c33c239` — Harden Tactical Impact against incomplete combat profiles
-- `2d30f028` — Integrate Tactical Impact analysis into authoritative Advisor
-- `b6e2c716` — Disable legacy preview renderer when canonical Advisor is active
-- `2358b54e` — Remove legacy Tactical Advisor surface remount bridge
-- `9ff95980` — Use canonical app state for Charge result validation
 
-### Repository / PR
-Repository: `Grumpa916/onoforge40k`
-PR: #1
-Feature branch: `feature/tactical-impact-layer`
+### Known non-blocking issue
+For some candidates, Tactical Impact may report incomplete projected Fight output because the required combat profile information is incomplete. The application now handles this gracefully rather than crashing the Battle screen.
 
-### Save-point rule
-Resume from commit `9ff959806f0f14aa0b1a4be4b890445ee6e96a18` and use the next successful Preview Validation artifact for testing.
+### Validation history relevant to current checkpoint
+- Preview Validation #148: **passed**
+- Tactical Advisor Tests #158: **passed**
+- Surface Fix Preview #22: **passed**
+
+The earlier Preview Validation #146 and #147 failures were build/syntax issues and should not be used as test artifacts.
+
+### Do not do yet
+Do not:
+- merge `feature/tactical-impact-layer` to `main`
+- deploy to production
+- redesign the Tactical Advisor layout
+- remove Tactical Context
+- replace the existing shared combat engine
+- treat projected damage as actual resolved damage
+
+### Next-chat starting point
+Resume from **`6969ac31`**.
+
+The next development/testing task is:
+**replace the current Fight Execution resolution markers with a real shared-engine melee resolution flow, including enemy Fight Back and actual model/wound state changes.**
+
+Before modifying code, inspect the existing melee/model-level resolution functions and Action Log conventions so the new Fight workflow integrates with existing authoritative state rather than duplicating it.
