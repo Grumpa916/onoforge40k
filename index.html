@@ -7756,6 +7756,7 @@ function tacticalContextHtmlBody(){
         '<div class="field"><label>'+esc(unitDisplayName('opp',te))+' — Consolidation completed?</label><select onchange="setTacticalFightUnitState(\''+esc(te.uid)+'\',\'consolidationDone\',this.value)"><option value="false" '+(eFu.consolidationDone!==true?'selected':'')+'>No / unresolved</option><option value="true" '+(eFu.consolidationDone===true?'selected':'')+'>Yes</select></div>'+
       '</div>':'');
 
+  }
 
   return '<div class="tactical-context-body">'+
     '<div class="split" style="margin-bottom:8px"><div class="muted small">'+esc(phaseLabel)+' • '+esc(status)+'</div><span class="tiny">Enter only battlefield facts</span></div>'+
@@ -8834,7 +8835,7 @@ function tacticalPreRollApplyResolution(){
       }
     });
     affected.forEach(uid=>{
-      const ce=entry('opp',uid),u=ce&&get(ce.unitId);if(!ce||!u)return;
+      const ce=entry(targetSide,uid),u=ce&&get(ce.unitId);if(!ce||!u)return;
       if(modelRosterRule(u)){syncModelRosterBattleState(ce,u);return;}
       const states=(s.mixedResolution.modelStates||[]).filter(ms=>ms.sourceEntryUid===uid);
       const maxW=Math.max(1,Number(u.wounds)||1),maxModels=Math.max(0,Number(ce.models)||Number(u.models)||0),maxTotal=maxModels*maxW;
@@ -8887,7 +8888,7 @@ else if(stage==='lethalChoice'){title='LETHAL HITS • CHOOSE';promptText='How m
   else if(stage==='precisionFnp'){title='PRECISION • FEEL NO PAIN';promptText='How many of the '+(Number(s.precisionPendingDamage)||0)+' wounds will be ignored by Feel No Pain '+(String(s.precisionPendingFnp||'')+'+')+'?';max=Number(s.precisionPendingDamage)||0;value='';note='Enter the number of wounds actually ignored by the physical Feel No Pain rolls.';}
   else if(stage==='precisionDevastating'){const total=Math.max(0,Number(specials.criticalWounds)||0);title='PRECISION • DEVASTATING WOUNDS';promptText=plan.variableDamage?'Roll Damage for Critical Wound '+(Number(counts.precisionDevastating||0)+1)+'/'+total+'.':'Applying fixed Damage for Critical Wound '+(Number(counts.precisionDevastating||0)+1)+'/'+total+'.';max=tacticalPreRollDamageMax(s.precisionWeapon?.D||'1');value='';note=plan.variableDamage?'Each Devastating Wounds critical is resolved against one model; excess damage is lost.':'No additional physical die is required for fixed Damage.';}
   else if(stage==='saveOrder'){
-    const groups=tacticalPreRollSaveGroups(entry('opp',current.targetEntryUid),s.precisionTargetState?[s.precisionTargetState]:null);
+    const groups=tacticalPreRollSaveGroups(entry(current.targetSide==='my'?'my':'opp',current.targetEntryUid),s.precisionTargetState?[s.precisionTargetState]:null,current.targetSide);
     title='SAVES • ALLOCATION ORDER';promptText='Declare the legal 11th Edition allocation order for the target groups.';
     note='Wounded non-CHARACTER groups must come first; CHARACTER groups come after all non-CHARACTER groups. The app will enforce the legal order.';
     const ranked=groups.slice().sort((a,b)=>(a.character?2+(a.wounded?0:1):(a.wounded?0:1))-(b.character?2+(b.wounded?0:1):(b.wounded?0:1)));
