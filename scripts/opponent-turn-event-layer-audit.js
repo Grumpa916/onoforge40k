@@ -1,5 +1,6 @@
 const fs=require('fs');
 const s=fs.readFileSync('opponent-turn-event-layer.js','utf8');
+const index=fs.readFileSync('index.html','utf8');
 const checks=[];
 const check=(name,condition,detail='')=>checks.push({name,pass:!!condition,detail});
 
@@ -18,6 +19,12 @@ check('Post-resolution target state is read from existing model state',s.include
 check('History persists under shared battle state',s.includes('s.combatHistory={version:VERSION,events:[]}'));
 check('Existing event logger is wrapped rather than replaced',s.includes('const original=global.event')&&s.includes('original.apply(this,arguments)'));
 check('Layer does not resolve combat',!s.includes('Math.random')&&!s.includes('tacticalPreRollApplyResolution')&&!s.includes('calculateMathMixed'));
+check('Index exposes bidirectional pre-roll opener',index.includes('function tacticalPreRollOpenResolutionForSides(attackerSide,targetSide'));
+check('Index stores attacker and target sides on sessions',index.includes('session.attackerSide=as;session.targetSide=ts;'));
+check('Index ATTACK_RESOLUTION records the actual attacker side',index.includes('event(\'ATTACK_RESOLUTION\',{resolutionId,')&&index.includes('side:attackerSide'));
+check('Fight markers were replaced by real resolution entry',!index.includes('Mark Friendly Fight Resolved')&&!index.includes('Record Enemy Fight Back'));
+check('Opponent turn exposes shared shooting and fight resolution',index.includes('Enter Opponent Shooting Dice')&&index.includes('Enter Opponent Fight Dice'));
+check('Opponent Charge never infers movement from roll',index.includes('chargeMoveInferred:false')&&index.includes('measuredDistance'));
 const failures=checks.filter(x=>!x.pass);
 console.log(JSON.stringify({audit:'Opponent-turn event capture layer',checks:checks.length,passed:checks.length-failures.length,failed:failures.length,failures},null,2));
 if(failures.length)process.exit(1);
