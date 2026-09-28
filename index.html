@@ -8347,7 +8347,7 @@ function tacticalPreRollResolutionPlan(ae,te,w,r,poolId=null,attackerSide='my',t
 function tacticalPreRollOpenResolutionForSides(attackerSide,targetSide,attackerUid,targetUid,weaponName,poolId=null){
   const as=attackerSide==='opp'?'opp':'my',ts=targetSide==='my'?'my':'opp',ae=entry(as,attackerUid),te=entry(ts,targetUid),stored=String(weaponName||'');
   if(!ae||!te||!stored)return false;
-  const manifest=tacticalPreRollPoolManifest(ae,as);
+ const manifest=tacticalPreRollPoolManifest(ae,as,ts);
   const selectedPool=(poolId?manifest.find(p=>p.key===String(poolId)):null)||manifest.find(p=>String(p.weapon?.name||'')===stored&&p.modelIds?.length);
   if(!selectedPool)return false;
   const chosenPoolId=String(selectedPool.key),t=ensureTacticalState();t.preRollPools=t.preRollPools||{};
