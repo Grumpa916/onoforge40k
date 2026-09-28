@@ -49,21 +49,29 @@
     };
   }
 
+  function uniqueSideEntry(uid,expectedSide){
+    if(typeof global.entry!=='function')return null;
+    try{
+      const expected=global.entry(expectedSide,uid)||null;
+      const other=global.entry(expectedSide==='my'?'opp':'my',uid)||null;
+      return expected&&!other?expected:null;
+    }catch(_e){return null;}
+  }
+
   function normalizeAttack(payload){
     const p=payload&&typeof payload==='object'?payload:{};
     const attackerSide=sideOf(p.attackerSide||p.sourceSide||p.side);
-    const targetSide=sideOf(p.targetSide||p.defenderSide||p.defender?.side);
-    if(attackerSide!=='opp'||targetSide!=='my')return null;
+    const attackerUid=asId(p.attackerUid||p.attackerEntryUid||p.sourceUid||p.attacker?.uid);
+    const targetUid=asId(p.targetUid||p.targetEntryUid||p.defenderUid||p.target?.uid);
+    if(attackerSide!=='opp'||!attackerUid||!targetUid)return null;
+    if(!uniqueSideEntry(attackerUid,'opp')||!uniqueSideEntry(targetUid,'my'))return null;
     const phase=phaseOf(p.phase||global.state?.phase);
     if(phase!=='shooting'&&phase!=='fight')return null;
-    const targetUid=asId(p.targetUid||p.targetEntryUid||p.defenderUid||p.target?.uid);
-    const attackerUid=asId(p.attackerUid||p.sourceUid||p.attackerEntryUid||p.attacker?.uid);
-    if(!attackerUid||!targetUid)return null;
     return {
       kind:phase==='shooting'?'opponent-shooting':'opponent-fight',
       phase:phase==='shooting'?'Shooting':'Fight',
       round:Math.max(1,Number(global.state?.round)||1),
-      attackerSide,targetSide,attackerUid,targetUid,
+      attackerSide,targetSide:'my',attackerUid,targetUid,
       damage:finite(p.damage??p.appliedDamage??p.totalDamage),
       casualties:finite(p.casualties??p.modelsLost??p.kills),
       wounds:finite(p.wounds??p.woundsLost),
@@ -81,7 +89,8 @@
     const attackerUid=asId(p.attackerUid||p.sourceUid||p.entryUid);
     const targetUid=asId(p.targetUid||p.defenderUid||p.targetEntryUid);
     if(!attackerUid||!targetUid)return null;
-    const result=p.result??p.success??p.chargeSuccessful;
+    if(!uniqueSideEntry(attackerUid,'opp')||!uniqueSideEntry(targetUid,'my'))return null;
+    const result=p.result??p.success??p.chargeSuccessful??p.outcome;
     const success=result===true||String(result).toLowerCase()==='successful'||String(result).toLowerCase()==='success';
     const failed=result===false||String(result).toLowerCase()==='failed'||String(result).toLowerCase()==='failure';
     if(!success&&!failed)return null;
@@ -101,10 +110,9 @@
     if(!record)return null;
     const h=ensureHistory();
     if(!h)return null;
-    const comparable={...record};
     const prior=h.events[h.events.length-1];
-    if(prior&&JSON.stringify(prior.record||prior)===JSON.stringify(comparable))return prior;
-    const stamped={record:comparable,id:'combat-'+Date.now()+'-'+h.events.length,turn:currentTurn(),capturedAt:new Date().toISOString()};
+    if(prior&&JSON.stringify(prior.record||prior)===JSON.stringify(record))return prior;
+    const stamped={record,id:'combat-'+Date.now()+'-'+h.events.length,turn:currentTurn(),capturedAt:new Date().toISOString()};
     h.events.push(stamped);
     return stamped;
   }
@@ -112,8 +120,13 @@
   function capture(type,payload){
     if(currentTurn()!=='opp')return null;
     const t=String(type||'').toUpperCase();
-    if(t==='ATTACK_RESOLUTION')return push(normalizeAttack(payload));
-    if(t==='CHARGE_RESULT'||t==='CHARGE RESULT'||String(payload?.action||'').toUpperCase()==='CHARGE RESULT')return push(normalizeCharge(payload));
+    if(t==='ATTACK_RESOLUTION'||t==='OPPONENT_SHOOTING_CAPTURE'||t==='OPPONENT_FIGHT_CAPTURE'){
+      const record=normalizeAttack({...payload,phase:payload?.phase||global.state?.phase,attackerSide:payload?.attackerSide||payload?.side,targetSide:payload?.targetSide||'my'});
+      if(t==='OPPONENT_SHOOTING_CAPTURE'&&record)record.kind='opponent-shooting';
+      if(t==='OPPONENT_FIGHT_CAPTURE'&&record)record.kind='opponent-fight';
+      return push(record);
+    }
+    if(t==='CHARGE_RESULT'||t==='CHARGE RESULT'||t==='OPPONENT_CHARGE_CAPTURE'||String(payload?.action||'').toUpperCase()==='CHARGE RESULT')return push(normalizeCharge(payload));
     return null;
   }
 
