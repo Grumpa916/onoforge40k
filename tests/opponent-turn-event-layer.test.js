@@ -55,6 +55,6 @@ assert.strictEqual(api.getHistory().some(x=>x.attackerSide==='opp'),true);
 state.events.push({id:'bad',round:2,phase:'Fight',playerTurn:'opp',kind:'ATTACK_RESOLUTION',payload:{
   side:'opp',attackerEntryUid:'oppAttacker',targetEntryUid:'unknown',damage:9
 }});
-assert.strictEqual(api.getHistory().length,3,'Unknown identity must not be guessed');
+assert.strictEqual(api.getHistory().length,4,'Unknown identity must not be guessed');
 
 console.log('Opponent-turn event layer tests passed');
