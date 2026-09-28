@@ -110,6 +110,83 @@ Desired complete exchange:
 Important design goal:
 **Do not create a separate parallel melee engine.** Reuse the existing shared combat and model-level resolution machinery already used elsewhere in OnoForge.
 
+
+### New design requirement identified during opponent-turn playtest
+
+The opponent-turn walkthrough revealed an important missing category of battlefield-state collection. The Tactical Advisor cannot rely only on actions performed by the current player's units; it also needs to capture relevant opponent-turn events that affect the player's units so that later recommendations have authoritative context.
+
+Required opponent-turn event/state capture:
+
+#### Opponent Shooting against my units
+When the opponent resolves Shooting, record:
+- which of my units/models were targeted
+- relevant damage / casualties actually applied
+- whether the target unit survived
+- enough event/state information to identify that the unit was recently shot
+- preserve this in Action Log and tactical state for later Advisor reasoning
+
+#### Opponent Charge against my units
+When the opponent declares/resolves a Charge, record:
+- which of my units were charged
+- which opponent unit charged them
+- Charge success/failure
+- resulting engagement state
+- implied/derived movement information where rules and observed facts make it authoritative
+- preserve the charge relationship for the next Fight phase
+- do not infer exact movement distance when it cannot be established; unknown values remain unknown
+
+This is especially important because an opponent Charge can change:
+- whether my unit is engaged
+- Fight eligibility/order
+- tactical target relationships
+- inferred battlefield positioning/movement context
+
+#### Opponent Fight / melee exchange
+During the opponent Fight phase, capture:
+- which of my units participated in melee
+- which opponent unit fought it
+- friendly-side and enemy-side melee results
+- actual wounds/casualties applied to each side
+- pile-in/consolidation state where relevant
+- completion of each side's combat action
+- Action Log entries that preserve the exchange
+
+#### Bidirectional combat history
+The Advisor should eventually have a coherent bidirectional combat history:
+my shooting → enemy casualties
+enemy shooting → my casualties
+my charge → enemy engagement
+enemy charge → my engagement
+my melee → enemy casualties
+enemy melee → my casualties
+
+This history should feed future Tactical Advisor analysis while remaining based on recorded/authoritative events rather than assumptions.
+
+### Architectural implication
+
+The current Fight implementation proved that a simple current-player UI can work, but the opponent-turn playtest showed that the application needs an event capture layer for actions initiated by the opponent.
+
+Do not solve this by duplicating the Tactical Advisor UI for the opponent.
+
+Instead, extend the existing battle-state / Action Log architecture so opponent actions write structured state/events that the canonical Tactical Advisor can consume on the player's next turn.
+
+Recommended future structure:
+- opponentShootingEvents
+- opponentChargeEvents
+- opponentFightEvents
+- or, preferably, a unified typed event structure if the existing Action Log architecture can support it cleanly
+
+### Prioritize data capture before advanced recommendations
+
+When implementing these features, prioritize:
+1. authoritative event capture
+2. state persistence
+3. Action Log visibility
+4. correct engagement and action-state updates
+5. Advisor consumption of the captured facts
+
+Do not add speculative “implied movement” values unless the underlying game state or recorded event provides enough information to support them.
+
 ### Current UI architecture
 Canonical Tactical Advisor owns the main Advisor surface.
 
@@ -164,7 +241,15 @@ Do not:
 ### Next-chat starting point
 Resume from **`6969ac31`**.
 
-The next development/testing task is:
-**replace the current Fight Execution resolution markers with a real shared-engine melee resolution flow, including enemy Fight Back and actual model/wound state changes.**
+The next development/testing task now has two connected priorities:
 
-Before modifying code, inspect the existing melee/model-level resolution functions and Action Log conventions so the new Fight workflow integrates with existing authoritative state rather than duplicating it.
+**A. Replace the current Fight Execution resolution markers with a real shared-engine melee resolution flow, including enemy Fight Back and actual model/wound state changes.**
+
+**B. Expand battle-state/event capture so the player's next turn knows what happened during the opponent turn:**
+- which of my units were shot
+- which of my units were charged
+- resulting engagement state and defensible implied movement information
+- which of my units fought in melee
+- friendly and enemy melee results/casualties
+
+Before modifying code, inspect the existing melee/model-level resolution functions, Action Log conventions, turn/phase event architecture, and opponent-turn tracking code. Integrate into the existing authoritative state rather than creating parallel combat engines or duplicate Advisor surfaces.
