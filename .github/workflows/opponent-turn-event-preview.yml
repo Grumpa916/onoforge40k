@@ -1,0 +1,56 @@
+name: Opponent Turn Event Capture Preview
+
+on:
+  push:
+    branches:
+      - feature/opponent-turn-history
+  pull_request:
+    paths:
+      - 'opponent-turn-event-layer.js'
+      - 'scripts/opponent-turn-event-layer-audit.js'
+      - 'tests/opponent-turn-event-layer.test.js'
+      - '.github/workflows/opponent-turn-event-preview.yml'
+      - 'index.html'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Run opponent-turn event layer unit tests
+        run: node tests/opponent-turn-event-layer.test.js
+
+      - name: Run opponent-turn event layer architecture audit
+        run: node scripts/opponent-turn-event-layer-audit.js
+
+      - name: Build opponent-turn preview artifact
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          html=Path('index.html').read_text(encoding='utf-8')
+          layer=Path('opponent-turn-event-layer.js').read_text(encoding='utf-8')
+          if 'id="onoforge-opponent-turn-event-layer"' not in html:
+              html=html.replace('</head>', '<script id="onoforge-opponent-turn-event-layer">\\n'+layer+'\\n</script></head>', 1)
+          if 'ONOFORGE_OPPONENT_EVENT_CAPTURE' not in html:
+              raise SystemExit('Opponent-turn event layer was not injected')
+          out=Path('preview-site')
+          out.mkdir(parents=True,exist_ok=True)
+          (out/'index.html').write_text(html,encoding='utf-8')
+          print('Built preview-site/index.html')
+          PY
+          node --check opponent-turn-event-layer.js
+
+      - name: Upload opponent-turn preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: onoforge40k-opponent-turn-event-preview
+          path: preview-site
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Report
+        run: echo "Opponent-turn event capture validation passed"
