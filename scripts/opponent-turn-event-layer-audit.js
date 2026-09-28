@@ -16,8 +16,8 @@ check('Manual opponent capture event types are supported',s.includes("OPPONENT_S
 check('No exact movement is invented',!s.includes('movementDistance'));
 check('Actual attack result fields are preserved when present',s.includes('damage:finite(p.damage??p.appliedDamage??p.totalDamage)')&&s.includes('casualties:finite(p.casualties??p.modelsLost??p.kills)'));
 check('Post-resolution target state is read from existing model state',s.includes('targetState:survivingState(targetUid,\'my\')'));
-check('History persists under shared battle state',s.includes('s.combatHistory={version:VERSION,events:[]}'));
-check('Existing event logger is wrapped rather than replaced',s.includes('const original=global.event')&&s.includes('original.apply(this,arguments)'));
+check('History is derived from authoritative Action Log',s.includes('function historyFromState()')&&s.includes('global.state?.events')&&!s.includes('s.combatHistory='));
+check('Adapter does not replace or wrap the authoritative event logger',!s.includes('const original=global.event')&&!s.includes('original.apply(this,arguments)'));
 check('Layer does not resolve combat',!s.includes('Math.random')&&!s.includes('tacticalPreRollApplyResolution')&&!s.includes('calculateMathMixed'));
 check('Index exposes bidirectional pre-roll opener',index.includes('function tacticalPreRollOpenResolutionForSides(attackerSide,targetSide'));
 check('Index stores attacker and target sides on sessions',index.includes('session.attackerSide=as;session.targetSide=ts;'));
