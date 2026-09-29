@@ -97,8 +97,16 @@ const openStart = html.indexOf('function tacticalPreRollOpenResolutionForSides')
 assert(openStart >= 0, 'tacticalPreRollOpenResolutionForSides must exist');
 const openBody = html.slice(openStart, html.indexOf('function tacticalPreRollOpenResolution(){', openStart));
 assert(
-  openBody.includes("r.status==='blocked'||(r.status==='check-required'&&!(as==='opp'&&ts==='my'))"),
-  'opponent capture must bypass advisory check-required status but still block genuine target illegality'
+  openBody.includes("poolId=null,allowObservedContext=false") &&
+  openBody.includes("!allowObservedContext&&(r.status==='blocked'||r.status==='check-required')"),
+  'shared resolver must expose an explicit observed-capture context override'
+);
+const uiStart = html.indexOf('function tacticalOpenOpponentCombatResolution');
+assert(uiStart >= 0, 'tacticalOpenOpponentCombatResolution must exist');
+const uiBody = html.slice(uiStart, html.indexOf('function recordOpponentChargeResult', uiStart));
+assert(
+  uiBody.includes("tacticalPreRollOpenResolutionForSides('opp','my',attackerUid,targetUid,weaponName,null,true)"),
+  'opponent shooting capture must invoke the shared resolver in observed-capture mode'
 );
 
 console.log('Bidirectional combat edge-case regression passed');
