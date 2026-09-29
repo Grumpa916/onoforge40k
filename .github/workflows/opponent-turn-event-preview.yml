@@ -8,8 +8,10 @@ on:
     paths:
       - 'opponent-turn-event-layer.js'
       - 'opponent-turn-capture.js'
+      - 'opponent-turn-render-fix.js'
       - 'scripts/opponent-turn-event-layer-audit.js'
       - 'tests/opponent-turn-event-layer.test.js'
+      - 'tests/opponent-turn-render-bridge.test.js'
       - 'tests/bidirectional-combat-edge-cases.test.js'
       - '.github/workflows/opponent-turn-event-preview.yml'
       - 'index.html'
@@ -25,6 +27,9 @@ jobs:
       - name: Run opponent-turn event layer unit tests
         run: node tests/opponent-turn-event-layer.test.js
 
+      - name: Run opponent-turn resolver render bridge regression
+        run: node tests/opponent-turn-render-bridge.test.js
+
       - name: Run bidirectional combat edge-case regression
         run: node tests/bidirectional-combat-edge-cases.test.js
 
@@ -33,6 +38,9 @@ jobs:
 
       - name: Validate capture UI syntax
         run: node --check opponent-turn-capture.js
+
+      - name: Validate resolver render bridge syntax
+        run: node --check opponent-turn-render-fix.js
 
       - name: Validate inline JavaScript in index.html
         shell: bash
@@ -58,14 +66,17 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           html=Path('index.html').read_text(encoding='utf-8')
-          layers=[
+          head_layers=[
               ('onoforge-opponent-turn-event-layer',Path('opponent-turn-event-layer.js')),
               ('onoforge-opponent-turn-capture',Path('opponent-turn-capture.js')),
           ]
-          for script_id,source_path in layers:
+          for script_id,source_path in head_layers:
               if f'id="{script_id}"' not in html:
                   html=html.replace('</head>', f'<script id="{script_id}">\\n{source_path.read_text(encoding="utf-8")}\\n</script></head>', 1)
-          for marker in ['ONOFORGE_OPPONENT_EVENT_CAPTURE','ONOFORGE_OPPONENT_CAPTURE_UI']:
+          render_fix=Path('opponent-turn-render-fix.js').read_text(encoding='utf-8')
+          if 'id="onoforge-opponent-turn-render-fix"' not in html:
+              html=html.replace('</body>', f'<script id="onoforge-opponent-turn-render-fix">\\n{render_fix}\\n</script></body>', 1)
+          for marker in ['ONOFORGE_OPPONENT_EVENT_CAPTURE','ONOFORGE_OPPONENT_CAPTURE_UI','ONOFORGE_OPPONENT_RESOLVER_RENDER_BRIDGE']:
               if marker not in html:
                   raise SystemExit(f'Missing injected opponent-turn marker: {marker}')
           out=Path('preview-site')
@@ -75,6 +86,7 @@ jobs:
           PY
           node --check opponent-turn-event-layer.js
           node --check opponent-turn-capture.js
+          node --check opponent-turn-render-fix.js
 
       - name: Upload opponent-turn preview
         uses: actions/upload-artifact@v4
