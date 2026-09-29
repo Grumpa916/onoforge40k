@@ -9,11 +9,15 @@
  * This bridge does not create a second resolver or history store. It only
  * mounts the existing tacticalPreRollResolutionModal() after the normal
  * Battle render when an observed opponent resolver session is active.
+ *
+ * Note: application state is a top-level lexical binding in index.html, not
+ * necessarily a window property. The bridge therefore asks the existing
+ * resolver modal function for its current HTML instead of reading window.state.
  */
 (function(global){
   'use strict';
 
-  const VERSION=1;
+  const VERSION=2;
   const INSTALL_FLAG='__ONOFORGE_OPPONENT_RESOLVER_RENDER_BRIDGE__';
 
   function install(){
@@ -24,8 +28,6 @@
     global.render=function(){
       const result=originalRender.apply(this,arguments);
       try{
-        const s=global.state||{};
-        if(s.page!=='battle'||s.currentTurn!=='opp')return result;
         if(typeof global.tacticalPreRollResolutionModal!=='function')return result;
         const root=global.document&&global.document.getElementById('battle-view');
         if(!root)return result;
