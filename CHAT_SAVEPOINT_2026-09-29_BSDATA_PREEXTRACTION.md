@@ -2,14 +2,14 @@
 
 **Date:** 2026-09-29
 **Branch:** `feature/opponent-turn-history`
-**Checkpoint commit:** `492d4b6803b1c837501856ef1d454029f3cd29b9`
+**Checkpoint purpose:** Freeze the documented state immediately before the first JavaScript monolith extraction.
 **Application baseline:** `index.html` blob `4941fcffc41072fd9f60dcf870a0227b4437b74c`
 
 ## Purpose
 
-Cross-chat-safe checkpoint immediately before the first proposed JavaScript extraction. This checkpoint contains documentation and mapping only; application runtime code has not been extracted or behaviorally changed.
+Cross-chat-safe checkpoint immediately before the first proposed JavaScript extraction. This checkpoint contains documentation, mapping, harness tooling, and baseline fixtures only; application runtime code has not been extracted or behaviorally changed.
 
-## Completed
+## Completed mapping
 
 - Complete `index.html` inventory.
 - Architecture map.
@@ -20,6 +20,25 @@ Cross-chat-safe checkpoint immediately before the first proposed JavaScript extr
 - Correction of the hidden `window.__BS_OBJECT_MAP` dependency into an explicit parser-context requirement.
 - Separation of `refreshCurrentUnitDatabase()` from the parser boundary.
 - Identification of the complete unit-parser helper family.
+
+## Test tooling and baseline cases
+
+- `tools/bsdata-baseline-harness.js`
+- `tools/bsdata-baseline-adapter.js`
+- `tools/verify-bsdata-baseline.js`
+- `tests/fixtures/bsdata-baseline/`
+
+Seven deterministic parser-behavior cases are recorded:
+
+1. normal unit
+2. multiple profiles
+3. multiple weapons
+4. weapon abilities
+5. missing/optional characteristics
+6. wargear/options
+7. linked/object-map edge case
+
+These fixtures are synthetic BSData-shaped cases used to fingerprint parser behavior. They are not claims that the synthetic entries are current live catalogue records.
 
 ## Current proposed module
 
@@ -34,7 +53,7 @@ collectBSDataObjects(source)
 bsUnitFromEntry(entry, context)
 ```
 
-Private helper family unless external callers require compatibility:
+Private helper family unless verified external callers require compatibility:
 
 ```text
 bsProfile
@@ -45,38 +64,70 @@ bsWargearOptions
 normalize11eWeaponAbilities
 ```
 
-## Important dependency correction
+## Corrected dependency boundary
 
 `bsWeapons()` / `bsAbilities()` currently rely on `window.__BS_OBJECT_MAP`. The extracted parser must receive the object map explicitly through parser context rather than retain this hidden global dependency.
 
 `refreshCurrentUnitDatabase()` remains outside the parser because it owns application-level loading/refresh behavior.
 
-## Baseline status
+Conceptually:
 
-The authoritative source baseline is captured by Git blob SHA `4941fcffc41072fd9f60dcf870a0227b4437b74c` and the exact uploaded source used for analysis was verified against that SHA.
+```text
+refreshCurrentUnitDatabase()
+    -> collect BSData objects
+    -> construct parser context { objectMap, ... }
+    -> bsUnitFromEntry(entry, context)
+         -> bsWeapons(..., context)
+         -> bsAbilities(..., context)
+```
 
-A runtime serialized fixture baseline has **not** been generated yet because the available environment does not provide a browser/runtime execution harness for the full monolithic application. We therefore do not claim runtime fixture equivalence at this checkpoint.
+## Loading strategy
 
-Before extraction, the next safe task is to create a minimal parser harness that loads the existing parser functions against representative embedded/BSData objects and records serialized outputs. That harness must be test-only and must not alter `index.html` behavior.
+Use an explicit browser script/module boundary rather than dynamically evaluating the monolith at runtime.
 
-## No-code-change guarantee
+During the first extraction, preserve existing browser-global compatibility where required. Do not convert the entire application to ES modules in the same change.
 
-At this checkpoint:
+The first extraction should be minimal:
 
-- no parser code has been extracted;
-- no combat code has been changed;
-- no state/event semantics have been changed;
-- no Tactical Advisor code has been changed;
-- no data definitions have been corrected;
-- no rendering behavior has been changed.
+1. create the parser module/file;
+2. expose only the intended parser entry point(s);
+3. load it before the application code that consumes it;
+4. replace the old parser implementation with calls to the module;
+5. leave unrelated application initialization untouched.
 
-## Next steps
+## Extraction gate
 
-1. Build a test-only baseline harness around the existing parser family.
-2. Capture representative serialized outputs.
-3. Record those fixtures in the repository.
-4. Implement `js/data/bsdata-parser.js` in one isolated extraction commit.
-5. Update the application loader/import path without changing parser semantics.
-6. Compare extracted outputs to the baseline fixtures.
-7. Run application startup and roster/battle smoke tests.
-8. If validation fails, revert the extraction commit and update the dependency map rather than changing gameplay logic.
+- [x] architecture map
+- [x] dependency map
+- [x] parser contract
+- [x] dependency audit
+- [x] object-map correction
+- [x] baseline harness
+- [x] seven baseline cases
+- [x] loading strategy selected
+- [ ] run baseline verifier against the exact branch state
+- [ ] perform isolated parser extraction
+- [ ] run post-extraction baseline comparison
+- [ ] run application smoke test
+- [ ] record extraction commit and next save point
+
+## Non-negotiable protections
+
+Do not modify in this extraction:
+
+- combat resolver
+- canonical combat state mutation
+- event system
+- Action Log / Combat History
+- undo/persistence semantics
+- Tactical Advisor
+- scoring behavior
+- roster mutation semantics
+
+## Rollback
+
+If the extraction causes unexpected behavior, revert the extraction commit and return to this checkpoint. Do not repair unrelated behavior in the same rollback/fix commit.
+
+## Current status
+
+**READY FOR FINAL BASELINE VERIFIER RUN, THEN FIRST ISOLATED PARSER EXTRACTION.**
