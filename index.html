@@ -8194,7 +8194,7 @@ function tacticalPreRollResolutionCurrent(){
   if(!ae||!te)return null;
   const stored=String(raw.weaponName||'');if(!stored)return null;
   const r=tacticalPreRollCheck(ae.uid,te.uid,stored,attackerSide,targetSide);
-  if(!r||!['ready','ready-with-warnings'].includes(r.status))return null;
+  if(!r||(!raw.allowObservedContext&&!['ready','ready-with-warnings'].includes(r.status)))return null;
   const poolId=String(r.poolId||raw.poolId||''),signature=tacticalPreRollContextSignature(ae.uid,te.uid,stored,r,attackerSide,targetSide);
   if(raw.signature!==signature)return null;
   return {...raw,key,signature,poolId:raw.poolId||poolId||null,result:r,attackerEntryUid:ae.uid,targetEntryUid:te.uid,weaponName:stored,attackerSide,targetSide};
@@ -8359,7 +8359,7 @@ function tacticalPreRollOpenResolutionForSides(attackerSide,targetSide,attackerU
   const signature=tacticalPreRollContextSignature(ae.uid,te.uid,stored,r,as,ts),key=tacticalPreRollSessionKey(ae.uid,te.uid,stored,chosenPoolId,as,ts);
   const plan=tacticalPreRollResolutionPlan(ae,te,w,r,chosenPoolId,as,ts),map=tacticalPreRollResolutionState(),old=map[key];
   const session=(old&&old.signature===signature)?old:{key,signature,poolId:chosenPoolId,stage:plan.torrent?'wounds':'hits',counts:{},specials:{},plan,startedAt:new Date().toISOString()};
-  session.key=key;session.attackerEntryUid=ae.uid;session.targetEntryUid=te.uid;session.weaponName=stored;session.attackerSide=as;session.targetSide=ts;session.poolId=chosenPoolId;session.plan=plan;session.signature=signature;
+  session.key=key;session.attackerEntryUid=ae.uid;session.targetEntryUid=te.uid;session.weaponName=stored;session.attackerSide=as;session.targetSide=ts;session.allowObservedContext=!!allowObservedContext;session.poolId=chosenPoolId;session.plan=plan;session.signature=signature;
   if(plan.torrent&&session.counts.hits==null)session.counts.hits=plan.attacks;
   map[key]=session;t.preRollResolutionOpen=key;save();render();return true;
 }
