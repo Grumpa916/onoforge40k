@@ -5,8 +5,9 @@ const assert=require('assert');
 const source=fs.readFileSync('opponent-turn-render-fix.js','utf8');
 let renderCalls=0;
 let inserted=[];
+let existingModal=false;
 const root={
-  querySelector:()=>null,
+  querySelector:()=>existingModal?{}:null,
   insertAdjacentHTML:(position,html)=>inserted.push({position,html})
 };
 const context={
@@ -27,9 +28,16 @@ assert.strictEqual(inserted[0].position,'beforeend');
 assert.ok(inserted[0].html.includes('pr-dice-modal'));
 
 inserted=[];
-context.state.currentTurn='my';
+existingModal=true;
 context.render();
 assert.strictEqual(renderCalls,2);
+assert.strictEqual(inserted.length,0,'Bridge must not duplicate an already-mounted resolver modal');
+
+inserted=[];
+existingModal=false;
+context.state.currentTurn='my';
+context.render();
+assert.strictEqual(renderCalls,3);
 assert.strictEqual(inserted.length,0,'Bridge must not add opponent resolver UI during my turn');
 
 console.log('Opponent-turn resolver render bridge tests passed');
