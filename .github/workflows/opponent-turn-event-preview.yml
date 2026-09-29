@@ -72,10 +72,10 @@ jobs:
           ]
           for script_id,source_path in head_layers:
               if f'id="{script_id}"' not in html:
-                  html=html.replace('</head>', f'<script id="{script_id}">\\n{source_path.read_text(encoding="utf-8")}\\n</script></head>', 1)
+                  html=html.replace('</head>', f'<script id="{script_id}">\n{source_path.read_text(encoding="utf-8")}\n</script></head>', 1)
           render_fix=Path('opponent-turn-render-fix.js').read_text(encoding='utf-8')
           if 'id="onoforge-opponent-turn-render-fix"' not in html:
-              html=html.replace('</body>', f'<script id="onoforge-opponent-turn-render-fix">\\n{render_fix}\\n</script></body>', 1)
+              html=html.replace('</body>', f'<script id="onoforge-opponent-turn-render-fix">\n{render_fix}\n</script></body>', 1)
           for marker in ['ONOFORGE_OPPONENT_EVENT_CAPTURE','ONOFORGE_OPPONENT_CAPTURE_UI','ONOFORGE_OPPONENT_RESOLVER_RENDER_BRIDGE']:
               if marker not in html:
                   raise SystemExit(f'Missing injected opponent-turn marker: {marker}')
@@ -87,6 +87,14 @@ jobs:
           node --check opponent-turn-event-layer.js
           node --check opponent-turn-capture.js
           node --check opponent-turn-render-fix.js
+
+      - name: Assert preview contains no literal backslash-n escape in injected resolver script
+        shell: bash
+        run: |
+          if grep -nF '\\n/* OnoForge 40K — opponent-turn resolver render bridge' preview-site/index.html; then
+            echo 'ERROR: preview contains a literal backslash-n escape before the resolver bridge.'
+            exit 1
+          fi
 
       - name: Upload opponent-turn preview
         uses: actions/upload-artifact@v4
