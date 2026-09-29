@@ -1,0 +1,108 @@
+name: Opponent Turn Event Capture Preview
+
+on:
+  push:
+    branches:
+      - feature/opponent-turn-history
+  pull_request:
+    paths:
+      - 'opponent-turn-event-layer.js'
+      - 'opponent-turn-capture.js'
+      - 'opponent-turn-render-fix.js'
+      - 'scripts/opponent-turn-event-layer-audit.js'
+      - 'tests/opponent-turn-event-layer.test.js'
+      - 'tests/opponent-turn-render-bridge.test.js'
+      - 'tests/bidirectional-combat-edge-cases.test.js'
+      - '.github/workflows/opponent-turn-event-preview.yml'
+      - 'index.html'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Run opponent-turn event layer unit tests
+        run: node tests/opponent-turn-event-layer.test.js
+
+      - name: Run opponent-turn resolver render bridge regression
+        run: node tests/opponent-turn-render-bridge.test.js
+
+      - name: Run bidirectional combat edge-case regression
+        run: node tests/bidirectional-combat-edge-cases.test.js
+
+      - name: Run opponent-turn event layer architecture audit
+        run: node scripts/opponent-turn-event-layer-audit.js
+
+      - name: Validate capture UI syntax
+        run: node --check opponent-turn-capture.js
+
+      - name: Validate resolver render bridge syntax
+        run: node --check opponent-turn-render-fix.js
+
+      - name: Validate inline JavaScript in index.html
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          html=Path('index.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script(?:[ \\t\\r\\n][^>]*)?>(.*?)</script>',html,re.I|re.S)
+          if not scripts:
+              raise SystemExit('No inline script blocks found in index.html')
+          for i,src in enumerate(scripts,1):
+              Path(f'/tmp/onoforge-inline-{i}.js').write_text(src,encoding='utf-8')
+          print(f'Extracted {len(scripts)} inline script block(s)')
+          PY
+          for f in /tmp/onoforge-inline-*.js; do
+            node --check "$f"
+          done
+
+      - name: Build opponent-turn preview artifact
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          html=Path('index.html').read_text(encoding='utf-8')
+          head_layers=[
+              ('onoforge-opponent-turn-event-layer',Path('opponent-turn-event-layer.js')),
+              ('onoforge-opponent-turn-capture',Path('opponent-turn-capture.js')),
+          ]
+          for script_id,source_path in head_layers:
+              if f'id="{script_id}"' not in html:
+                  html=html.replace('</head>', f'<script id="{script_id}">\n{source_path.read_text(encoding="utf-8")}\n</script></head>', 1)
+          render_fix=Path('opponent-turn-render-fix.js').read_text(encoding='utf-8')
+          if 'id="onoforge-opponent-turn-render-fix"' not in html:
+              html=html.replace('</body>', f'<script id="onoforge-opponent-turn-render-fix">\n{render_fix}\n</script></body>', 1)
+          for marker in ['ONOFORGE_OPPONENT_EVENT_CAPTURE','ONOFORGE_OPPONENT_CAPTURE_UI','ONOFORGE_OPPONENT_RESOLVER_RENDER_BRIDGE']:
+              if marker not in html:
+                  raise SystemExit(f'Missing injected opponent-turn marker: {marker}')
+          out=Path('preview-site')
+          out.mkdir(parents=True,exist_ok=True)
+          (out/'index.html').write_text(html,encoding='utf-8')
+          print('Built preview-site/index.html')
+          PY
+          node --check opponent-turn-event-layer.js
+          node --check opponent-turn-capture.js
+          node --check opponent-turn-render-fix.js
+
+      - name: Assert preview contains no literal backslash-n escape in injected resolver script
+        shell: bash
+        run: |
+          if grep -nF '\\n/* OnoForge 40K — opponent-turn resolver render bridge' preview-site/index.html; then
+            echo 'ERROR: preview contains a literal \\n escape before the resolver bridge.'
+            exit 1
+          fi
+
+      - name: Upload opponent-turn preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: onoforge40k-opponent-turn-event-preview
+          path: preview-site
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Report
+        run: echo "Opponent-turn event capture validation passed"
