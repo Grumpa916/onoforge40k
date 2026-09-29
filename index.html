@@ -8344,7 +8344,7 @@ function tacticalPreRollResolutionPlan(ae,te,w,r,poolId=null,attackerSide='my',t
     precision:!!c.precision,precisionTargetModelId,precisionTargetVisible,fnpNeed:engineFnp(c)||null
   };
 }
-function tacticalPreRollOpenResolutionForSides(attackerSide,targetSide,attackerUid,targetUid,weaponName,poolId=null){
+function tacticalPreRollOpenResolutionForSides(attackerSide,targetSide,attackerUid,targetUid,weaponName,poolId=null,allowObservedContext=false){
   const as=attackerSide==='opp'?'opp':'my',ts=targetSide==='my'?'my':'opp',ae=entry(as,attackerUid),te=entry(ts,targetUid),stored=String(weaponName||'');
   if(!ae||!te||!stored)return false;
  const manifest=tacticalPreRollPoolManifest(ae,as,ts);
@@ -8354,7 +8354,7 @@ function tacticalPreRollOpenResolutionForSides(attackerSide,targetSide,attackerU
   const existing=t.preRollPools[chosenPoolId]?.allocations,hasTarget=Array.isArray(existing)&&existing.some(x=>String(x.targetUid||'')===String(te.uid)&&Array.isArray(x.modelIds)&&x.modelIds.length);
   if(!hasTarget)t.preRollPools[chosenPoolId]={allocations:[{targetUid:String(te.uid),count:selectedPool.modelIds.length,modelIds:[...selectedPool.modelIds]}]};
   t.preRoll=t.preRoll||{};t.preRoll[tacticalPairKey(ae.uid,te.uid)]={weaponName:stored,poolId:chosenPoolId};
-  const r=tacticalPreRollCheck(ae.uid,te.uid,stored,as,ts);if(r.status==='blocked'||(r.status==='check-required'&&!(as==='opp'&&ts==='my')))return false;
+  const r=tacticalPreRollCheck(ae.uid,te.uid,stored,as,ts);if(!allowObservedContext&&(r.status==='blocked'||r.status==='check-required'))return false;
   const w=attachedCombatWeaponGroups(as,ae,te).map(g=>g.weapon).find(x=>String(x.name)===stored);if(!w)return false;
   const signature=tacticalPreRollContextSignature(ae.uid,te.uid,stored,r,as,ts),key=tacticalPreRollSessionKey(ae.uid,te.uid,stored,chosenPoolId,as,ts);
   const plan=tacticalPreRollResolutionPlan(ae,te,w,r,chosenPoolId,as,ts),map=tacticalPreRollResolutionState(),old=map[key];
@@ -9048,7 +9048,7 @@ function tacticalOpenOpponentCombatResolution(phase,attackerUid,targetUid,weapon
   if(state.currentTurn!=='opp'){alert('Opponent resolution controls are only available during the opponent turn.');return;}
   if(String(state.phase||'')!==String(phase||'')){alert('This control is for the current '+String(state.phase||'')+' phase.');return;}
   if(!attackerUid||!targetUid||!weaponName){alert('Select the attacking unit, target unit, and weapon profile first.');return;}
-  if(!tacticalPreRollOpenResolutionForSides('opp','my',attackerUid,targetUid,weaponName)){
+  if(!tacticalPreRollOpenResolutionForSides('opp','my',attackerUid,targetUid,weaponName,null,true)){
     alert('The shared physical-dice resolver could not open this attack. Re-check the selected units and the current battlefield context.');
   }
 }
