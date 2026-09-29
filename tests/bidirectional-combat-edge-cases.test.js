@@ -108,5 +108,10 @@ assert(
   uiBody.includes("tacticalPreRollOpenResolutionForSides('opp','my',attackerUid,targetUid,weaponName,null,true)"),
   'opponent shooting capture must invoke the shared resolver in observed-capture mode'
 );
+assert(
+  openBody.includes("session.allowObservedContext=!!allowObservedContext") &&
+  html.includes("!raw.allowObservedContext&&!['ready','ready-with-warnings'].includes(r.status)"),
+  'observed opponent resolver sessions must remain renderable after opening'
+);
 
 console.log('Bidirectional combat edge-case regression passed');
