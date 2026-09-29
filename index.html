@@ -4200,7 +4200,7 @@ function buildModelRoster(e,u){
 function ensureModelRoster(e,u){
   if(!e||!u)return [];
   const desired=buildModelRoster(e,u);
-  const prior=Array.isArray(e.game?.modelRoster)?e.game.modelRoster:(Array.isArray(e.modelRoster)?e.modelRoster:[]);
+ const prior=Array.isArray(e.modelRoster)?e.modelRoster:(Array.isArray(e.game?.modelRoster)?e.game.modelRoster:[]);
   const byId=new Map(prior.map(m=>[m.id,m]));
   e.modelRoster=desired.map(m=>{
     const old=byId.get(m.id);
