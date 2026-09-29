@@ -91,4 +91,14 @@ assert(
   'model roster synchronization must preserve the already-mutated e.modelRoster'
 );
 
+// Opponent-turn capture is based on an observed tabletop attack. Unknown or
+// advisory-only target context must not prevent the shared resolver from opening.
+const openStart = html.indexOf('function tacticalPreRollOpenResolutionForSides');
+assert(openStart >= 0, 'tacticalPreRollOpenResolutionForSides must exist');
+const openBody = html.slice(openStart, html.indexOf('function tacticalPreRollOpenResolution(){', openStart));
+assert(
+  openBody.includes("observedOpponentCapture") && openBody.includes("r.status==='blocked'&&!observedOpponentCapture"),
+  'observed opponent capture must not be blocked by advisory target-legality status'
+);
+
 console.log('Bidirectional combat edge-case regression passed');
