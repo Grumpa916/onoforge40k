@@ -8354,7 +8354,7 @@ function tacticalPreRollOpenResolutionForSides(attackerSide,targetSide,attackerU
   const existing=t.preRollPools[chosenPoolId]?.allocations,hasTarget=Array.isArray(existing)&&existing.some(x=>String(x.targetUid||'')===String(te.uid)&&Array.isArray(x.modelIds)&&x.modelIds.length);
   if(!hasTarget)t.preRollPools[chosenPoolId]={allocations:[{targetUid:String(te.uid),count:selectedPool.modelIds.length,modelIds:[...selectedPool.modelIds]}]};
   t.preRoll=t.preRoll||{};t.preRoll[tacticalPairKey(ae.uid,te.uid)]={weaponName:stored,poolId:chosenPoolId};
-  const r=tacticalPreRollCheck(ae.uid,te.uid,stored,as,ts);if(!['ready','ready-with-warnings'].includes(r.status))return false;
+  const r=tacticalPreRollCheck(ae.uid,te.uid,stored,as,ts);if(r.status==='check-required'||(r.status==='blocked'&&!observedOpponentCapture))return false;
   const w=attachedCombatWeaponGroups(as,ae,te).map(g=>g.weapon).find(x=>String(x.name)===stored);if(!w)return false;
   const signature=tacticalPreRollContextSignature(ae.uid,te.uid,stored,r,as,ts),key=tacticalPreRollSessionKey(ae.uid,te.uid,stored,chosenPoolId,as,ts);
   const plan=tacticalPreRollResolutionPlan(ae,te,w,r,chosenPoolId,as,ts),map=tacticalPreRollResolutionState(),old=map[key];
