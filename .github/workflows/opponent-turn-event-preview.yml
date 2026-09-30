@@ -23,18 +23,25 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+
       - name: Run opponent-turn event layer unit tests
         run: node tests/opponent-turn-event-layer.test.js
+
       - name: Run opponent-turn resolver render bridge regression
         run: node tests/opponent-turn-render-bridge.test.js
+
       - name: Run bidirectional combat edge-case regression
         run: node tests/bidirectional-combat-edge-cases.test.js
+
       - name: Run opponent-turn event layer architecture audit
         run: node scripts/opponent-turn-event-layer-audit.js
+
       - name: Validate capture UI syntax
         run: node --check opponent-turn-capture.js
+
       - name: Validate resolver render bridge syntax
         run: node --check opponent-turn-render-fix.js
+
       - name: Validate inline JavaScript in index.html
         shell: bash
         run: |
@@ -43,35 +50,61 @@ jobs:
           from pathlib import Path
           html=Path('index.html').read_text(encoding='utf-8')
           scripts=re.findall(r'<script(?:[ \\t\\r\\n][^>]*)?>(.*?)</script>',html,re.I|re.S)
-          if not scripts: raise SystemExit('No inline script blocks found in index.html')
-          for i,src in enumerate(scripts,1): Path(f'/tmp/onoforge-inline-{i}.js').write_text(src,encoding='utf-8')
+          if not scripts:
+              raise SystemExit('No inline script blocks found in index.html')
+          for i,src in enumerate(scripts,1):
+              Path(f'/tmp/onoforge-inline-{i}.js').write_text(src,encoding='utf-8')
+          print(f'Extracted {len(scripts)} inline script block(s)')
           PY
-          for f in /tmp/onoforge-inline-*.js; do node --check "$f"; done
+          for f in /tmp/onoforge-inline-*.js; do
+            node --check "$f"
+          done
+
       - name: Build opponent-turn preview artifact
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
           html=Path('index.html').read_text(encoding='utf-8')
-          head_layers=[('onoforge-opponent-turn-event-layer',Path('opponent-turn-event-layer.js')),('onoforge-opponent-turn-capture',Path('opponent-turn-capture.js'))]
+          head_layers=[
+              ('onoforge-opponent-turn-event-layer',Path('opponent-turn-event-layer.js')),
+              ('onoforge-opponent-turn-capture',Path('opponent-turn-capture.js')),
+          ]
           for script_id,source_path in head_layers:
               if f'id="{script_id}"' not in html:
-                  html=html.replace('</head>',f'<script id="{script_id}">\n{source_path.read_text(encoding="utf-8")}\n</script></head>',1)
+                  html=html.replace('</head>', f'<script id="{script_id}">\n{source_path.read_text(encoding="utf-8")}\n</script></head>', 1)
+
+          # The production index.html now contains the iPad-verified opponent
+          # resolver render fix. The preview must use that source directly;
+          # do not re-patch the renderer in the build step.
           expected="${state.currentTurn==='opp'?(opponentTurnTrackingHtml()+tacticalPreRollResolutionModal()):(tacticalMovementTrackerHtml()+tacticalAdvisorHtml()+tacticalContextHtml()+tacticalShootingResultHtml()+tacticalPreRollResolutionModal())}"
-          if expected not in html: raise SystemExit('Production opponent-turn resolver render fix is missing from index.html')
+          if expected not in html:
+              raise SystemExit('Production opponent-turn resolver render fix is missing from index.html')
+
           marker='<script id="onoforge-opponent-turn-render-v4">window.ONOFORGE_OPPONENT_RESOLVER_RENDER_V4=true;</script>'
-          if 'id="onoforge-opponent-turn-render-v4"' not in html: html=html.replace('</body>',marker+'</body>',1)
+          if 'id="onoforge-opponent-turn-render-v4"' not in html:
+              html=html.replace('</body>', marker+'</body>',1)
+
           for marker_text in ['ONOFORGE_OPPONENT_EVENT_CAPTURE','ONOFORGE_OPPONENT_CAPTURE_UI','ONOFORGE_OPPONENT_RESOLVER_RENDER_V4']:
-              if marker_text not in html: raise SystemExit(f'Missing injected opponent-turn marker: {marker_text}')
-          out=Path('preview-site'); out.mkdir(parents=True,exist_ok=True); (out/'index.html').write_text(html,encoding='utf-8')
+              if marker_text not in html:
+                  raise SystemExit(f'Missing injected opponent-turn marker: {marker_text}')
+          out=Path('preview-site')
+          out.mkdir(parents=True,exist_ok=True)
+          (out/'index.html').write_text(html,encoding='utf-8')
+          print('Built preview-site/index.html from the production resolver render fix')
           PY
           node --check opponent-turn-event-layer.js
           node --check opponent-turn-capture.js
           node --check opponent-turn-render-fix.js
+
       - name: Assert preview contains no literal backslash-n escape in injected scripts
         shell: bash
         run: |
-          if grep -nF '\\n/* OnoForge 40K — opponent-turn resolver render bridge' preview-site/index.html; then exit 1; fi
+          if grep -nF '\\n/* OnoForge 40K — opponent-turn resolver render bridge' preview-site/index.html; then
+            echo 'ERROR: preview contains a literal backslash-n escape before the resolver bridge.'
+            exit 1
+          fi
+
       - name: Upload opponent-turn preview
         uses: actions/upload-artifact@v4
         with:
@@ -79,64 +112,6 @@ jobs:
           path: preview-site
           if-no-files-found: error
           retention-days: 14
+
       - name: Report
         run: echo "Opponent-turn event capture validation passed with production resolver render fix"
-      # TEMP_PASS1A_START
-      - name: Apply Pass 1A UI setup flow
-        if: github.event_name == 'push' && github.event.head_commit.message != 'Apply Pass 1A UI setup flow'
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path('index.html'); s=p.read_text(encoding='utf-8')
-          # Remove Begin Deployment button.
-          old='onclick="beginDeployment()">Begin Deployment</button>'
-          if s.count(old)!=1: raise SystemExit(f'Begin Deployment button matches: {s.count(old)}')
-          s=s.replace(old,'',1)
-          # Enable Start Battle from Setup or Deployment.
-          old="onclick=\"startBattle()\" ${state.tournamentLifecycle==='DEPLOYMENT'?'':'disabled'}"
-          new="onclick=\"startBattle()\" ${(['SETUP','DEPLOYMENT'].includes(state.tournamentLifecycle))?'':'disabled'}"
-          if s.count(old)!=1: raise SystemExit(f'Start Battle binding matches: {s.count(old)}')
-          s=s.replace(old,new,1)
-          # Permit SETUP -> LIVE.
-          old="const transitions={SETUP:['DEPLOYMENT'],DEPLOYMENT:['SETUP','LIVE'],LIVE:['COMPLETED'],COMPLETED:['SETUP']};"
-          new="const transitions={SETUP:['DEPLOYMENT','LIVE'],DEPLOYMENT:['SETUP','LIVE'],LIVE:['COMPLETED'],COMPLETED:['SETUP']};"
-          if s.count(old)!=1: raise SystemExit(f'Lifecycle transition matches: {s.count(old)}')
-          s=s.replace(old,new,1)
-          # Replace the gate inside startBattle without depending on line numbers.
-          fn=s.index('function startBattle(){')
-          gate=s.index("  if(state.tournamentLifecycle!=='DEPLOYMENT'){",fn)
-          before=s.index('  const before=snapshotForUndo();',gate)
-          replacement="""  if(state.tournamentLifecycle==='DEPLOYMENT'){
-    const deploymentCheck=tournamentDeploymentValidation();
-    if(!deploymentCheck.ready){alert('Deployment is incomplete:\\n\\n• '+deploymentCheck.missing.join('\\n• '));return false;}
-  }else if(state.tournamentLifecycle!=='SETUP'){
-    alert('The tournament is not in Setup or Deployment.');
-    return false;
-  }
-"""
-          s=s[:gate]+replacement+s[before:]
-          p.write_text(s,encoding='utf-8')
-          PY
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-          html=Path('index.html').read_text(encoding='utf-8')
-          Path('/tmp/index.js').write_text('\n\n'.join(re.findall(r'<script[^>]*>(.*?)</script>',html,re.S|re.I)),encoding='utf-8')
-          PY
-          node --check /tmp/index.js
-          grep -F "const transitions={SETUP:['DEPLOYMENT','LIVE']" index.html
-          grep -F "(['SETUP','DEPLOYMENT'].includes(state.tournamentLifecycle))" index.html
-          ! grep -F 'onclick="beginDeployment()">Begin Deployment</button>' index.html
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path('.github/workflows/opponent-turn-event-preview.yml')
-          s=p.read_text(encoding='utf-8')
-          s=s.split('      # TEMP_PASS1A_START',1)[0].rstrip()+'\n'
-          p.write_text(s,encoding='utf-8')
-          PY
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add index.html .github/workflows/opponent-turn-event-preview.yml
-          git commit -m "Apply Pass 1A UI setup flow"
-          git push origin HEAD:feature/opponent-turn-history
