@@ -1,0 +1,63 @@
+name: Apply Pass 1A UI Fix
+on:
+  push:
+    branches: [feature/opponent-turn-history]
+    paths: ['.github/workflows/apply-pass1a-ui-fix.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch and validate
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          # Remove redundant Begin Deployment button.
+          s,n=re.subn(r'<button[^>]*onclick="beginDeployment\(\)"[^>]*>Begin Deployment</button>','',s,count=1)
+          if n!=1: raise SystemExit(f'Begin Deployment button matches: {n}')
+          # Enable Start Battle from Setup or Deployment.
+          pat=r'(onclick="startBattle\(\)" )\$\{state\.tournamentLifecycle===\'DEPLOYMENT\'\?\'\':\'disabled\'\}'
+          s,n=re.subn(pat,r"\1${(['SETUP','DEPLOYMENT'].includes(state.tournamentLifecycle))?'':'disabled'}",s,count=1)
+          if n!=1: raise SystemExit(f'Start Battle binding matches: {n}')
+          # Permit SETUP -> LIVE; preserve DEPLOYMENT -> LIVE.
+          old="const transitions={SETUP:['DEPLOYMENT'],DEPLOYMENT:['SETUP','LIVE'],LIVE:['COMPLETED'],COMPLETED:['SETUP']};"
+          new="const transitions={SETUP:['DEPLOYMENT','LIVE'],DEPLOYMENT:['SETUP','LIVE'],LIVE:['COMPLETED'],COMPLETED:['SETUP']};"
+          if s.count(old)!=1: raise SystemExit(f'Lifecycle transition matches: {s.count(old)}')
+          s=s.replace(old,new)
+          # Replace only the pre-live gate inside startBattle.
+          pat=r"if\(state\.tournamentLifecycle!=='DEPLOYMENT'\)\{.*?const deploymentCheck=tournamentDeploymentValidation\(\);\s*if\(!deploymentCheck\.ready\)\{.*?return false;\}\s*"
+          repl="if(state.tournamentLifecycle==='DEPLOYMENT'){\n    const deploymentCheck=tournamentDeploymentValidation();\n    if(!deploymentCheck.ready){alert('Deployment is incomplete:\\n\\n• '+deploymentCheck.missing.join('\\n• '));return false;}\n  }else if(state.tournamentLifecycle!=='SETUP'){\n    alert('The tournament is not in Setup or Deployment.');\n    return false;\n  }\n  "
+          s,n=re.subn(pat,repl,s,count=1,flags=re.S)
+          if n!=1: raise SystemExit(f'Start Battle gate matches: {n}')
+          # Preserve the previously verified resolver rendering fix.
+          old="${state.currentTurn==='opp'?opponentTurnTrackingHtml():(tacticalMovementTrackerHtml()+tacticalAdvisorHtml()+tacticalContextHtml()+tacticalShootingResultHtml()+tacticalPreRollResolutionModal())}"
+          new="${state.currentTurn==='opp'?(opponentTurnTrackingHtml()+tacticalPreRollResolutionModal()):(tacticalMovementTrackerHtml()+tacticalAdvisorHtml()+tacticalContextHtml()+tacticalShootingResultHtml()+tacticalPreRollResolutionModal())}"
+          if old in s: s=s.replace(old,new,1)
+          elif new not in s: raise SystemExit('Resolver rendering fix missing')
+          p.write_text(s,encoding='utf-8')
+          PY
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('index.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script[^>]*>(.*?)</script>',s,re.S|re.I)
+          Path('/tmp/index.js').write_text('\n\n'.join(scripts),encoding='utf-8')
+          PY
+          node --check /tmp/index.js
+          grep -F "const transitions={SETUP:['DEPLOYMENT','LIVE']" index.html
+          grep -F "(['SETUP','DEPLOYMENT'].includes(state.tournamentLifecycle))" index.html
+          ! grep -F 'onclick="beginDeployment()">Begin Deployment</button>' index.html
+          grep -F "state.currentTurn==='opp'?(opponentTurnTrackingHtml()+tacticalPreRollResolutionModal())" index.html
+      - name: Commit source only
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git rm .github/workflows/apply-pass1a-ui-fix.yml
+          git add index.html
+          git commit -m "Apply Pass 1A UI setup flow"
+          git push origin HEAD:feature/opponent-turn-history
