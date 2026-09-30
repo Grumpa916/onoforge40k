@@ -1,0 +1,42 @@
+name: Apply Opponent Resolver Source Fix
+
+on:
+  push:
+    branches:
+      - feature/opponent-turn-history
+    paths:
+      - '.github/workflows/apply-opponent-resolver-source-fix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply-fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Patch opponent-turn renderer
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          old = "${state.currentTurn==='opp'?opponentTurnTrackingHtml():(tacticalMovementTrackerHtml()+tacticalAdvisorHtml()+tacticalContextHtml()+tacticalShootingResultHtml()+tacticalPreRollResolutionModal())}"
+          new = "${state.currentTurn==='opp'?(opponentTurnTrackingHtml()+tacticalPreRollResolutionModal()):(tacticalMovementTrackerHtml()+tacticalAdvisorHtml()+tacticalContextHtml()+tacticalShootingResultHtml()+tacticalPreRollResolutionModal())}"
+          if old not in s:
+              raise SystemExit('Expected opponent-turn renderer expression was not found; no source change made.')
+          if s.count(old) != 1:
+              raise SystemExit(f'Expected exactly one renderer expression, found {s.count(old)}.')
+          p.write_text(s.replace(old, new), encoding='utf-8')
+          PY
+
+      - name: Commit source fix
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m "Fix opponent-turn resolver rendering"
+          git push origin HEAD:feature/opponent-turn-history
