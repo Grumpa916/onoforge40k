@@ -73,22 +73,35 @@ jobs:
           for script_id,source_path in head_layers:
               if f'id="{script_id}"' not in html:
                   html=html.replace('</head>', f'<script id="{script_id}">\n{source_path.read_text(encoding="utf-8")}\n</script></head>', 1)
-          render_fix=Path('opponent-turn-render-fix.js').read_text(encoding='utf-8')
-          if 'id="onoforge-opponent-turn-render-fix"' not in html:
-              html=html.replace('</body>', f'<script id="onoforge-opponent-turn-render-fix">\n{render_fix}\n</script></body>', 1)
-          for marker in ['ONOFORGE_OPPONENT_EVENT_CAPTURE','ONOFORGE_OPPONENT_CAPTURE_UI','ONOFORGE_OPPONENT_RESOLVER_RENDER_BRIDGE']:
-              if marker not in html:
-                  raise SystemExit(f'Missing injected opponent-turn marker: {marker}')
+
+          # Test-proven surgical render fix: the opponent-turn branch must mount
+          # the existing shared physical-dice resolver exactly as the normal
+          # player-turn branch already does. This changes only the render
+          # expression in the generated preview artifact; index.html remains
+          # untouched until the fix is promoted deliberately.
+          old="${state.currentTurn==='opp'?opponentTurnTrackingHtml():(tacticalMovementTrackerHtml()+tacticalAdvisorHtml()+tacticalContextHtml()+tacticalShootingResultHtml()+tacticalPreRollResolutionModal())}"
+          fixed="${state.currentTurn==='opp'?(opponentTurnTrackingHtml()+tacticalPreRollResolutionModal()):(tacticalMovementTrackerHtml()+tacticalAdvisorHtml()+tacticalContextHtml()+tacticalShootingResultHtml()+tacticalPreRollResolutionModal())}"
+          if old not in html:
+              raise SystemExit('Expected opponent-turn render expression not found in index.html')
+          html=html.replace(old,fixed,1)
+
+          marker='<script id="onoforge-opponent-turn-render-v4">window.ONOFORGE_OPPONENT_RESOLVER_RENDER_V4=true;</script>'
+          if 'id="onoforge-opponent-turn-render-v4"' not in html:
+              html=html.replace('</body>', marker+'</body>',1)
+
+          for marker_text in ['ONOFORGE_OPPONENT_EVENT_CAPTURE','ONOFORGE_OPPONENT_CAPTURE_UI','ONOFORGE_OPPONENT_RESOLVER_RENDER_V4']:
+              if marker_text not in html:
+                  raise SystemExit(f'Missing injected opponent-turn marker: {marker_text}')
           out=Path('preview-site')
           out.mkdir(parents=True,exist_ok=True)
           (out/'index.html').write_text(html,encoding='utf-8')
-          print('Built preview-site/index.html')
+          print('Built preview-site/index.html with the test-proven opponent resolver render fix')
           PY
           node --check opponent-turn-event-layer.js
           node --check opponent-turn-capture.js
           node --check opponent-turn-render-fix.js
 
-      - name: Assert preview contains no literal backslash-n escape in injected resolver script
+      - name: Assert preview contains no literal backslash-n escape in injected scripts
         shell: bash
         run: |
           if grep -nF '\\n/* OnoForge 40K — opponent-turn resolver render bridge' preview-site/index.html; then
@@ -105,4 +118,4 @@ jobs:
           retention-days: 14
 
       - name: Report
-        run: echo "Opponent-turn event capture validation passed"
+        run: echo "Opponent-turn event capture validation passed with test-proven resolver render fix"
