@@ -15,21 +15,13 @@ OnoForge should help the player play the tabletop game, not make the player play
 - During development, Terrain Setup may be reopened/unlocked.
 
 ## Persistent battlefield model
-All three map modes share one persistent battlefield model.
-
-GW reference maps are the authoritative visual source for battlefield layout, deployment zones, terrain arrangement, and objectives. Terrain is not user-created in Terrain Setup. Preserve the GW image as a reference layer and use a derived clean display layer for later phases where useful.
+All three map modes share one persistent battlefield model. GW reference maps are the authoritative visual source for battlefield layout, deployment zones, terrain arrangement, and objectives. Terrain is not user-created in Terrain Setup. Preserve the GW image as a reference layer and use a derived clean display layer for later phases where useful.
 
 The structured battlefield definition should represent battlefield dimensions, deployment zones, objective locations/control areas, terrain regions/footprints and relevant metadata, and map/reference identity. The image is not the sole source of truth.
 
-Unit positions support explicit confidence states:
-- `approximate` — default drag/drop placement;
-- `measured` — optional deliberate precision;
-- `unknown` — intentionally not tracked.
-
-Approximate positions must not be displayed as 0.1-inch precision or used as authoritative rule measurements. When exact distance matters, instruct the player to verify the physical tabletop.
+Unit positions support explicit confidence states: `approximate` (default drag/drop), `measured` (optional deliberate precision), and `unknown` (intentionally not tracked). Approximate positions must not be displayed as 0.1-inch precision or used as authoritative rule measurements. When exact distance matters, instruct the player to verify the physical tabletop.
 
 ## Map modes
-
 ### Terrain Setup
 Full-screen or near-full-screen on iPad. Purpose is to inspect/confirm the GW battlefield reference. No terrain move/rotate/place tools. Show readable terrain, deployment zones, objectives, and reference markings. `Terrain Setup Complete` exits the phase; development builds may reopen it.
 
@@ -40,7 +32,6 @@ Large map occupying most of the screen. Same battlefield model as Terrain Setup,
 Large but not dominant. Track approximate live unit positions, objectives, and relevant spatial context. Future overlays may include movement range, weapon range, charge context, threat areas, and tactical-engine information. Preserve position history for post-game reconstruction. Never imply precision the player did not provide.
 
 ## My List vs Army State
-
 ### My List
 Large, readable tabletop reference: unit name/size, core stats, weapons/profiles, abilities/keywords, attached characters, detachment/enhancement information, and notes. It is reference data and should not change merely because a unit takes damage.
 
