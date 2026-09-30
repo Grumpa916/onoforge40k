@@ -74,16 +74,12 @@ jobs:
               if f'id="{script_id}"' not in html:
                   html=html.replace('</head>', f'<script id="{script_id}">\n{source_path.read_text(encoding="utf-8")}\n</script></head>', 1)
 
-          # Test-proven surgical render fix: the opponent-turn branch must mount
-          # the existing shared physical-dice resolver exactly as the normal
-          # player-turn branch already does. This changes only the render
-          # expression in the generated preview artifact; index.html remains
-          # untouched until the fix is promoted deliberately.
-          old="${state.currentTurn==='opp'?opponentTurnTrackingHtml():(tacticalMovementTrackerHtml()+tacticalAdvisorHtml()+tacticalContextHtml()+tacticalShootingResultHtml()+tacticalPreRollResolutionModal())}"
-          fixed="${state.currentTurn==='opp'?(opponentTurnTrackingHtml()+tacticalPreRollResolutionModal()):(tacticalMovementTrackerHtml()+tacticalAdvisorHtml()+tacticalContextHtml()+tacticalShootingResultHtml()+tacticalPreRollResolutionModal())}"
-          if old not in html:
-              raise SystemExit('Expected opponent-turn render expression not found in index.html')
-          html=html.replace(old,fixed,1)
+          # The production index.html now contains the iPad-verified opponent
+          # resolver render fix. The preview must use that source directly;
+          # do not re-patch the renderer in the build step.
+          expected="${state.currentTurn==='opp'?(opponentTurnTrackingHtml()+tacticalPreRollResolutionModal()):(tacticalMovementTrackerHtml()+tacticalAdvisorHtml()+tacticalContextHtml()+tacticalShootingResultHtml()+tacticalPreRollResolutionModal())}"
+          if expected not in html:
+              raise SystemExit('Production opponent-turn resolver render fix is missing from index.html')
 
           marker='<script id="onoforge-opponent-turn-render-v4">window.ONOFORGE_OPPONENT_RESOLVER_RENDER_V4=true;</script>'
           if 'id="onoforge-opponent-turn-render-v4"' not in html:
@@ -95,7 +91,7 @@ jobs:
           out=Path('preview-site')
           out.mkdir(parents=True,exist_ok=True)
           (out/'index.html').write_text(html,encoding='utf-8')
-          print('Built preview-site/index.html with the test-proven opponent resolver render fix')
+          print('Built preview-site/index.html from the production resolver render fix')
           PY
           node --check opponent-turn-event-layer.js
           node --check opponent-turn-capture.js
@@ -118,4 +114,4 @@ jobs:
           retention-days: 14
 
       - name: Report
-        run: echo "Opponent-turn event capture validation passed with test-proven resolver render fix"
+        run: echo "Opponent-turn event capture validation passed with production resolver render fix"
