@@ -1,0 +1,78 @@
+name: Apply Pass 1A UI Fix
+on:
+  push:
+    branches: [feature/opponent-turn-history]
+    paths: ['.github/workflows/apply-pass1a-ui-fix.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - name: Apply Pass 1A patch
+        shell: bash
+        run: |
+          cat > /tmp/pass1a.patch <<'PATCH'
+          diff --git a/index.html b/index.html
+          --- a/index.html
+          +++ b/index.html
+          @@ -4801,7 +4801,7 @@
+           <div class="setup-panel"><h3>${esc(state.oppName)}</h3><div class="field"><label>Mission Type</label><select onchange="setSecondaryMode('opp',this.value)"><option value="fixed" ${state.secondaryOpp==='fixed'?'selected':''}>Fixed</option><option value="tactical" ${state.secondaryOpp==='tactical'?'selected':''}>Tactical</option></select></div>
+           ${state.secondaryOpp==='fixed'?`<div class="secondary-grid">${SECONDARY_CARDS.filter(c=>c.fixed).map(c=>`<label class="secondary-card ${secState('opp').includes(c.name)?'selected':''}"><input type="checkbox" ${secState('opp').includes(c.name)?'checked':''} onchange="toggleFixedSecondary('opp','${esc(c.name)}')"><b>${esc(c.name)}</b><span>${esc(c.type)}</span></label>`).join('')}</div><div class="muted">Selected: ${secState('opp').length} / 2 active</div>`:``}</div>
+           </div></div>
+          - <div class="row" style="margin-top:10px"><button class="btn" type="button" onclick="returnToTournamentSetup()" ${state.tournamentLifecycle==='DEPLOYMENT'?'':'disabled'}>Back to Setup</button><button class="btn primary" type="button" onclick="beginDeployment()">Begin Deployment</button><button class="btn primary" type="button" onclick="startBattle()" ${state.tournamentLifecycle==='DEPLOYMENT'?'':'disabled'}>Start Battle</button> </div></div>`
+          + <div class="row" style="margin-top:10px"><button class="btn" type="button" onclick="returnToTournamentSetup()" ${state.tournamentLifecycle==='DEPLOYMENT'?'':'disabled'}>Back to Setup</button><button class="btn primary" type="button" onclick="startBattle()" ${(['SETUP','DEPLOYMENT'].includes(state.tournamentLifecycle))?'':'disabled'}>Start Battle</button> </div></div>`
+           }
+          @@ -4997,7 +4997,7 @@
+           const allowed=['SETUP','DEPLOYMENT','LIVE','COMPLETED'];
+           if(!allowed.includes(next))return false;
+           const current=ensureTournamentLifecycle();
+          - const transitions={SETUP:['DEPLOYMENT'],DEPLOYMENT:['SETUP','LIVE'],LIVE:['COMPLETED'],COMPLETED:['SETUP']};
+          + const transitions={SETUP:['DEPLOYMENT','LIVE'],DEPLOYMENT:['SETUP','LIVE'],LIVE:['COMPLETED'],COMPLETED:['SETUP']};
+           if(current!==next&&!transitions[current].includes(next))return false;
+           state.tournamentLifecycle=next;
+           return true;
+          @@ -5224,12 +5224,13 @@
+           function startBattle(){
+             const setupCheck=tournamentSetupValidation();
+             if(!setupCheck.ready){alert('Tournament setup is incomplete:\n\n• '+setupCheck.missing.join('\n• '));return false;}
+          -  if(state.tournamentLifecycle!=='DEPLOYMENT'){
+          -    alert('Begin Deployment before starting the live battle.');
+          +  if(state.tournamentLifecycle==='DEPLOYMENT'){
+          +    const deploymentCheck=tournamentDeploymentValidation();
+          +    if(!deploymentCheck.ready){alert('Deployment is incomplete:\n\n• '+deploymentCheck.missing.join('\n• '));return false;}
+          +  }else if(state.tournamentLifecycle!=='SETUP'){
+          +    alert('The tournament is not in Setup or Deployment.');
+               return false;
+             }
+          -  const deploymentCheck=tournamentDeploymentValidation();
+          -  if(!deploymentCheck.ready){alert('Deployment is incomplete:\n\n• '+deploymentCheck.missing.join('\n• '));return false;}
+             const before=snapshotForUndo();
+             // Pin the rules-data revision for the lifetime of this tournament battle.
+          PATCH
+          git apply --check /tmp/pass1a.patch
+          git apply /tmp/pass1a.patch
+      - name: Validate source
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          html=Path('index.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script[^>]*>(.*?)</script>',html,re.S|re.I)
+          Path('/tmp/index.js').write_text('\n\n'.join(scripts),encoding='utf-8')
+          PY
+          node --check /tmp/index.js
+          grep -F "const transitions={SETUP:['DEPLOYMENT','LIVE']" index.html
+          grep -F "(['SETUP','DEPLOYMENT'].includes(state.tournamentLifecycle))" index.html
+          ! grep -F 'onclick="beginDeployment()">Begin Deployment</button>' index.html
+          grep -F "state.currentTurn==='opp'?(opponentTurnTrackingHtml()+tacticalPreRollResolutionModal())" index.html
+      - name: Commit source only
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git rm .github/workflows/apply-pass1a-ui-fix.yml
+          git add index.html
+          git commit -m "Apply Pass 1A UI setup flow"
+          git push origin HEAD:feature/opponent-turn-history
