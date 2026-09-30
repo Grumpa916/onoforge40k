@@ -73,18 +73,12 @@ jobs:
           for script_id,source_path in head_layers:
               if f'id="{script_id}"' not in html:
                   html=html.replace('</head>', f'<script id="{script_id}">\n{source_path.read_text(encoding="utf-8")}\n</script></head>', 1)
-
-          # The production index.html now contains the iPad-verified opponent
-          # resolver render fix. The preview must use that source directly;
-          # do not re-patch the renderer in the build step.
           expected="${state.currentTurn==='opp'?(opponentTurnTrackingHtml()+tacticalPreRollResolutionModal()):(tacticalMovementTrackerHtml()+tacticalAdvisorHtml()+tacticalContextHtml()+tacticalShootingResultHtml()+tacticalPreRollResolutionModal())}"
           if expected not in html:
               raise SystemExit('Production opponent-turn resolver render fix is missing from index.html')
-
           marker='<script id="onoforge-opponent-turn-render-v4">window.ONOFORGE_OPPONENT_RESOLVER_RENDER_V4=true;</script>'
           if 'id="onoforge-opponent-turn-render-v4"' not in html:
               html=html.replace('</body>', marker+'</body>',1)
-
           for marker_text in ['ONOFORGE_OPPONENT_EVENT_CAPTURE','ONOFORGE_OPPONENT_CAPTURE_UI','ONOFORGE_OPPONENT_RESOLVER_RENDER_V4']:
               if marker_text not in html:
                   raise SystemExit(f'Missing injected opponent-turn marker: {marker_text}')
@@ -115,3 +109,68 @@ jobs:
 
       - name: Report
         run: echo "Opponent-turn event capture validation passed with production resolver render fix"
+
+      # TEMP_PASS1A_START
+      - name: Apply Pass 1A UI setup flow
+        if: github.event_name == 'push' && github.event.head_commit.message != 'Apply Pass 1A UI setup flow'
+        shell: bash
+        run: |
+          cat > /tmp/pass1a.patch <<'PATCH'
+          diff --git a/index.html b/index.html
+          --- a/index.html
+          +++ b/index.html
+          @@ -4801,7 +4801,7 @@
+           <div class="setup-panel"><h3>${esc(state.oppName)}</h3><div class="field"><label>Mission Type</label><select onchange="setSecondaryMode('opp',this.value)"><option value="fixed" ${state.secondaryOpp==='fixed'?'selected':''}>Fixed</option><option value="tactical" ${state.secondaryOpp==='tactical'?'selected':''}>Tactical</option></select></div>
+           ${state.secondaryOpp==='fixed'?`<div class="secondary-grid">${SECONDARY_CARDS.filter(c=>c.fixed).map(c=>`<label class="secondary-card ${secState('opp').includes(c.name)?'selected':''}"><input type="checkbox" ${secState('opp').includes(c.name)?'checked':''} onchange="toggleFixedSecondary('opp','${esc(c.name)}')"><b>${esc(c.name)}</b><span>${esc(c.type)}</span></label>`).join('')}</div><div class="muted">Selected: ${secState('opp').length} / 2 active</div>`:``}</div>
+           </div></div>
+          - <div class="row" style="margin-top:10px"><button class="btn" type="button" onclick="returnToTournamentSetup()" ${state.tournamentLifecycle==='DEPLOYMENT'?'':'disabled'}>Back to Setup</button><button class="btn primary" type="button" onclick="beginDeployment()">Begin Deployment</button><button class="btn primary" type="button" onclick="startBattle()" ${state.tournamentLifecycle==='DEPLOYMENT'?'':'disabled'}>Start Battle</button> </div></div>`
+          + <div class="row" style="margin-top:10px"><button class="btn" type="button" onclick="returnToTournamentSetup()" ${state.tournamentLifecycle==='DEPLOYMENT'?'':'disabled'}>Back to Setup</button><button class="btn primary" type="button" onclick="startBattle()" ${(['SETUP','DEPLOYMENT'].includes(state.tournamentLifecycle))?'':'disabled'}>Start Battle</button> </div></div>`
+           }
+          @@ -4997,7 +4997,7 @@
+           const allowed=['SETUP','DEPLOYMENT','LIVE','COMPLETED'];
+           if(!allowed.includes(next))return false;
+           const current=ensureTournamentLifecycle();
+          - const transitions={SETUP:['DEPLOYMENT'],DEPLOYMENT:['SETUP','LIVE'],LIVE:['COMPLETED'],COMPLETED:['SETUP']};
+          + const transitions={SETUP:['DEPLOYMENT','LIVE'],DEPLOYMENT:['SETUP','LIVE'],LIVE:['COMPLETED'],COMPLETED:['SETUP']};
+           if(current!==next&&!transitions[current].includes(next))return false;
+           state.tournamentLifecycle=next;
+           return true;
+          @@ -5224,12 +5224,13 @@
+           function startBattle(){
+             const setupCheck=tournamentSetupValidation();
+             if(!setupCheck.ready){alert('Tournament setup is incomplete:\n\n• '+setupCheck.missing.join('\n• '));return false;}
+          -  if(state.tournamentLifecycle!=='DEPLOYMENT'){
+          -    alert('Begin Deployment before starting the live battle.');
+          +  if(state.tournamentLifecycle==='DEPLOYMENT'){
+          +    const deploymentCheck=tournamentDeploymentValidation();
+          +    if(!deploymentCheck.ready){alert('Deployment is incomplete:\n\n• '+deploymentCheck.missing.join('\n• '));return false;}
+          +  }else if(state.tournamentLifecycle!=='SETUP'){
+          +    alert('The tournament is not in Setup or Deployment.');
+               return false;
+             }
+          -  const deploymentCheck=tournamentDeploymentValidation();
+          -  if(!deploymentCheck.ready){alert('Deployment is incomplete:\n\n• '+deploymentCheck.missing.join('\n• '));return false;}
+             const before=snapshotForUndo();
+             // Pin the rules-data revision for the lifetime of this tournament battle.
+          PATCH
+          git apply --check /tmp/pass1a.patch
+          git apply /tmp/pass1a.patch
+          node --check <(python3 - <<'PY'
+          import re
+          from pathlib import Path
+          html=Path('index.html').read_text(encoding='utf-8')
+          print('\n'.join(re.findall(r'<script[^>]*>(.*?)</script>',html,re.S|re.I)))
+          PY
+          )
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('.github/workflows/opponent-turn-event-preview.yml')
+          s=p.read_text(encoding='utf-8')
+          s=s.split('      # TEMP_PASS1A_START',1)[0].rstrip()+'\n'
+          p.write_text(s,encoding='utf-8')
+          PY
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add index.html .github/workflows/opponent-turn-event-preview.yml
+          git commit -m "Apply Pass 1A UI setup flow"
+          git push origin HEAD:feature/opponent-turn-history
