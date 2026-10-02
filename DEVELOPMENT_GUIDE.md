@@ -41,8 +41,8 @@ The goal is to protect the known-good baseline, not to make every intermediate e
 ## Canonical project
 
 - Repository: `Grumpa916/onoforge40k`
-- Authoritative branch for current development: `feature/opponent-turn-history-clean-reset`
-- Live deployment branch: `main` (operational deployment only; do not treat it as the current development source)
+- Branch: `feature/opponent-turn-history-clean-reset` for current development
+- Live app: GitHub Pages from `main`
 - Repository identity guardrail: `REPOSITORY_IDENTITY.md`
 - Architecture map: `ARCHITECTURE_MAP.md`
 - Feature roadmap: `ROADMAP.md`
@@ -51,7 +51,19 @@ Do not use `Grumpa916/ono40k` as the source of truth.
 
 ## Current baseline
 
-The current controlled-reset line preserves the known-good gameplay checkpoint above while deployment work proceeds on the clean-reset branch. Older references to `main`, `0603fb8...`, or earlier Charge/Fight continuation states in historical sections of this guide are historical and do not override the current save point.
+The current clean-reset line preserves the known-good gameplay checkpoint `132551b340bdff635eeb9b193470f2c1a8e46ccd` while deployment work proceeds on the clean-reset branch. Older references in this guide to `main`, `0603fb8de11ba5e83c0fb0ac7c9fd585fbb11cbc`, or earlier Charge/Fight continuation states are historical and do not override the current save point.
+
+## Recently verified live workflow
+
+The historical live test completed:
+
+`Shooting → Exocrine → Lieutenant → 15" → LOS Yes → Bio-plasmic Cannon`
+
+Verified path:
+
+`Pre-Roll → physical dice entry → hits → wounds → saves → resolution review → damage → casualty → action log → repeat-action prevention`
+
+The test exposed and fixed a model identity mismatch between persistent model-roster IDs and generic combat-snapshot IDs.
 
 ## Development focus / anti-rabbit-hole rule
 
@@ -75,33 +87,65 @@ At the beginning of a substantial development session, re-read the current save 
 
 1. Read the newest save point on the authoritative development branch.
 2. Read this guide.
-3. Read `ARCHITECTURE_MAP.md` and the relevant section of `ROADMAP.md`.
-4. Inspect the smallest affected subsystem in the repository; avoid whole-file transfer of the monolithic `index.html` when a repository-native module change can accomplish the work.
-5. Check the existing audit(s) under `scripts/`.
-6. Make the bounded change that preserves existing state and event contracts.
-7. Run the relevant audit(s) locally when possible.
-8. Let GitHub Actions remain the final integration/deployment gate.
-9. Re-test the live workflow when the change affects tournament/gameplay behavior.
+3. Read `ARCHITECTURE_MAP.md`.
+4. Read the relevant section of `ROADMAP.md`.
+5. Inspect the smallest affected subsystem in `index.html` or an already-extracted repository module.
+6. Check the existing audit(s) under `scripts/`.
+7. Make the bounded change that preserves existing state and event contracts.
+8. Run the relevant audit(s) locally when possible.
+9. Let GitHub Actions remain the final integration/deployment gate.
+10. Re-test the live workflow when the change affects tournament/gameplay behavior.
+
+Prefer repository-native module changes over whole-file manual transfer of the monolithic `index.html`.
 
 ## Current monolith facts
 
-`index.html` currently contains the page shell, global application state, persistence, event history/undo, Army Builder, Deployment/reserves/battlefield map, Objectives/scoring, Tactical Advisor, combat eligibility/engine, physical-dice resolution, and tournament operations/timer. It is approximately 1 MB with one large inline JavaScript block.
+`index.html` currently contains:
 
-The monolith is the reason the current extraction effort exists. Do not treat the size as a reason to abandon the project; progressively move subsystem behavior into small repository modules instead.
+- the page shell and UI
+- global application state
+- persistence
+- event history / undo
+- Army Builder
+- Deployment / reserves / battlefield map
+- Objectives / primary and secondary missions
+- Tactical Advisor
+- combat eligibility and combat engine
+- physical-dice resolution
+- tournament operations and timer
+
+The file is approximately 1 MB and contains one large inline JavaScript block.
 
 ## Current supporting modules
 
-Root-level JavaScript files include deployment/combat/advisor extraction and diagnostic scaffolding. Supporting modules should be treated as authoritative only when the current save point and integration state identify them as active production seams.
+These root-level JavaScript files are diagnostic/checkpoint scaffolding:
+
+- `battleCheckpoint.js`
+- `battleCheckpointAdapter.js`
+- `battleCheckpointMapper.js`
+- `battleStateInspector.js`
+- `checkpointIntegrationPlan.js`
+- `checkpointLoader.js`
+
+They currently expose diagnostic functions through `window.OnoForgeDebug` and are not imported by `index.html`.
+
+The deployment extraction also includes `deployment-state.js`, which is an active bounded state seam identified by the current save point and architecture work.
 
 ## Current QA / deployment flow
 
-The active deployment workflow is `.github/workflows/deploy.yml`. It performs repository audits, syntax/runtime validation, build preparation, and GitHub Pages deployment. GitHub Actions may use Python on its Linux runner for build/injection scripts; this does **not** imply Python is installed on the user's Windows testing computer.
+The active deployment workflow is:
+
+`.github/workflows/deploy.yml`
+
+It performs repository audits, syntax validation, runtime symbol validation, build preparation, and GitHub Pages deployment.
 
 Avoid adding post-build hotfix workflows for application code. Source-of-truth application changes should live in the repository itself.
 
+GitHub Actions may use Python on its Linux runner for build/injection scripts. This does **not** mean Python is installed on the user's Windows testing computer. `PROJECT_ENVIRONMENT_NOTES.md` is the permanent local-environment reference.
+
 ## Safe refactoring direction
 
-The planned architecture migration remains incremental, but the current controlled-reset method permits larger bounded extraction batches when appropriate:
+The planned architecture migration is incremental:
 
 1. Shared contracts and identity helpers
 2. Deployment / reserves / battlefield map
@@ -110,7 +154,9 @@ The planned architecture migration remains incremental, but the current controll
 5. Tactical Advisor
 6. UI shell
 
-The immediate active boundary is **Deployment / reserves / battlefield map**, followed by a **compatibility bridge** that lets the existing monolith call the extracted subsystem without changing gameplay semantics.
+Do not perform an uncontrolled rewrite of `index.html`.
+
+The current controlled-reset method permits a larger bounded extraction batch when that is safer and faster than repeated micro-patches. Preserve the known-good baseline and use the experimental branch for recovery.
 
 ### Non-negotiable boundaries
 
@@ -121,16 +167,20 @@ The immediate active boundary is **Deployment / reserves / battlefield map**, fo
 - Tactical Advisor recommendations remain read-only with respect to authoritative outcomes.
 - Model/unit/weapon identity must remain stable across Deployment → Live Map → Movement → Shooting → Damage → Casualties.
 
-## Current deployment extraction status
+## Deployment / map extraction status
 
-The bounded `deployment-state.js` module is an established first seam. It owns deployment-plan and live-battlefield position state normalization and mutation without owning rendering, persistence, rules, reserves, or geometry.
+The bounded `deployment-state.js` module owns deployment-plan and live-battlefield position state normalization and mutation without owning rendering, persistence, rules, reserves, or geometry.
 
 The next implementation target is a compatibility bridge around this seam. The bridge should expose a stable deployment API to the existing application and delegate to `OnoForgeDeploymentState`, allowing the monolith to migrate call sites without immediately moving all rendering/UI logic.
 
 The bridge must not create a second deployment state store.
 
+## Development note
+
+A future chat or developer should be able to start from this file plus `ARCHITECTURE_MAP.md` and understand where to continue without relying on conversation history. For current state, always start with the newest save point on the authoritative development branch.
+
 ## Historical continuity note
 
 Older `CURRENT_SESSION_HANDOFF.md`, `NEXT_CHAT_HANDOFF.md`, and similar documents contain valuable historical gameplay information but may describe earlier branches and objectives. They are not current-state authority when they conflict with the newest save point or this guide.
 
-The original project handoff remains the product North Star in `ORIGINAL_PROJECT_HANDOFF.md`.
+The original project handoff document remains the product North Star in `ORIGINAL_PROJECT_HANDOFF.md`.
