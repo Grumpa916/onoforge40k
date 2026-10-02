@@ -20,8 +20,13 @@ assert(
 );
 
 assert(
-  html.includes("state.liveDeploymentPanelOpen=!!panel.open;save();"),
-  'The Live Deployment panel toggle handler does not persist its open/closed state.'
+  html.includes('data-live-deployment-panel style="margin-top:10px"'),
+  'Live Deployment panel element is missing its expected marker.'
+);
+
+assert(
+  html.includes('ontoggle="state.liveDeploymentPanelOpen=this.open;save()"'),
+  'The Live Deployment panel does not directly persist its open/closed state.'
 );
 
 assert(
