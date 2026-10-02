@@ -30,6 +30,11 @@ assert(
 );
 
 assert(
+  !html.includes("document.addEventListener('toggle',function(ev){const panel=ev.target.closest?.('[data-live-deployment-panel]')"),
+  'A global Live Deployment toggle listener still couples DOM replacement to panel state.'
+);
+
+assert(
   html.includes("(state.liveDeploymentPanelOpen===false?'':'open ')+'data-live-deployment-panel"),
   'The rendered Live Deployment panel is not driven by state.liveDeploymentPanelOpen.'
 );
