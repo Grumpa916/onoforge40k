@@ -1,8 +1,18 @@
 # ONOForge 40K — Master Feature Roadmap
 
-Last updated: 2026-09-25
+Last updated: 2026-10-02
 Repository: Grumpa916/onoforge40k
-Branch: main
+
+## Current execution overlay
+
+This roadmap remains the product-level roadmap. It does not override the newest save point for implementation state or `DEVELOPMENT_GUIDE.md` for development method.
+
+- Authoritative development branch: `feature/opponent-turn-history-clean-reset`
+- Operational deployment branch: `main`
+- Current state pointer: newest `CHAT_SAVEPOINT_*.md` on the authoritative development branch
+- Current active development target: Deployment / battlefield-map extraction, specifically the compatibility bridge around `deployment-state.js`
+- The controlled reset preserves known-good gameplay while allowing larger bounded extraction batches in the experimental branch.
+- Older `main`-based execution notes below are historical planning context unless superseded by this overlay.
 
 ## Purpose
 
@@ -216,7 +226,6 @@ Completed: objective-state scoring linkage, end-of-turn scoring, VP/CP integrity
 Dice → hits → wounds → saves → allocation → damage → FNP → casualties → logging.
 
 Completed: physical-dice authority, mixed-save allocation, Precision, variable Damage, Devastating Wounds, FNP, model-level casualties, per-step resolution history, and combat regression gate. Completion gate: `scripts/track2-combat-regression-audit.js`.
-Dice → hits → wounds → saves → allocation → damage → FNP → casualties → logging.
 
 ### Track 3 — Tournament Mission System 🟢
 Primary missions + secondary missions + objective scoring + end-game scoring.
@@ -255,7 +264,7 @@ Current layer: tablet dashboard, sticky command rail, responsive touch controls,
 4. Every major feature should have a regression audit before being considered complete.
 5. A feature is not closed merely because its UI exists; state, persistence, rules, logging, and regression behavior must also be verified.
 6. Historical failed GitHub Actions runs do not require correction when a later deployment for the same development path is green.
-7. The latest green deployment on main is the operational deployment state.
+7. The latest green deployment on main is the operational deployment state; it is not necessarily the current development state.
 8. Physical-dice entry is authoritative for real-game resolution; simulation/random Mathhammer code must remain isolated.
 9. Prefer tablet/tournament usability over adding unnecessary UI density.
 10. When a numbered task is completed, update this roadmap if the feature-level status changed.
@@ -266,29 +275,22 @@ Current layer: tablet dashboard, sticky command rail, responsive touch controls,
 
 # Current Execution State
 
-- Task 31 — 🟢 Complete
-- Task 32 — 🟢 FNP resolution integrity audit
-- Track 1 — 🟢 Authoritative Game State complete
-- Track 1 regression gates — 🟢 complete
-- Track 2 — 🟢 Complete Physical Combat Resolution complete
-- Track 2 regression gate — 🟢 complete
-- Forward turn/round transitions preserve authoritative CP state — 🟢 complete
-- Manual turn override preserves scoring and CP integrity — 🟢 complete
-- Track 3 Tournament Mission System — 🟢 complete
-- Track 3 mission catalogue/scoring integrity gate — 🟢 complete
-- Current execution: Track 5 Tournament Operations 🔵 — lifecycle wiring complete; final tournament-operations regression remains (with Track 6/7 parallel integrity work active)
-- Track 4 battle-state context layer — 🟢 complete
-- Track 4 stratagem consequence analysis — 🟢 complete
-- Track 4 recommendation prioritization refinement — 🟢 complete
-- Track 4 v2 deployment regression gate — 🟢 complete
-- Track 3 audit: scripts/track3-mission-system-audit.js
-- Track 1 audits: scripts/track1-end-turn-scoring-audit.js, scripts/track1-scoring-vp-cp-audit.js, scripts/track1-turn-phase-action-log-audit.js, scripts/track1-completion-audit.js
-- Track 2 audits: scripts/model-level-damage-audit.js, scripts/fnp-resolution-audit.js, scripts/track2-combat-regression-audit.js
-- Deployment workflow gates both completed tracks before GitHub Pages publication
+The previous Track 5-oriented execution notes are historical. The current implementation state is controlled by the newest save point on `feature/opponent-turn-history-clean-reset`.
 
-Next planning checkpoint: continue Track 5 Tournament Operations.
+- Known-good gameplay checkpoint — 🟢 preserved: `132551b340bdff635eeb9b193470f2c1a8e46ccd`
+- Controlled reset deployment/map extraction — 🔵 active
+- `deployment-state.js` first bounded deployment state seam — 🟢 integrated/established
+- Deployment compatibility bridge — 🔵 **current implementation target**
+- Live Deployment Tracking panel behavior — 🟡 unresolved; do not treat the symptom as the primary architecture target
+- Battlefield geometry / Event Companion map data — 🟢 verified when served correctly over HTTP; do not change geometry to solve local file/server problems
+- Physical tabletop measurement remains authoritative for exact charge distance; map positioning is contextual
+- Previously verified Shooting, Charge, Fight, opponent-turn, and round-transition workflows must remain protected during deployment extraction
 
 ### Batch-First Development Workflow
-- 🟢 Local/pre-push batch preflight: `scripts/preflight-batch.js`
-- 🟢 Runtime internal-symbol deployment gate: `scripts/runtime-internal-symbol-audit.js`
-- Development batches should group 2–5 related tasks, preflight them before GitHub, then use GitHub Actions as the final independent integration/deployment gate.
+- 🟢 Local/pre-push batch preflight: `scripts/preflight-batch.js` where available
+- 🟢 Runtime internal-symbol deployment gate: `scripts/runtime-internal-symbol-audit.js` where applicable
+- Development batches may now be larger when a coherent subsystem boundary makes that safer/faster. Preserve the known-good checkpoint and commit frequently; use meaningful save points at milestones.
+
+## Continuity rule
+
+This roadmap is a product roadmap, not a chat handoff. Do not copy current implementation state into new duplicate documents. For current state, read the newest save point on the authoritative branch.
