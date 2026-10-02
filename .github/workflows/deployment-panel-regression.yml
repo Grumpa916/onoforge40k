@@ -1,0 +1,21 @@
+name: Deployment Panel Regression
+
+on:
+  push:
+    branches:
+      - feature/opponent-turn-history-clean-reset
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'tests/deployment-panel-state-regression.test.js'
+      - '.github/workflows/deployment-panel-regression.yml'
+
+jobs:
+  deployment-panel:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run deployment panel regression
+        run: node tests/deployment-panel-state-regression.test.js
