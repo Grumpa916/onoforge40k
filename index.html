@@ -11485,8 +11485,6 @@ function renderBattleOnly(){
   ensureLiveGameTimerDisplay();
 }
 function render(){
-  const liveDeploymentPanel=document.querySelector('[data-live-deployment-panel]');
-  if(liveDeploymentPanel)state.liveDeploymentPanelOpen=!!liveDeploymentPanel.open;
   const pages={builder,saved:savedListsPage,battle,setup,math,rules,data:dataPage,manage:dataManagementPage,log:logPage,scorelog:scoringLogPage};
   prepareTacticalRenderCache();
   const app=document.getElementById('app');
