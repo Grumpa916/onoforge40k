@@ -29,7 +29,6 @@ assert(
   'The Live Deployment panel does not directly persist its open/closed state.'
 );
 
-
 assert(
   html.includes("(state.liveDeploymentPanelOpen===false?'':'open ')+'data-live-deployment-panel"),
   'The rendered Live Deployment panel is not driven by state.liveDeploymentPanelOpen.'
@@ -48,11 +47,13 @@ assert(
   'render() still overwrites the Live Deployment panel state from the outgoing DOM.'
 );
 
-const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)]
+// Only validate inline JavaScript here. External module/script tags such as
+// deployment-state.js and deployment-bridge.js are intentionally excluded.
+const scripts = [...html.matchAll(/<script\b(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)<\/script>/gi)]
   .map((match) => match[1])
   .filter((source) => source.trim().length > 0);
 
-assert(scripts.length > 0, 'No JavaScript was extracted from index.html.');
+assert(scripts.length > 0, 'No inline JavaScript was extracted from index.html.');
 
 const extractedPath = '/tmp/onoforge-index-extracted.js';
 fs.writeFileSync(extractedPath, scripts.join('\n\n'), 'utf8');
@@ -68,4 +69,4 @@ if (check.status !== 0) {
 
 console.log('Deployment panel regression checks passed.');
 console.log('Verified state-driven panel persistence and render behavior.');
-console.log(`Checked index.html JavaScript syntax across ${scripts.length} script block(s).`);
+console.log(`Checked inline index.html JavaScript syntax across ${scripts.length} script block(s).`);
