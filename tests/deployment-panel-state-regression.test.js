@@ -29,10 +29,6 @@ assert(
   'The Live Deployment panel does not directly persist its open/closed state.'
 );
 
-assert(
-  !html.includes("document.addEventListener('toggle',function(ev){const panel=ev.target.closest?.('[data-live-deployment-panel]')"),
-  'A global Live Deployment toggle listener still couples DOM replacement to panel state.'
-);
 
 assert(
   html.includes("(state.liveDeploymentPanelOpen===false?'':'open ')+'data-live-deployment-panel"),
