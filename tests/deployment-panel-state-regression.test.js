@@ -29,7 +29,7 @@ assert(
   'Live Deployment panel marker is missing.'
 );
 
-const scripts = [...html.matchAll(/<script\\b[^>]*>([\\s\\S]*?)<\\/script>/gi)]
+const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)]
   .map((match) => match[1])
   .filter((source) => source.trim().length > 0);
 
