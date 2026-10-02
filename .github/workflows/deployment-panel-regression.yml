@@ -9,9 +9,11 @@ on:
       - 'index.html'
       - 'deployment-state.js'
       - 'deployment-bridge.js'
+      - 'deployment-interaction.js'
       - 'tests/deployment-panel-state-regression.test.js'
       - 'scripts/deployment-bridge-audit.js'
       - 'scripts/deployment-boundary-audit.js'
+      - 'scripts/deployment-map-boundary-audit.js'
       - '.github/workflows/deployment-panel-regression.yml'
 
 jobs:
@@ -23,6 +25,9 @@ jobs:
 
       - name: Audit deployment boundary in full index.html
         run: node scripts/deployment-boundary-audit.js
+
+      - name: Audit deployment map rendering boundary in full index.html
+        run: node scripts/deployment-map-boundary-audit.js
 
       - name: Run deployment state compatibility bridge audit
         run: node scripts/deployment-bridge-audit.js
