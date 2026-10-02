@@ -1,9 +1,6 @@
 name: Create Game Test Artifact
 
 on:
-  push:
-    paths:
-      - '.github/workflows/create-game-test-artifact.yml'
   workflow_dispatch:
 
 jobs:
