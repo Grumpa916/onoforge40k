@@ -21,8 +21,10 @@ jobs:
       - name: Apply bounded compatibility-bridge integration
         run: node scripts/integrate-deployment-bridge.js
 
-      - name: Validate JavaScript syntax
-        run: node --check index.html
+      - name: Validate deployment boundary and application syntax
+        run: |
+          node scripts/deployment-boundary-audit.js
+          node tests/deployment-panel-state-regression.test.js
 
       - name: Commit integrated monolith change
         run: |
