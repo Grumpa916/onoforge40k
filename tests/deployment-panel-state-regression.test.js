@@ -15,18 +15,31 @@ assert(
 );
 
 assert(
-  html.includes("const liveDeploymentPanel=document.querySelector('[data-live-deployment-panel]');"),
-  'render() does not capture the current Live Deployment panel state before replacing the DOM.'
-);
-
-assert(
-  html.includes("state.liveDeploymentPanelOpen=!!liveDeploymentPanel.open;"),
-  'render() does not persist the Live Deployment panel open/closed state.'
-);
-
-assert(
   html.includes("data-live-deployment-panel"),
   'Live Deployment panel marker is missing.'
+);
+
+assert(
+  html.includes("state.liveDeploymentPanelOpen=!!panel.open;save();"),
+  'The Live Deployment panel toggle handler does not persist its open/closed state.'
+);
+
+assert(
+  html.includes("(state.liveDeploymentPanelOpen===false?'':'open ')+'data-live-deployment-panel"),
+  'The rendered Live Deployment panel is not driven by state.liveDeploymentPanelOpen.'
+);
+
+const renderMatch = html.match(/function render\(\)\{([\s\S]*?)\n\s*const pages=/);
+assert(renderMatch, 'render() function boundary could not be located.');
+
+assert(
+  !renderMatch[1].includes("document.querySelector('[data-live-deployment-panel]')"),
+  'render() still reads the Live Deployment panel DOM state before replacing the DOM.'
+);
+
+assert(
+  !renderMatch[1].includes('state.liveDeploymentPanelOpen=!!liveDeploymentPanel.open;'),
+  'render() still overwrites the Live Deployment panel state from the outgoing DOM.'
 );
 
 const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)]
@@ -48,4 +61,5 @@ if (check.status !== 0) {
 }
 
 console.log('Deployment panel regression checks passed.');
+console.log('Verified state-driven panel persistence and render behavior.');
 console.log(`Checked index.html JavaScript syntax across ${scripts.length} script block(s).`);
