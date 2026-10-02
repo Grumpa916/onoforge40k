@@ -33,6 +33,37 @@ for(const target of targets){
   console.log(`${target}: ${hits.length} occurrence(s)${hits.length ? ` at lines ${hits.slice(0,20).join(', ')}${hits.length>20?' ...':''}` : ''}`);
 }
 
+// Print compact source context for the deployment-related call sites. This is deliberately
+// limited to the first 20 matches per target so CI logs remain usable while exposing the
+// exact monolith boundary without transferring index.html through chat.
+const contextTargets = [
+  'ensureDeploymentPlans',
+  'deploymentPlanForCurrentMap',
+  'setDeploymentPlanPosition',
+  'saveDeploymentPlan',
+  'loadDeploymentPlan',
+  'ensureReserveState',
+  'setReserveDeclaration',
+  'deployReserveByMap',
+  'ensureBattlefieldUnitPositions',
+  'setBattlefieldUnitPosition',
+  'battlefieldDistanceBetween',
+  'battlefieldTerrainPathIntersections',
+  'objectiveMapRendererHtml'
+];
+
+for(const target of contextTargets){
+  const hits=[];
+  lines.forEach((line,i)=>{
+    if(line.includes(target) && hits.length<20) hits.push(i);
+  });
+  for(const i of hits){
+    const start=Math.max(0,i-2),end=Math.min(lines.length,i+3);
+    console.log(`\n--- ${target} @ line ${i+1} ---`);
+    for(let j=start;j<end;j++) console.log(`${j+1}: ${lines[j]}`);
+  }
+}
+
 const externalScriptMarkers = [...html.matchAll(/<script[^>]+(?:src=|id=)[^>]*>/gi)].map(m=>m[0]);
 console.log(`script tags with attributes: ${externalScriptMarkers.length}`);
 for(const marker of externalScriptMarkers.slice(0,30)) console.log(`SCRIPT ${marker}`);
