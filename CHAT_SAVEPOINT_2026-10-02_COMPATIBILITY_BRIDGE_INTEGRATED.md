@@ -6,7 +6,10 @@ Repository: `Grumpa916/onoforge40k`
 Authoritative branch:
 `feature/opponent-turn-history-clean-reset`
 
-Current save-point HEAD:
+Current save-point commit:
+`33b1ee411169c45b41a6c87a0a489d69987262e4`
+
+The application state captured by this save point is the immediately preceding commit:
 `b1db8b257a9d8d0ac9f5c24eef16202e183f8682`
 
 ## Canonical project references
@@ -50,7 +53,7 @@ The automated integration migrated 12 direct `OnoForgeDeploymentState.*` referen
 The resulting monolith change was committed by GitHub Actions as:
 `cdb0e79` (`feat: integrate deployment compatibility bridge [deployment-bridge-integrated]`)
 
-The one-time integrator script/workflow was then removed. Current HEAD is `b1db8b257a9d8d0ac9f5c24eef16202e183f8682`.
+The one-time integrator script/workflow was then removed. The captured application state was validated by Deployment Panel Regression run #39 on `b1db8b257a9d8d0ac9f5c24eef16202e183f8682`.
 
 ## CI verification
 
