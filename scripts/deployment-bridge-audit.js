@@ -42,17 +42,17 @@ const state = { objectiveMapMissionKey:'mission', objectiveMapLayout:'A' };
 
 if(!bridge.setDeploymentPlanPosition(state,'u1',10.04,20.06)) throw new Error('Deployment-plan write failed');
 const planned = bridge.deploymentPlanPosition(state,'u1');
-if(!planned || planned.x !== 10 || planned.y !== 20 || planned.source !== 'deployment-plan'){
+if(!planned || planned.x !== 10 || planned.y !== 20.1 || planned.source !== 'deployment-plan'){
   throw new Error('Deployment-plan normalization/delegation failed');
 }
 
 if(!bridge.setBattlefieldUnitPosition(state,'opp','u2',30.04,40.06,'manual',2)) throw new Error('Live-position write failed');
-const live = bridge.battlefieldUnitPosition(state,'opp','u2');
-if(!live || live.x !== 30 || live.y !== 40 || live.side !== 'opp' || live.round !== undefined){
-  // battlefieldUnitPosition intentionally exposes the normalized public position, not the raw round metadata.
+const live=bridge.battlefieldUnitPosition(state,'opp','u2');
+if(!live || live.x !== 30 || live.y !== 40.1 || live.side !== 'opp'){
   throw new Error('Live-position delegation failed');
 }
 
+if(state.battlefieldUnitPositions.u2.round !== 2) throw new Error('Live-position round metadata was not preserved in authoritative state');
 if(!state.deploymentPlans || !state.battlefieldUnitPositions) throw new Error('Expected state containers were not created');
 if(Object.keys(state).some(k => k.toLowerCase().includes('bridge'))) throw new Error('Bridge created a duplicate state container');
 
