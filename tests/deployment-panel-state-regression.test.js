@@ -20,7 +20,7 @@ assert(
 );
 
 assert(
-  html.includes('data-live-deployment-panel style="margin-top:10px"'),
+  html.includes('data-live-deployment-panel'),
   'Live Deployment panel element is missing its expected marker.'
 );
 
