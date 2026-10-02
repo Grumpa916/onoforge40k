@@ -687,7 +687,8 @@ body{overflow-x:hidden}
 #battle-view #onoforge-advisor-render .ta-decision-render{margin-bottom:10px;padding:11px}
 @media (min-width:701px){#battle-view #onoforge-advisor-render .ta-grid{grid-template-columns:repeat(8,minmax(0,1fr));gap:5px}#battle-view #onoforge-advisor-render .ta-metric{padding:6px}#battle-view #onoforge-advisor-render .ta-metric b{font-size:14px}}
 </style>
-<style id="ono-battle-ux-requested">.battle-layout>.objective-map-renderer{grid-column:1!important;grid-row:2!important}.battle-layout>.battle-state-column{grid-column:2!important;grid-row:1 / span 2!important}.battle-layout>.battle-log{grid-column:1 / -1!important;grid-row:3!important}@media (min-width:900px) and (max-width:1300px) and (orientation:landscape){.battle-layout{display:grid!important;grid-template-columns:minmax(0,1fr) 500px!important;grid-template-rows:auto auto auto!important;gap:12px!important}.battle-layout>div:first-child{grid-column:1!important;grid-row:1!important}.battle-layout>.objective-map-renderer{grid-column:1!important;grid-row:2!important}.battle-layout>.battle-state-column{grid-column:2!important;grid-row:1 / span 2!important}.battle-layout>.battle-state-column .army-state-grid{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)!important;gap:10px!important}.battle-layout>.battle-log{grid-column:1 / -1!important;grid-row:3!important}}</style></head><body><div id="app"></div><script src="./deployment-state.js"></script><script>
+<style id="ono-battle-ux-requested">.battle-layout>.objective-map-renderer{grid-column:1!important;grid-row:2!important}.battle-layout>.battle-state-column{grid-column:2!important;grid-row:1 / span 2!important}.battle-layout>.battle-log{grid-column:1 / -1!important;grid-row:3!important}@media (min-width:900px) and (max-width:1300px) and (orientation:landscape){.battle-layout{display:grid!important;grid-template-columns:minmax(0,1fr) 500px!important;grid-template-rows:auto auto auto!important;gap:12px!important}.battle-layout>div:first-child{grid-column:1!important;grid-row:1!important}.battle-layout>.objective-map-renderer{grid-column:1!important;grid-row:2!important}.battle-layout>.battle-state-column{grid-column:2!important;grid-row:1 / span 2!important}.battle-layout>.battle-state-column .army-state-grid{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)!important;gap:10px!important}.battle-layout>.battle-log{grid-column:1 / -1!important;grid-row:3!important}}</style></head><body><div id="app"></div><script src="./deployment-state.js">
+<script src="./deployment-bridge.js"></script><script>
 window.addEventListener('error',function(ev){if(ev.target&&ev.target.tagName==='SCRIPT'&&ev.target.src===SUPABASE_SCRIPT_URL)return;var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var msg=String(ev.error?.message||ev.message||'Unknown error');a.innerHTML='<span class="error-title">OnoForge error</span><div class="error-detail">'+msg.replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</div><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});window.addEventListener('unhandledrejection',function(ev){var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var reason=ev.reason?.message||ev.reason||'Unhandled promise rejection';a.innerHTML='<span class="error-title">OnoForge error</span><div class="error-detail">'+String(reason).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</div><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});
 
 window.__ONOFORGE_DETACHMENTS = window.__ONOFORGE_DETACHMENTS || {}; function detachmentCatalog(){return window.__ONOFORGE_DETACHMENTS;}
@@ -726,7 +727,7 @@ function objectiveLayoutInfo(){const m=[primaryMission('my'),primaryMission('opp
 function ensureObjectiveLayoutForMission(){const key=objectiveMissionKey();if(!key)return null;if(state.objectiveMapMissionKey!==key){state.objectiveMapMissionKey=key;state.objectiveMapLayout='A';}state.objectiveMapLayout=['A','B','C'].includes(state.objectiveMapLayout)?state.objectiveMapLayout:'A';return objectiveLayoutInfo();}
 function setObjectiveMapLayout(layout){const next=['A','B','C'].includes(layout)?layout:null;if(!next)return;const info=ensureObjectiveLayoutForMission();if(!info)return;const before=snapshotForUndo();const previous=state.objectiveMapLayout||'A';state.objectiveMapLayout=next;state.objectiveMapMissionKey=objectiveMissionKey();state.terrainSetupComplete=false;if(Object.keys(state.objectives||{}).length===0)autoSeedObjectiveStructure();event('OBJECTIVE_LAYOUT_CHANGED',{unit:'Battlefield Layout',action:'Layout '+next+' selected',previous,after:next,round:Math.max(1,Number(state.round)||1),primaryMissions:[primaryMission('my'),primaryMission('opp')],missionKey:state.objectiveMapMissionKey,page:objectiveLayoutPage()},before);save();render();}
 function objectiveLayoutPage(){const info=ensureObjectiveLayoutForMission();if(!info)return null;const i=['A','B','C'].indexOf(state.objectiveMapLayout);return info.pages[i<0?0:i];}
-function deploymentPlanKey(){return OnoForgeDeploymentState.deploymentPlanKey(state,objectiveMissionKey());}
+function deploymentPlanKey(){return OnoForgeDeploymentBridge.deploymentPlanKey(state,objectiveMissionKey());}
 
 function ensureReserveState(){
   if(!state.reserveDeclarations||typeof state.reserveDeclarations!=='object'||Array.isArray(state.reserveDeclarations))state.reserveDeclarations={my:{},opp:{}};
@@ -840,25 +841,25 @@ function transportDeclarationSectionHtml(side){
     }).join('')+'</div></div>';
 }
 
-function ensureDeploymentPlans(){return OnoForgeDeploymentState.ensureDeploymentPlans(state);}
-function deploymentPlanForCurrentMap(){return OnoForgeDeploymentState.deploymentPlanForCurrentMap(state,objectiveMissionKey());}
-function deploymentPlanPosition(uid){return OnoForgeDeploymentState.deploymentPlanPosition(state,uid,objectiveMissionKey());}
-function setDeploymentPlanPosition(uid,x,y){if(!OnoForgeDeploymentState.setDeploymentPlanPosition(state,uid,x,y,objectiveMissionKey()))return false;save();render();return true;}
-function clearDeploymentPlanPosition(uid){if(!OnoForgeDeploymentState.clearDeploymentPlanPosition(state,uid,objectiveMissionKey()))return;save();render();}
-function clearDeploymentPlanForCurrentMap(){if(!OnoForgeDeploymentState.clearDeploymentPlanForCurrentMap(state,objectiveMissionKey()))return;save();render();}
+function ensureDeploymentPlans(){return OnoForgeDeploymentBridge.ensureDeploymentPlans(state);}
+function deploymentPlanForCurrentMap(){return OnoForgeDeploymentBridge.deploymentPlanForCurrentMap(state,objectiveMissionKey());}
+function deploymentPlanPosition(uid){return OnoForgeDeploymentBridge.deploymentPlanPosition(state,uid,objectiveMissionKey());}
+function setDeploymentPlanPosition(uid,x,y){if(!OnoForgeDeploymentBridge.setDeploymentPlanPosition(state,uid,x,y,objectiveMissionKey()))return false;save();render();return true;}
+function clearDeploymentPlanPosition(uid){if(!OnoForgeDeploymentBridge.clearDeploymentPlanPosition(state,uid,objectiveMissionKey()))return;save();render();}
+function clearDeploymentPlanForCurrentMap(){if(!OnoForgeDeploymentBridge.clearDeploymentPlanForCurrentMap(state,objectiveMissionKey()))return;save();render();}
 function saveDeploymentPlan(){const id=String(state.activeRosterId||'');if(!id){alert('Save the current army list first, then save its deployment plan.');return;}const plans=ensureDeploymentPlans(),key=deploymentPlanKey();if(!plans[key])plans[key]={positions:{},missionKey:String(state.objectiveMapMissionKey||objectiveMissionKey()||''),layout:state.objectiveMapLayout||'A'};const saved=(state.savedArmyLists||[]).find(x=>String(x.id)===id),roster=(state.lists||[]).find(x=>String(x.id)===id);if(saved){saved.deploymentPlans=JSON.parse(JSON.stringify(plans));saved.updated=new Date().toISOString();cloudUpsertArmyList(saved).catch(()=>{});}if(roster)roster.deploymentPlans=JSON.parse(JSON.stringify(plans));save();render();}
 function loadDeploymentPlan(){const key=deploymentPlanKey(),id=String(state.activeRosterId||''),saved=(state.savedArmyLists||[]).find(x=>String(x.id)===id),roster=(state.lists||[]).find(x=>String(x.id)===id),source=saved?.deploymentPlans||roster?.deploymentPlans||null;if(source&&source[key])state.deploymentPlans=JSON.parse(JSON.stringify(source));const plan=ensureDeploymentPlans()[key];if(!plan){alert('No saved deployment plan exists for this mission and layout.');return;}save();render();}
 function objectiveMapModel(mode='battle'){const geometry=objectiveBattlefieldGeometry(),objectives=Object.keys(state.objectives||{}).map(objectiveStateRecord);return {version:'map.v1',mode,layout:geometry.layout,missionKey:geometry.missionKey,page:geometry.page,table:geometry.table,verified:geometry.verified,deploymentZones:geometry.verified?(geometry.source.geometryEntry?.deploymentZones||null):null,terrainGeometry:geometry.verified?(geometry.source.geometryEntry?.terrainGeometry||null):null,objectives:objectives.map(o=>({name:o.name,owner:o.owner,type:o.type,territory:o.territory,deploymentZone:o.deploymentZone,position:o.battlefieldPosition||null})),unitPositions:mode==='setup'?deploymentPlanForCurrentMap():ensureBattlefieldUnitPositions()};}
-function ensureBattlefieldUnitPositions(){return OnoForgeDeploymentState.ensureBattlefieldUnitPositions(state);}
-function battlefieldUnitPosition(side,uid,mode='battle'){if(isUnitReserved(side,uid))return null;if(mode==='setup')return side==='my'?deploymentPlanPosition(uid):null;return OnoForgeDeploymentState.battlefieldUnitPosition(state,side,uid);}
+function ensureBattlefieldUnitPositions(){return OnoForgeDeploymentBridge.ensureBattlefieldUnitPositions(state);}
+function battlefieldUnitPosition(side,uid,mode='battle'){if(isUnitReserved(side,uid))return null;if(mode==='setup')return side==='my'?deploymentPlanPosition(uid):null;return OnoForgeDeploymentBridge.battlefieldUnitPosition(state,side,uid);}
 function setBattlefieldUnitPosition(side,uid,x,y,source='manual'){
   if(state.page==='battle'&&!battleMutationAllowed('battlefield position changes'))return false;
-  const nextSide=side==='opp'?'opp':'my',id=String(uid||''),normalized=OnoForgeDeploymentState.normalizePosition(x,y);
+  const nextSide=side==='opp'?'opp':'my',id=String(uid||''),normalized=OnoForgeDeploymentBridge.normalizePosition(x,y);
   if(!id||!normalized)return false;
   if(source!=='reserve'&&isUnitReserved(nextSide,id))return false;
   const before=snapshotForUndo();
   const previous=ensureBattlefieldUnitPositions()[id]||null;
-  if(!OnoForgeDeploymentState.setBattlefieldUnitPosition(state,nextSide,id,x,y,source))return false;
+  if(!OnoForgeDeploymentBridge.setBattlefieldUnitPosition(state,nextSide,id,x,y,source))return false;
   const position=ensureBattlefieldUnitPositions()[id];
   position.round=Math.max(1,Number(state.round)||1);
   event(source==='deployment'?'UNIT_DEPLOYED':source==='reserve'?'UNIT_DEPLOYED_FROM_RESERVE':'UNIT_BATTLEFIELD_POSITION_CHANGED',{unit:id,action:source==='deployment'?'Unit deployment position recorded':source==='reserve'?'Unit deployed from reserve':'Battlefield position moved',side:nextSide,from:source==='reserve'?'RESERVE':(previous?{x:previous.x,y:previous.y}:null),x:position.x,y:position.y,round:position.round,phase:String(state.phase||'Command')},before);
@@ -869,7 +870,7 @@ function clearBattlefieldUnitPosition(uid){
   const id=String(uid||'');
   if(!id||!Object.prototype.hasOwnProperty.call(ensureBattlefieldUnitPositions(),id))return;
   const before=snapshotForUndo();
-  if(!OnoForgeDeploymentState.clearBattlefieldUnitPosition(state,id))return;
+  if(!OnoForgeDeploymentBridge.clearBattlefieldUnitPosition(state,id))return;
   event('UNIT_BATTLEFIELD_POSITION_CLEARED',{unit:id,action:'Battlefield position cleared',round:Math.max(1,Number(state.round)||1),phase:String(state.phase||'Command')},before);
   save();render();
 }
