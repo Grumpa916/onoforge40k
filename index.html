@@ -3,6 +3,12 @@
 *{box-sizing:border-box}body{margin:0;background:#0b0f15;color:#e9edf3;font-family:Arial,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}.top{padding:18px 22px;background:#111722;border-bottom:1px solid #273142}.brand{font-size:25px;font-weight:800}.sub,.muted{color:#9ca8b8;font-size:13px}.nav{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:10px 16px;background:#0e141e;border-bottom:1px solid #273142}.nav-main{display:flex;gap:6px;flex-wrap:wrap}.nav button,.nav-tools summary{background:#171e2a;color:#cbd5e1;border:1px solid #2c3748;border-radius:7px;padding:9px 13px;font-size:14px;cursor:pointer}.nav button.active{background:#24334b;color:#fff;border-color:#49678f}.nav-tools{position:relative;margin-left:auto}.nav-tools summary{list-style:none}.nav-tools summary::-webkit-details-marker{display:none}.nav-tools summary:after{content:' ▾';font-size:11px}.nav-tools[open] summary{background:#24334b;color:#fff;border-color:#49678f}.nav-tools-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:1200;min-width:170px;padding:6px;background:#111722;border:1px solid #344052;border-radius:8px;box-shadow:0 12px 30px rgba(0,0,0,.4);display:grid;gap:4px}.nav-tools-menu button{width:100%;text-align:left}.wrap{max-width:1250px;margin:auto;padding:18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.card{background:#111722;border:1px solid #273142;border-radius:10px;padding:15px;margin-bottom:14px}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.split{display:flex;justify-content:space-between;gap:10px;align-items:center}.field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:150px}.field label{font-size:12px;color:#9ca8b8}.field input,.field select,.field textarea,input[type=text]{width:100%;background:#0b1018;color:#eef2f7;border:1px solid #344052;border-radius:7px;padding:9px}.btn{background:#1b2432;color:#e8edf4;border:1px solid #354255;border-radius:7px;padding:8px 11px}.btn.primary{background:#27598b;border-color:#3975b6}.btn.danger{background:#5b252c;border-color:#82404a}.pill{display:inline-block;border:1px solid #3a4658;border-radius:999px;padding:4px 8px;font-size:12px;margin:2px}.status,.warn,.ok{border-radius:7px;padding:9px;margin-top:8px}.status{background:#17202d;border:1px solid #304057}.warn{background:#38261b;border:1px solid #78512d;color:#f4c58f}.ok{background:#183022;border:1px solid #356747;color:#aee2bf}.big{font-size:24px;font-weight:800}.unit{padding:11px 0;border-top:1px solid #26303e}.empty{padding:25px;text-align:center;color:#8995a5}.bar{height:8px;background:#242d3a;border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;background:#4d86bd}.mono{font-family:monospace;font-size:12px;white-space:pre-wrap}.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.tabs button{background:#171e2a;color:#cbd5e1;border:1px solid #2c3748;border-radius:7px;padding:8px 11px}.tabs button.active{background:#315174}.logrow{border-top:1px solid #273142;padding:10px 0}.metric{font-size:20px;font-weight:700}.modal{position:fixed;inset:0;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;padding:18px;z-index:50}.modal>.card{width:min(850px,100%);max-height:92vh;overflow:auto}.tiny{font-size:11px;color:#8290a1}@media(max-width:850px){.grid,.grid3,.grid2{grid-template-columns:1fr}.wrap{padding:10px}}
 
 
+/* Quick aggregate physical-result controls */
+.pr-quick-count{display:grid;grid-template-columns:82px 1fr 82px;gap:12px;align-items:center;margin-top:18px}
+.pr-count-btn{min-height:76px;font-size:38px;font-weight:900}
+.pr-count-value{text-align:center;font-size:54px;font-weight:900}
+.pr-count-presets{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;margin-top:10px}
+.pr-count-presets .btn{min-width:52px;min-height:44px;font-weight:800}
 /* Pre-Roll physical dice entry overlay */
 .pr-dice-modal{z-index:5000;background:rgba(0,0,0,.86)}
 .pr-dice-card{width:min(900px,100%);padding:22px;max-height:94vh;overflow:auto}
@@ -8533,6 +8539,40 @@ m.woundsRemaining=Math.max(0,before-n);m.alive=m.woundsRemaining>0;
   s.counts.damage=mr.damage;s.counts.damageResolved=(Number(s.counts.damageResolved)||0)+1;
   s.stage=vs.devastatingIndex<total?'mixedDamage':'review';
 }
+function tacticalPreRollCanQuickAggregateSave(s){
+  const plan=s?.plan||{};
+  if(!plan.mixedSaveGroups)return true;
+  if(plan.precision||plan.variableDamage||plan.devastating)return false;
+  if(Number(plan.damageValue)!==Math.floor(Number(plan.damageValue)))return false;
+  const te=entry('opp',s.targetEntryUid);
+  if(!te)return false;
+  const groups=tacticalPreRollSaveGroups(te,s.precisionTargetState?[s.precisionTargetState]:null);
+  if(groups.length!==1)return false;
+  const models=combatSnapshot('opp',te)?.models||[];
+  if(models.some(m=>m?.rerollSave1||engineFnp(m)))return false;
+  return true;
+}
+function tacticalPreRollQuickCounterHtml(stage,value,max){
+  const current=Number(value);
+  const safe=Number.isFinite(current)?Math.max(0,Math.min(Number(max)||0,current)):0;
+  const cap=Math.max(0,Number(max)||0);
+  return '<div class="pr-quick-count">'+
+    '<button type="button" class="btn pr-count-btn" onclick="tacticalPreRollResolutionSet(\\''+stage+'\\',String(Math.max(0,'+safe+'-1)))">−</button>'+
+    '<div class="pr-count-value">'+safe+'</div>'+
+    '<button type="button" class="btn pr-count-btn" onclick="tacticalPreRollResolutionSet(\\''+stage+'\\',String(Math.min('+cap+','+safe+'+1)))">+</button>'+
+    '</div>'+
+    '<div class="pr-count-presets">'+
+      '<button type="button" class="btn" onclick="tacticalPreRollResolutionSet(\\''+stage+'\\',\\'0\\')">0</button>'+
+      (cap>=1?'<button type="button" class="btn" onclick="tacticalPreRollResolutionSet(\\''+stage+'\\',\\'1\\')">1</button>':'')+
+      (cap>=2?'<button type="button" class="btn" onclick="tacticalPreRollResolutionSet(\\''+stage+'\\',\\'2\\')">2</button>':'')+
+      (cap>=3?'<button type="button" class="btn" onclick="tacticalPreRollResolutionSet(\\''+stage+'\\',\\'3\\')">3</button>':'')+
+      (cap>=4?'<button type="button" class="btn" onclick="tacticalPreRollResolutionSet(\\''+stage+'\\',\\'4\\')">4</button>':'')+
+      (cap>=5?'<button type="button" class="btn" onclick="tacticalPreRollResolutionSet(\\''+stage+'\\',\\'5\\')">5</button>':'')+
+      (cap>=6?'<button type="button" class="btn" onclick="tacticalPreRollResolutionSet(\\''+stage+'\\',\\'6\\')">6</button>':'')+
+      (cap>6?'<button type="button" class="btn" onclick="tacticalPreRollResolutionSet(\\''+stage+'\\',String('+cap+'))">MAX</button>':'')+
+    '</div>';
+}
+
 function tacticalPreRollResolutionSet(field,value){
   const current=tacticalPreRollResolutionCurrent();
   if(!current)return;
@@ -8565,7 +8605,7 @@ function tacticalPreRollResolutionSet(field,value){
     if(n>woundDice){alert('Successful wound count cannot exceed the wound rolls required by the preceding result.');return;}
     s.counts.wounds=n;
     if(plan.devastating)s.stage='woundSpecial';
-    else if(plan.mixedSaveGroups)s.stage='saveOrder';
+    else if(plan.mixedSaveGroups&&!tacticalPreRollCanQuickAggregateSave(s))s.stage='saveOrder';
     else s.stage='saves';
   }else if(field==='criticalWounds'){
     const max=Number(s.counts.wounds)||0;
@@ -8793,7 +8833,14 @@ else if(stage==='lethalChoice'){title='LETHAL HITS • CHOOSE';promptText='How m
   else if(stage==='damage'){title='DAMAGE • RESOLVE';promptText='Enter the total damage actually applied by the failed saves.';max=Math.max(0,(Number(counts.failedSaves)||0)*Math.max(1,Number(plan.damageValue)||1)*6);value=counts.damage??'';note='Use the physical dice result. Enter the final damage after any damage-reduction rules already shown by the Pre-Roll Check.';}
   else {title='RESOLUTION • REVIEW';promptText='Confirm the recorded physical result before applying it to the battlefield state.';note='The app will update the target using the recorded dice result and existing model-level state.';}
   const invalid=stage!=='review'&&stage!=='saveRolls'&&value!==''&&((Number(value)||0)<0||(Number(value)||0)>max)?' invalid':'';
-  const fixedMixedDevastating=stage==='mixedDamage'&&s.mixedVariableState?.phase==='devastating'&&!s.plan?.variableDamage;const input=(stage==='review'||stage==='saveOrder'||fixedMixedDevastating)?'':((stage==='saveRolls'||stage==='precisionSave'||stage==='precisionSaveReroll'||stage==='precisionDamage'||stage==='precisionFnp'||stage==='precisionDevastating'||stage==='mixedVariableSave'||stage==='mixedSaveReroll'||stage==='mixedDamage'||stage==='mixedFnp')?'<input id="pr-dice-input" class="pr-dice-input" type="text" inputmode="numeric" placeholder="1, 2, 3, 5, 6" value="'+esc(String(value))+'">':'<input id="pr-dice-input" class="pr-dice-input'+invalid+'" type="number" inputmode="numeric" min="0" max="'+max+'" step="1" value="'+esc(String(value))+'" autofocus>');
+  const fixedMixedDevastating=stage==='mixedDamage'&&s.mixedVariableState?.phase==='devastating'&&!s.plan?.variableDamage;
+  const quickAggregateStages=['hits','hitSpecial','lethalChoice','wounds','woundSpecial','saves','damage'];
+  const quickAggregate=quickAggregateStages.includes(stage)&&tacticalPreRollCanQuickAggregateSave(s);
+  const input=(stage==='review'||stage==='saveOrder'||fixedMixedDevastating)?'':
+    (quickAggregate?tacticalPreRollQuickCounterHtml(stage,value,max):
+      ((stage==='saveRolls'||stage==='precisionSave'||stage==='precisionSaveReroll'||stage==='precisionDamage'||stage==='precisionFnp'||stage==='precisionDevastating'||stage==='mixedVariableSave'||stage==='mixedSaveReroll'||stage==='mixedDamage'||stage==='mixedFnp')?
+        '<input id="pr-dice-input" class="pr-dice-input" type="text" inputmode="numeric" placeholder="1, 2, 3, 5, 6" value="'+esc(String(value))+'">':
+        '<input id="pr-dice-input" class="pr-dice-input'+invalid+'" type="number" inputmode="numeric" min="0" max="'+max+'" step="1" value="'+esc(String(value))+'" autofocus>'));
   const action=stage==='review'?'<button type="button" class="btn primary pr-big-btn" onclick="tacticalPreRollApplyResolution()">Apply Result</button>':'<button type="button" class="btn primary pr-big-btn" onclick="tacticalPreRollResolutionSet(\''+(stage==='saveRolls'?'saveRolls':stage==='precisionSaveReroll'?'precisionSaveReroll':stage==='mixedVariableSave'?'mixedVariableSave':stage==='mixedSaveReroll'?'mixedSaveReroll':stage==='mixedDamage'?'mixedDamage':stage==='mixedFnp'?'mixedFnp':stage==='precisionFnp'?'precisionFnp':stage==='hitSpecial'?'criticalHits':stage==='lethalChoice'?'lethalHits':stage==='hits'?'hits':stage==='woundSpecial'?'criticalWounds':stage==='wounds'?'wounds':stage==='saves'?'failedSaves':'damage')+'\',document.getElementById(\'pr-dice-input\').value)">Continue</button>';
   const back='<button type="button" class="btn pr-secondary-btn" onclick="tacticalPreRollResolutionBack()">Back</button>';
   return '<div class="modal pr-dice-modal"><div class="card pr-dice-card"><div class="split"><div><div class="tiny">PHYSICAL DICE ENTRY • '+esc(state.phase||'Phase')+'</div><h2 style="margin:4px 0">'+esc(title)+'</h2><div class="muted">'+esc(get(s.targetEntryUid?entry(s.targetSide==='my'?'my':'opp',s.targetEntryUid)?.unitId:'')?.name||'Target')+' • '+esc(s.weaponName)+'</div></div><button type="button" class="btn" onclick="tacticalPreRollCloseResolution()">Close</button></div><div class="pr-dice-target"><span>Target</span><strong>'+esc(s.result.type==='Charge'?'2D6':(stage==='hits'||stage==='hitSpecial'?String(plan.hitNeed)+'+':stage==='lethalChoice'?String(plan.hitCritThreshold)+'+':stage==='wounds'||stage==='woundSpecial'?String(plan.woundNeed)+'+':stage==='saves'?(plan.saveNeed===null?'No Save':String(plan.saveNeed)+'+'):stage==='mixedVariableSave'?(String(s.mixedVariableState?.currentSaveNeed||'?')+'+'):stage==='mixedDamage'?'Damage':'Damage'))+'</strong><span>'+esc(s.result.attacker)+' → '+esc(s.result.target)+'</span></div><div class="pr-dice-prompt">'+esc(promptText)+'</div>'+(stage==='review'?'<div class="grid3" style="margin-top:14px"><div class="status"><div class="tiny">Hits</div><b>'+counts.hits+(specials.criticalHits!=null?' • '+specials.criticalHits+' crit':'')+'</b></div><div class="status"><div class="tiny">Wounds</div><b>'+counts.wounds+(specials.criticalWounds!=null?' • '+specials.criticalWounds+' crit':'')+'</b></div><div class="status"><div class="tiny">Failed Saves</div><b>'+counts.failedSaves+'</b></div><div class="status"><div class="tiny">Damage</div><b>'+counts.damage+'</b></div></div>':'')+input+(note?'<div class="pr-dice-note">'+esc(note)+'</div>':'')+'<div class="pr-dice-actions">'+back+action+'</div><div class="tiny" style="margin-top:10px">If the battlefield state changes, this session is invalidated and the Pre-Roll Check must be re-run. Nothing here rolls dice for you.</div></div></div>';
