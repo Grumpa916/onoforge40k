@@ -134,7 +134,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git fetch origin refactor/bsdata-extraction-candidate --depth=0
+          git fetch origin refactor/bsdata-extraction-candidate
           BASE=$(git rev-parse HEAD)
           CAND=$(git rev-parse origin/refactor/bsdata-extraction-candidate)
           MB=$(git merge-base "$BASE" "$CAND")
