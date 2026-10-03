@@ -4,13 +4,17 @@ on:
   push:
     branches:
       - refactor/bsdata-extraction-candidate
+  pull_request:
+    branches:
+      - feature/opponent-turn-history
+    types: [opened, synchronize]
 
 permissions:
   contents: write
 
 jobs:
   extract-and-verify:
-    if: ${{ !startsWith(github.event.head_commit.message, 'refactor: apply BSData extraction') }}
+    if: ${{ !startsWith(github.event.head_commit.message || '', 'refactor: apply BSData extraction') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout candidate branch
@@ -37,7 +41,8 @@ jobs:
           const fs=require('fs');
           const html=fs.readFileSync('index.html','utf8');
           const required='<script src="js/data/bsdata-parser.js"></script><script>';
-          if((html.match(new RegExp('function (collectBSDataObjects|bsProfile|bsCharacteristics|normalize11eWeaponAbilities|bsAbilities|bsWeapons|bsWargearOptions|bsUnitFromEntry)\\(','g'))||[]).length!==0)throw new Error('Old BSData parser function definitions remain in index.html');
+          const oldFns=['collectBSDataObjects','bsProfile','bsCharacteristics','normalize11eWeaponAbilities','bsAbilities','bsWeapons','bsWargearOptions','bsUnitFromEntry'];
+          for(const name of oldFns) if(html.includes(`function ${name}(`)) throw new Error(`Old BSData parser function remains: ${name}`);
           if(!html.includes(required))throw new Error('Parser module loader not found');
           if(html.includes('window.__BS_OBJECT_MAP=map;'))throw new Error('Hidden BSData object-map global remains');
           const start=html.indexOf('<script>')+8;
@@ -50,13 +55,16 @@ jobs:
         run: |
           git diff --check
           git status --short
-          test "$(git status --porcelain | wc -l | tr -d ' ')" = "1"
-          test "$(git status --porcelain | head -1 | cut -c4-)" = "index.html"
+          if [ "${{ github.event_name }}" = "push" ]; then
+            test "$(git status --porcelain | wc -l | tr -d ' ')" = "1"
+            test "$(git status --porcelain | head -1 | cut -c4-)" = "index.html"
+          fi
 
-      - name: Commit extracted index.html
+      - name: Commit extracted index.html on candidate branch
+        if: github.event_name == 'pull_request'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
           git commit -m "refactor: apply BSData extraction"
-          git push origin HEAD:refactor/bsdata-extraction-candidate
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
