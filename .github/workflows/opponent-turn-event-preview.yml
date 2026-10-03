@@ -142,7 +142,7 @@ jobs:
           git fetch origin feature/opponent-turn-history refactor/bsdata-extraction-candidate refactor/bsdata-extraction-current-base
           git checkout -B reconcile-work origin/refactor/bsdata-extraction-current-base
 
-      - name: Apply extraction against the actual feature baseline
+      - name: Apply extraction patch against the actual feature baseline
         shell: bash
         run: |
           set -euo pipefail
@@ -153,12 +153,14 @@ jobs:
           echo "CAND=$CAND"
           echo "MERGE_BASE=$MB"
 
-          git show "$BASE:index.html" > /tmp/base-index.html
-          git show "$CAND:index.html" > /tmp/candidate-index.html
-          git show "$MB:index.html" > /tmp/merge-base-index.html
-          if ! git merge-file -p /tmp/base-index.html /tmp/candidate-index.html /tmp/merge-base-index.html > index.html; then
-            echo 'Three-way merge conflict in index.html'
-            grep -nE '^(<<<<<<<|=======|>>>>>>>)' index.html || true
+          git diff --binary "$MB" "$CAND" -- index.html > /tmp/bsdata-index-extraction.patch
+          if [ ! -s /tmp/bsdata-index-extraction.patch ]; then
+            echo 'Candidate index extraction patch is empty.'
+            exit 1
+          fi
+          git show "$BASE:index.html" > index.html
+          if ! git apply --3way --index /tmp/bsdata-index-extraction.patch; then
+            echo 'Three-way application of the BSData extraction patch failed.'
             exit 1
           fi
 
