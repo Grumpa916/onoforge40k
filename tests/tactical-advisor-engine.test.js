@@ -1,4 +1,3 @@
-// Temporary CI retrigger for the BSData extraction candidate audit.
 const fs = require('fs');
 const vm = require('vm');
 const assert = require('assert');
