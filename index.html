@@ -2081,6 +2081,15 @@ Object.assign(detachmentCatalog(),{
   'Space Marines':[
     ['Gladius Task Force',3,'Priority Assets'],['Stormlance Task Force',3,'Disruption'],['Armoured Speartip',3,'Take and Hold'],['Ceramite Sentinels',3,'Priority Assets'],['Firestorm Assault Force',2,'Priority Assets'],['Headhunter Task Force',2,'Purge the Foe'],['1st Company Task Force',2,'Reconnaissance'],['Vanguard Spearhead',2,'Take and Hold'],['Anvil Siege Force',2,'Take and Hold'],['Bastion Task Force',2,'Take and Hold'],['Ironstorm Spearhead',2,'Take and Hold'],['Orbital Assault Force',2,'Disruption'],['Subversion Assets',1,'Disruption'],['Fulguris Task Force',1,'Reconnaissance'],['Librarius Conclave',1,'Reconnaissance'],['Vengeful Hosts',1,'Take and Hold']]
 });
+function commandPhasePrimaryScoringAudit(){
+  const issues=[];
+  Object.entries(PRIMARY_SCORING||{}).forEach(([mission,items])=>items.forEach((row,index)=>{
+    const timing=String(row?.[0]||'').toLowerCase();
+    if(timing.includes('command phase')&&!primaryScoringRowsForRound(mission).includes(row))issues.push(mission+' row '+index+' not visible in its command-phase scoring window');
+  }));
+  return {ok:issues.length===0,issues};
+}
+window.commandPhasePrimaryScoringAudit=commandPhasePrimaryScoringAudit;
 const CORE_STRATAGEMS_11E=[
 {name:'Command Re-roll',cp:1,phase:'Any Phase',summary:'Re-roll one eligible roll.'},
 {name:'Epic Challenge',cp:1,phase:'Fight',summary:'A CHARACTER gains Precision for the phase.'},
@@ -2337,7 +2346,7 @@ function stratagemsUI(){
 const ONOFORGE_RULES_DATA_PIN={schema:'onoforge.rules-data-pin.v1',unitSource:'BSData 11e',unitRevision:'current',unitRevisionDate:'',eventCompanion:'Warhammer Event Companion',eventCompanionVersion:'1.2',eventCompanionRevision:'1.2'};
 let state={
   savedArmyLists:[],tournamentLifecycle:'SETUP',battleResultLocked:false,battleResultVerified:false,battleResultVerifiedAt:null,
-  stratagemsMy:[], stratagemsOpp:[], stratagemsOpen:false,primaryMissionsOpen:false,secondaryMissionsOpen:false,page:'builder',myName:'My Army',oppName:'Opponent Army',faction:'Tyranids',detachment:'Invasion Fleet',detachmentSelections:['Invasion Fleet'],oppFaction:'Ultramarines',oppDetachment:'Gladius Task Force',oppDetachmentSelections:['Gladius Task Force'],limit:2000,my:[],opp:[],searchMy:'',searchOpp:'',configure:null,attacker:'norn',weapon:'Rupture Cannon',target:'marine',round:1,phase:'Command',myVP:0,oppVP:0,myCP:0,oppCP:0,phaseCP:{},battleReadyMy:false,battleReadyOpp:false,secondaryMy:'tactical',secondaryOpp:'tactical',secondaryMyCards:[],secondaryOppCards:[],secondaryMyDeck:[],secondaryOppDeck:[],secondaryMyDeckInitialized:false,secondaryOppDeckInitialized:false,secondaryMyDiscard:[],secondaryOppDiscard:[],newOrdersCompletedMy:false,newOrdersCompletedOpp:false,secondaryMyScored:[],secondaryOppScored:[],secondaryMyScoredVP:{},secondaryOppScoredVP:{},secondaryMyScoredVPByRound:{},secondaryOppScoredVPByRound:{},secondaryMyScoredRound:{},secondaryOppScoredRound:{},secondaryNewOrdersUsedMy:false,secondaryNewOrdersUsedOpp:false,secondaryPersonalPlans:{},secondaryPlanEdit:'',secondaryDetailSide:'',secondaryDetailName:'',gameReferencePersonal:{},rulesDataPin:null,myForceDisposition:'',oppForceDisposition:'',attackerSide:'my',firstTurn:'my',currentTurn:'my',objectives:{},objectiveMapLayout:'A',objectiveMapMissionKey:'',terrainSetupComplete:false,deletedSavedArmyLists:[],objectiveControlHistory:{},objectiveControlSources:{},objectiveMeta:{},deploymentTrackingSide:'my',liveDeploymentPanelOpen:true,battlefieldUnitPositions:{},deploymentMapPlacement:null,battlefieldMapPlacement:null,reserveDeclarations:{my:{},opp:{}},events:[],gameAssistantChecks:{},gameAssistantNotes:'',personalArmyNotes:'',lists:[],activeRosterId:'',activeOpponentRosterId:'',dataStatus:'BSData 11e structured source • embedded catalogue bootstrap fallback',source:'BSData 11e',revision:'current',cloud:{email:'',userId:'',status:'Not connected',lastSync:'',error:''},cloudBattles:[],rulesLog:[],mathRules:{},gameTimer:{elapsedMs:0,running:false,paused:false,startedAt:0,pausedAt:0,finishedAt:0,turnMyMs:0,turnOppMs:0,turnStartedGameMs:0,turnPaused:false},cloudPasswordRecovery:false,localSavedAt:''};
+  stratagemsMy:[], stratagemsOpp:[], stratagemsOpen:false,primaryMissionsOpen:false,secondaryMissionsOpen:false,page:'builder',myName:'My Army',oppName:'Opponent Army',faction:'Tyranids',detachment:'Invasion Fleet',detachmentSelections:['Invasion Fleet'],oppFaction:'Ultramarines',oppDetachment:'Gladius Task Force',oppDetachmentSelections:['Gladius Task Force'],limit:2000,my:[],opp:[],searchMy:'',searchOpp:'',configure:null,attacker:'norn',weapon:'Rupture Cannon',target:'marine',round:1,phase:'Command',myVP:0,oppVP:0,myCP:0,oppCP:0,phaseCP:{},battleReadyMy:false,battleReadyOpp:false,secondaryMy:'tactical',secondaryOpp:'tactical',secondaryMyCards:[],secondaryOppCards:[],secondaryMyDeck:[],secondaryOppDeck:[],secondaryMyDeckInitialized:false,secondaryOppDeckInitialized:false,secondaryMyDiscard:[],secondaryOppDiscard:[],newOrdersCompletedMy:false,newOrdersCompletedOpp:false,secondaryMyScored:[],secondaryOppScored:[],secondaryMyScoredVP:{},secondaryOppScoredVP:{},secondaryMyScoredVPByRound:{},secondaryOppScoredVPByRound:{},secondaryMyScoredRound:{},secondaryOppScoredRound:{},secondaryNewOrdersUsedMy:false,secondaryNewOrdersUsedOpp:false,secondaryPersonalPlans:{},secondaryPlanEdit:'',secondaryDetailSide:'',secondaryDetailName:'',gameReferencePersonal:{},rulesDataPin:null,myForceDisposition:'',oppForceDisposition:'',attackerSide:'my',firstTurn:'my',currentTurn:'my',shadowInTheWarpUsed:false,objectives:{},objectiveMapLayout:'A',objectiveMapMissionKey:'',terrainSetupComplete:false,deletedSavedArmyLists:[],objectiveControlHistory:{},objectiveControlSources:{},objectiveMeta:{},deploymentTrackingSide:'my',liveDeploymentPanelOpen:true,battlefieldUnitPositions:{},deploymentMapPlacement:null,battlefieldMapPlacement:null,reserveDeclarations:{my:{},opp:{}},events:[],gameAssistantChecks:{},gameAssistantNotes:'',personalArmyNotes:'',lists:[],activeRosterId:'',activeOpponentRosterId:'',dataStatus:'BSData 11e structured source • embedded catalogue bootstrap fallback',source:'BSData 11e',revision:'current',cloud:{email:'',userId:'',status:'Not connected',lastSync:'',error:''},cloudBattles:[],rulesLog:[],mathRules:{},gameTimer:{elapsedMs:0,running:false,paused:false,startedAt:0,pausedAt:0,finishedAt:0,turnMyMs:0,turnOppMs:0,turnStartedGameMs:0,turnPaused:false},cloudPasswordRecovery:false,localSavedAt:''};
 Object.defineProperty(window,'ONOFORGE_APP_STATE',{configurable:true,get:function(){return state;}});
 
 const GAME_REFERENCE_PHASES={Command:[],Movement:[],Shooting:[],Charge:[],Fight:[],End:[]};
@@ -5732,7 +5741,7 @@ function setUnitDestroyed(side,id){
   event('UNIT_STATE_CHANGED',{side,unitId:e.unitId,entryId:id,unit:u.name,action:e.game.status==='Destroyed'?'Destroyed':'Destroyed cleared',modelsBefore:before.models,modelsAfter:e.game.models,woundsBefore:before.wounds,woundsAfter:e.game.wounds,statusBefore:before.status,statusAfter:e.game.status,before,after:e.game},fullBefore);save();render();
 }
 function toggleBattleshocked(side,id){const fullBefore=snapshotForUndo();const e=entry(side,id);if(!e)return;const u=get(e.unitId);if(!u)return;if(!e.game)e.game={entryId:e.uid,models:e.models,wounds:e.models*u.wounds,status:'Alive',battleshocked:false};
-if(e.game.entryId!==e.uid)e.game={...e.game,entryId:e.uid};const before=!!e.game.battleshocked;e.game.battleshocked=!before;event('BATTLESHOCK_CHANGED',{side,unit:e?u.name:'Unit',entryId:id,action:e.game.battleshocked?'Battleshocked':'Battleshock cleared',battleshockedBefore:before,battleshockedAfter:e.game.battleshocked},fullBefore);save();render()}
+if(e.game.entryId!==e.uid)e.game={...e.game,entryId:e.uid};const before=!!e.game.battleshocked;e.game.battleshocked=!before;event('BATTLESHOCK_CHANGED',{side,unit:e?u.name:'Unit',entryId:id,action:e.game.battleshocked?'Battleshocked':'Battleshock cleared',battleshockedBefore:before,battleshockedAfter:e.game.battleshocked},fullBefore);recordPrimaryScoringCandidates(state.currentTurn==='opp'?'opp':'my','battle-shock-change');save();render()}
 function setCurrentTurn(side){
   const fullBefore=snapshotForUndo();
   const next=side==='opp'?'opp':'my';
@@ -9144,9 +9153,27 @@ function tacticalMovementTrackerHtml(){
   return '<div class="card tactical-movement-tracker"><div class="split"><div><h3 style="margin:0">Movement Tracking</h3><div class="muted">Record one movement decision per unit. Exact inches are not required.</div></div><span class="pill">Movement</span></div><div style="margin-top:8px">'+rows+'</div></div>';
 }
 
+function commandPhasePrimaryAdvisorHtml(){
+  const opportunity=commandPhasePrimaryScoringOpportunity('my');
+  if(!opportunity.mission)return '';
+  const tyranids=String(state.faction||'').toLowerCase()==='tyranids';
+  const shadowAvailable=tyranids&&state.shadowInTheWarpUsed!==true;
+  const objectives=opportunity.atRiskObjectives||[];
+  const objectiveList=objectives.length?objectives.map(o=>'<span class="pill" style="margin:2px">'+esc(o.name)+' • '+esc(String(o.contributorCount))+' OC source'+(o.contributorCount===1?'':'s')+'</span>').join(''):'<span class="muted">No enemy-controlled objective has recorded live OC contributors.</span>';
+  const shadowBlock=shadowAvailable&&objectives.length?'<div class="status" style="margin-top:8px;border-color:#5f4b2b"><b>Tyranid Command-phase opportunity</b><div style="margin-top:4px">Shadow in the Warp resolves in the Command step. A failed enemy Battle-shock makes that unit contribute 0 OC, so use it before the end-of-Command-phase Primary check if the objective-control swing is worth the once-per-battle resource.</div><div style="margin-top:7px"><button type="button" class="btn primary" onclick="window.markShadowInTheWarpUsed();return false;">Mark Shadow in the Warp used</button></div></div>':'';
+  return '<div class="card tactical-advisor-card" style="margin-bottom:8px"><div class="split"><div><h3 style="margin:0">Command Phase Tactical Advisor</h3><div class="muted">'+esc(opportunity.mission)+' • Round '+opportunity.round+'</div></div><span class="pill">Primary window</span></div>'+
+    '<div class="status" style="margin-top:8px"><div class="grid2"><div><div class="muted small">Current Command-phase Primary</div><b>'+opportunity.currentProjectedVP+' VP currently available</b></div><div><div class="muted small">Potential additional VP</div><b>'+opportunity.potentialAdditionalVP+' VP (conditional)</b></div></div>'+
+    '<div class="tiny" style="margin-top:7px">These points are evaluated at the end of the Command phase. Re-check objective control after Command-phase abilities and Battle-shock effects before scoring.</div></div>'+
+    '<div style="margin-top:7px"><b>Enemy objectives that could be affected:</b><div style="margin-top:4px">'+objectiveList+'</div></div>'+
+    shadowBlock+
+    '<div class="tiny" style="margin-top:7px">OnoForge does not infer physical OC from unit presence. Confirm the actual objective control on the tabletop and update the objective tracker before scoring.</div>'+
+  '</div>';
+}
+
 function tacticalAdvisorHtml(){
   const currentPhase=String(state.phase||'Command');
-  if(currentPhase==='Command'||currentPhase==='Movement') return '';
+  if(currentPhase==='Command') return commandPhasePrimaryAdvisorHtml();
+  if(currentPhase==='Movement') return '';
   const ae=tacticalAdvisorAttackerEntry();
   if(!ae)return '<div class="card tactical-advisor-card"><h3 style="margin:0">Tactical Advisor</h3><div class="muted">Build your army and select an attacker to receive target recommendations.</div></div>';
   const attackerOptions=(state.my||[]).filter(e=>!e.attachedTo&&!tacticalUnitState('my',e)?.destroyed).map(e=>'<option value="'+esc(e.uid)+'" '+(e.uid===ae.uid?'selected':'')+'>'+esc(unitDisplayName('my',e))+'</option>').join('');
@@ -9536,8 +9563,68 @@ function getTacticalRenderBundle(attackerEntry,targetEntry){
   };
 }
 
+function commandPhasePrimaryScoringOpportunity(side='my'){
+  const player=side==='opp'?'opp':'my';
+  const phase=String(state.phase||'Command');
+  const round=Math.max(1,Number(state.round)||1);
+  const mission=primaryMission(player);
+  const base={eligible:false,side:player,phase,round,mission,projectedVP:0,currentProjectedVP:0,potentialAdditionalVP:0,atRiskObjectives:[],notes:[]};
+  if(player!=='my'||phase!=='Command'||round<2||!mission)return base;
+  const current=primaryScorePreviewSummary(player,mission);
+  base.currentProjectedVP=Math.max(0,Number(current?.projectedVP)||0);
+  base.projectedVP=base.currentProjectedVP;
+  const atRisk=[];
+  Object.keys(state.objectives||{}).forEach(name=>{
+    const o=objectiveStateRecord(name);
+    if(o.owner!=='opp')return;
+    const ids=objectiveControlSourceIds(name);
+    const contributors=(state.opp||[]).filter(e=>e&&e.uid&&!e.attachedTo&&ids.includes(String(e.uid)));
+    const live=contributors.filter(e=>!(e.game&&e.game.battleshocked));
+    if(!live.length)return;
+    atRisk.push({name:o.name,type:o.type,territory:o.territory,deploymentZone:o.deploymentZone,contributorCount:live.length,contributors:live.map(e=>({uid:e.uid,unitId:e.unitId,name:unitDisplayName('opp',e)||get(e.unitId)?.name||e.unitId}))});
+  });
+  base.atRiskObjectives=atRisk;
+  const tyranids=String(state.faction||'').toLowerCase()==='tyranids';
+  const shadowAvailable=tyranids&&state.shadowInTheWarpUsed!==true;
+  if(!shadowAvailable||!atRisk.length)return base;
+  const rows=primaryScoringRowsForRound(mission);
+  let potential=0;
+  rows.forEach(row=>{
+    const timing=String(row?.[0]||'').toLowerCase();
+    if(!timing.includes('command phase'))return;
+    const text=String(row?.[2]||'').toLowerCase();
+    const baseVP=primaryScoringVP(row?.[1]);
+    if(!baseVP)return;
+    if(/per objective/.test(text)){
+      const qualifying=atRisk.filter(o=>{
+        if(/excluding home|exclude home|excl\. home/.test(text)&&o.type==='home')return false;
+        if(/enemy territory/.test(text)&&o.territory!=='opp')return false;
+        if(/deployment zone/.test(text)&&o.deploymentZone!=='opp')return false;
+        return true;
+      });
+      potential+=qualifying.length*baseVP;
+    }else if(/control more objectives than your opponent|control 2\+ objectives|control 3\+ objectives|control one or more objectives/.test(text)){
+      potential=Math.max(potential,baseVP);
+    }
+  });
+  base.eligible=potential>0;
+  base.potentialAdditionalVP=Math.min(potential,Math.max(0,15-base.currentProjectedVP));
+  base.notes.push('A failed enemy Battle-shock test makes that unit contribute 0 OC, so objective control can change before the end-of-Command-phase Primary check.');
+  base.notes.push('This is an opportunity estimate, not an automatic control ruling: verify physical objective control after the Battle-shock results.');
+  return base;
+}
+function markShadowInTheWarpUsed(){
+  if(String(state.faction||'').toLowerCase()!=='tyranids')return;
+  const before=snapshotForUndo();
+  state.shadowInTheWarpUsed=true;
+  event('ARMY_RULE_USED',{side:'my',unit:'Tyranids',action:'Shadow in the Warp marked used',round:Math.max(1,Number(state.round)||1),phase:String(state.phase||'Command')},before);
+  recordPrimaryScoringCandidates('my','shadow-in-the-warp');
+  save();render();
+}
+window.markShadowInTheWarpUsed=markShadowInTheWarpUsed;
 function tacticalAdvisorBattleStateContext(){
   const mission=missionDecisionContext();
+  const commandPhasePrimaryOpportunity=commandPhasePrimaryScoringOpportunity('my');
   const activeSecondary=(side)=>{
     const key=side==='my'?'secondaryMyCards':'secondaryOppCards';
     return (Array.isArray(state[key])?state[key]:[]).map(x=>typeof x==='string'?x:(x?.name||x?.id||'')).filter(Boolean);
@@ -9554,7 +9641,7 @@ function tacticalAdvisorBattleStateContext(){
     round:mission.round,phase:state.phase||'Command',currentTurn:state.currentTurn||'my',
     vp:{my:mission.score.my,opp:mission.score.opp,gap:mission.score.gap},
     cp:{my:Number(state.myCP)||0,opp:Number(state.oppCP)||0},
-    primary:mission.primary,secondary:mission.secondary,objectives:mission.objectives,
+    primary:mission.primary,secondary:mission.secondary,objectives:mission.objectives,commandPhasePrimaryOpportunity,
     battlefield:mission.battlefield,reserves:{my:reserved('my'),opp:reserved('opp')},
     positions:{my:positioned('my'),opp:positioned('opp')},
     activeSecondaries:{my:activeSecondary('my'),opp:activeSecondary('opp')},
@@ -9658,6 +9745,9 @@ function tacticalAdvisorV2(attackerEntryUid,options={}){
   });
   const top=recommendations[0]||null;
   const alerts=[];
+  const commandPrimaryOpportunity=battle.commandPhasePrimaryOpportunity;
+  if(commandPrimaryOpportunity?.eligible&&commandPrimaryOpportunity.potentialAdditionalVP>0)alerts.push('Command-phase Primary window: up to '+commandPrimaryOpportunity.potentialAdditionalVP+' additional VP may be available if enemy OC is reduced before scoring.');
+  if(commandPrimaryOpportunity?.eligible&&String(battle?.phase||'')==='Command'&&String(battle?.currentTurn||'')==='my'&&String(state.faction||'').toLowerCase()==='tyranids'&&state.shadowInTheWarpUsed!==true)alerts.push('Tyranids: consider Shadow in the Warp before Command-phase Primary scoring when enemy units are controlling objectives; failed Battle-shock can reduce their OC to 0.');
   if(battle.currentTurn==='my'&&battle.cp.my<=1)alerts.push('CP is limited; preserve 1 CP when a critical stratagem window is expected.');
   if(battle.vp.gap<0)alerts.push('You are currently behind on VP; prioritize actions that create or deny scoring opportunities when legal.');
   if(battle.activeSecondaries.my.length<2&&battle.phase==='Command')alerts.push('Your Tactical hand is below two active cards; check the Command phase replenishment state.');
@@ -9667,7 +9757,7 @@ function tacticalAdvisorV2(attackerEntryUid,options={}){
   if(top?.recommendationExplanation?.nearTie)alerts.push('Top recommendation is a close call; verify the measured battlefield facts before committing.');
   return {
     version:'tactical-advisor-v2',status:base.status,battleState:battle,
-    decisionContext:{phase:battle.phase,round:battle.round,currentTurn:battle.currentTurn,vpGap:battle.vp.gap,cp:battle.cp.my,objectiveCount:battle.objectives.my,activeSecondaryCount:battle.activeSecondaries.my.length,reserveCount:battle.reserves.my.length,phaseStratagemCount:battle.stratagems.myPhaseAvailable.length,phaseStratagemsUsed:battle.stratagems.myUsedThisPhase.length,stratagemPressure:stratagemPressure.pressure,preserveCP:stratagemPressure.preserveCP},
+    decisionContext:{phase:battle.phase,round:battle.round,currentTurn:battle.currentTurn,vpGap:battle.vp.gap,cp:battle.cp.my,objectiveCount:battle.objectives.my,activeSecondaryCount:battle.activeSecondaries.my.length,reserveCount:battle.reserves.my.length,phaseStratagemCount:battle.stratagems.myPhaseAvailable.length,phaseStratagemsUsed:battle.stratagems.myUsedThisPhase.length,stratagemPressure:stratagemPressure.pressure,preserveCP:stratagemPressure.preserveCP,commandPhasePrimaryOpportunity:battle.commandPhasePrimaryOpportunity},
     recommendations,avoid:base.avoid||[],naturalTargets:base.naturalTargets||[],stratagemPressure,
     missionDecisionContext:base.missionDecisionContext||null,attacker:base.attacker||null,
     legality:base.legality||null,attackerActionState:base.attackerActionState||null,alerts,
