@@ -1,10 +1,10 @@
 # OnoForge 40K — BSData Extraction Candidate Final Checkpoint
 
 **Date:** 2026-10-03
-**Candidate branch:** `refactor/bsdata-extraction-candidate`
+**Candidate branch:** `refactor/bsdata-extraction-current-base`
 **Target branch:** `feature/opponent-turn-history`
-**PR:** `#3` — Candidate: extract BSData parser from index.html
-**Status:** Extraction complete and statically/regression validated; browser/application smoke test remains the final merge gate.
+**PR:** `#4` — Candidate: extract BSData parser from current feature baseline
+**Status:** Extraction has been reconciled against the current feature baseline and fresh CI validation is green; browser/application smoke test and final diff review remain before merge.
 
 ## Exact source
 
@@ -14,9 +14,11 @@ Pre-extraction source supplied and verified:
 - 1,067,876 bytes
 - Git blob: `4941fcffc41072fd9f60dcf870a0227b4437b74c`
 
-Candidate extracted `index.html`:
+Original extracted candidate `index.html`:
 
 - Git blob: `3b00ee0fe2ee21654da8a7bea125c0a05f826687`
+
+Current-baseline reconciled `index.html` is carried on PR #4; the current branch blob is verified separately in the repository.
 
 ## Code extraction
 
@@ -39,24 +41,19 @@ The application now uses an explicit parser boundary and passes `{objectMap}` to
 
 ## Automated validation
 
-The dedicated extraction workflow completed successfully with:
+The extraction baseline verification passes all seven deterministic cases.
 
-- seven BSData baseline cases passing;
-- extracted parser module loading;
-- old parser definitions absent from `index.html`;
-- parser module loader present;
-- hidden object-map assignment absent;
-- inline application JavaScript syntax valid;
-- diff hygiene valid.
-
-The existing Opponent Turn Event Capture Preview validation also passed on the extracted candidate, including:
+The current PR's fresh Opponent Turn Event Capture Preview validation is green, including:
 
 - opponent-turn event tests;
 - resolver render bridge regression;
 - bidirectional combat edge-case regression;
 - architecture audit;
 - inline `index.html` syntax validation;
-- preview artifact construction.
+- preview artifact construction and upload;
+- extracted parser syntax validation.
+
+The current PR's fresh Tactical Advisor Preview Validation is also green, including the extracted-parser normalization audit and downloadable preview construction.
 
 ## CI audit correction
 
@@ -64,29 +61,33 @@ The first Tactical Advisor Preview Validation run failed at a pre-existing audit
 
 That expectation is no longer correct after the intentional extraction.
 
-The candidate branch now updates the Tactical Advisor audit to inspect `js/data/bsdata-parser.js` for the normalization marker and updates the downloadable preview to bundle the extracted parser module.
+The candidate now updates the Tactical Advisor audit to inspect `js/data/bsdata-parser.js` for the normalization marker and bundles the extracted parser in the downloadable Tactical Advisor preview and the Opponent Turn preview.
 
-The original Tactical Advisor test file was restored byte-for-byte; no gameplay/test logic was changed.
+The original Tactical Advisor test file was restored without gameplay/test changes.
 
-The corrected audit has been locally verified against the extracted parser. A fresh green GitHub run is still desirable before merge.
+## Current-baseline reconciliation
 
-CI revalidation was requested after the parser preview-bundling correction.
+PR #3 was closed because it was based on stale pre-current-baseline history. PR #4 starts from the current `feature/opponent-turn-history` baseline.
+
+The extraction was applied as a three-way patch using merge-base `009056353d3ff3ffebee2afb7ede1a552cc27902`, the current feature branch as the baseline, and the controlled extraction candidate as the source of the parser-removal hunks. The reconciled `index.html` preserves the current feature branch changes while applying the extraction.
+
+The temporary reconciliation automation has been removed from the candidate branch after successful reconciliation. The final PR contains only the intended extraction changes and supporting validation/savepoint updates.
 
 ## Protected branches
 
-- `feature/opponent-turn-history`: **not merged yet**
+- `feature/opponent-turn-history`: **not merged**
 - `main`: **unchanged**
 
 ## Merge gate
 
-Do not merge PR #3 until:
+Do not merge PR #4 until:
 
-1. corrected CI validation is green where applicable;
-2. a real browser/application smoke test is completed;
+1. fresh CI validation remains green;
+2. a real browser/application smoke test is completed against the current reconciled candidate;
 3. BSData refresh/import behavior is manually verified;
 4. no unrelated gameplay/UI regression is observed;
 5. the PR diff is reviewed as the intended first monolith extraction only.
 
 ## Next chat continuation
 
-Resume from this file and PR #3. Treat `feature/opponent-turn-history` as the development source and `main` as the stable/reference branch. Do not start another extraction until this candidate has either passed the smoke-test gate and been merged, or been explicitly rejected and rolled back.
+Resume from this file and PR #4. Treat `feature/opponent-turn-history` as the development source and `main` as the stable/reference branch. The candidate remains isolated until the smoke-test and final-review gates are explicitly cleared.
