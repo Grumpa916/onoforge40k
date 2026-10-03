@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - refactor/bsdata-extraction-current-base
+  pull_request:
+    branches:
+      - feature/opponent-turn-history
 
 permissions:
   contents: write
