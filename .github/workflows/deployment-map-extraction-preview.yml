@@ -16,6 +16,9 @@ jobs:
       - name: Extract candidate deployment map functions
         run: node scripts/deployment-map-extraction-preview.js
 
+      - name: Audit renderer dependency closure
+        run: node scripts/deployment-map-renderer-dependency-audit.js | tee deployment-map-extraction-preview/RENDERER_DEPENDENCY_AUDIT.txt
+
       - name: Upload extraction preview
         uses: actions/upload-artifact@v4
         with:
