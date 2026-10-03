@@ -2,12 +2,10 @@
 /**
  * Deterministically produces the first BSData extraction of index.html.
  *
- * This tool is intentionally separate from the application. It removes the
- * eight parser functions from the monolith, loads js/data/bsdata-parser.js
- * before the inline application script, and replaces the two application
- * call sites with the explicit parser/context boundary.
- *
- * It does not alter unrelated application code.
+ * The tool removes the eight parser functions from the monolith, loads
+ * js/data/bsdata-parser.js before the inline application script, replaces the
+ * two application call sites with the explicit parser/context boundary, and
+ * removes the now-unused hidden object-map global.
  */
 const fs = require('fs');
 const path = require('path');
@@ -69,6 +67,7 @@ source = source.replace(
   'const u=bsUnitFromEntry(entry,faction);',
   'const u=window.OnoForgeBSDataParser.bsUnitFromEntry(entry,faction,{objectMap:map});'
 );
+source = source.replace('      window.__BS_OBJECT_MAP=map;\n', '');
 
 const loader = '<div id="app"></div><script src="js/data/bsdata-parser.js"></script><script>';
 if (!source.includes(loader)) {
