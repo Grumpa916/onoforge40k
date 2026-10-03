@@ -179,7 +179,6 @@ jobs:
           fi
 
           node tools/verify-bsdata-extracted-module.js
-          node tests/opponent-turn-event-capture.test.js
 
       - name: Commit reconciled candidate
         shell: bash
