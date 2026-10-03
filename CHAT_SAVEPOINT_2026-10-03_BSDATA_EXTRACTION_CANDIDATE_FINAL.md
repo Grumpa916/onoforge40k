@@ -1,10 +1,10 @@
 # OnoForge 40K — BSData Extraction Candidate Final Checkpoint
 
 **Date:** 2026-10-03
-**Candidate branch:** `refactor/bsdata-extraction-current-base`
+**Candidate branch:** `refactor/bsdata-extraction-candidate`
 **Target branch:** `feature/opponent-turn-history`
-**PR:** `#4` — Candidate: extract BSData parser from current feature baseline
-**Status:** Extraction reconciled against the current feature baseline; fresh CI and browser/application smoke test remain the final merge gates.
+**PR:** `#3` — Candidate: extract BSData parser from index.html
+**Status:** Extraction complete and statically/regression validated; browser/application smoke test remains the final merge gate.
 
 ## Exact source
 
@@ -68,15 +68,9 @@ The candidate branch now updates the Tactical Advisor audit to inspect `js/data/
 
 The original Tactical Advisor test file was restored byte-for-byte; no gameplay/test logic was changed.
 
-The corrected audit has been locally verified against the extracted parser.
+The corrected audit has been locally verified against the extracted parser. A fresh green GitHub run is still desirable before merge.
 
-## Current-baseline reconciliation
-
-PR #3 was intentionally closed because it was based on a stale pre-current-baseline history. PR #4 starts from the current `feature/opponent-turn-history` baseline and uses a three-way Git reconciliation for `index.html`, preserving the current Pass 1A/deployment changes while applying the parser extraction.
-
-The reconciliation workflow passed the seven BSData baseline cases and committed the reconciled candidate. The Opponent Turn Event Capture Preview validation also passed in the same run.
-
-A fresh post-reconciliation GitHub validation run remains required because the reconciliation commit was produced by the Actions token and therefore requires a subsequent user-authored synchronization event for the normal PR checks.
+CI revalidation was requested after the parser preview-bundling correction.
 
 ## Protected branches
 
@@ -85,9 +79,9 @@ A fresh post-reconciliation GitHub validation run remains required because the r
 
 ## Merge gate
 
-Do not merge PR #4 until:
+Do not merge PR #3 until:
 
-1. fresh post-reconciliation CI validation is green where applicable;
+1. corrected CI validation is green where applicable;
 2. a real browser/application smoke test is completed;
 3. BSData refresh/import behavior is manually verified;
 4. no unrelated gameplay/UI regression is observed;
@@ -95,4 +89,4 @@ Do not merge PR #4 until:
 
 ## Next chat continuation
 
-Resume from this file and PR #4. Treat `feature/opponent-turn-history` as the development source and `main` as the stable/reference branch. Do not start another extraction until this candidate has either passed the smoke-test gate and been merged, or been explicitly rejected and rolled back.
+Resume from this file and PR #3. Treat `feature/opponent-turn-history` as the development source and `main` as the stable/reference branch. Do not start another extraction until this candidate has either passed the smoke-test gate and been merged, or been explicitly rejected and rolled back.
