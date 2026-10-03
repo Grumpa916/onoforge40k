@@ -1,9 +1,6 @@
 name: Apply BSData Extraction Candidate
 
 on:
-  push:
-    branches:
-      - refactor/bsdata-extraction-candidate
   pull_request:
     branches:
       - feature/opponent-turn-history
@@ -14,11 +11,12 @@ permissions:
 
 jobs:
   extract-and-verify:
-    if: ${{ !startsWith(github.event.head_commit.message || '', 'refactor: apply BSData extraction') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout candidate branch
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Set up Node
         uses: actions/setup-node@v4
@@ -51,17 +49,13 @@ jobs:
           console.log('index.html inline JavaScript syntax: OK');
           NODE
 
-      - name: Check diff hygiene
+      - name: Check generated diff hygiene
         run: |
           git diff --check
-          git status --short
-          if [ "${{ github.event_name }}" = "push" ]; then
-            test "$(git status --porcelain | wc -l | tr -d ' ')" = "1"
-            test "$(git status --porcelain | head -1 | cut -c4-)" = "index.html"
-          fi
+          test -f index.html
+          test ! -f index.extracted.html
 
       - name: Commit extracted index.html on candidate branch
-        if: github.event_name == 'pull_request'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
