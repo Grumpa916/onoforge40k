@@ -16,6 +16,7 @@ on:
       - '.github/workflows/opponent-turn-event-preview.yml'
       - 'index.html'
       - 'data/warhammer-event-companion-v1.2.json'
+      - 'js/data/bsdata-parser.js'
   workflow_dispatch:
 
 jobs:
@@ -95,11 +96,15 @@ jobs:
           data_out=out/'data'
           data_out.mkdir(parents=True,exist_ok=True)
           (data_out/data_src.name).write_text(data_src.read_text(encoding='utf-8'),encoding='utf-8')
-          print('Built preview-site with index.html and Event Companion geometry data')
+          parser_target=out/'js'/'data'
+          parser_target.mkdir(parents=True,exist_ok=True)
+          parser_target.joinpath('bsdata-parser.js').write_text(Path('js/data/bsdata-parser.js').read_text(encoding='utf-8'),encoding='utf-8')
+          print('Built preview-site with index.html, Event Companion geometry data, and extracted BSData parser')
           PY
           node --check opponent-turn-event-layer.js
           node --check opponent-turn-capture.js
           node --check opponent-turn-render-fix.js
+          node --check js/data/bsdata-parser.js
 
       - name: Assert preview contains no literal backslash-n escape in injected scripts
         shell: bash
@@ -118,7 +123,7 @@ jobs:
           retention-days: 14
 
       - name: Report
-        run: echo "Opponent-turn event capture validation passed with production resolver render fix and Event Companion geometry data"
+        run: echo "Opponent-turn event capture validation passed with extracted BSData parser and Event Companion geometry data"
 
   reconcile-bsdata:
     runs-on: ubuntu-latest
@@ -156,7 +161,6 @@ jobs:
           }
 
           merge_file index.html
-          merge_file .github/workflows/opponent-turn-event-preview.yml
 
           for path in \
             .github/workflows/tactical-advisor-preview.yml \
@@ -169,7 +173,7 @@ jobs:
             git show "$CAND:$path" > "$path"
           done
 
-          if grep -R -nE '^(<<<<<<<|=======|>>>>>>>)' index.html .github/workflows/opponent-turn-event-preview.yml; then
+          if grep -R -nE '^(<<<<<<<|=======|>>>>>>>)' index.html; then
             echo 'Conflict markers remain after reconciliation.'
             exit 1
           fi
