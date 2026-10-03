@@ -54,6 +54,12 @@ jobs:
           out=Path('preview-site-fixed')
           out.mkdir(parents=True,exist_ok=True)
           (out/'index.html').write_text(html,encoding='utf-8')
+          parser_out=out/'js'/'data'
+          parser_out.mkdir(parents=True,exist_ok=True)
+          parser_out.joinpath('bsdata-parser.js').write_text(
+              Path('js/data/bsdata-parser.js').read_text(encoding='utf-8'),
+              encoding='utf-8'
+          )
           data_out=out/'data'
           data_out.mkdir(parents=True,exist_ok=True)
           companion=Path('data/warhammer-event-companion-v1.2.json')
@@ -61,7 +67,8 @@ jobs:
           (out/'README.txt').write_text(
               'OnoForge 40K Tactical Advisor surface-fix preview\\n\\n'
               'This preview contains the consolidated Tactical Advisor plus a hard removal of the hidden '
-              'staging renderer host after Tactical Impact is mounted into the existing Advisor.\\n',
+              'staging renderer host after Tactical Impact is mounted into the existing Advisor.\\n'
+              'The extracted BSData parser is bundled at js/data/bsdata-parser.js for the relative parser URL.\\n',
               encoding='utf-8'
           )
           PY
