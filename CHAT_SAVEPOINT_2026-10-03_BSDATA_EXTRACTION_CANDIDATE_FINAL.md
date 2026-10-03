@@ -70,6 +70,8 @@ The original Tactical Advisor test file was restored byte-for-byte; no gameplay/
 
 The corrected audit has been locally verified against the extracted parser. A fresh green GitHub run is still desirable before merge.
 
+CI revalidation was requested after the parser preview-bundling correction.
+
 ## Protected branches
 
 - `feature/opponent-turn-history`: **not merged yet**
