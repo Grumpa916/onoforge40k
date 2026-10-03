@@ -1,0 +1,62 @@
+name: Apply BSData Extraction Candidate
+
+on:
+  push:
+    branches:
+      - refactor/bsdata-extraction-candidate
+
+permissions:
+  contents: write
+
+jobs:
+  extract-and-verify:
+    if: ${{ !startsWith(github.event.head_commit.message, 'refactor: apply BSData extraction') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout candidate branch
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Generate extraction
+        run: |
+          node tools/extract-bsdata-parser.js
+          cp index.extracted.html index.html
+          rm index.extracted.html
+
+      - name: Verify extracted module
+        run: node tools/verify-bsdata-extracted-module.js
+
+      - name: Verify extraction boundary and syntax
+        run: |
+          node --check js/data/bsdata-parser.js
+          node - <<'NODE'
+          const fs=require('fs');
+          const html=fs.readFileSync('index.html','utf8');
+          const required='<script src="js/data/bsdata-parser.js"></script><script>';
+          if((html.match(new RegExp('function (collectBSDataObjects|bsProfile|bsCharacteristics|normalize11eWeaponAbilities|bsAbilities|bsWeapons|bsWargearOptions|bsUnitFromEntry)\\(','g'))||[]).length!==0)throw new Error('Old BSData parser function definitions remain in index.html');
+          if(!html.includes(required))throw new Error('Parser module loader not found');
+          if(html.includes('window.__BS_OBJECT_MAP=map;'))throw new Error('Hidden BSData object-map global remains');
+          const start=html.indexOf('<script>')+8;
+          const end=html.lastIndexOf('</script>');
+          new Function(html.slice(start,end));
+          console.log('index.html inline JavaScript syntax: OK');
+          NODE
+
+      - name: Check diff hygiene
+        run: |
+          git diff --check
+          git status --short
+          test "$(git status --porcelain | wc -l | tr -d ' ')" = "1"
+          test "$(git status --porcelain | head -1 | cut -c4-)" = "index.html"
+
+      - name: Commit extracted index.html
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "refactor: apply BSData extraction"
+          git push origin HEAD:refactor/bsdata-extraction-candidate
