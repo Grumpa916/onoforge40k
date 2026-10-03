@@ -158,7 +158,7 @@ jobs:
             echo 'Candidate index extraction patch is empty.'
             exit 1
           fi
-          git show "$BASE:index.html" > index.html
+          git restore --source="$BASE" --staged --worktree index.html
           if ! git apply --3way --index /tmp/bsdata-index-extraction.patch; then
             echo 'Three-way application of the BSData extraction patch failed.'
             exit 1
