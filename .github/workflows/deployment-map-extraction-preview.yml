@@ -1,0 +1,24 @@
+name: Deployment Map Extraction Preview
+
+on:
+  push:
+    branches:
+      - feature/opponent-turn-history-clean-reset
+  workflow_dispatch:
+
+jobs:
+  extraction-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract candidate deployment map functions
+        run: node scripts/deployment-map-extraction-preview.js
+
+      - name: Upload extraction preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-map-extraction-preview
+          path: deployment-map-extraction-preview
+          if-no-files-found: error
