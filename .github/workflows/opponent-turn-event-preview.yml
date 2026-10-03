@@ -119,3 +119,74 @@ jobs:
 
       - name: Report
         run: echo "Opponent-turn event capture validation passed with production resolver render fix and Event Companion geometry data"
+
+  reconcile-bsdata:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout current-base candidate
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Reconcile extraction candidate with current feature branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin refactor/bsdata-extraction-candidate --depth=0
+          BASE=$(git rev-parse HEAD)
+          CAND=$(git rev-parse origin/refactor/bsdata-extraction-candidate)
+          MB=$(git merge-base "$BASE" "$CAND")
+          echo "BASE=$BASE"
+          echo "CAND=$CAND"
+          echo "MERGE_BASE=$MB"
+
+          merge_file() {
+            local path="$1"
+            git show "$BASE:$path" > /tmp/base-file
+            git show "$CAND:$path" > /tmp/candidate-file
+            git show "$MB:$path" > /tmp/merge-base-file
+            if ! git merge-file -p /tmp/base-file /tmp/candidate-file /tmp/merge-base-file > /tmp/merged-file; then
+              echo "Three-way merge conflict in $path"
+              grep -nE '^(<<<<<<<|=======|>>>>>>>)' /tmp/merged-file || true
+              exit 1
+            fi
+            mv /tmp/merged-file "$path"
+          }
+
+          merge_file index.html
+          merge_file .github/workflows/opponent-turn-event-preview.yml
+
+          for path in \
+            .github/workflows/tactical-advisor-preview.yml \
+            .github/workflows/tactical-advisor-surface-fix-preview.yml \
+            CHAT_SAVEPOINT_2026-10-03_BSDATA_EXTRACTION_CANDIDATE_FINAL.md \
+            tools/extract-bsdata-parser.js \
+            tools/verify-bsdata-extracted-module.js \
+            js/data/bsdata-parser.js; do
+            mkdir -p "$(dirname "$path")"
+            git show "$CAND:$path" > "$path"
+          done
+
+          if grep -R -nE '^(<<<<<<<|=======|>>>>>>>)' index.html .github/workflows/opponent-turn-event-preview.yml; then
+            echo 'Conflict markers remain after reconciliation.'
+            exit 1
+          fi
+
+          node tools/verify-bsdata-extracted-module.js
+          node tests/opponent-turn-event-capture.test.js
+
+      - name: Commit reconciled candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html js/data/bsdata-parser.js .github/workflows/opponent-turn-event-preview.yml .github/workflows/tactical-advisor-preview.yml .github/workflows/tactical-advisor-surface-fix-preview.yml CHAT_SAVEPOINT_2026-10-03_BSDATA_EXTRACTION_CANDIDATE_FINAL.md tools/extract-bsdata-parser.js tools/verify-bsdata-extracted-module.js
+          if git diff --cached --quiet; then
+            echo 'No reconciliation changes required.'
+            exit 0
+          fi
+          git commit -m 'rebase: reconcile BSData extraction with current opponent-turn branch'
+          git push origin HEAD:refactor/bsdata-extraction-current-base
