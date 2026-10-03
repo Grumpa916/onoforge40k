@@ -15,6 +15,7 @@ on:
       - 'tests/bidirectional-combat-edge-cases.test.js'
       - '.github/workflows/opponent-turn-event-preview.yml'
       - 'index.html'
+      - 'data/warhammer-event-companion-v1.2.json'
       - 'js/data/bsdata-parser.js'
   workflow_dispatch:
 
