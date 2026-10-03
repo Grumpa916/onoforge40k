@@ -19,6 +19,9 @@ jobs:
       - name: Audit renderer dependency closure
         run: node scripts/deployment-map-renderer-dependency-audit.js | tee deployment-map-extraction-preview/RENDERER_DEPENDENCY_AUDIT.txt
 
+      - name: Syntax-check extracted renderer
+        run: node --check deployment-map-renderer.js
+
       - name: Upload extraction preview
         uses: actions/upload-artifact@v4
         with:
