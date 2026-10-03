@@ -14,6 +14,7 @@ on:
       - 'scripts/deployment-bridge-audit.js'
       - 'scripts/deployment-boundary-audit.js'
       - 'scripts/deployment-map-boundary-audit.js'
+      - 'scripts/deployment-map-extraction-audit.js'
       - 'scripts/deployment-inline-handler-inspector.js'
       - '.github/workflows/deployment-panel-regression.yml'
 
@@ -32,6 +33,9 @@ jobs:
 
       - name: Audit deployment map rendering boundary in full index.html
         run: node scripts/deployment-map-boundary-audit.js
+
+      - name: Audit map extraction function dependencies
+        run: node scripts/deployment-map-extraction-audit.js
 
       - name: Run deployment state compatibility bridge audit
         run: node scripts/deployment-bridge-audit.js
