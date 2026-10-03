@@ -687,7 +687,7 @@ body{overflow-x:hidden}
 #battle-view #onoforge-advisor-render .ta-decision-render{margin-bottom:10px;padding:11px}
 @media (min-width:701px){#battle-view #onoforge-advisor-render .ta-grid{grid-template-columns:repeat(8,minmax(0,1fr));gap:5px}#battle-view #onoforge-advisor-render .ta-metric{padding:6px}#battle-view #onoforge-advisor-render .ta-metric b{font-size:14px}}
 </style>
-<style id="ono-battle-ux-requested">.battle-layout>.objective-map-renderer{grid-column:1!important;grid-row:2!important}.battle-layout>.battle-state-column{grid-column:2!important;grid-row:1 / span 2!important}.battle-layout>.battle-log{grid-column:1 / -1!important;grid-row:3!important}@media (min-width:900px) and (max-width:1300px) and (orientation:landscape){.battle-layout{display:grid!important;grid-template-columns:minmax(0,1fr) 500px!important;grid-template-rows:auto auto auto!important;gap:12px!important}.battle-layout>div:first-child{grid-column:1!important;grid-row:1!important}.battle-layout>.objective-map-renderer{grid-column:1!important;grid-row:2!important}.battle-layout>.battle-state-column{grid-column:2!important;grid-row:1 / span 2!important}.battle-layout>.battle-state-column .army-state-grid{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)!important;gap:10px!important}.battle-layout>.battle-log{grid-column:1 / -1!important;grid-row:3!important}}</style></head><body><div id="app"></div><script src="js/data/bsdata-parser.js"></script><script>
+<style id="ono-battle-ux-requested">.battle-layout>.objective-map-renderer{grid-column:1!important;grid-row:2!important}.battle-layout>.battle-state-column{grid-column:2!important;grid-row:1 / span 2!important}.battle-layout>.battle-log{grid-column:1 / -1!important;grid-row:3!important}@media (min-width:900px) and (max-width:1300px) and (orientation:landscape){.battle-layout{display:grid!important;grid-template-columns:minmax(0,1fr) 500px!important;grid-template-rows:auto auto auto!important;gap:12px!important}.battle-layout>div:first-child{grid-column:1!important;grid-row:1!important}.battle-layout>.objective-map-renderer{grid-column:1!important;grid-row:2!important}.battle-layout>.battle-state-column{grid-column:2!important;grid-row:1 / span 2!important}.battle-layout>.battle-state-column .army-state-grid{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)!important;gap:10px!important}.battle-layout>.battle-log{grid-column:1 / -1!important;grid-row:3!important}}</style></head><body><div id="app"></div><script>
 window.addEventListener('error',function(ev){if(ev.target&&ev.target.tagName==='SCRIPT'&&ev.target.src===SUPABASE_SCRIPT_URL)return;var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var msg=String(ev.error?.message||ev.message||'Unknown error');a.innerHTML='<span class="error-title">OnoForge error</span><div class="error-detail">'+msg.replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</div><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});window.addEventListener('unhandledrejection',function(ev){var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var reason=ev.reason?.message||ev.reason||'Unhandled promise rejection';a.innerHTML='<span class="error-title">OnoForge error</span><div class="error-detail">'+String(reason).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</div><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});
 
 window.__ONOFORGE_DETACHMENTS = window.__ONOFORGE_DETACHMENTS || {}; function detachmentCatalog(){return window.__ONOFORGE_DETACHMENTS;}
@@ -1024,19 +1024,154 @@ function mergeSupplementalUnits(canonical,supplemental){
   return out;
 }
 
+function collectBSDataObjects(root){
+  const map=new Map(), seen=new Set();
+  function walk(x){
+    if(!x||typeof x!=='object'||seen.has(x))return;
+    seen.add(x);
+    if(typeof x.id==='string')map.set(x.id,x);
+    Object.keys(x).forEach(k=>walk(x[k]));
+  }
+  walk(root);
+  return map;
+}
 
+function bsProfile(entry,typeName){
+  return (entry?.profiles||[]).find(p=>p.typeName===typeName) || null;
+}
 
+function bsCharacteristics(profile){
+  const out={};
+  (profile?.characteristics||[]).forEach(c=>{
+    const rawName=String(c?.name||'').trim();
+    if(!rawName)return;
+    const key=rawName==='LD'?'Ld':rawName==='Range'?'rng':rawName;
+    out[key]=c.$text??'';
+  });
+  return out;
+}
 
+function bsAbilities(entry){
+  const out=[],seen=new Set();
+  function walk(x){
+    if(!x||typeof x!=='object')return;
+    if(Array.isArray(x.profiles)){
+      x.profiles.forEach(p=>{
+        if(String(p.typeName||'').toLowerCase()!=='abilities')return;
+        const description=(p.characteristics||[]).find(c=>c.name==='Description')?.$text||'';
+        if(!p.name||!description||seen.has(p.name))return;
+        seen.add(p.name);
+        out.push({name:p.name,description});
+      });
+    }
+    if(Array.isArray(x.selectionEntries))x.selectionEntries.forEach(walk);
+    if(Array.isArray(x.selectionEntryGroups))x.selectionEntryGroups.forEach(walk);
+    if(Array.isArray(x.entryLinks)){
+      x.entryLinks.forEach(link=>{
+        const targetId=link.targetId||link.id;
+        if(window.__BS_OBJECT_MAP&&targetId){
+          const target=window.__BS_OBJECT_MAP.get(targetId);
+          if(target)walk(target);
+        }
+      });
+    }
+  }
+  walk(entry);
+  return out;
+}
+function normalize11eWeaponAbilities(raw){
+  const src=Array.isArray(raw)?raw:[];
+  const out=[];
+  src.forEach(value=>{
+    const text=String(value??'').trim();
+    if(!text)return;
+    // 11th edition renamed the former PISTOL weapon keyword to CLOSE-QUARTERS.
+    // Normalize legacy source labels at ingestion so stale supplemental data
+    // cannot silently reintroduce 10th-edition terminology into the engine.
+    const normalized=text.toUpperCase().replace(/-/g,' ').replace(/_/g,' ').replace(/\\s+/g,' ').trim();
+    if(normalized==='PISTOL') out.push('CLOSE QUARTERS');
+    else out.push(text);
+  });
+  return [...new Set(out)];
+}
 
+function bsWeapons(entry){
+  const out=[], seen=new Set(), visited=new Set();
+  const objectMap=(typeof window!=='undefined' && window.__BS_OBJECT_MAP && typeof window.__BS_OBJECT_MAP.get==='function')?window.__BS_OBJECT_MAP:null;
+  function walk(x){
+    if(!x||typeof x!=='object')return;
+    const objectId=x.id||x.targetId;
+    if(objectId){
+      if(visited.has(objectId))return;
+      visited.add(objectId);
+    }
+    if(Array.isArray(x.profiles)){
+      x.profiles.forEach(p=>{
+        const type=String(p.typeName||'').toLowerCase();
+        if(type!=='ranged weapons' && type!=='melee weapons' && !type.includes('ranged weapon') && !type.includes('melee weapon'))return;
+        const chars=bsCharacteristics(p);
+        const w={name:p.name,...chars,abilities:normalize11eWeaponAbilities(chars.Keywords?[chars.Keywords]:[])};
+        delete w.Keywords;
+        const key=JSON.stringify(w);
+        if(!seen.has(key)){seen.add(key);out.push(w);}
+      });
+    }
+    if(Array.isArray(x.selectionEntries))x.selectionEntries.forEach(walk);
+    if(Array.isArray(x.selectionEntryGroups))x.selectionEntryGroups.forEach(walk);
+    if(Array.isArray(x.entryLinks)){
+      x.entryLinks.forEach(link=>{
+        const targetId=link.targetId||link.id;
+        if(objectMap && targetId){
+          const target=objectMap.get(targetId);
+          if(target)walk(target);
+        }
+      });
+    }
+  }
+  walk(entry);
+  return out;
+}
+function bsWargearOptions(entry){
+  const out=[],seen=new Set();
+  function walk(x){
+    if(!x||typeof x!=='object')return;
+    if(Array.isArray(x.selectionEntries))x.selectionEntries.forEach(s=>{
+      if(s.type==='upgrade' && s.name && !seen.has(s.name)){
+        seen.add(s.name);out.push(s.name);
+      }
+      walk(s);
+    });
+    if(Array.isArray(x.selectionEntryGroups))x.selectionEntryGroups.forEach(walk);
+  }
+  walk(entry);
+  return out;
+}
 
-
-
-
-
-
-
-
-
+function bsUnitFromEntry(entry,faction){
+  if(!entry||entry.type!=='unit')return null;
+  const p=bsProfile(entry,'Unit');
+  if(!p)return null;
+  const stats=bsCharacteristics(p);
+  const pts=(entry.costs||[]).find(c=>c.name==='pts');
+  const categories=(entry.categoryLinks||[]).map(c=>c.name).filter(Boolean);
+  const weapons=bsWeapons(entry);
+  return {
+    id:`${faction}_${String(entry.name).toLowerCase().replace(/[^a-z0-9]+/g,'_')}`,
+    name:entry.name,
+    faction,
+    points:pts?Number(pts.value):0,
+    models:1,
+    wounds:Number(stats.W)||1,
+    profile:stats,
+    keywords:categories,
+    abilities:bsAbilities(entry),
+    weapons,
+    weaponOptions:bsWargearOptions(entry),
+    dataSource:'BSData 11e',
+    dataVersion:'current',
+    sourceRole:'supplemental'
+  };
+}
 
 async function refreshCurrentUnitDatabase(showMessage=true){
   try{
@@ -1045,12 +1180,13 @@ async function refreshCurrentUnitDatabase(showMessage=true){
       const res=await fetch(CURRENT_11E_DATA_SOURCES[faction],{cache:'no-store'});
       if(!res.ok)throw new Error(`${faction} data request failed (${res.status})`);
       const root=await res.json();
-      const map=window.OnoForgeBSDataParser.collectBSDataObjects(root);
+      const map=collectBSDataObjects(root);
+      window.__BS_OBJECT_MAP=map;
       const links=root?.catalogue?.entryLinks||[];
       const seen=new Set();
       links.forEach(link=>{
         const entry=map.get(link.targetId||link.id);
-        const u=window.OnoForgeBSDataParser.bsUnitFromEntry(entry,faction,{objectMap:map});
+        const u=bsUnitFromEntry(entry,faction);
         if(u&&!seen.has(u.name)){seen.add(u.name);all.push(u);}
       });
       // Only catalogue-linked unit entries are eligible for supplemental import.
@@ -11374,7 +11510,7 @@ document.addEventListener('change',function(ev){
   }
 });
 document.addEventListener('toggle',function(ev){const panel=ev.target.closest?.('[data-live-deployment-panel]');if(panel){state.liveDeploymentPanelOpen=!!panel.open;save();}});
-document.addEventListener('change',function(ev){const transport=ev.target.closest('[data-transport-toggle]');if(transport){setTransportEmbarkation(transport.dataset.transportToggle,transport.dataset.transportUid,transport.dataset.passengerUid,transport.checked);return;}const reserve=ev.target.closest('[data-reserve-toggle]');if(reserve){setReserveDeclaration(reserve.dataset.reserveToggle,reserve.dataset.reserveUid,reserve.checked);return;}const livePanel=ev.target.closest('[data-live-deployment-panel]');if(livePanel)state.liveDeploymentPanelOpen=!!livePanel.open;const sideSel=ev.target.closest('[data-deployment-side]');if(sideSel){state.deploymentTrackingSide=sideSel.value==='opp'?'opp':'my';delete state.battlefieldMapPlacement;render();return;}const sel=ev.target.closest('.objective-map-unit-select');if(!sel)return;const mode=sel.dataset.mapMode==='setup'?'setup':sel.dataset.mapMode==='deployment'?'deployment':'battle',value=String(sel.value||'');if(mode==='setup'){if(!value){delete state.deploymentMapPlacement;render();return;}state.deploymentMapPlacement={uid:value};render();return;}if(!value){delete state.battlefieldMapPlacement;render();return;}const [side,uid]=value.split('|');if(side&&uid)state.battlefieldMapPlacement={side,uid};render();});
+document.addEventListener('change',function(ev){const transport=ev.target.closest('[data-transport-toggle]');if(transport){setTransportEmbarkation(transport.dataset.transportToggle,transport.dataset.transportUid,transport.dataset.passengerUid,transport.checked);return;}const reserve=ev.target.closest('[data-reserve-toggle]');if(reserve){setReserveDeclaration(reserve.dataset.reserveToggle,reserve.dataset.reserveUid,reserve.checked);return;}const sideSel=ev.target.closest('[data-deployment-side]');if(sideSel){state.deploymentTrackingSide=sideSel.value==='opp'?'opp':'my';delete state.battlefieldMapPlacement;render();return;}const sel=ev.target.closest('.objective-map-unit-select');if(!sel)return;const mode=sel.dataset.mapMode==='setup'?'setup':sel.dataset.mapMode==='deployment'?'deployment':'battle',value=String(sel.value||'');if(mode==='setup'){if(!value){delete state.deploymentMapPlacement;render();return;}state.deploymentMapPlacement={uid:value};render();return;}if(!value){delete state.battlefieldMapPlacement;render();return;}const [side,uid]=value.split('|');if(side&&uid)state.battlefieldMapPlacement={side,uid};render();});
 let objectiveMapDrag=null;
 document.addEventListener('pointerdown',function(ev){const reserve=ev.target.closest('[data-reserve-unit]');if(reserve&&!ev.target.closest('[data-reserve-select]')){ev.preventDefault();ev.stopPropagation();objectiveMapDrag={node:reserve,canvas:null,mode:'reserve',side:reserve.dataset.reserveSide,uid:reserve.dataset.reserveUid,pointerId:ev.pointerId};reserve.classList.add('dragging');reserve.setPointerCapture?.(ev.pointerId);return;}const node=ev.target.closest('[data-map-unit],[data-map-plan-unit]');if(!node)return;const canvas=node.closest('[data-objective-map-canvas]');if(!canvas)return;ev.preventDefault();ev.stopPropagation();const rect=canvas.getBoundingClientRect();if(!rect.width||!rect.height)return;const mapMode=canvas.dataset.objectiveMapMode==='setup'?'setup':canvas.dataset.objectiveMapMode==='deployment'?'deployment':'battle';const mode=node.hasAttribute('data-map-plan-unit')?'setup':mapMode;const side=node.dataset.mapSide,uid=node.dataset.mapUid;objectiveMapDrag={node,canvas,mode,side,uid,pointerId:ev.pointerId};node.classList.add('dragging');node.setPointerCapture?.(ev.pointerId);});
 document.addEventListener('pointermove',function(ev){const d=objectiveMapDrag;if(!d||d.pointerId!==ev.pointerId)return;ev.preventDefault();if(d.mode==='reserve')return;const rect=d.canvas?.getBoundingClientRect();if(!rect)return;const x=Math.max(0,Math.min(60,((ev.clientX-rect.left)/rect.width)*60)),y=Math.max(0,Math.min(44,(1-(ev.clientY-rect.top)/rect.height)*44));d.node.style.left=(x/60*100)+'%';d.node.style.top=((44-y)/44*100)+'%';});

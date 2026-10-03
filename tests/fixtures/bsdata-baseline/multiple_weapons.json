@@ -1,0 +1,19 @@
+{
+  "id": "Test Faction_weapons_unit",
+  "name": "Weapons Unit",
+  "faction": "Test Faction",
+  "points": 100,
+  "models": 1,
+  "wounds": 2,
+  "profile": {"M":"6\"","T":4,"Sv":"3+","W":"2","OC":"1"},
+  "keywords": ["INFANTRY"],
+  "abilities": [],
+  "weapons": [
+    {"name":"Rifle","A":"2","S":4,"AP":"0","D":"1","abilities":["ASSAULT"]},
+    {"name":"Sword","A":"4","S":5,"AP":"-1","D":"1","abilities":["TWIN LINKED"]}
+  ],
+  "weaponOptions": [],
+  "dataSource": "BSData 11e",
+  "dataVersion": "current",
+  "sourceRole": "supplemental"
+}

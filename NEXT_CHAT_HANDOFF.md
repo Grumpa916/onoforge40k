@@ -1,3 +1,17 @@
+<!-- LATEST CHAT TRANSFER NOTICE -->
+
+## Latest authoritative chat-transition checkpoint
+
+Use `CHAT_SAVEPOINT_2026-09-27_BIDIRECTIONAL_COMBAT.md` as the primary resume document.
+
+Current development branch: `feature/opponent-turn-history`
+Current HEAD: `132551b340bdff635eeb9b193470f2c1a8e46ccd`
+Known-good baseline: `6969ac316727c100c1092c1724f33a81a016dc18`
+Draft PR: #2, open/draft/unmerged
+Latest three validation lanes for current HEAD: all successful.
+
+Do not assume the older checkpoint described later in this document is the current code state.
+
 # NEXT_CHAT_HANDOFF
 
 ## OnoForge 40K — Tactical Advisor / Charge / Fight Save Point
@@ -238,18 +252,98 @@ Do not:
 - replace the existing shared combat engine
 - treat projected damage as actual resolved damage
 
-### Next-chat starting point
-Resume from **`6969ac31`**.
+### Current continuation state — 2026-09-27
 
-The next development/testing task now has two connected priorities:
+The isolated development branch is **feature/opponent-turn-history**.
 
-**A. Replace the current Fight Execution resolution markers with a real shared-engine melee resolution flow, including enemy Fight Back and actual model/wound state changes.**
+Known-good baseline remains **6969ac316727c100c1092c1724f33a81a016dc18** on `feature/tactical-impact-layer`. The development branch is currently **31 commits ahead, 0 behind** that baseline. Do not merge it yet.
 
-**B. Expand battle-state/event capture so the player's next turn knows what happened during the opponent turn:**
-- which of my units were shot
-- which of my units were charged
-- resulting engagement state and defensible implied movement information
-- which of my units fought in melee
-- friendly and enemy melee results/casualties
+#### Completed in this continuation
 
-Before modifying code, inspect the existing melee/model-level resolution functions, Action Log conventions, turn/phase event architecture, and opponent-turn tracking code. Integrate into the existing authoritative state rather than creating parallel combat engines or duplicate Advisor surfaces.
+**1. Shared physical-dice combat resolver is bidirectional**
+- The authoritative physical-dice resolution session now carries `attackerSide` and `targetSide`.
+- Existing my → opponent behavior remains through compatibility wrappers.
+- The same resolver can now resolve opponent → my attacks.
+- Resolution session keys include both sides to prevent directional collisions.
+- Target-side save groups, model allocation, snapshots, weapon pools, and mixed/Precision handling were generalized where needed.
+- `ATTACK_RESOLUTION` now carries a `resolutionId` and authoritative `side`.
+- Fight completion is tied to an actual `ATTACK_RESOLUTION`, not a manual resolved marker.
+- Weapon-use history prefers `payload.side` where present, so opponent Fight Back is counted in the correct direction.
+
+**2. Fight Execution now uses the real resolver**
+- Removed the old Friendly Fight / Enemy Fight Back marker-button flow.
+- Friendly melee has an Enter Friendly Dice path.
+- Enemy melee has an Enter Enemy Dice path.
+- Actual damage/casualties update the existing model roster / battle state through the canonical application path.
+- Pile-in and consolidation remain explicit state controls; they are not inferred.
+
+**3. Opponent-turn capture is integrated into the existing battle screen**
+- Opponent Shooting: choose enemy shooter, friendly target, weapon profile, then enter physical dice through the shared resolver.
+- Opponent Charge: choose charging enemy unit, explicitly select friendly units actually charged, record Successful/Failed, optional required roll/rolled total, optional measured pre-charge distance, explicit engagement state, and movement observed/not observed.
+- Successful Charge never infers movement distance from the 2D6 roll.
+- Opponent Fight: choose enemy fighting unit, friendly target, weapon, then enter physical dice through the shared resolver; pile-in/consolidation are explicit for both sides.
+- There is still only one Tactical Advisor surface.
+
+**4. Combat History is derived from the authoritative Action Log**
+- Added a read-only combatHistoryEvents()/combatHistoryHtml() view in Battle Mode.
+- It shows both directions of shooting, charging, and melee.
+- No persistent duplicate state.combatHistory store is used.
+
+**5. Legacy preview layers were de-parallelized**
+- opponent-turn-event-layer.js is now a read-only normalization adapter over state.events; it does not wrap event() or maintain a second event store.
+- opponent-turn-capture.js is now a compatibility shim; production capture UI is in index.html.
+- The audit/test files now validate the final architecture instead of the earlier experimental duplicate-history design.
+
+#### Latest validation
+
+The latest three GitHub Actions validation lanes for commit **6b14cc6a95f56ff328d52ff8b9e968648e9fbf2c** all completed **successfully**:
+- tests: success
+- architecture audit: success
+- inline index.html JavaScript validation / preview validation: success
+
+The earlier failures were diagnosed as stale test/audit assumptions and syntax in the experimental audit; those were corrected and the later three-lane validation passed.
+
+Latest subsequent commit **7e79d44bf817afc1ca4f443567fe3d48c7e1b8f5** updates the invalid-identity test expectation to the intended bidirectional history count. The branch then received **6b14cc6a95f56ff328d52ff8b9e968648e9fbf2c**, which rewrote the final architecture audit. GitHub did not yet attach a new check-run to the latter commit at the time this handoff was updated, so treat the **6b14cc6a** three-lane success as the last verified Actions result, not as verification of any later code changes.
+
+#### Important current architecture
+
+Authoritative combat history source: state.events.
+
+Authoritative attack event: ATTACK_RESOLUTION, with attacker/target IDs, side, damage/results, before/after snapshots, and resolutionId.
+
+Authoritative charge event: CHARGE_RESOLUTION, with explicit attacker/target IDs, result, optional measured distance, engagement state, and chargeMoveInferred:false for opponent charges.
+
+Authoritative model state remains the existing model-roster/battle-state functions:
+- ensureModelRoster
+- syncModelRosterBattleState
+- setModelDestroyed
+- restoreModel
+- changeModelWounds
+- setUnitDestroyed
+
+#### Important next development/testing task
+
+Do not redesign the Tactical Advisor or create another combat engine.
+
+The next work should be a real playtest and edge-case pass against the new shared resolver, especially:
+- my Shooting → opponent casualties
+- opponent Shooting → my casualties
+- my Charge → opponent engagement
+- opponent Charge → my engagement
+- my Fight → opponent casualties
+- opponent Fight → my casualties
+- multiple weapon pools / multiple model rosters
+- attached leaders/bodyguards
+- mixed-save / Precision / Devastating wounds
+- repeated Fight activations and weapon-use accounting
+- undo behavior around ATTACK_RESOLUTION and CHARGE_RESOLUTION
+- opponent-turn transition back to the player's turn
+- Action Log and Combat History consistency after undo / phase transitions
+
+Also inspect whether any remaining helper still assumes my → opp in a path reachable from the opponent shared resolver. Legacy friendly-only Tactical Advisor UI is allowed to retain its my → opponent wrappers; shared execution code is not.
+
+#### Branch / PR
+
+Draft PR #2 exists from feature/opponent-turn-history into feature/tactical-impact-layer. It remains draft / unmerged.
+
+Do not merge or deploy until the bidirectional live playtest is completed and the newest branch HEAD has a fresh successful validation run.

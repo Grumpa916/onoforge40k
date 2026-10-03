@@ -1,0 +1,16 @@
+{
+  "id": "Test Faction_sparse_unit",
+  "name": "Sparse Unit",
+  "faction": "Test Faction",
+  "points": 100,
+  "models": 1,
+  "wounds": 2,
+  "profile": {"T":4,"W":"2"},
+  "keywords": ["INFANTRY"],
+  "abilities": [],
+  "weapons": [],
+  "weaponOptions": [],
+  "dataSource": "BSData 11e",
+  "dataVersion": "current",
+  "sourceRole": "supplemental"
+}
