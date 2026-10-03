@@ -15,6 +15,7 @@ on:
       - 'tests/bidirectional-combat-edge-cases.test.js'
       - '.github/workflows/opponent-turn-event-preview.yml'
       - 'index.html'
+      - 'js/data/bsdata-parser.js'
   workflow_dispatch:
 
 jobs:
@@ -82,11 +83,15 @@ jobs:
           out=Path('preview-site')
           out.mkdir(parents=True,exist_ok=True)
           (out/'index.html').write_text(html,encoding='utf-8')
-          print('Built preview-site/index.html')
+          parser_target=out/'js'/'data'
+          parser_target.mkdir(parents=True,exist_ok=True)
+          parser_target.joinpath('bsdata-parser.js').write_text(Path('js/data/bsdata-parser.js').read_text(encoding='utf-8'),encoding='utf-8')
+          print('Built preview-site/index.html and bundled js/data/bsdata-parser.js')
           PY
           node --check opponent-turn-event-layer.js
           node --check opponent-turn-capture.js
           node --check opponent-turn-render-fix.js
+          node --check js/data/bsdata-parser.js
 
       - name: Assert preview contains no literal backslash-n escape in injected resolver script
         shell: bash
