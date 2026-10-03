@@ -135,11 +135,17 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Switch from PR merge ref to actual candidate branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin feature/opponent-turn-history refactor/bsdata-extraction-candidate refactor/bsdata-extraction-current-base
+          git checkout -B reconcile-work origin/refactor/bsdata-extraction-current-base
+
       - name: Apply extraction against the actual feature baseline
         shell: bash
         run: |
           set -euo pipefail
-          git fetch origin feature/opponent-turn-history refactor/bsdata-extraction-candidate
           BASE=origin/feature/opponent-turn-history
           CAND=origin/refactor/bsdata-extraction-candidate
           MB=$(git merge-base "$BASE" "$CAND")
