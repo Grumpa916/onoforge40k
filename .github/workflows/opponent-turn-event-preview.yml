@@ -15,7 +15,7 @@ on:
       - 'tests/bidirectional-combat-edge-cases.test.js'
       - '.github/workflows/opponent-turn-event-preview.yml'
       - 'index.html'
-      - 'data/warhammer-event-companion-v1.2.json'
+      - 'js/data/bsdata-parser.js'
   workflow_dispatch:
 
 jobs:
@@ -95,11 +95,15 @@ jobs:
           data_out=out/'data'
           data_out.mkdir(parents=True,exist_ok=True)
           (data_out/data_src.name).write_text(data_src.read_text(encoding='utf-8'),encoding='utf-8')
-          print('Built preview-site with index.html and Event Companion geometry data')
+          parser_target=out/'js'/'data'
+          parser_target.mkdir(parents=True,exist_ok=True)
+          parser_target.joinpath('bsdata-parser.js').write_text(Path('js/data/bsdata-parser.js').read_text(encoding='utf-8'),encoding='utf-8')
+          print('Built preview-site/index.html and bundled js/data/bsdata-parser.js')
           PY
           node --check opponent-turn-event-layer.js
           node --check opponent-turn-capture.js
           node --check opponent-turn-render-fix.js
+          node --check js/data/bsdata-parser.js
 
       - name: Assert preview contains no literal backslash-n escape in injected scripts
         shell: bash
