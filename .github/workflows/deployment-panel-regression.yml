@@ -14,6 +14,7 @@ on:
       - 'scripts/deployment-bridge-audit.js'
       - 'scripts/deployment-boundary-audit.js'
       - 'scripts/deployment-map-boundary-audit.js'
+      - 'scripts/deployment-inline-handler-inspector.js'
       - '.github/workflows/deployment-panel-regression.yml'
 
 jobs:
@@ -22,6 +23,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Inspect remaining inline deployment handlers
+        run: node scripts/deployment-inline-handler-inspector.js
 
       - name: Audit deployment boundary in full index.html
         run: node scripts/deployment-boundary-audit.js
