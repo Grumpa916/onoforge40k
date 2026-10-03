@@ -15,6 +15,7 @@ on:
       - 'tests/tactical-charge-workflow.test.js'
       - '.github/workflows/deploy.yml'
       - '.github/workflows/tactical-advisor-preview.yml'
+      - '.github/workflows/tactical-advisor-surface-fix-preview.yml'
   workflow_dispatch:
 
 jobs:
