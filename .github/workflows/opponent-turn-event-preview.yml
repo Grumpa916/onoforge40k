@@ -22,6 +22,7 @@ on:
       - 'js/ui/unit-display-utils.js'
       - 'js/ui/secondary-input-utils.js'
       - 'tests/secondary-input-utils.test.js'
+      - 'tests/timer-snapshot-scope.test.js'
       - 'tests/unit-display-utils.test.js'
       - 'tests/unit-list-utils.test.js'
       - 'js/core/geometry.js'
@@ -64,6 +65,9 @@ jobs:
 
       - name: Run secondary input utility regression
         run: node tests/secondary-input-utils.test.js
+
+      - name: Run timer snapshot scope regression
+        run: node tests/timer-snapshot-scope.test.js
 
       - name: Run game timer turn-boundary regression
         run: node tests/game-timer.test.js
