@@ -68,6 +68,8 @@ jobs:
 
       - name: Run timer snapshot scope regression
         run: node tests/timer-snapshot-scope.test.js
+      - name: Run terrain reference browser regression
+        run: node tests/terrain-reference-browser.test.js
 
       - name: Run game timer turn-boundary regression
         run: node tests/game-timer.test.js
