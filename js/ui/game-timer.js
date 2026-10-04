@@ -78,9 +78,16 @@
   }
   function switchTurnClock(next){
     const state=hState(),t=ensureGameTimer();
+    // Capture the outgoing side before changing currentTurn. Some application
+    // callers intentionally update state.currentTurn first; the timer must still
+    // attribute elapsed time to the side that was actually active.
+    const outgoingSide=state.currentTurn==='opp'?'opp':'my';
     if(!t.turnPaused){
-      finalizeCurrentTurnTime();
-      t.turnStartedGameMs=gameTimerElapsed();
+      const key=outgoingSide==='opp'?'turnOppMs':'turnMyMs';
+      const now=gameTimerElapsed();
+      const delta=Math.max(0,now-(Number(t.turnStartedGameMs)||0));
+      t[key]=Math.max(0,Number(t[key])||0)+delta;
+      t.turnStartedGameMs=now;
     }
     state.currentTurn=next==='opp'?'opp':'my';
   }
