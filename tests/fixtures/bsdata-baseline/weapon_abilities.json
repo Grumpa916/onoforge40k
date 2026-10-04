@@ -1,0 +1,19 @@
+{
+  "id": "Test Faction_ability_weapons",
+  "name": "Ability Weapons",
+  "faction": "Test Faction",
+  "points": 100,
+  "models": 1,
+  "wounds": 2,
+  "profile": {"M":"6\"","T":4,"Sv":"3+","W":"2","OC":"1"},
+  "keywords": ["INFANTRY"],
+  "abilities": [],
+  "weapons": [
+    {"name":"Pistol","A":"1","S":5,"AP":"-1","D":"1","abilities":["CLOSE QUARTERS"]},
+    {"name":"Heavy Gun","A":"2","S":8,"AP":"-2","D":"2","abilities":["HEAVY"]}
+  ],
+  "weaponOptions": [],
+  "dataSource": "BSData 11e",
+  "dataVersion": "current",
+  "sourceRole": "supplemental"
+}

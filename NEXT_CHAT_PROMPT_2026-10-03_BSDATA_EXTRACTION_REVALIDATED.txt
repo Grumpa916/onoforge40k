@@ -1,0 +1,21 @@
+Resume the OnoForge 40K project from the latest save point.
+
+Repository: Grumpa916/onoforge40k
+Save point: CHAT_SAVEPOINT_2026-10-03_BSDATA_EXTRACTION_REVALIDATED.md
+Current BSData candidate branch: refactor/bsdata-extraction-candidate
+Current candidate HEAD after savepoint commit: f2b5a999329bf182e1cad1a6230240d9ec58bf67
+Current PR: #6 — Candidate: extract BSData parser from index.html — revalidated
+PR URL: https://github.com/Grumpa916/onoforge40k/pull/6
+PR base: feature/opponent-turn-history
+
+READ THE SAVEPOINT FIRST.
+
+The browser smoke test has already passed. Confirmed: List Builder rendering, BSData 11e cross-check, unit search/add, leader attachment, leader configuration/save, and preservation of existing list state. The BSData refresh explicitly reported that verified runtime data was not overwritten.
+
+Do not start new development yet. First inspect PR #6, verify the current HEAD and GitHub Actions status, review the diff, and only merge after the current validation is green and the diff is consistent with the intended extraction.
+
+Important: feature/opponent-turn-history-clean-reset and feature/opponent-turn-history are diverged branches. Do not merge/rebase them casually. The immediate continuation point for this task is PR #6 targeting feature/opponent-turn-history.
+
+Python is not installed on my computer. Do not give me workflows that require Python locally. Use GitHub Actions, browser testing, GitHub files, or other available project tooling instead.
+
+Continue from the saved state without repeating already-passed browser tests unless a new change invalidates them.

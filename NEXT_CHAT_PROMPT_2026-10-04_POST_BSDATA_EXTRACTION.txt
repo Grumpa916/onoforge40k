@@ -1,0 +1,31 @@
+Resume the OnoForge 40K project from the latest authoritative save point.
+
+Repository: Grumpa916/onoforge40k
+Active development branch: feature/opponent-turn-history
+Save point: CHAT_SAVEPOINT_2026-10-04_BSDATA_EXTRACTION_MERGED.md
+Current HEAD: e37c13a2ba5501ef1a47f722de6e7ad145e07d7d
+
+READ THE SAVEPOINT FIRST.
+
+PR #6 (BSData parser extraction) has already been merged into feature/opponent-turn-history at merge commit 10757225ea6fcaa1be5ba0b3d3c50cc9dd91fc8b.
+
+The current branch then received five runtime/UI repair commits:
+- a835c6b0 Restore streamlined physical dice result entry
+- 69201e08 Fix quick physical result controls flow
+- 7745ab5b Harden quick physical result eligibility for complex attacks
+- 497c65e7 Fix quick physical result control JavaScript escaping
+- e37c13a2 Restore catalogue-aware opponent weapon selection
+
+Fresh CI for current HEAD is green:
+- Tactical Advisor Preview Validation run #317
+- Opponent Turn Event Capture Preview run #331
+
+Do NOT begin another extraction yet.
+
+First perform the browser verification gate against immutable HEAD e37c13a2ba5501ef1a47f722de6e7ad145e07d7d. Verify app loading, List Builder, opponent weapon selection, streamlined physical-dice entry, and that complex attacks still route through the full resolver path.
+
+The earlier BSData extraction browser test passed before PR #6 merge; do not repeat its entire workflow unless the current changes make it necessary.
+
+Keep main untouched. Do not merge/rebase feature/opponent-turn-history-clean-reset casually. Python is not installed locally; use GitHub Actions and browser testing instead.
+
+If the browser gate passes, create the next savepoint and only then choose the next safe extraction boundary from index.html.

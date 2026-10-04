@@ -7,6 +7,8 @@ on:
   pull_request:
     paths:
       - 'index.html'
+      - 'js/data/bsdata-parser.js'
+      - 'js/core/geometry.js'
       - 'tactical-advisor-engine.js'
       - 'tactical-advisor-adapter.js'
       - 'tactical-charge-workflow.js'
@@ -14,6 +16,7 @@ on:
       - 'tests/tactical-charge-workflow.test.js'
       - '.github/workflows/deploy.yml'
       - '.github/workflows/tactical-advisor-preview.yml'
+      - '.github/workflows/tactical-advisor-surface-fix-preview.yml'
   workflow_dispatch:
 
 jobs:
@@ -42,6 +45,7 @@ jobs:
           adapter = Path('tactical-advisor-adapter.js').read_text(encoding='utf-8')
           charge_workflow = Path('tactical-charge-workflow.js').read_text(encoding='utf-8')
           html = Path('index.html').read_text(encoding='utf-8')
+          bsdata_parser = Path('js/data/bsdata-parser.js').read_text(encoding='utf-8')
 
           required_workflow = [
               'Inject Tactical Advisor decision layer into deploy artifact',
@@ -108,8 +112,8 @@ jobs:
               raise SystemExit('Charge adapter is not using the OnoForge runtime-state bridge')
           if "function rosterEntry(side,id,unitId,name)" not in adapter:
               raise SystemExit('Charge adapter is missing roster entry resolver')
-          if "rawName==='Range'?'rng'" not in html:
-              raise SystemExit('BSData Range field is not normalized to OnoForge rng')
+          if "rawName==='Range'?'rng'" not in bsdata_parser:
+              raise SystemExit('BSData Range field is not normalized to OnoForge rng in the extracted parser')
           if "const supplemental=all.map(u=>({...u,sourceRole:'supplemental'}));" not in html:
               raise SystemExit('BSData refresh is not retained as supplemental data')
           if "window.CURRENT_UNIT_DATABASE=mergeSupplementalUnits" in html:
@@ -177,6 +181,12 @@ jobs:
           out = Path("preview-site")
           out.mkdir(parents=True, exist_ok=True)
           (out / "index.html").write_text(html, encoding="utf-8")
+          geometry_out = out / "js" / "core"
+          geometry_out.mkdir(parents=True, exist_ok=True)
+          (geometry_out / "geometry.js").write_text(
+              Path("js/core/geometry.js").read_text(encoding="utf-8"),
+              encoding="utf-8"
+          )
           data_out = out / "data"
           data_out.mkdir(parents=True, exist_ok=True)
           companion = Path("data/warhammer-event-companion-v1.2.json")

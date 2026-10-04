@@ -1,0 +1,16 @@
+{
+  "id": "Test Faction_baseline_squad",
+  "name": "Baseline Squad",
+  "faction": "Test Faction",
+  "points": 100,
+  "models": 1,
+  "wounds": 2,
+  "profile": {"M":"6\"","T":4,"Sv":"3+","W":"2","OC":"1","Ld":"7"},
+  "keywords": ["INFANTRY"],
+  "abilities": [],
+  "weapons": [],
+  "weaponOptions": [],
+  "dataSource": "BSData 11e",
+  "dataVersion": "current",
+  "sourceRole": "supplemental"
+}

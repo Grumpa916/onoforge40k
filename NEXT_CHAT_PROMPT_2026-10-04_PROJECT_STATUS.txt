@@ -1,0 +1,69 @@
+Resume the OnoForge 40K project from the latest authoritative save point.
+
+Repository: Grumpa916/onoforge40k
+Authoritative development branch: feature/opponent-turn-history
+Save point: CHAT_SAVEPOINT_2026-10-04_PROJECT_STATUS_BEFORE_NEW_CHAT.md
+Current HEAD: ffa0940f1732826cb8e164377bbaf75c315c65fd
+
+READ THE SAVEPOINT FIRST.
+
+Important project rules:
+- Keep main untouched.
+- Do not casually merge or rebase feature/opponent-turn-history-clean-reset into feature/opponent-turn-history.
+- Python is not installed on my computer. Do not require local Python.
+- Work incrementally and preserve browser-verified behavior.
+- Use GitHub Actions and browser testing for validation.
+- Do not repeat already-passed tests unless a new change affects them.
+
+Current verified functional state:
+- BSData parser extraction is complete and merged through PR #6.
+- Shared physical Saves -> Damage flow is fixed and browser-verified.
+- Action Log blue result text wraps instead of truncating.
+- Opponent Shooting completed-state messaging is clear.
+- Opponent Shooting now requires ranged-weapon eligibility.
+- Ballistus Dreadnought Armoured feet is correctly excluded from Shooting.
+- Ballistus ranged weapons are correctly available.
+
+Latest functional commit:
+5fb0fb7f39fc7ab375355415f13f9fb7fa4aaeea
+
+Current branch HEAD is a documentation save-point commit:
+ffa0940f1732826cb8e164377bbaf75c315c65fd
+
+NEXT TASK:
+Return to the planned index.html extraction work.
+
+A full function inventory found approximately 716 inline functions. The next promising boundary is the Game Timer block:
+
+ensureGameTimer
+gameTimerElapsed
+turnElapsedMs
+finalizeCurrentTurnTime
+toggleTurnPause
+switchTurnClock
+formatGameTime
+updateGameTimerDisplay
+ensureLiveGameTimerDisplay
+startGameTimer
+toggleGameTimer
+finishGameTimer
+saveBattleFromTimer
+gameTimerHtml
+
+It also owns:
+let gameTimerInterval=null;
+
+Do NOT immediately extract it.
+
+First:
+1. inspect every caller of those functions;
+2. inspect every gameTimer state field read/write outside the block;
+3. inspect how save/load, turn switching, battle start/end, render, and cloud-save interact with the timer;
+4. determine whether the timer runtime interval, state helpers, and HTML renderer should be one module or split;
+5. define a narrow host interface;
+6. compare the design with the successful BSData parser extraction pattern;
+7. only after that, make the smallest reversible implementation.
+
+The objective is a clean module boundary, not merely reducing index.html line count.
+
+Create a new save point after the next extraction is browser-verified and CI-green.

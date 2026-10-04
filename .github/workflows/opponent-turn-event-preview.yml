@@ -1,0 +1,279 @@
+name: Opponent Turn Event Capture Preview
+
+on:
+  push:
+    branches:
+      - feature/opponent-turn-history
+  pull_request:
+    paths:
+      - 'opponent-turn-event-layer.js'
+      - 'opponent-turn-capture.js'
+      - 'opponent-turn-render-fix.js'
+      - 'scripts/opponent-turn-event-layer-audit.js'
+      - 'tests/opponent-turn-event-layer.test.js'
+      - 'tests/opponent-turn-render-bridge.test.js'
+      - 'tests/bidirectional-combat-edge-cases.test.js'
+      - '.github/workflows/opponent-turn-event-preview.yml'
+      - 'index.html'
+      - 'data/warhammer-event-companion-v1.2.json'
+      - 'js/data/bsdata-parser.js'
+      - 'js/ui/game-timer.js'
+      - 'js/data/unit-list-utils.js'
+      - 'js/ui/unit-display-utils.js'
+      - 'js/ui/secondary-input-utils.js'
+      - 'tests/secondary-input-utils.test.js'
+      - 'tests/timer-snapshot-scope.test.js'
+      - 'tests/unit-display-utils.test.js'
+      - 'tests/unit-list-utils.test.js'
+      - 'js/core/geometry.js'
+      - 'js/core/dice-utils.js'
+      - 'tests/geometry.test.js'
+      - 'tests/dice-utils.test.js'
+      - 'js/battle/primary-scoring-utils.js'
+      - 'tests/primary-scoring-utils.test.js'
+      - 'js/data/saved-list-utils.js'
+      - 'tests/saved-list-utils.test.js'
+      - 'tests/game-timer.test.js'
+      - 'tactical-charge-workflow.js'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Run opponent-turn event layer unit tests
+        run: node tests/opponent-turn-event-layer.test.js
+
+      - name: Run geometry utility regression
+        run: node tests/geometry.test.js
+
+      - name: Run dice utility regression
+        run: node tests/dice-utils.test.js
+
+      - name: Run primary scoring utility regression
+        run: node tests/primary-scoring-utils.test.js
+
+      - name: Run saved-list utility regression
+        run: node tests/saved-list-utils.test.js
+
+      - name: Run HTML utility regression
+        run: node tests/html-utils.test.js
+
+      - name: Run unit list utility regression
+        run: node tests/unit-list-utils.test.js
+
+      - name: Run unit display utility regression
+        run: node tests/unit-display-utils.test.js
+
+      - name: Run secondary input utility regression
+        run: node tests/secondary-input-utils.test.js
+
+      - name: Run timer snapshot scope regression
+        run: node tests/timer-snapshot-scope.test.js
+      - name: Run terrain reference browser regression
+        run: node tests/terrain-reference-browser.test.js
+
+      - name: Run game timer turn-boundary regression
+        run: node tests/game-timer.test.js
+
+      - name: Run opponent-turn resolver render bridge regression
+        run: node tests/opponent-turn-render-bridge.test.js
+
+      - name: Run bidirectional combat edge-case regression
+        run: node tests/bidirectional-combat-edge-cases.test.js
+
+      - name: Run opponent-turn event layer architecture audit
+        run: node scripts/opponent-turn-event-layer-audit.js
+
+      - name: Validate capture UI syntax
+        run: node --check opponent-turn-capture.js
+
+      - name: Validate resolver render bridge syntax
+        run: node --check opponent-turn-render-fix.js
+
+      - name: Validate HTML utility syntax
+        run: node --check js/ui/html-utils.js
+
+      - name: Validate dice utility syntax
+        run: node --check js/core/dice-utils.js
+
+      - name: Validate unit list utility syntax
+        run: node --check js/data/unit-list-utils.js
+
+      - name: Validate unit display utility syntax
+        run: node --check js/ui/unit-display-utils.js
+
+      - name: Validate secondary input utility syntax
+        run: node --check js/ui/secondary-input-utils.js
+
+      - name: Validate inline JavaScript in index.html
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          html=Path('index.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script(?:[ \\t\\r\\n][^>]*)?>(.*?)</script>',html,re.I|re.S)
+          if not scripts:
+              raise SystemExit('No inline script blocks found in index.html')
+          for i,src in enumerate(scripts,1):
+              Path(f'/tmp/onoforge-inline-{i}.js').write_text(src,encoding='utf-8')
+          print(f'Extracted {len(scripts)} inline script block(s)')
+          PY
+          for f in /tmp/onoforge-inline-*.js; do
+            node --check "$f"
+          done
+
+      - name: Build opponent-turn preview artifact
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          html=Path('index.html').read_text(encoding='utf-8')
+          head_layers=[
+              ('onoforge-opponent-turn-event-layer',Path('opponent-turn-event-layer.js')),
+              ('onoforge-opponent-turn-capture',Path('opponent-turn-capture.js')),
+          ]
+          for script_id,source_path in head_layers:
+              if f'id="{script_id}"' not in html:
+                  html=html.replace('</head>', f'<script id="{script_id}">\n{source_path.read_text(encoding="utf-8")}\n</script></head>', 1)
+
+          expected="${state.currentTurn==='opp'?(opponentTurnTrackingHtml()+tacticalPreRollResolutionModal()):(tacticalMovementTrackerHtml()+tacticalAdvisorHtml()+tacticalContextHtml()+tacticalShootingResultHtml()+tacticalPreRollResolutionModal())}"
+          if expected not in html:
+              raise SystemExit('Production opponent-turn resolver render fix is missing from index.html')
+
+          marker='<script id="onoforge-opponent-turn-render-v4">window.ONOFORGE_OPPONENT_RESOLVER_RENDER_V4=true;</script>'
+          if 'id="onoforge-opponent-turn-render-v4"' not in html:
+              html=html.replace('</body>', marker+'</body>',1)
+
+          for marker_text in ['ONOFORGE_OPPONENT_EVENT_CAPTURE','ONOFORGE_OPPONENT_CAPTURE_UI','ONOFORGE_OPPONENT_RESOLVER_RENDER_V4']:
+              if marker_text not in html:
+                  raise SystemExit(f'Missing injected opponent-turn marker: {marker_text}')
+          out=Path('preview-site')
+          out.mkdir(parents=True,exist_ok=True)
+          (out/'index.html').write_text(html,encoding='utf-8')
+          data_src=Path('data/warhammer-event-companion-v1.2.json')
+          if not data_src.exists():
+              raise SystemExit('Required Event Companion geometry data file is missing')
+          data_out=out/'data'
+          data_out.mkdir(parents=True,exist_ok=True)
+          (data_out/data_src.name).write_text(data_src.read_text(encoding='utf-8'),encoding='utf-8')
+          parser_target=out/'js'/'data'
+          parser_target.mkdir(parents=True,exist_ok=True)
+          parser_target.joinpath('bsdata-parser.js').write_text(Path('js/data/bsdata-parser.js').read_text(encoding='utf-8'),encoding='utf-8')
+          geometry_target=out/'js'/'core'
+          geometry_target.mkdir(parents=True,exist_ok=True)
+          geometry_target.joinpath('geometry.js').write_text(Path('js/core/geometry.js').read_text(encoding='utf-8'),encoding='utf-8')
+          geometry_target.joinpath('dice-utils.js').write_text(Path('js/core/dice-utils.js').read_text(encoding='utf-8'),encoding='utf-8')
+          scoring_target=out/'js'/'battle'
+          scoring_target.mkdir(parents=True,exist_ok=True)
+          scoring_target.joinpath('primary-scoring-utils.js').write_text(Path('js/battle/primary-scoring-utils.js').read_text(encoding='utf-8'),encoding='utf-8')
+          saved_target=out/'js'/'data'
+          saved_target.mkdir(parents=True,exist_ok=True)
+          saved_target.joinpath('saved-list-utils.js').write_text(Path('js/data/saved-list-utils.js').read_text(encoding='utf-8'),encoding='utf-8')
+          ui_target=out/'js'/'ui'
+          ui_target.mkdir(parents=True,exist_ok=True)
+          ui_target.joinpath('html-utils.js').write_text(Path('js/ui/html-utils.js').read_text(encoding='utf-8'),encoding='utf-8')
+          saved_target.joinpath('unit-list-utils.js').write_text(Path('js/data/unit-list-utils.js').read_text(encoding='utf-8'),encoding='utf-8')
+          ui_target.joinpath('unit-display-utils.js').write_text(Path('js/ui/unit-display-utils.js').read_text(encoding='utf-8'),encoding='utf-8')
+          ui_target.joinpath('secondary-input-utils.js').write_text(Path('js/ui/secondary-input-utils.js').read_text(encoding='utf-8'),encoding='utf-8')
+
+          # Also emit a single-file preview for iPad/Safari testing. This keeps the
+          # validated preview self-contained so the user does not need a web host.
+          standalone=html.replace(
+              '<script src="js/data/bsdata-parser.js"></script>',
+              '<script>\n'+Path('js/data/bsdata-parser.js').read_text(encoding='utf-8')+'\n</script>',
+              1
+          )
+          standalone=standalone.replace(
+              '<script src="js/ui/game-timer.js"></script>',
+              '<script>\n'+Path('js/ui/game-timer.js').read_text(encoding='utf-8')+'\n</script>',
+              1
+          )
+          standalone=standalone.replace(
+              '<script src="js/core/geometry.js"></script>',
+              '<script>\n'+Path('js/core/geometry.js').read_text(encoding='utf-8')+'\n</script>',
+              1
+          )
+          standalone=standalone.replace(
+              '<script src="js/core/dice-utils.js"></script>',
+              '<script>\n'+Path('js/core/dice-utils.js').read_text(encoding='utf-8')+'\n</script>',
+              1
+          )
+          standalone=standalone.replace(
+              '<script src="js/battle/primary-scoring-utils.js"></script>',
+              '<script>\n'+Path('js/battle/primary-scoring-utils.js').read_text(encoding='utf-8')+'\n</script>',
+              1
+          )
+          standalone=standalone.replace(
+              '<script src="js/data/saved-list-utils.js"></script>',
+              '<script>\n'+Path('js/data/saved-list-utils.js').read_text(encoding='utf-8')+'\n</script>',
+              1
+          )
+          standalone=standalone.replace(
+              '<script src="js/ui/html-utils.js"></script>',
+              '<script>\n'+Path('js/ui/html-utils.js').read_text(encoding='utf-8')+'\n</script>',
+              1
+          )
+          standalone=standalone.replace(
+              '<script src="js/data/unit-list-utils.js"></script>',
+              '<script>\n'+Path('js/data/unit-list-utils.js').read_text(encoding='utf-8')+'\n</script>',
+              1
+          )
+          standalone=standalone.replace(
+              '<script src="js/ui/unit-display-utils.js"></script>',
+              '<script>\n'+Path('js/ui/unit-display-utils.js').read_text(encoding='utf-8')+'\n</script>',
+              1
+          )
+          standalone=standalone.replace(
+              '<script src="js/ui/secondary-input-utils.js"></script>',
+              '<script>\n'+Path('js/ui/secondary-input-utils.js').read_text(encoding='utf-8')+'\n</script>',
+              1
+          )
+          standalone=standalone.replace(
+              '<script src="tactical-charge-workflow.js"></script>',
+              '<script>\n'+Path('tactical-charge-workflow.js').read_text(encoding='utf-8')+'\n</script>',
+              1
+          )
+          companion_json=data_src.read_text(encoding='utf-8')
+          standalone=standalone.replace(
+              '</head>',
+              '<script type="application/json" id="onoforge-companion-data">'+companion_json+'</script></head>',
+              1
+          )
+          standalone=standalone.replace(
+              "const r=await fetch('./data/warhammer-event-companion-v1.2.json',{cache:'no-store'});",
+              "const r={ok:true,json:async()=>JSON.parse(document.getElementById('onoforge-companion-data').textContent)};",
+              1
+          )
+          (out/'onoforge40k-standalone.html').write_text(standalone,encoding='utf-8')
+          print('Built preview-site/index.html, standalone iPad preview, and bundled js/data/bsdata-parser.js')
+          PY
+          node --check opponent-turn-event-layer.js
+          node --check opponent-turn-capture.js
+          node --check opponent-turn-render-fix.js
+          node --check js/data/bsdata-parser.js
+          node --check js/ui/game-timer.js
+          node --check tactical-charge-workflow.js
+
+      - name: Assert preview contains no literal backslash-n escape in injected scripts
+        shell: bash
+        run: |
+          if grep -nF '\\n/* OnoForge 40K — opponent-turn resolver render bridge' preview-site/index.html; then
+            echo 'ERROR: preview contains a literal backslash-n escape before the resolver bridge.'
+            exit 1
+          fi
+
+      - name: Upload opponent-turn preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: onoforge40k-opponent-turn-event-preview
+          path: preview-site
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Report
+        run: echo "Opponent-turn event capture validation passed with production resolver render fix and Event Companion geometry data"

@@ -1,0 +1,16 @@
+{
+  "id": "Test Faction_wargear_unit",
+  "name": "Wargear Unit",
+  "faction": "Test Faction",
+  "points": 100,
+  "models": 1,
+  "wounds": 2,
+  "profile": {"M":"6\"","T":4,"Sv":"3+","W":"2","OC":"1"},
+  "keywords": ["INFANTRY"],
+  "abilities": [],
+  "weapons": [],
+  "weaponOptions": ["Power Fist","Plasma Gun"],
+  "dataSource": "BSData 11e",
+  "dataVersion": "current",
+  "sourceRole": "supplemental"
+}

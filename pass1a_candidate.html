@@ -3,12 +3,6 @@
 *{box-sizing:border-box}body{margin:0;background:#0b0f15;color:#e9edf3;font-family:Arial,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}.top{padding:18px 22px;background:#111722;border-bottom:1px solid #273142}.brand{font-size:25px;font-weight:800}.sub,.muted{color:#9ca8b8;font-size:13px}.nav{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:10px 16px;background:#0e141e;border-bottom:1px solid #273142}.nav-main{display:flex;gap:6px;flex-wrap:wrap}.nav button,.nav-tools summary{background:#171e2a;color:#cbd5e1;border:1px solid #2c3748;border-radius:7px;padding:9px 13px;font-size:14px;cursor:pointer}.nav button.active{background:#24334b;color:#fff;border-color:#49678f}.nav-tools{position:relative;margin-left:auto}.nav-tools summary{list-style:none}.nav-tools summary::-webkit-details-marker{display:none}.nav-tools summary:after{content:' ▾';font-size:11px}.nav-tools[open] summary{background:#24334b;color:#fff;border-color:#49678f}.nav-tools-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:1200;min-width:170px;padding:6px;background:#111722;border:1px solid #344052;border-radius:8px;box-shadow:0 12px 30px rgba(0,0,0,.4);display:grid;gap:4px}.nav-tools-menu button{width:100%;text-align:left}.wrap{max-width:1250px;margin:auto;padding:18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.card{background:#111722;border:1px solid #273142;border-radius:10px;padding:15px;margin-bottom:14px}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.split{display:flex;justify-content:space-between;gap:10px;align-items:center}.field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:150px}.field label{font-size:12px;color:#9ca8b8}.field input,.field select,.field textarea,input[type=text]{width:100%;background:#0b1018;color:#eef2f7;border:1px solid #344052;border-radius:7px;padding:9px}.btn{background:#1b2432;color:#e8edf4;border:1px solid #354255;border-radius:7px;padding:8px 11px}.btn.primary{background:#27598b;border-color:#3975b6}.btn.danger{background:#5b252c;border-color:#82404a}.pill{display:inline-block;border:1px solid #3a4658;border-radius:999px;padding:4px 8px;font-size:12px;margin:2px}.status,.warn,.ok{border-radius:7px;padding:9px;margin-top:8px}.status{background:#17202d;border:1px solid #304057}.warn{background:#38261b;border:1px solid #78512d;color:#f4c58f}.ok{background:#183022;border:1px solid #356747;color:#aee2bf}.big{font-size:24px;font-weight:800}.unit{padding:11px 0;border-top:1px solid #26303e}.empty{padding:25px;text-align:center;color:#8995a5}.bar{height:8px;background:#242d3a;border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;background:#4d86bd}.mono{font-family:monospace;font-size:12px;white-space:pre-wrap}.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.tabs button{background:#171e2a;color:#cbd5e1;border:1px solid #2c3748;border-radius:7px;padding:8px 11px}.tabs button.active{background:#315174}.logrow{border-top:1px solid #273142;padding:10px 0}.metric{font-size:20px;font-weight:700}.modal{position:fixed;inset:0;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;padding:18px;z-index:50}.modal>.card{width:min(850px,100%);max-height:92vh;overflow:auto}.tiny{font-size:11px;color:#8290a1}@media(max-width:850px){.grid,.grid3,.grid2{grid-template-columns:1fr}.wrap{padding:10px}}
 
 
-/* Quick aggregate physical-result controls */
-.pr-quick-count{display:grid;grid-template-columns:82px 1fr 82px;gap:12px;align-items:center;margin-top:18px}
-.pr-count-btn{min-height:76px;font-size:38px;font-weight:900}
-.pr-count-value{text-align:center;font-size:54px;font-weight:900}
-.pr-count-presets{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;margin-top:10px}
-.pr-count-presets .btn{min-width:52px;min-height:44px;font-weight:800}
 /* Pre-Roll physical dice entry overlay */
 .pr-dice-modal{z-index:5000;background:rgba(0,0,0,.86)}
 .pr-dice-card{width:min(900px,100%);padding:22px;max-height:94vh;overflow:auto}
@@ -132,7 +126,7 @@
 .game-unit-row{display:grid;grid-template-columns:minmax(170px,1fr) minmax(240px,290px);gap:10px;align-items:start;padding:9px 0;border-top:1px solid #26303e}.game-unit-stats{color:#9ca8b8;font-size:12px;white-space:nowrap;line-height:1.35}.game-unit-controls{min-width:0}.game-unit-actions{justify-content:flex-start;flex-wrap:wrap;gap:4px;margin-top:4px}.game-unit-actions .btn{white-space:nowrap;font-size:10px;line-height:1;padding:3px 5px;min-height:24px}.battleshock-badge{display:inline-block;margin-left:7px;padding:2px 7px;border-radius:999px;background:#6b2430;color:#ffd9de;border:1px solid #a94b58;font-size:11px;font-weight:800;letter-spacing:.03em}.game-unit-row.is-battleshocked{background:rgba(169,75,88,.08)}@media(max-width:700px){.game-unit-row{grid-template-columns:1fr;gap:6px}.game-unit-actions{justify-content:flex-start}.game-unit-stats{white-space:normal}}.unit-category{margin-top:12px}.unit-category-title{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;padding:8px 10px;margin:12px 0 6px;border-radius:8px;background:rgba(41,168,255,.14);color:#dff3ff;border:1px solid rgba(41,168,255,.28)}
 .detachment-box{margin-top:10px;padding:14px;border:1px solid #344052;border-radius:12px;background:#0b1018;color:#eef2f7;box-shadow:0 8px 18px rgba(0,0,0,.18);font-family:inherit}.detachment-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px}.detachment-head label{margin:0;color:#eaf2fb;font-weight:800}.detachment-dp{font-weight:800;padding:5px 10px;border-radius:999px;background:#1d3850;color:#dff0ff;border:1px solid #3e6e98}.detachment-selected{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}.detachment-selected .pill{padding:5px 9px;border-radius:999px;background:#1b3145;border:1px solid #3c6384;color:#f1f7fc;font-size:.9em}.detachment-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.detachment-options .detach-check{margin:0}.detachment-help{font-size:.82em;margin-top:8px;color:#a9b7c7}@media(max-width:700px){.detachment-options{grid-template-columns:1fr}}
 
-.action-line{display:grid;grid-template-columns:90px 82px 34px 78px minmax(120px,1.1fr) minmax(180px,1.5fr) minmax(120px,1fr) auto;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid #263244;font-size:12px;min-width:0}.action-line>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.action-turn{font-weight:800;color:#7fc8ff;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}.action-phase{font-weight:800;color:#dbe7f4}.action-round,.action-time{color:#8996a7}.action-unit{font-weight:700;color:#f0f4f8}.action-action{color:#cdd7e3}.action-result{color:#7fc8ff;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.3}.action-undo{padding:5px 8px;font-size:11px}.scoring-log-list{display:flex;flex-direction:column}.scoring-line{display:grid;grid-template-columns:1.2fr .8fr .45fr .9fr .7fr 1.4fr 1.8fr 1.6fr;gap:8px;align-items:center;border-top:1px solid #273142;padding:8px 0;font-size:11px}.scoring-source{color:#8eb7df;font-weight:800}.scoring-line .action-result{color:#b9c7d8}@media(max-width:850px){.scoring-line{grid-template-columns:1fr 1fr}.scoring-line>*{min-width:0}}.action-log-list{overflow-x:auto}@media(max-width:900px){.action-line{grid-template-columns:78px 70px 30px 72px minmax(100px,1fr) minmax(150px,1.4fr) minmax(100px,1fr) auto}}@media(max-width:650px){.action-line{grid-template-columns:72px 60px 28px 65px minmax(90px,1fr) minmax(130px,1.4fr);}.action-result{grid-column:5/7}.action-undo{grid-column:7}.action-time{display:none}}
+.action-line{display:grid;grid-template-columns:90px 82px 34px 78px minmax(120px,1.1fr) minmax(180px,1.5fr) minmax(120px,1fr) auto;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid #263244;font-size:12px;min-width:0}.action-line>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.action-turn{font-weight:800;color:#7fc8ff}.action-phase{font-weight:800;color:#dbe7f4}.action-round,.action-time{color:#8996a7}.action-unit{font-weight:700;color:#f0f4f8}.action-action{color:#cdd7e3}.action-result{color:#7fc8ff}.action-undo{padding:5px 8px;font-size:11px}.scoring-log-list{display:flex;flex-direction:column}.scoring-line{display:grid;grid-template-columns:1.2fr .8fr .45fr .9fr .7fr 1.4fr 1.8fr 1.6fr;gap:8px;align-items:center;border-top:1px solid #273142;padding:8px 0;font-size:11px}.scoring-source{color:#8eb7df;font-weight:800}.scoring-line .action-result{color:#b9c7d8}@media(max-width:850px){.scoring-line{grid-template-columns:1fr 1fr}.scoring-line>*{min-width:0}}.action-log-list{overflow-x:auto}@media(max-width:900px){.action-line{grid-template-columns:78px 70px 30px 72px minmax(100px,1fr) minmax(150px,1.4fr) minmax(100px,1fr) auto}}@media(max-width:650px){.action-line{grid-template-columns:72px 60px 28px 65px minmax(90px,1fr) minmax(130px,1.4fr);}.action-result{grid-column:5/7}.action-undo{grid-column:7}.action-time{display:none}}
 
 .battle-main>.battle-log{width:100%;margin-top:12px}.model-roster-list{margin-top:7px;border:1px solid #29435c;border-radius:9px;background:#0d1722;overflow:hidden}.model-roster-list>summary{list-style:none;cursor:pointer;padding:7px 9px;color:#bfe7ff;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em}.model-roster-list>summary::-webkit-details-marker{display:none}.model-roster-list>summary::before{content:'▶';display:inline-block;margin-right:6px;font-size:9px}.model-roster-list[open]>summary::before{content:'▼'}.model-roster-body{padding:0 6px 6px}.model-roster-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;padding:6px 5px;border-top:1px solid #263244;min-height:34px}.model-roster-row.destroyed{opacity:.58}.model-roster-name{font-weight:800;font-size:11px;color:#eef4fb}.model-roster-wounds{font-size:10px;color:#9eb0c3;margin-top:2px}.model-roster-actions{display:flex;gap:4px;align-items:center}.model-roster-actions .btn{font-size:10px;line-height:1;min-height:24px;padding:3px 6px}.model-roster-title{display:none}.game-unit-name{min-width:0}.game-unit-controls{display:flex;align-items:center;gap:5px;flex-wrap:wrap}.game-unit-controls .game-unit-stats{margin-right:auto}.game-status-actions,.game-modifier-actions{margin-top:0!important}.model-roster-list{grid-column:1/-1}@media(max-width:700px){.model-roster-row{grid-template-columns:minmax(0,1fr) auto}.model-roster-actions .btn{min-height:28px}}
 
@@ -693,8 +687,7 @@ body{overflow-x:hidden}
 #battle-view #onoforge-advisor-render .ta-decision-render{margin-bottom:10px;padding:11px}
 @media (min-width:701px){#battle-view #onoforge-advisor-render .ta-grid{grid-template-columns:repeat(8,minmax(0,1fr));gap:5px}#battle-view #onoforge-advisor-render .ta-metric{padding:6px}#battle-view #onoforge-advisor-render .ta-metric b{font-size:14px}}
 </style>
-<style id="ono-battle-ux-requested">.battle-layout>.objective-map-renderer{grid-column:1!important;grid-row:2!important}.battle-layout>.battle-state-column{grid-column:2!important;grid-row:1 / span 2!important}.battle-layout>.battle-log{grid-column:1 / -1!important;grid-row:3!important}@media (min-width:900px) and (max-width:1300px) and (orientation:landscape){.battle-layout{display:grid!important;grid-template-columns:minmax(0,1fr) 500px!important;grid-template-rows:auto auto auto!important;gap:12px!important}.battle-layout>div:first-child{grid-column:1!important;grid-row:1!important}.battle-layout>.objective-map-renderer{grid-column:1!important;grid-row:2!important}.battle-layout>.battle-state-column{grid-column:2!important;grid-row:1 / span 2!important}.battle-layout>.battle-state-column .army-state-grid{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)!important;gap:10px!important}.battle-layout>.battle-log{grid-column:1 / -1!important;grid-row:3!important}}</style></head><body><div id="app"></div><script src="js/data/bsdata-parser.js"></script><script src="js/ui/game-timer.js"></script><script src="js/core/geometry.js"></script><script src="js/core/dice-utils.js"></script><script src="js/battle/primary-scoring-utils.js"></script><script src="js/data/saved-list-utils.js"></script><script src="js/ui/html-utils.js"></script><script src="js/data/unit-list-utils.js"></script><script src="js/ui/unit-display-utils.js"></script>
-<script src="js/ui/secondary-input-utils.js"></script><script src="tactical-charge-workflow.js"></script><script>
+<style id="ono-battle-ux-requested">.battle-layout>.objective-map-renderer{grid-column:1!important;grid-row:2!important}.battle-layout>.battle-state-column{grid-column:2!important;grid-row:1 / span 2!important}.battle-layout>.battle-log{grid-column:1 / -1!important;grid-row:3!important}@media (min-width:900px) and (max-width:1300px) and (orientation:landscape){.battle-layout{display:grid!important;grid-template-columns:minmax(0,1fr) 500px!important;grid-template-rows:auto auto auto!important;gap:12px!important}.battle-layout>div:first-child{grid-column:1!important;grid-row:1!important}.battle-layout>.objective-map-renderer{grid-column:1!important;grid-row:2!important}.battle-layout>.battle-state-column{grid-column:2!important;grid-row:1 / span 2!important}.battle-layout>.battle-state-column .army-state-grid{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)!important;gap:10px!important}.battle-layout>.battle-log{grid-column:1 / -1!important;grid-row:3!important}}</style></head><body><div id="app"></div><script>
 window.addEventListener('error',function(ev){if(ev.target&&ev.target.tagName==='SCRIPT'&&ev.target.src===SUPABASE_SCRIPT_URL)return;var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var msg=String(ev.error?.message||ev.message||'Unknown error');a.innerHTML='<span class="error-title">OnoForge error</span><div class="error-detail">'+msg.replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</div><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});window.addEventListener('unhandledrejection',function(ev){var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var reason=ev.reason?.message||ev.reason||'Unhandled promise rejection';a.innerHTML='<span class="error-title">OnoForge error</span><div class="error-detail">'+String(reason).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</div><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});
 
 window.__ONOFORGE_DETACHMENTS = window.__ONOFORGE_DETACHMENTS || {}; function detachmentCatalog(){return window.__ONOFORGE_DETACHMENTS;}
@@ -881,6 +874,12 @@ function clearBattlefieldUnitPosition(uid){
   event('UNIT_BATTLEFIELD_POSITION_CLEARED',{unit:id,action:'Battlefield position cleared',round:Math.max(1,Number(state.round)||1),phase:String(state.phase||'Command')},before);
   save();render();
 }
+function battlefieldDistanceBetween(a,b){
+  if(!a||!b)return null;
+  const ax=Number(a.x),ay=Number(a.y),bx=Number(b.x),by=Number(b.y);
+  if(![ax,ay,bx,by].every(Number.isFinite))return null;
+  return Math.hypot(ax-bx,ay-by);
+}
 function objectiveDistanceFromUnit(side,uid,objectiveName){
   const unit=battlefieldUnitPosition(side,uid);
   const objective=objectiveStateRecord(objectiveName);
@@ -958,8 +957,8 @@ function terrainReferenceImageHtml(model){
   const layout=String(model?.layout||'');
   const pdf=typeof WARHAMMER_EVENT_COMPANION_PDF==='string'?WARHAMMER_EVENT_COMPANION_PDF:'https://assets.warhammer-community.com/eng_12-06_warhammer40000_event_companion-s3bfb5f9s1-ivswuij3fo.pdf';
   if(!Number.isInteger(page)||page<1)return '<div class="terrain-reference-missing"><strong>Event Companion layout unavailable.</strong><div class="tiny">Select a valid mission and Layout A, B, or C.</div></div>';
-  const src=pdf+'#page='+page;
-  return '<div class="terrain-reference-card" style="margin-top:10px;padding:18px;background:#0c1722;border:1px solid #3a5068;border-radius:10px;text-align:center"><div style="font-size:20px;font-weight:800;color:#e9edf3">Official Event Companion Terrain Layout</div><div class="muted" style="margin-top:6px">Layout '+esc(layout)+' • Event Companion p.'+page+'</div><div style="margin-top:16px;padding:18px;background:#111d29;border:1px solid #30465c;border-radius:8px"><div style="font-size:13px;color:#cbd5e1">The official terrain diagram opens in the browser PDF viewer for reliable iPad/Safari rendering.</div><a class="btn primary" href="'+esc(src)+'" target="_blank" rel="noopener" style="display:inline-block;margin-top:14px;text-decoration:none">Open Official Map • Page '+page+'</a></div></div>';
+  const src=pdf+'#page='+page+'&zoom=125';
+  return '<div class="terrain-reference-frame"><iframe src="'+esc(src)+'" title="Event Companion terrain layout '+esc(layout)+' • page '+page+'" loading="eager"></iframe></div>';
 }
 function objectiveMapRendererHtml(mode='battle'){const model=objectiveMapModel(mode),status=mode==='terrain'?'Official Event Companion reference':model.verified?'Verified geometry':'Geometry pending verification',pct=(n,max)=>Math.max(0,Math.min(100,(Number(n)/Number(max))*100)),point=p=>p&&Number.isFinite(Number(p.x))&&Number.isFinite(Number(p.y)),terrainSetup=mode==='terrain',setup=mode==='setup',deployment=mode==='deployment';const regionLabel=key=>{const k=String(key||'');if(k==='attackerDeployment')return (state.attackerSide==='opp'?state.oppName:state.myName)+' Deployment Zone';if(k==='defenderDeployment')return (state.attackerSide==='opp'?state.myName:state.oppName)+' Deployment Zone';if(k==='attackerTerritory')return (state.attackerSide==='opp'?state.oppName:state.myName)+' Territory';if(k==='defenderTerritory')return (state.attackerSide==='opp'?state.myName:state.oppName)+' Territory';return ({my:'My Deployment Zone',opp:'Opponent Deployment Zone',noMansLand:"No Man's Land",myTerritory:'My Territory',oppTerritory:'Opponent Territory'})[k]||k.replace(/([A-Z])/g,' $1').replace(/^./,s=>s.toUpperCase());};const regionClass=key=>{const k=String(key||'').toLowerCase();return k.includes('deployment')?'deployment':k.includes('territory')?'territory':'region';};const renderRegion=(key,r)=>{if(!r||typeof r!=='object')return '';if([r.x,r.y,r.width,r.height].every(v=>Number.isFinite(Number(v))))return '<div class="objective-map-region '+regionClass(key)+'" style="left:'+pct(r.x,60)+'%;top:'+pct(44-(Number(r.y)+Number(r.height)),44)+'%;width:'+pct(r.width,60)+'%;height:'+pct(r.height,44)+'%" title="'+esc(regionLabel(key))+'">'+esc(regionLabel(key))+'</div>';if(Array.isArray(r.points)&&r.points.every(point)){const pts=r.points.map(p=>pct(p.x,60)+','+pct(44-p.y,44)).join(' '),cx=r.points.reduce((s,p)=>s+Number(p.x),0)/r.points.length,cy=r.points.reduce((s,p)=>s+Number(p.y),0)/r.points.length,labelX=pct(cx,60),labelY=pct(44-cy,44);return '<svg class="objective-map-region-polygon '+regionClass(key)+'" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="'+esc(regionLabel(key))+'"><polygon points="'+pts+'"/><text x="'+labelX+'" y="'+labelY+'" text-anchor="middle">'+esc(regionLabel(key))+'</text></svg>';}return '';};const renderTerrain=(key,r)=>{if(!r||typeof r!=='object')return '';const label='Terrain '+String(key||'');if([r.x,r.y,r.width,r.height].every(v=>Number.isFinite(Number(v))))return '<div class="objective-map-terrain" style="left:'+pct(r.x,60)+'%;top:'+pct(44-(Number(r.y)+Number(r.height)),44)+'%;width:'+pct(r.width,60)+'%;height:'+pct(r.height,44)+'%" title="'+esc(label)+'"></div>';if(Array.isArray(r.points)&&r.points.every(point)){const pts=r.points.map(p=>pct(p.x,60)+'% '+pct(44-Number(p.y),44)+'%').join(',');return '<div class="objective-map-terrain-polygon" style="clip-path:polygon('+pts+')" title="'+esc(label)+'"></div>';}return '';};const regions=(!terrainSetup&&model.verified)?Object.entries(model.deploymentZones||{}).map(([k,v])=>renderRegion(k,v)).join(''):'';const terrain=model.verified?Object.entries(model.terrainGeometry||{}).map(([k,v])=>renderTerrain(k,v)).join(''):'';const ghostNodes=(mode==='setup'||mode==='deployment')?objectiveMapPlanGhostNodesHtml(model,pct):'',unitNodes=terrainSetup?'':objectiveMapUnitNodesHtml(model,pct,mode),measurementToggle=terrainSetup?'<span class="pill">Measurements shown</span>':'',objectiveNodes=terrainSetup?'':model.objectives.map(o=>{const p=o.position,x=point(p)?pct(p.x,60):null,y=point(p)?pct(44-p.y,44):null,ownerClass=o.owner==='my'?'my':o.owner==='opp'?'opp':o.owner==='contested'?'contested':'none';return '<div class="objective-map-node '+ownerClass+'" data-map-objective="'+esc(o.name)+'" style="'+(x===null||y===null?'display:none;':'left:'+x+'%;top:'+y+'%;')+'" title="'+esc(o.name)+'">'+esc(o.name.replace(/^Central |^Expansion |^My |^Opponent /,''))+'</div>';}).join(''),pending='<div class="status" style="margin-top:8px"><b>Map geometry pending verification.</b><div class="tiny" style="margin-top:4px">No deployment zone, territory, terrain, or objective position is inferred from the 60 × 44 table boundary. The Event Companion geometry must be verified first.</div></div>',title=terrainSetup?'Terrain Setup':setup?'Deployment Planning':deployment?'Deployment Tracking':'Battlefield Map',subtitle=terrainSetup?'Step 4 • Create the Battlefield • use the selected Event Companion layout as the terrain placement guide.':setup?'Step 8 preparation • plan opening positions separately from terrain setup.':deployment?'Record actual alternating deployment positions • drag units after placement.':'Live battlefield positions • drag units to record movement',controls=terrainSetup?'':setup?deploymentPlanMapControlsHtml(model):deployment?deploymentTrackingControlsHtml(model):objectiveMapPlacementPanelHtml(model),reserveTray=(deployment||mode==='battle')?reserveTrayHtml():'',editor=terrainSetup?'':setup?deploymentPlanPositionEditorHtml():deployment?deploymentTrackingEditorHtml():battlefieldPositionEditorHtml();const battlefieldMarkup=terrainSetup?terrainReferenceImageHtml(model):'<div class="objective-map-canvas '+(setup?'terrain-measurement-map':'')+'" data-objective-map-canvas data-objective-map-mode="'+esc(mode)+'" role="application" aria-label="'+esc(title)+' 60 by 44 inch battlefield map">'+(model.verified?regions+terrain+objectiveNodes+ghostNodes+unitNodes:'<div class="objective-map-placeholder">Verified Event Companion geometry required</div>')+'</div>';
 const footer=terrainSetup?'<div class="terrain-reference-note"><strong>Official Event Companion reference.</strong> This page is the selected mission/layout diagram. Use it directly to place the terrain areas and terrain features on the physical 60 × 44 battlefield. The app does not reconstruct or infer the diagram measurements.</div>':'<div class="objective-map-legend"><span><i class="objective-map-legend-swatch terrain"></i>Terrain</span><span><i class="objective-map-legend-swatch deployment"></i>Deployment</span><span><i class="objective-map-legend-swatch territory"></i>Territory</span><span><i class="objective-map-legend-swatch objective"></i>Objective</span></div><div class="tiny" style="margin-top:6px">60 × 44 inches • bottom-left origin • geometry and terrain are rendered only from verified Event Companion data. Line of sight is never inferred.</div>';
@@ -1025,19 +1024,154 @@ function mergeSupplementalUnits(canonical,supplemental){
   return out;
 }
 
+function collectBSDataObjects(root){
+  const map=new Map(), seen=new Set();
+  function walk(x){
+    if(!x||typeof x!=='object'||seen.has(x))return;
+    seen.add(x);
+    if(typeof x.id==='string')map.set(x.id,x);
+    Object.keys(x).forEach(k=>walk(x[k]));
+  }
+  walk(root);
+  return map;
+}
 
+function bsProfile(entry,typeName){
+  return (entry?.profiles||[]).find(p=>p.typeName===typeName) || null;
+}
 
+function bsCharacteristics(profile){
+  const out={};
+  (profile?.characteristics||[]).forEach(c=>{
+    const rawName=String(c?.name||'').trim();
+    if(!rawName)return;
+    const key=rawName==='LD'?'Ld':rawName==='Range'?'rng':rawName;
+    out[key]=c.$text??'';
+  });
+  return out;
+}
 
+function bsAbilities(entry){
+  const out=[],seen=new Set();
+  function walk(x){
+    if(!x||typeof x!=='object')return;
+    if(Array.isArray(x.profiles)){
+      x.profiles.forEach(p=>{
+        if(String(p.typeName||'').toLowerCase()!=='abilities')return;
+        const description=(p.characteristics||[]).find(c=>c.name==='Description')?.$text||'';
+        if(!p.name||!description||seen.has(p.name))return;
+        seen.add(p.name);
+        out.push({name:p.name,description});
+      });
+    }
+    if(Array.isArray(x.selectionEntries))x.selectionEntries.forEach(walk);
+    if(Array.isArray(x.selectionEntryGroups))x.selectionEntryGroups.forEach(walk);
+    if(Array.isArray(x.entryLinks)){
+      x.entryLinks.forEach(link=>{
+        const targetId=link.targetId||link.id;
+        if(window.__BS_OBJECT_MAP&&targetId){
+          const target=window.__BS_OBJECT_MAP.get(targetId);
+          if(target)walk(target);
+        }
+      });
+    }
+  }
+  walk(entry);
+  return out;
+}
+function normalize11eWeaponAbilities(raw){
+  const src=Array.isArray(raw)?raw:[];
+  const out=[];
+  src.forEach(value=>{
+    const text=String(value??'').trim();
+    if(!text)return;
+    // 11th edition renamed the former PISTOL weapon keyword to CLOSE-QUARTERS.
+    // Normalize legacy source labels at ingestion so stale supplemental data
+    // cannot silently reintroduce 10th-edition terminology into the engine.
+    const normalized=text.toUpperCase().replace(/-/g,' ').replace(/_/g,' ').replace(/\\s+/g,' ').trim();
+    if(normalized==='PISTOL') out.push('CLOSE QUARTERS');
+    else out.push(text);
+  });
+  return [...new Set(out)];
+}
 
+function bsWeapons(entry){
+  const out=[], seen=new Set(), visited=new Set();
+  const objectMap=(typeof window!=='undefined' && window.__BS_OBJECT_MAP && typeof window.__BS_OBJECT_MAP.get==='function')?window.__BS_OBJECT_MAP:null;
+  function walk(x){
+    if(!x||typeof x!=='object')return;
+    const objectId=x.id||x.targetId;
+    if(objectId){
+      if(visited.has(objectId))return;
+      visited.add(objectId);
+    }
+    if(Array.isArray(x.profiles)){
+      x.profiles.forEach(p=>{
+        const type=String(p.typeName||'').toLowerCase();
+        if(type!=='ranged weapons' && type!=='melee weapons' && !type.includes('ranged weapon') && !type.includes('melee weapon'))return;
+        const chars=bsCharacteristics(p);
+        const w={name:p.name,...chars,abilities:normalize11eWeaponAbilities(chars.Keywords?[chars.Keywords]:[])};
+        delete w.Keywords;
+        const key=JSON.stringify(w);
+        if(!seen.has(key)){seen.add(key);out.push(w);}
+      });
+    }
+    if(Array.isArray(x.selectionEntries))x.selectionEntries.forEach(walk);
+    if(Array.isArray(x.selectionEntryGroups))x.selectionEntryGroups.forEach(walk);
+    if(Array.isArray(x.entryLinks)){
+      x.entryLinks.forEach(link=>{
+        const targetId=link.targetId||link.id;
+        if(objectMap && targetId){
+          const target=objectMap.get(targetId);
+          if(target)walk(target);
+        }
+      });
+    }
+  }
+  walk(entry);
+  return out;
+}
+function bsWargearOptions(entry){
+  const out=[],seen=new Set();
+  function walk(x){
+    if(!x||typeof x!=='object')return;
+    if(Array.isArray(x.selectionEntries))x.selectionEntries.forEach(s=>{
+      if(s.type==='upgrade' && s.name && !seen.has(s.name)){
+        seen.add(s.name);out.push(s.name);
+      }
+      walk(s);
+    });
+    if(Array.isArray(x.selectionEntryGroups))x.selectionEntryGroups.forEach(walk);
+  }
+  walk(entry);
+  return out;
+}
 
-
-
-
-
-
-
-
-
+function bsUnitFromEntry(entry,faction){
+  if(!entry||entry.type!=='unit')return null;
+  const p=bsProfile(entry,'Unit');
+  if(!p)return null;
+  const stats=bsCharacteristics(p);
+  const pts=(entry.costs||[]).find(c=>c.name==='pts');
+  const categories=(entry.categoryLinks||[]).map(c=>c.name).filter(Boolean);
+  const weapons=bsWeapons(entry);
+  return {
+    id:`${faction}_${String(entry.name).toLowerCase().replace(/[^a-z0-9]+/g,'_')}`,
+    name:entry.name,
+    faction,
+    points:pts?Number(pts.value):0,
+    models:1,
+    wounds:Number(stats.W)||1,
+    profile:stats,
+    keywords:categories,
+    abilities:bsAbilities(entry),
+    weapons,
+    weaponOptions:bsWargearOptions(entry),
+    dataSource:'BSData 11e',
+    dataVersion:'current',
+    sourceRole:'supplemental'
+  };
+}
 
 async function refreshCurrentUnitDatabase(showMessage=true){
   try{
@@ -1046,12 +1180,13 @@ async function refreshCurrentUnitDatabase(showMessage=true){
       const res=await fetch(CURRENT_11E_DATA_SOURCES[faction],{cache:'no-store'});
       if(!res.ok)throw new Error(`${faction} data request failed (${res.status})`);
       const root=await res.json();
-      const map=window.OnoForgeBSDataParser.collectBSDataObjects(root);
+      const map=collectBSDataObjects(root);
+      window.__BS_OBJECT_MAP=map;
       const links=root?.catalogue?.entryLinks||[];
       const seen=new Set();
       links.forEach(link=>{
         const entry=map.get(link.targetId||link.id);
-        const u=window.OnoForgeBSDataParser.bsUnitFromEntry(entry,faction,{objectMap:map});
+        const u=bsUnitFromEntry(entry,faction);
         if(u&&!seen.has(u.name)){seen.add(u.name);all.push(u);}
       });
       // Only catalogue-linked unit entries are eligible for supplemental import.
@@ -1155,10 +1290,20 @@ function ensurePermanentSampleArmies(){
   return samples.map(x=>x.id);
 }
 
+function isPermanentSampleArmy(id){
+  return String(id||'').startsWith('sample-');
+}
+
 function savedListsUI(){
   return '';
 }
 
+function formatSavedListDate(value){
+  if(!value)return 'Date not recorded';
+  const d=new Date(value);
+  if(Number.isNaN(d.getTime()))return String(value);
+  return d.toLocaleString(undefined,{year:'numeric',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+}
 function savedListsPage(){
   const lists=Array.isArray(state.savedArmyLists)?state.savedArmyLists:[];
   return `<div class="card">
@@ -1323,6 +1468,16 @@ function syncPrimaryScoringRound(){
   state.primaryScoredItemsMy=[...state.primaryScoringByRoundMy[roundKey]];
   state.primaryScoredItemsOpp=[...state.primaryScoringByRoundOpp[roundKey]];
 }
+function primaryScoringRoundRange(timing){
+  const text=String(timing||'').toUpperCase();
+  const m=text.match(/R(\\d+)\\s*[–—-]\\s*(\\d+)/);
+  if(m)return {min:Number(m[1]),max:Number(m[2])};
+  const plus=text.match(/R(\\d+)\\s*\\+/);
+  if(plus)return {min:Number(plus[1]),max:5};
+  const single=text.match(/R(\\d+)\\b/);
+  if(single)return {min:Number(single[1]),max:Number(single[1])};
+  return {min:1,max:5};
+}
 function primaryScoringRowAvailable(timing,round){
   const timingText=String(timing||'').toLowerCase();
   // End-of-battle Primary scoring is only displayed during the final game round.
@@ -1334,6 +1489,14 @@ function primaryScoringRowsForRound(mission){
   const rows=PRIMARY_SCORING[mission]||[];
   const round=Math.max(1,Math.min(5,Number(state.round)||1));
   return rows.filter(r=>primaryScoringRowAvailable(r?.[0],round));
+}
+function primaryScoringVP(value){
+  const m=String(value||'').match(/\d+/);
+  return m?Math.max(0,Number(m[0])||0):0;
+}
+function primaryScoringIsPer(row){
+  const text=String(row?.[2]||'').toLowerCase();
+  return /\bper\b|\bfor each\b/.test(text);
 }
 function objectiveCountsForSide(side){
   const player=side==='opp'?'opp':'my';
@@ -2173,17 +2336,8 @@ function stratagemsUI(){
 const ONOFORGE_RULES_DATA_PIN={schema:'onoforge.rules-data-pin.v1',unitSource:'BSData 11e',unitRevision:'current',unitRevisionDate:'',eventCompanion:'Warhammer Event Companion',eventCompanionVersion:'1.2',eventCompanionRevision:'1.2'};
 let state={
   savedArmyLists:[],tournamentLifecycle:'SETUP',battleResultLocked:false,battleResultVerified:false,battleResultVerifiedAt:null,
-  stratagemsMy:[], stratagemsOpp:[], stratagemsOpen:false,primaryMissionsOpen:false,secondaryMissionsOpen:false,page:'builder',myName:'My Army',oppName:'Opponent Army',faction:'Tyranids',detachment:'Invasion Fleet',detachmentSelections:['Invasion Fleet'],oppFaction:'Ultramarines',oppDetachment:'Gladius Task Force',oppDetachmentSelections:['Gladius Task Force'],limit:2000,my:[],opp:[],searchMy:'',searchOpp:'',configure:null,attacker:'norn',weapon:'Rupture Cannon',target:'marine',round:1,phase:'Command',myVP:0,oppVP:0,myCP:0,oppCP:0,phaseCP:{},battleReadyMy:false,battleReadyOpp:false,secondaryMy:'tactical',secondaryOpp:'tactical',secondaryMyCards:[],secondaryOppCards:[],secondaryMyDeck:[],secondaryOppDeck:[],secondaryMyDeckInitialized:false,secondaryOppDeckInitialized:false,secondaryMyDiscard:[],secondaryOppDiscard:[],newOrdersCompletedMy:false,newOrdersCompletedOpp:false,secondaryMyScored:[],secondaryOppScored:[],secondaryMyScoredVP:{},secondaryOppScoredVP:{},secondaryMyScoredVPByRound:{},secondaryOppScoredVPByRound:{},secondaryMyScoredRound:{},secondaryOppScoredRound:{},secondaryNewOrdersUsedMy:false,secondaryNewOrdersUsedOpp:false,secondaryPersonalPlans:{},secondaryPlanEdit:'',secondaryDetailSide:'',secondaryDetailName:'',gameReferencePersonal:{},rulesDataPin:null,myForceDisposition:'',oppForceDisposition:'',attackerSide:'my',firstTurn:'my',currentTurn:'my',objectives:{},objectiveMapLayout:'A',objectiveMapMissionKey:'',terrainSetupComplete:false,deletedSavedArmyLists:[],objectiveControlHistory:{},objectiveControlSources:{},objectiveMeta:{},deploymentTrackingSide:'my',battlefieldUnitPositions:{},deploymentMapPlacement:null,battlefieldMapPlacement:null,reserveDeclarations:{my:{},opp:{}},events:[],gameAssistantChecks:{},gameAssistantNotes:'',personalArmyNotes:'',lists:[],activeRosterId:'',activeOpponentRosterId:'',dataStatus:'BSData 11e structured source • embedded catalogue bootstrap fallback',source:'BSData 11e',revision:'current',cloud:{email:'',userId:'',status:'Not connected',lastSync:'',error:''},cloudBattles:[],rulesLog:[],mathRules:{},gameTimer:{elapsedMs:0,running:false,paused:false,startedAt:0,pausedAt:0,finishedAt:0,turnMyMs:0,turnOppMs:0,turnStartedGameMs:0,turnPaused:false,turnSide:null},cloudPasswordRecovery:false,localSavedAt:''};
+  stratagemsMy:[], stratagemsOpp:[], stratagemsOpen:false,primaryMissionsOpen:false,secondaryMissionsOpen:false,page:'builder',myName:'My Army',oppName:'Opponent Army',faction:'Tyranids',detachment:'Invasion Fleet',detachmentSelections:['Invasion Fleet'],oppFaction:'Ultramarines',oppDetachment:'Gladius Task Force',oppDetachmentSelections:['Gladius Task Force'],limit:2000,my:[],opp:[],searchMy:'',searchOpp:'',configure:null,attacker:'norn',weapon:'Rupture Cannon',target:'marine',round:1,phase:'Command',myVP:0,oppVP:0,myCP:0,oppCP:0,phaseCP:{},battleReadyMy:false,battleReadyOpp:false,secondaryMy:'tactical',secondaryOpp:'tactical',secondaryMyCards:[],secondaryOppCards:[],secondaryMyDeck:[],secondaryOppDeck:[],secondaryMyDeckInitialized:false,secondaryOppDeckInitialized:false,secondaryMyDiscard:[],secondaryOppDiscard:[],newOrdersCompletedMy:false,newOrdersCompletedOpp:false,secondaryMyScored:[],secondaryOppScored:[],secondaryMyScoredVP:{},secondaryOppScoredVP:{},secondaryMyScoredVPByRound:{},secondaryOppScoredVPByRound:{},secondaryMyScoredRound:{},secondaryOppScoredRound:{},secondaryNewOrdersUsedMy:false,secondaryNewOrdersUsedOpp:false,secondaryPersonalPlans:{},secondaryPlanEdit:'',secondaryDetailSide:'',secondaryDetailName:'',gameReferencePersonal:{},rulesDataPin:null,myForceDisposition:'',oppForceDisposition:'',attackerSide:'my',firstTurn:'my',currentTurn:'my',objectives:{},objectiveMapLayout:'A',objectiveMapMissionKey:'',terrainSetupComplete:false,deletedSavedArmyLists:[],objectiveControlHistory:{},objectiveControlSources:{},objectiveMeta:{},deploymentTrackingSide:'my',battlefieldUnitPositions:{},deploymentMapPlacement:null,battlefieldMapPlacement:null,reserveDeclarations:{my:{},opp:{}},events:[],gameAssistantChecks:{},gameAssistantNotes:'',personalArmyNotes:'',lists:[],activeRosterId:'',activeOpponentRosterId:'',dataStatus:'BSData 11e structured source • embedded catalogue bootstrap fallback',source:'BSData 11e',revision:'current',cloud:{email:'',userId:'',status:'Not connected',lastSync:'',error:''},cloudBattles:[],rulesLog:[],mathRules:{},gameTimer:{elapsedMs:0,running:false,paused:false,startedAt:0,pausedAt:0,finishedAt:0,turnMyMs:0,turnOppMs:0,turnStartedGameMs:0,turnPaused:false},cloudPasswordRecovery:false,localSavedAt:''};
 Object.defineProperty(window,'ONOFORGE_APP_STATE',{configurable:true,get:function(){return state;}});
-
-window.OnoForgeGameTimer.install({
-  getState:function(){return state;},
-  save:function(){return save();},
-  render:function(){return render();},
-  battleMutationAllowed:function(action){return battleMutationAllowed(action);},
-  cloudSaveCurrentBattle:function(opts){return cloudSaveCurrentBattle(opts);},
-  esc:function(value){return esc(value);}
-});
 
 const GAME_REFERENCE_PHASES={Command:[],Movement:[],Shooting:[],Charge:[],Fight:[],End:[]};
 const GAME_REFERENCE_QUICK=[];
@@ -2926,6 +3080,7 @@ function scoreSecondary(side,name,vpInput,rowMeta=null){
  event('SECONDARY_SCORED',{side,unit:name,action:'Secondary scored +'+actual+' VP',secondary:name,before,after:before+actual,delta:actual,mode,discarded:!fixed,round,roundCap:15,roundTotal:roundTotalBefore+actual,missionTotal:missionBefore+actual,missionCap:max},fullBefore);
  save();render();
 }
+function secondaryInputId(side,name){return 'score-'+side+'-'+String(name).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}
 function scoreSecondaryFromInput(side,name){const el=document.getElementById(secondaryInputId(side,name));scoreSecondary(side,name,el?el.value:0)}
 function resetSecondaryScore(side,name){
  const vk=side==='my'?'secondaryMyScoredVP':'secondaryOppScoredVP';
@@ -2984,7 +3139,7 @@ function discardTactical(side,name){
  event('SECONDARY_DISCARDED',{side,unit:name,action:'Secondary discarded',secondary:name,mode:'tactical'},fullBefore);save();render();
 }
 
-
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function get(id){return DEMO.find(u=>u.id===id)||DEMO[0]}
 const STORAGE_KEY='onoforge-v58';
 function save(){
@@ -2997,7 +3152,7 @@ function save(){
     const liveTimer=ensureGameTimer();
     if(liveTimer&&typeof liveTimer==='object'){
       const elapsed=gameTimerElapsed();
-      const currentSide=liveTimer.turnSide==='opp'||liveTimer.turnSide==='my'?liveTimer.turnSide:(state.currentTurn==='opp'?'opp':'my');
+      const currentSide=state.currentTurn==='opp'?'opp':'my';
       const turnKey=currentSide==='opp'?'turnOppMs':'turnMyMs';
       const savedTurn=Math.max(0,Number(liveTimer[turnKey])||0);
       const turnStarted=Math.max(0,Number(liveTimer.turnStartedGameMs)||0);
@@ -3008,7 +3163,6 @@ function save(){
       safeState.gameTimer[turnKey]=liveTurn;
       safeState.gameTimer.startedAt=liveTimer.running&&!liveTimer.finishedAt?Date.now():Number(liveTimer.startedAt)||0;
       safeState.gameTimer.turnStartedGameMs=liveTimer.running&&!liveTimer.finishedAt?elapsed:Math.max(0,Number(liveTimer.turnStartedGameMs)||0);
-      safeState.gameTimer.turnSide=currentSide;
     }
     safeState.events=(Array.isArray(safeState.events)?safeState.events:[]).slice(0,100);
     localStorage.setItem(STORAGE_KEY,JSON.stringify({state:safeState,DEMO}));
@@ -3020,7 +3174,7 @@ function save(){
         const compactTimer=ensureGameTimer();
         if(compactTimer&&typeof compactTimer==='object'){
           const elapsed=gameTimerElapsed();
-          const currentSide=compactTimer.turnSide==='opp'||compactTimer.turnSide==='my'?compactTimer.turnSide:(state.currentTurn==='opp'?'opp':'my');
+          const currentSide=state.currentTurn==='opp'?'opp':'my';
           const turnKey=currentSide==='opp'?'turnOppMs':'turnMyMs';
           const savedTurn=Math.max(0,Number(compactTimer[turnKey])||0);
           const turnStarted=Math.max(0,Number(compactTimer.turnStartedGameMs)||0);
@@ -3031,7 +3185,6 @@ function save(){
           compact.gameTimer[turnKey]=liveTurn;
           compact.gameTimer.startedAt=compactTimer.running&&!compactTimer.finishedAt?Date.now():Number(compactTimer.startedAt)||0;
           compact.gameTimer.turnStartedGameMs=compactTimer.running&&!compactTimer.finishedAt?elapsed:Math.max(0,Number(compactTimer.turnStartedGameMs)||0);
-          compact.gameTimer.turnSide=currentSide;
         }
         compact.events=(Array.isArray(compact.events)?compact.events:[]).slice(0,25).map(ev=>{const x={...ev};delete x.before;return x});
         localStorage.setItem(STORAGE_KEY,JSON.stringify({state:compact,DEMO}));
@@ -3118,7 +3271,6 @@ function load(){
     ?state.battleFirstTurn
     :(state.firstTurn==='opp'?'opp':'my');
   state.currentTurn=(state.currentTurn==='opp'||state.currentTurn==='my')?state.currentTurn:(state.battleFirstTurn==='opp'?'opp':'my');
-  if(state.gameTimer&&typeof state.gameTimer==='object'&&!(state.gameTimer.turnSide==='opp'||state.gameTimer.turnSide==='my'))state.gameTimer.turnSide=state.currentTurn==='opp'?'opp':'my';
   ensurePhaseCPState();
   state.secondaryDetailSide=(state.secondaryDetailSide==='opp'||state.secondaryDetailSide==='my')?state.secondaryDetailSide:'';
   state.secondaryDetailName=typeof state.secondaryDetailName==='string'?state.secondaryDetailName:'';
@@ -4259,9 +4411,16 @@ function changeMyFaction(value){
   render();
 }
 
-
+function alphaLabel(n){
+  const greek=['α','β','γ','δ','ε','ζ','η','θ','ι','κ','λ','μ','ν','ξ','ο','π','ρ','σ','τ','υ','φ','χ','ψ','ω'];
+  n=Math.max(1,Math.floor(Number(n)||1));
+  let s='';
+  while(n>0){n--;s=greek[n%greek.length]+s;n=Math.floor(n/greek.length)}
+  return s;
+}
 function unitDisplayName(side,e){const arr=Array.isArray(state[side])?state[side]:[],same=arr.filter(x=>x.unitId===e.unitId),u=get(e.unitId);if(same.length<=1)return u?.name||e.unitId;const idx=Math.max(0,same.findIndex(x=>x.uid===e.uid));return (u?.name||e.unitId)+' '+alphaLabel(idx+1);}
-
+function rosterCreatedLabel(value){if(!value)return '';const d=new Date(value);if(Number.isNaN(d.getTime()))return '';return d.toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});}
+function savedRosterDisplayName(x){const stamp=rosterCreatedLabel(x?.created);return (x?.name||'Unnamed Roster')+(stamp?' • '+stamp:'');}
 function activeArmyDisplayName(side){const name=side==='my'?state.myName:state.oppName,id=side==='my'?state.activeRosterId:state.activeOpponentRosterId,list=(state.savedArmyLists||[]).find(x=>x.id===id);return savedRosterDisplayName({name,created:list?.created});}
 function unitHasSelectableWargear(u){return wargearGroups(u).some(g=>((g.type==='single'||g.type==='multi'||g.type==='count'||g.type==='allocation')&&Array.isArray(g.options)&&g.options.length>1))}
 function armyListDisplayEntries(side){
@@ -4296,9 +4455,9 @@ function unitRow(side,e,forceAttached=false){
  return '<div class="unit"><div class="split"><div><strong>'+esc(displayName)+'</strong><span class="pill" style="margin-left:6px">'+(isLeader?'Leader':isSupport?'Support':'')+'</span><div class="muted">'+esc(u.faction)+' • '+unitPointsDisplay(e,u)+' • '+e.models+' models/unit</div></div><div class="row">'+attachButton+(hasSelectableWargear?'<button class="btn" onclick="configure(\''+side+'\',\''+e.uid+'\')">Configure</button>':'')+'<button class="btn danger" onclick="removeUnit(\''+side+'\',\''+e.uid+'\')">Remove</button></div></div><div>'+activeWeapons.map(w=>'<span class="pill">'+esc(w)+'</span>').join('')+'</div>'+(wg.length?'<div class="muted">Wargear: '+wg.map(esc).join(' • ')+'</div>':'')+(e.enhancement?'<div class="muted">Enhancement: '+esc(e.enhancement)+'</div>':'')+(e.notes?'<div class="muted">Note: '+esc(e.notes)+'</div>':'')+issues(side).filter(x=>x.startsWith(u.name+':')).map(x=>'<div class="warn">⚠ '+esc(x)+'</div>').join('')+(isLeader?bodyguardBox:isSupport?bodyguardBox+supportBox:leaderBoxes+supportBox)+'</div>';
 }
 function leaderAttachmentNamesForBodyguardFix(u){return leaderNamesForBodyguard(u)}
-
-
-
+function unitListCategory(u){const k=(Array.isArray(u.keywords)?u.keywords:[]).map(x=>String(x).toUpperCase());if(k.includes('CHARACTER'))return 0;if(k.includes('MONSTER')||k.includes('VEHICLE')||k.includes('AIRCRAFT')||k.includes('TITANIC')||k.includes('TRANSPORT'))return 2;if(k.includes('INFANTRY'))return 1;return 3}
+function sortUnitList(arr){return arr.slice().sort((a,b)=>unitListCategory(a)-unitListCategory(b)||a.name.localeCompare(b.name));}
+function unitListCategoryName(u){const c=unitListCategory(u);return c===0?'Characters':c===1?'Infantry':c===2?'Monsters / Vehicles':'Other'}
 function selectedUnitIds(side){
  const key=side==='my'?'selectedUnitsMy':'selectedUnitsOpp';
  if(!Array.isArray(state[key]))state[key]=[];
@@ -4645,6 +4804,144 @@ function setup(){
  <div class="row" style="margin-top:10px"><button class="btn" type="button" onclick="returnToTournamentSetup()" ${state.tournamentLifecycle==='DEPLOYMENT'?'':'disabled'}>Back to Setup</button><button class="btn primary" type="button" onclick="startBattle()" ${(['SETUP','DEPLOYMENT'].includes(state.tournamentLifecycle))?'':'disabled'}>Start Battle</button> </div></div>`
 }
 
+let gameTimerInterval=null;
+function ensureGameTimer(){
+  if(!state.gameTimer || typeof state.gameTimer!=='object'){
+    state.gameTimer={elapsedMs:0,running:false,paused:false,startedAt:0,pausedAt:0,finishedAt:0,turnMyMs:0,turnOppMs:0,turnStartedGameMs:0,turnPaused:false};
+  }
+  return state.gameTimer;
+}
+function gameTimerElapsed(){
+  const t=ensureGameTimer();
+  if(!t.running)return Math.max(0,Number(t.elapsedMs)||0);
+  return Math.max(0,(Number(t.elapsedMs)||0)+(Date.now()-(Number(t.startedAt)||Date.now())));
+}
+
+function turnElapsedMs(side){
+  const t=ensureGameTimer();
+  const key=side==='opp'?'turnOppMs':'turnMyMs';
+  const saved=Math.max(0,Number(t[key])||0);
+  if(t.turnPaused)return saved;
+  if(state.currentTurn!==side)return saved;
+  return saved+Math.max(0,gameTimerElapsed()-(Number(t.turnStartedGameMs)||0));
+}
+function finalizeCurrentTurnTime(){
+  const t=ensureGameTimer();
+  if(t.turnPaused)return;
+  const side=state.currentTurn==='opp'?'opp':'my';
+  const key=side==='opp'?'turnOppMs':'turnMyMs';
+  const now=gameTimerElapsed();
+  const delta=Math.max(0,now-(Number(t.turnStartedGameMs)||0));
+  t[key]=Math.max(0,Number(t[key])||0)+delta;
+  t.turnStartedGameMs=now;
+}
+function toggleTurnPause(){
+  if(!battleMutationAllowed('timer changes'))return;
+  const t=ensureGameTimer();
+  if(t.finishedAt)return;
+  if(t.turnPaused){
+    t.startedAt=Date.now();
+    t.running=true;
+    t.paused=false;
+    t.pausedAt=0;
+    t.turnStartedGameMs=Number(t.elapsedMs)||0;
+    t.turnPaused=false;
+    if(gameTimerInterval)clearInterval(gameTimerInterval);
+    gameTimerInterval=setInterval(updateGameTimerDisplay,100);
+  }else{
+    finalizeCurrentTurnTime();
+    t.elapsedMs=gameTimerElapsed();
+    t.running=false;
+    t.paused=true;
+    t.pausedAt=Date.now();
+    t.turnStartedGameMs=t.elapsedMs;
+    if(gameTimerInterval){clearInterval(gameTimerInterval);gameTimerInterval=null;}
+  }
+  save();
+  render();
+}
+function switchTurnClock(next){
+  const t=ensureGameTimer();
+  if(!t.turnPaused){
+    finalizeCurrentTurnTime();
+    t.turnStartedGameMs=gameTimerElapsed();
+  }
+  state.currentTurn=next==='opp'?'opp':'my';
+}
+function formatGameTime(ms){
+  const total=Math.max(0,Math.floor(Number(ms)||0)/1000);
+  const h=Math.floor(total/3600);
+  const m=Math.floor((total%3600)/60);
+  const s=Math.floor(total%60);
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+function updateGameTimerDisplay(){
+  const el=document.getElementById('game-timer-value');
+  if(el)el.textContent=formatGameTime(gameTimerElapsed());
+  const turnEl=document.getElementById('turn-timer-value');
+  if(turnEl)turnEl.textContent=formatGameTime(turnElapsedMs(state.currentTurn==='opp'?'opp':'my'));
+  const myTurnEl=document.getElementById('my-turn-time-value');
+  if(myTurnEl)myTurnEl.textContent=formatGameTime(turnElapsedMs('my'));
+  const oppTurnEl=document.getElementById('opp-turn-time-value');
+  if(oppTurnEl)oppTurnEl.textContent=formatGameTime(turnElapsedMs('opp'));
+  const status=document.getElementById('game-timer-status');
+  if(status){
+    const t=ensureGameTimer();
+    status.textContent=t.finishedAt?'Finished':(t.turnPaused?'Game Paused':'Game Running');
+  }
+}
+function ensureLiveGameTimerDisplay(){
+  if(gameTimerInterval!==null)return;
+  const t=ensureGameTimer();
+  if(t.running && !t.finishedAt){
+    gameTimerInterval=setInterval(updateGameTimerDisplay,100);
+  }
+}
+
+function startGameTimer(){
+  const t=ensureGameTimer();
+  t.elapsedMs=0;
+  t.startedAt=Date.now();
+  t.pausedAt=0;
+  t.finishedAt=0;
+  t.running=true;
+  t.paused=false;
+  if(gameTimerInterval)clearInterval(gameTimerInterval);
+  gameTimerInterval=setInterval(updateGameTimerDisplay,100);
+  updateGameTimerDisplay();
+}
+function toggleGameTimer(){
+  toggleTurnPause();
+}
+function finishGameTimer(){
+  const t=ensureGameTimer();
+  if(t.finishedAt)return;
+  if(t.running){finalizeCurrentTurnTime();t.elapsedMs=gameTimerElapsed();}
+  t.running=false;
+  t.paused=false;
+  t.finishedAt=Date.now();
+  if(gameTimerInterval){clearInterval(gameTimerInterval);gameTimerInterval=null;}
+  save();
+  render();
+}
+function saveBattleFromTimer(){if(state.cloud?.userId){cloudSaveCurrentBattle({silent:false});return;}save();alert('Battle saved on this device.');}
+function gameTimerHtml(){
+  const t=ensureGameTimer();
+  const label=t.finishedAt?'Finished':t.turnPaused?'Resume Game':'Pause Game';
+  const action=t.finishedAt?'':`<button type="button" class="btn ${t.turnPaused?'primary':'danger'}" onclick="toggleGameTimer();return false;">${label}</button>`;
+  return `<div class="game-timer" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 10px;padding:7px 9px;border:1px solid var(--border,#2d4055);border-radius:8px;background:var(--panel,#111c2b)">
+    <strong>Game Time</strong>
+    <span id="game-timer-value" style="font-variant-numeric:tabular-nums;font-weight:700">${formatGameTime(gameTimerElapsed())}</span>
+    <span id="game-timer-status" class="muted small">${t.finishedAt?'Finished':t.running?'Running':t.elapsedMs>0?'Paused':'Ready'}</span>
+    <span class="muted small">Current Turn: ${esc(state.currentTurn==='opp'?state.oppName:state.myName)} <strong id="turn-timer-value">${formatGameTime(turnElapsedMs(state.currentTurn==='opp'?'opp':'my'))}</strong></span>
+    <span class="muted small">${esc(state.myName)}: <strong id="my-turn-time-value">${formatGameTime(turnElapsedMs('my'))}</strong></span>
+    <span class="muted small">${esc(state.oppName)}: <strong id="opp-turn-time-value">${formatGameTime(turnElapsedMs('opp'))}</strong></span>
+    ${action}
+    <button type="button" class="btn primary" onclick="saveBattleFromTimer();return false;">${state.cloudBattleSaving?'Saving…':'Save Battle'}</button>
+    <button type="button" class="btn" onclick="finishGameTimer();return false;" ${t.finishedAt?'disabled':''}>Finish</button>
+  </div>`;
+}
+
 function battleEndSummaryHtml(){
  const my=scoreTotalForSide('my'),opp=scoreTotalForSide('opp');
  const pmy=Number(state.primaryMyScoredVP)||0,popp=Number(state.primaryOppScoredVP)||0;
@@ -4780,7 +5077,7 @@ function endBattle(){
  finalizeCurrentTurnTime();
  const t=ensureGameTimer();
  if(t.running){t.elapsedMs=gameTimerElapsed();t.running=false;t.paused=false;t.finishedAt=Date.now();}
- stopGameTimerRuntime();
+ if(gameTimerInterval){clearInterval(gameTimerInterval);gameTimerInterval=null;}
  if(!setTournamentLifecycle('COMPLETED')){
   alert('The tournament could not transition to Completed.');
   return false;
@@ -5045,7 +5342,7 @@ function snapshotForUndo(){
   const t=ensureGameTimer();
   if(t&&typeof t==='object'){
     const elapsed=gameTimerElapsed();
-    const currentSide=t.turnSide==='opp'||t.turnSide==='my'?t.turnSide:(state.currentTurn==='opp'?'opp':'my');
+    const currentSide=state.currentTurn==='opp'?'opp':'my';
     const turnKey=currentSide==='opp'?'turnOppMs':'turnMyMs';
     const otherKey=currentSide==='opp'?'turnMyMs':'turnOppMs';
     const savedTurn=Math.max(0,Number(t[turnKey])||0);
@@ -5142,6 +5439,21 @@ function actionLabel(e){
  return labels[e?.kind]||String(e?.kind||'Action').replaceAll('_',' ');
 }
 function event(kind,payload,before){const p={...(payload||{})};if(!p.phase)p.phase=state.phase;if(!p.unit)p.unit=kind==='PHASE_CHANGED'?'Game':kind==='ROUND_CHANGED'?'Game':'Game';if(!p.action)p.action=actionLabel({kind,payload:p});const playerTurn=state.currentTurn==='opp'?'opp':'my';state.events.unshift({id:uid(),at:new Date().toISOString(),round:state.round,phase:state.phase,playerTurn,kind,payload:p,before:before||state._undoSnapshot||null});state.events=state.events.slice(0,100);state._undoSnapshot=null}
+function syncGameTimerRuntime(){
+  if(gameTimerInterval!==null){
+    clearInterval(gameTimerInterval);
+    gameTimerInterval=null;
+  }
+  const t=ensureGameTimer();
+  if(t.running&&!t.finishedAt){
+    // Undo restores a snapshot from the action boundary; resume from that
+    // boundary instead of charging time spent while the action was undone.
+    t.startedAt=Date.now();
+    t.turnStartedGameMs=Math.max(0,Number(t.elapsedMs)||0);
+    gameTimerInterval=setInterval(updateGameTimerDisplay,100);
+  }
+  updateGameTimerDisplay();
+}
 function undoLastAction(){
   const e=state.events[0];
   if(!e){alert('No action to undo.');return}
@@ -6258,7 +6570,7 @@ function advancePhase(){
       recordPrimaryScoringCandidates(endingTurn,'round-end');
       ensureObjectiveTurnSnapshot();
       recordObjectiveTurnState();
-      switchTurnClock(firstTurn,endingTurn);
+      switchTurnClock(firstTurn);
       ensureTacticalTurnDraw(firstTurn);
       syncPrimaryScoringRound();
       state.my=sortBattleState(state.my);
@@ -6279,7 +6591,7 @@ function advancePhase(){
     recordPrimaryScoringCandidates(endingTurn,'turn-end');
     ensureObjectiveTurnSnapshot();
     recordObjectiveTurnState();
-    switchTurnClock(otherTurn,endingTurn);
+    switchTurnClock(otherTurn);
     ensureTacticalTurnDraw(otherTurn);
     state.my=sortBattleState(state.my);
     state.opp=sortBattleState(state.opp);
@@ -6345,7 +6657,7 @@ function previousPhase(){
 
   rememberPhaseCP();
   if(state.currentTurn!==previousTurn){
-    switchTurnClock(previousTurn,fromTurn);
+    switchTurnClock(previousTurn);
   }
   state.round=previousRound;
   state.currentTurn=previousTurn;
@@ -6388,7 +6700,7 @@ function nextRound(){
  const nextTurn=state.battleFirstTurn==='opp'?'opp':'my';
  autoScorePrimaryEndOfTurn(endingTurn);
  rememberPhaseCP();
- if(state.currentTurn!==nextTurn)switchTurnClock(nextTurn,endingTurn);
+ if(state.currentTurn!==nextTurn)switchTurnClock(nextTurn);
  else if(!ensureGameTimer().turnPaused){finalizeCurrentTurnTime();ensureGameTimer().turnStartedGameMs=gameTimerElapsed();}
  state.round=nextRoundNumber;
  state.currentTurn=nextTurn;
@@ -6415,9 +6727,8 @@ function previousRound(){
  const before=snapshotForUndo();
  const nextRoundNumber=Math.max(1,current-1);
  const nextTurn=state.battleFirstTurn==='opp'?'opp':'my';
- const outgoingTurn=state.currentTurn==='opp'?'opp':'my';
  rememberPhaseCP();
- if(state.currentTurn!==nextTurn)switchTurnClock(nextTurn,outgoingTurn);
+ if(state.currentTurn!==nextTurn)switchTurnClock(nextTurn);
  else if(!ensureGameTimer().turnPaused){finalizeCurrentTurnTime();ensureGameTimer().turnStartedGameMs=gameTimerElapsed();}
  state.round=nextRoundNumber;
  state.currentTurn=nextTurn;
@@ -6441,7 +6752,7 @@ window.previousRound=previousRound;
 window.advancePhase=advancePhase;
 window.previousPhase=previousPhase;
 
-/* parseNum extracted to js/core/dice-utils.js */
+function parseNum(v){const s=String(v).trim().toUpperCase();if(/^D6$/.test(s))return 3.5;let m=s.match(/^(\d*)D6(?:\+(\d+))?$/);if(m)return (+(m[1]||1))*3.5+(+(m[2]||0));return Number(s)||1}
 function roll(v){const s=String(v).trim().toUpperCase();let m=s.match(/^(\d*)D6(?:\+(\d+))?$/);if(!m)return Number(s)||1;let r=+(m[2]||0);for(let i=0;i<+(m[1]||1);i++)r+=1+Math.floor(Math.random()*6);return r}
 function targetNeed(S,T){S=+S;T=+T;if(S>=T*2)return 2;if(S>T)return 3;if(S===T)return 4;if(S*2<=T)return 6;return 5}
 function ruleContext(a,w,t){const wa=(w.abilities||[]).map(x=>String(x).toUpperCase());const ctx={lethal:wa.some(x=>x.includes('LETHAL HITS')),sustained:(wa.find(x=>x.includes('SUSTAINED HITS'))||'').match(/SUSTAINED HITS\s*(\d+)/)?.[1]*1||0,devastating:wa.some(x=>x.includes('DEVASTATING WOUNDS')),torrent:wa.some(x=>x.includes('TORRENT')),blast:(wa.find(x=>x.includes('BLAST'))||'').match(/BLAST\s*(\d+)/)?.[1]*1||0,rapid:(wa.find(x=>x.includes('RAPID FIRE'))||'').match(/RAPID FIRE\s*(\d+)/)?.[1]*1||0,anti:(wa.find(x=>x.includes('ANTI-'))||''),heavy:wa.some(x=>x==='HEAVY'),twin:wa.some(x=>x.includes('TWIN-LINKED')),melta:(wa.find(x=>x.includes('MELTA'))||'').match(/MELTA\s*(\d+)/)?.[1]*1||0,ignoreCover:wa.some(x=>x.includes('IGNORES COVER')),precision:wa.some(x=>x.includes('PRECISION'))};return ctx}
@@ -7188,7 +7499,7 @@ function tacticalWeaponPhaseEligible(w,phase,attackerEntry,targetEntry,attackerS
   const advanced=movementType==='advance';
   if(p==='Shooting'){
     if(!tacticalPhaseActionAvailable(attackerEntry?.uid,'Shooting',attackerSide))return false;
-    if(!tacticalWeaponIsRanged(w))return false;
+    if(raw==='MELEE')return false;
     if(movementType==='fallback')return false;
     if(tacticalWeaponIsIndirect(w)&&tacticalUnitIsEngagedAny(attackerEntry?.uid))return false;
     // Assault Shooting is the only core-rule shooting mode available to a unit
@@ -7828,8 +8139,7 @@ function tacticalPreRollCheck(attackerUid,targetUid,weaponName,attackerSide='my'
   const c=engineContext(get(ae.unitId),w,targetUnit,{...(state.mathRules||{}),halfRange:halfRangeState.active===true,chargeMade:!!movement?.chargeMade,attackerEngagedWithTarget:ctx.engagement==='engaged',attackerEngagedAny:tacticalUnitIsEngagedAny(ae.uid),attackerMonsterVehicle:tacticalUnitIsMonsterVehicle(ae),engagedTargetMonsterVehicle:ctx.engagement==='engaged'&&tacticalUnitIsMonsterVehicle(te),movementDistanceInches:movement?.movementDistanceInches,heavyEligible:movement?.movement==='remained'&&movement?.setUpThisTurn!==true&&Number(movement?.movementDistanceInches||0)<=3});
   const precisionWeapon=(w.abilities||[]).some(a=>String(a||'').toUpperCase().includes('PRECISION'));
   const precisionSnap=combatSnapshot(targetSide,te),precisionCharacters=(precisionSnap?.characterModels||[]).filter(m=>m.alive!==false),precisionTargetId=String((state.mathRules||{}).precisionTargetModelId||''),precisionTarget=precisionCharacters.find(m=>String(m.id)===precisionTargetId),precisionVisible=(state.mathRules||{}).precisionTargetVisible===true;
-  const targetHasCharacter=precisionCharacters.length>0;
-  if(precisionWeapon&&targetHasCharacter&&(!precisionTarget||!precisionVisible))warnings.push('Precision requires a selected visible CHARACTER allocation group before rolling.');
+  if(precisionWeapon&&(!precisionTarget||!precisionVisible))warnings.push('Precision requires a selected visible CHARACTER allocation group before rolling.');
   const save=engineSaveDistribution(targetUnit,w,c,{...(state.mathRules||{})}),modifiers=[];
   if(c.closeQuartersHitPenalty)modifiers.push('-1 to Hit: close-quarters shooting condition');
   if(c.cover)modifiers.push('+1 to Hit needed: Cover / Indirect Fire');
@@ -8359,41 +8669,6 @@ m.woundsRemaining=Math.max(0,before-n);m.alive=m.woundsRemaining>0;
   s.counts.damage=mr.damage;s.counts.damageResolved=(Number(s.counts.damageResolved)||0)+1;
   s.stage=vs.devastatingIndex<total?'mixedDamage':'review';
 }
-function tacticalPreRollCanQuickAggregateSave(s){
-  const plan=s?.plan||{};
-  if(plan.precision||plan.variableDamage||plan.devastating)return false;
-  if(!plan.mixedSaveGroups)return true;
-  if(Number(plan.damageValue)!==Math.floor(Number(plan.damageValue)))return false;
-  const te=entry('opp',s.targetEntryUid);
-  if(!te)return false;
-  const groups=tacticalPreRollSaveGroups(te,s.precisionTargetState?[s.precisionTargetState]:null);
-  if(groups.length!==1)return false;
-  const models=combatSnapshot('opp',te)?.models||[];
-  if(models.some(m=>m?.rerollSave1||engineFnp(m)))return false;
-  return true;
-}
-function tacticalPreRollQuickCounterHtml(stage,value,max){
-  const field={hits:'hits',hitSpecial:'criticalHits',lethalChoice:'lethalHits',wounds:'wounds',woundSpecial:'criticalWounds',saves:'failedSaves',damage:'damage'}[stage]||stage;
-  const current=Number(value);
-  const safe=Number.isFinite(current)?Math.max(0,Math.min(Number(max)||0,current)):0;
-  const cap=Math.max(0,Number(max)||0);
-  return '<div class="pr-quick-count">'+
-    '<button type="button" class="btn pr-count-btn" onclick="tacticalPreRollResolutionSet(\''+field+'\',String(Math.max(0,'+safe+'-1)))">−</button>'+
-    '<div class="pr-count-value">'+safe+'</div>'+
-    '<button type="button" class="btn pr-count-btn" onclick="tacticalPreRollResolutionSet(\''+field+'\',String(Math.min('+cap+','+safe+'+1)))">+</button>'+
-    '</div>'+
-    '<div class="pr-count-presets">'+
-      '<button type="button" class="btn" onclick="tacticalPreRollResolutionSet(\''+field+'\',\'0\')">0</button>'+
-      (cap>=1?'<button type="button" class="btn" onclick="tacticalPreRollResolutionSet(\''+field+'\',\'1\')">1</button>':'')+
-      (cap>=2?'<button type="button" class="btn" onclick="tacticalPreRollResolutionSet(\''+field+'\',\'2\')">2</button>':'')+
-      (cap>=3?'<button type="button" class="btn" onclick="tacticalPreRollResolutionSet(\''+field+'\',\'3\')">3</button>':'')+
-      (cap>=4?'<button type="button" class="btn" onclick="tacticalPreRollResolutionSet(\''+field+'\',\'4\')">4</button>':'')+
-      (cap>=5?'<button type="button" class="btn" onclick="tacticalPreRollResolutionSet(\''+field+'\',\'5\')">5</button>':'')+
-      (cap>=6?'<button type="button" class="btn" onclick="tacticalPreRollResolutionSet(\''+field+'\',\'6\')">6</button>':'')+
-      (cap>6?'<button type="button" class="btn" onclick="tacticalPreRollResolutionSet(\''+field+'\',String('+cap+'))">MAX</button>':'')+
-    '</div>';
-}
-
 function tacticalPreRollResolutionSet(field,value){
   const current=tacticalPreRollResolutionCurrent();
   if(!current)return;
@@ -8426,7 +8701,7 @@ function tacticalPreRollResolutionSet(field,value){
     if(n>woundDice){alert('Successful wound count cannot exceed the wound rolls required by the preceding result.');return;}
     s.counts.wounds=n;
     if(plan.devastating)s.stage='woundSpecial';
-    else if(plan.mixedSaveGroups&&!tacticalPreRollCanQuickAggregateSave(s))s.stage='saveOrder';
+    else if(plan.mixedSaveGroups)s.stage='saveOrder';
     else s.stage='saves';
   }else if(field==='criticalWounds'){
     const max=Number(s.counts.wounds)||0;
@@ -8654,15 +8929,8 @@ else if(stage==='lethalChoice'){title='LETHAL HITS • CHOOSE';promptText='How m
   else if(stage==='damage'){title='DAMAGE • RESOLVE';promptText='Enter the total damage actually applied by the failed saves.';max=Math.max(0,(Number(counts.failedSaves)||0)*Math.max(1,Number(plan.damageValue)||1)*6);value=counts.damage??'';note='Use the physical dice result. Enter the final damage after any damage-reduction rules already shown by the Pre-Roll Check.';}
   else {title='RESOLUTION • REVIEW';promptText='Confirm the recorded physical result before applying it to the battlefield state.';note='The app will update the target using the recorded dice result and existing model-level state.';}
   const invalid=stage!=='review'&&stage!=='saveRolls'&&value!==''&&((Number(value)||0)<0||(Number(value)||0)>max)?' invalid':'';
-  const fixedMixedDevastating=stage==='mixedDamage'&&s.mixedVariableState?.phase==='devastating'&&!s.plan?.variableDamage;
-  const quickAggregateStages=['hits','hitSpecial','lethalChoice','wounds','woundSpecial','saves','damage'];
-  const quickAggregate=quickAggregateStages.includes(stage)&&tacticalPreRollCanQuickAggregateSave(s);
-  const input=(stage==='review'||stage==='saveOrder'||fixedMixedDevastating)?'':
-    (quickAggregate?tacticalPreRollQuickCounterHtml(stage,value,max):
-      ((stage==='saveRolls'||stage==='precisionSave'||stage==='precisionSaveReroll'||stage==='precisionDamage'||stage==='precisionFnp'||stage==='precisionDevastating'||stage==='mixedVariableSave'||stage==='mixedSaveReroll'||stage==='mixedDamage'||stage==='mixedFnp')?
-        '<input id="pr-dice-input" class="pr-dice-input" type="text" inputmode="numeric" placeholder="1, 2, 3, 5, 6" value="'+esc(String(value))+'">':
-        '<input id="pr-dice-input" class="pr-dice-input'+invalid+'" type="number" inputmode="numeric" min="0" max="'+max+'" step="1" value="'+esc(String(value))+'" autofocus>'));
-  const action=stage==='review'?'<button type="button" class="btn primary pr-big-btn" onclick="tacticalPreRollApplyResolution()">Apply Result</button>':quickAggregate?'':'<button type="button" class="btn primary pr-big-btn" onclick="tacticalPreRollResolutionSet(\''+(stage==='saveRolls'?'saveRolls':stage==='precisionSaveReroll'?'precisionSaveReroll':stage==='mixedVariableSave'?'mixedVariableSave':stage==='mixedSaveReroll'?'mixedSaveReroll':stage==='mixedDamage'?'mixedDamage':stage==='mixedFnp'?'mixedFnp':stage==='precisionFnp'?'precisionFnp':stage==='hitSpecial'?'criticalHits':stage==='lethalChoice'?'lethalHits':stage==='hits'?'hits':stage==='woundSpecial'?'criticalWounds':stage==='wounds'?'wounds':stage==='saves'?'failedSaves':'damage')+'\',document.getElementById(\'pr-dice-input\').value)">Continue</button>';
+  const fixedMixedDevastating=stage==='mixedDamage'&&s.mixedVariableState?.phase==='devastating'&&!s.plan?.variableDamage;const input=(stage==='review'||stage==='saveOrder'||fixedMixedDevastating)?'':((stage==='saveRolls'||stage==='precisionSave'||stage==='precisionSaveReroll'||stage==='precisionDamage'||stage==='precisionFnp'||stage==='precisionDevastating'||stage==='mixedVariableSave'||stage==='mixedSaveReroll'||stage==='mixedDamage'||stage==='mixedFnp')?'<input id="pr-dice-input" class="pr-dice-input" type="text" inputmode="numeric" placeholder="1, 2, 3, 5, 6" value="'+esc(String(value))+'">':'<input id="pr-dice-input" class="pr-dice-input'+invalid+'" type="number" inputmode="numeric" min="0" max="'+max+'" step="1" value="'+esc(String(value))+'" autofocus>');
+  const action=stage==='review'?'<button type="button" class="btn primary pr-big-btn" onclick="tacticalPreRollApplyResolution()">Apply Result</button>':'<button type="button" class="btn primary pr-big-btn" onclick="tacticalPreRollResolutionSet(\''+(stage==='saveRolls'?'saveRolls':stage==='precisionSaveReroll'?'precisionSaveReroll':stage==='mixedVariableSave'?'mixedVariableSave':stage==='mixedSaveReroll'?'mixedSaveReroll':stage==='mixedDamage'?'mixedDamage':stage==='mixedFnp'?'mixedFnp':stage==='precisionFnp'?'precisionFnp':stage==='hitSpecial'?'criticalHits':stage==='lethalChoice'?'lethalHits':stage==='hits'?'hits':stage==='woundSpecial'?'criticalWounds':stage==='wounds'?'wounds':stage==='saves'?'failedSaves':'damage')+'\',document.getElementById(\'pr-dice-input\').value)">Continue</button>';
   const back='<button type="button" class="btn pr-secondary-btn" onclick="tacticalPreRollResolutionBack()">Back</button>';
   return '<div class="modal pr-dice-modal"><div class="card pr-dice-card"><div class="split"><div><div class="tiny">PHYSICAL DICE ENTRY • '+esc(state.phase||'Phase')+'</div><h2 style="margin:4px 0">'+esc(title)+'</h2><div class="muted">'+esc(get(s.targetEntryUid?entry(s.targetSide==='my'?'my':'opp',s.targetEntryUid)?.unitId:'')?.name||'Target')+' • '+esc(s.weaponName)+'</div></div><button type="button" class="btn" onclick="tacticalPreRollCloseResolution()">Close</button></div><div class="pr-dice-target"><span>Target</span><strong>'+esc(s.result.type==='Charge'?'2D6':(stage==='hits'||stage==='hitSpecial'?String(plan.hitNeed)+'+':stage==='lethalChoice'?String(plan.hitCritThreshold)+'+':stage==='wounds'||stage==='woundSpecial'?String(plan.woundNeed)+'+':stage==='saves'?(plan.saveNeed===null?'No Save':String(plan.saveNeed)+'+'):stage==='mixedVariableSave'?(String(s.mixedVariableState?.currentSaveNeed||'?')+'+'):stage==='mixedDamage'?'Damage':'Damage'))+'</strong><span>'+esc(s.result.attacker)+' → '+esc(s.result.target)+'</span></div><div class="pr-dice-prompt">'+esc(promptText)+'</div>'+(stage==='review'?'<div class="grid3" style="margin-top:14px"><div class="status"><div class="tiny">Hits</div><b>'+counts.hits+(specials.criticalHits!=null?' • '+specials.criticalHits+' crit':'')+'</b></div><div class="status"><div class="tiny">Wounds</div><b>'+counts.wounds+(specials.criticalWounds!=null?' • '+specials.criticalWounds+' crit':'')+'</b></div><div class="status"><div class="tiny">Failed Saves</div><b>'+counts.failedSaves+'</b></div><div class="status"><div class="tiny">Damage</div><b>'+counts.damage+'</b></div></div>':'')+input+(note?'<div class="pr-dice-note">'+esc(note)+'</div>':'')+'<div class="pr-dice-actions">'+back+action+'</div><div class="tiny" style="margin-top:10px">If the battlefield state changes, this session is invalidated and the Pre-Roll Check must be re-run. Nothing here rolls dice for you.</div></div></div>';
 }
@@ -8766,9 +9034,7 @@ function setOpponentChargeTarget(uid,checked){
 }
 function tacticalOpponentWeaponChoices(attackerSide,targetSide,attackerEntry,targetEntry,phase){
   if(!attackerEntry||!targetEntry)return [];
-  // Use the same catalogue-aware weapon surface as Tactical Advisor so opponent-turn
-  // weapon selection cannot lose profiles when the combat snapshot is incomplete.
-  const groups=tacticalAdvisorWeaponGroups(attackerSide,attackerEntry,targetEntry)
+  const groups=attachedCombatWeaponGroups(attackerSide,attackerEntry,targetEntry)
     .filter(g=>tacticalWeaponPhaseEligible(g.weapon,phase,attackerEntry,targetEntry,attackerSide,targetSide));
   const out=[],seen=new Set();
   groups.forEach(g=>{
@@ -8837,12 +9103,11 @@ function opponentTurnTrackingHtml(){
   if(phase==='Shooting'){
     const ae=oppUnits.find(e=>e.uid===capture.attackerUid)||oppUnits[0]||null,te=myUnits.find(e=>e.uid===capture.targetUid)||myUnits[0]||null;
     const weapons=tacticalOpponentWeaponChoices('opp','my',ae,te,'Shooting'),selectedWeapon=weapons.find(w=>String(w.name)===String(capture.weaponName))||weapons[0]||null;
-    const weaponPlaceholder=weapons.length?'Choose weapon…':(ae&&!tacticalPhaseActionAvailable(ae.uid,'Shooting','opp')?'Shooting completed — choose another shooter…':'No eligible ranged weapons');
     specific='<div class="status" style="margin-top:8px"><b>Opponent Shooting Resolution</b><div class="tiny" style="margin-top:4px">Enter the physical dice result. The resolver writes ATTACK_RESOLUTION and updates the friendly target roster.</div>'+
       '<div class="grid3" style="margin-top:8px">'+
       '<div class="field"><label>Enemy shooter</label><select onchange="setOpponentTurnCapture(\'attackerUid\',this.value)"><option value="">Choose unit…</option>'+oppUnits.map(e=>'<option value="'+esc(e.uid)+'" '+(e.uid===ae?.uid?'selected':'')+'>'+esc(unitDisplayName('opp',e))+'</option>').join('')+'</select></div>'+
       '<div class="field"><label>My target</label><select onchange="setOpponentTurnCapture(\'targetUid\',this.value)"><option value="">Choose unit…</option>'+myUnits.map(e=>'<option value="'+esc(e.uid)+'" '+(e.uid===te?.uid?'selected':'')+'>'+esc(unitDisplayName('my',e))+'</option>').join('')+'</select></div>'+
-      '<div class="field"><label>Weapon profile</label><select onchange="setOpponentTurnCapture(\'weaponName\',this.value)"><option value="">'+esc(weaponPlaceholder)+'</option>'+weapons.map(w=>'<option value="'+esc(w.name)+'" '+(w.name===selectedWeapon?.name?'selected':'')+'>'+esc(w.name)+' • A '+esc(String(w.A??'?'))+' • BS '+esc(String(w.BS??'?'))+' • D '+esc(String(w.D??'?'))+'</option>').join('')+'</select></div>'+
+      '<div class="field"><label>Weapon profile</label><select onchange="setOpponentTurnCapture(\'weaponName\',this.value)"><option value="">Choose weapon…</option>'+weapons.map(w=>'<option value="'+esc(w.name)+'" '+(w.name===selectedWeapon?.name?'selected':'')+'>'+esc(w.name)+' • A '+esc(String(w.A??'?'))+' • BS '+esc(String(w.BS??'?'))+' • D '+esc(String(w.D??'?'))+'</option>').join('')+'</select></div>'+
       '</div><button type="button" class="btn primary" style="width:100%;margin-top:8px" '+(!ae||!te||!selectedWeapon?'disabled':'')+' onclick="tacticalOpenOpponentCombatResolution(\'Shooting\',\''+esc(ae?.uid||'')+'\',\''+esc(te?.uid||'')+'\',\''+esc(selectedWeapon?.name||'')+'\')">Enter Opponent Shooting Dice</button></div>';
   }else if(phase==='Charge'){
     const ae=oppUnits.find(e=>e.uid===capture.attackerUid)||oppUnits[0]||null,selected=new Set(capture.chargeTargets||[]);
@@ -11245,7 +11510,7 @@ document.addEventListener('change',function(ev){
   }
 });
 document.addEventListener('toggle',function(ev){const panel=ev.target.closest?.('[data-live-deployment-panel]');if(panel){state.liveDeploymentPanelOpen=!!panel.open;save();}});
-document.addEventListener('change',function(ev){const transport=ev.target.closest('[data-transport-toggle]');if(transport){setTransportEmbarkation(transport.dataset.transportToggle,transport.dataset.transportUid,transport.dataset.passengerUid,transport.checked);return;}const reserve=ev.target.closest('[data-reserve-toggle]');if(reserve){setReserveDeclaration(reserve.dataset.reserveToggle,reserve.dataset.reserveUid,reserve.checked);return;}const livePanel=ev.target.closest('[data-live-deployment-panel]');if(livePanel)state.liveDeploymentPanelOpen=!!livePanel.open;const sideSel=ev.target.closest('[data-deployment-side]');if(sideSel){state.deploymentTrackingSide=sideSel.value==='opp'?'opp':'my';delete state.battlefieldMapPlacement;render();return;}const sel=ev.target.closest('.objective-map-unit-select');if(!sel)return;const mode=sel.dataset.mapMode==='setup'?'setup':sel.dataset.mapMode==='deployment'?'deployment':'battle',value=String(sel.value||'');if(mode==='setup'){if(!value){delete state.deploymentMapPlacement;render();return;}state.deploymentMapPlacement={uid:value};render();return;}if(!value){delete state.battlefieldMapPlacement;render();return;}const [side,uid]=value.split('|');if(side&&uid)state.battlefieldMapPlacement={side,uid};render();});
+document.addEventListener('change',function(ev){const transport=ev.target.closest('[data-transport-toggle]');if(transport){setTransportEmbarkation(transport.dataset.transportToggle,transport.dataset.transportUid,transport.dataset.passengerUid,transport.checked);return;}const reserve=ev.target.closest('[data-reserve-toggle]');if(reserve){setReserveDeclaration(reserve.dataset.reserveToggle,reserve.dataset.reserveUid,reserve.checked);return;}const sideSel=ev.target.closest('[data-deployment-side]');if(sideSel){state.deploymentTrackingSide=sideSel.value==='opp'?'opp':'my';delete state.battlefieldMapPlacement;render();return;}const sel=ev.target.closest('.objective-map-unit-select');if(!sel)return;const mode=sel.dataset.mapMode==='setup'?'setup':sel.dataset.mapMode==='deployment'?'deployment':'battle',value=String(sel.value||'');if(mode==='setup'){if(!value){delete state.deploymentMapPlacement;render();return;}state.deploymentMapPlacement={uid:value};render();return;}if(!value){delete state.battlefieldMapPlacement;render();return;}const [side,uid]=value.split('|');if(side&&uid)state.battlefieldMapPlacement={side,uid};render();});
 let objectiveMapDrag=null;
 document.addEventListener('pointerdown',function(ev){const reserve=ev.target.closest('[data-reserve-unit]');if(reserve&&!ev.target.closest('[data-reserve-select]')){ev.preventDefault();ev.stopPropagation();objectiveMapDrag={node:reserve,canvas:null,mode:'reserve',side:reserve.dataset.reserveSide,uid:reserve.dataset.reserveUid,pointerId:ev.pointerId};reserve.classList.add('dragging');reserve.setPointerCapture?.(ev.pointerId);return;}const node=ev.target.closest('[data-map-unit],[data-map-plan-unit]');if(!node)return;const canvas=node.closest('[data-objective-map-canvas]');if(!canvas)return;ev.preventDefault();ev.stopPropagation();const rect=canvas.getBoundingClientRect();if(!rect.width||!rect.height)return;const mapMode=canvas.dataset.objectiveMapMode==='setup'?'setup':canvas.dataset.objectiveMapMode==='deployment'?'deployment':'battle';const mode=node.hasAttribute('data-map-plan-unit')?'setup':mapMode;const side=node.dataset.mapSide,uid=node.dataset.mapUid;objectiveMapDrag={node,canvas,mode,side,uid,pointerId:ev.pointerId};node.classList.add('dragging');node.setPointerCapture?.(ev.pointerId);});
 document.addEventListener('pointermove',function(ev){const d=objectiveMapDrag;if(!d||d.pointerId!==ev.pointerId)return;ev.preventDefault();if(d.mode==='reserve')return;const rect=d.canvas?.getBoundingClientRect();if(!rect)return;const x=Math.max(0,Math.min(60,((ev.clientX-rect.left)/rect.width)*60)),y=Math.max(0,Math.min(44,(1-(ev.clientY-rect.top)/rect.height)*44));d.node.style.left=(x/60*100)+'%';d.node.style.top=((44-y)/44*100)+'%';});

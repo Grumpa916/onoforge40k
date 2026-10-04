@@ -1,0 +1,16 @@
+{
+  "id": "Test Faction_multi_profile",
+  "name": "Multi Profile",
+  "faction": "Test Faction",
+  "points": 100,
+  "models": 1,
+  "wounds": 2,
+  "profile": {"M":"6\"","T":4,"Sv":"3+","W":"2","OC":"1"},
+  "keywords": ["INFANTRY"],
+  "abilities": [{"name":"Test Ability","description":"Should not be treated as unit stats"}],
+  "weapons": [],
+  "weaponOptions": [],
+  "dataSource": "BSData 11e",
+  "dataVersion": "current",
+  "sourceRole": "supplemental"
+}
