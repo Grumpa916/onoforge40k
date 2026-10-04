@@ -8553,6 +8553,7 @@ function tacticalPreRollCanQuickAggregateSave(s){
   return true;
 }
 function tacticalPreRollQuickCounterHtml(stage,value,max){
+  const field={hits:'hits',hitSpecial:'criticalHits',lethalChoice:'lethalHits',wounds:'wounds',woundSpecial:'criticalWounds',saves:'failedSaves',damage:'damage'}[stage]||stage;
   const current=Number(value);
   const safe=Number.isFinite(current)?Math.max(0,Math.min(Number(max)||0,current)):0;
   const cap=Math.max(0,Number(max)||0);
