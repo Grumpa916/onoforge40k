@@ -100,8 +100,22 @@
     }
   }
   function ensureLiveGameTimerDisplay(){
+    const state=hState(),t=ensureGameTimer();
+    // Migration guard: an already-live battle created before timer state was
+    // initialized should start its untouched clock automatically. Intentionally
+    // paused or finished timers are left alone.
+    const untouched=!t.running&&!t.paused&&!t.finishedAt
+      &&Math.max(0,Number(t.elapsedMs)||0)===0
+      &&Math.max(0,Number(t.turnMyMs)||0)===0
+      &&Math.max(0,Number(t.turnOppMs)||0)===0;
+    if(state.tournamentLifecycle==='LIVE'&&!state.battleEnded&&untouched){
+      t.startedAt=Date.now();
+      t.turnStartedGameMs=0;
+      t.running=true;
+      t.paused=false;
+      if(host.save)host.save();
+    }
     if(gameTimerInterval!==null)return;
-    const t=ensureGameTimer();
     if(t.running && !t.finishedAt){
       gameTimerInterval=setInterval(updateGameTimerDisplay,100);
     }
