@@ -97,7 +97,7 @@
       const t=ensureGameTimer();
       status.textContent=t.finishedAt?'Finished':(t.turnPaused?'Game Paused':'Game Running');
     }
-    const control=document.querySelector('[data-game-timer-action="toggle"]');
+    const control=document.getElementById('game-timer-toggle');
     if(control){
       const t=ensureGameTimer();
       control.textContent=t.finishedAt?'Finished':t.turnPaused?'Resume Game':'Pause Game';
@@ -150,17 +150,6 @@
     stopGameTimerRuntime();
     host.save();
     host.render();
-  }
-  let saveStatusTimer=null;
-  function setTimerSaveStatus(message){
-    const el=document.getElementById('game-timer-save-status');
-    if(!el)return;
-    el.textContent=message;
-    if(saveStatusTimer)clearTimeout(saveStatusTimer);
-    saveStatusTimer=setTimeout(()=>{
-      const current=document.getElementById('game-timer-save-status');
-      if(current)current.textContent='';
-    },1800);
   }
   let saveStatusTimer=null;
   function setTimerSaveStatus(message){
