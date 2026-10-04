@@ -1332,6 +1332,18 @@ function syncPrimaryScoringRound(){
   state.primaryScoredItemsMy=[...state.primaryScoringByRoundMy[roundKey]];
   state.primaryScoredItemsOpp=[...state.primaryScoringByRoundOpp[roundKey]];
 }
+function primaryScoringRowAvailable(timing,round){
+  const timingText=String(timing||'').toLowerCase();
+  // End-of-battle Primary scoring is only displayed during the final game round.
+  if(timingText.includes('end of battle')) return Number(round)===5;
+  const range=primaryScoringRoundRange(timing);
+  return round>=range.min&&round<=range.max;
+}
+function primaryScoringRowsForRound(mission){
+  const rows=PRIMARY_SCORING[mission]||[];
+  const round=Math.max(1,Math.min(5,Number(state.round)||1));
+  return rows.filter(r=>primaryScoringRowAvailable(r?.[0],round));
+}
 function objectiveCountsForSide(side){
   const player=side==='opp'?'opp':'my';
   return Object.keys(state.objectives||{}).map(objectiveStateRecord).filter(o=>o.owner===player);
