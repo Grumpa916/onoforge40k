@@ -22,3 +22,17 @@ assert.ok(/Jan/.test(formatted));
 assert.ok(/2/.test(formatted));
 
 console.log('saved-list-utils.test.js: PASS');
+
+
+assert.strictEqual(context.rosterCreatedLabel(''), '');
+assert.strictEqual(context.rosterCreatedLabel(null), '');
+assert.strictEqual(context.rosterCreatedLabel('not-a-date'), '');
+const rosterStamp=context.rosterCreatedLabel('2026-01-02T15:04:00Z');
+assert.ok(/Jan/.test(rosterStamp));
+assert.ok(/2/.test(rosterStamp));
+
+assert.strictEqual(context.savedRosterDisplayName({name:'My Army',created:'2026-01-02T15:04:00Z'}).startsWith('My Army • Jan'), true);
+assert.strictEqual(context.savedRosterDisplayName({name:'My Army',created:'not-a-date'}), 'My Army');
+assert.strictEqual(context.savedRosterDisplayName({name:'',created:''}), 'Unnamed Roster');
+
+console.log('saved-list-utils display helpers: PASS');
