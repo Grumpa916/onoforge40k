@@ -1,8 +1,8 @@
 # ONOForge 40K — Master Feature Roadmap
 
-Last updated: 2026-09-25
+Last updated: 2026-10-04
 Repository: Grumpa916/onoforge40k
-Branch: main
+Branch: feature/opponent-turn-history
 
 ## Purpose
 
@@ -182,6 +182,7 @@ Goal: Protect tournament game state from refreshes, device changes, and errors.
 - 🟡 Sync conflict handling
 
 ## N. QA / Regression / Deployment — 🟢 / 🔵
+- ⚪ **Hosted authentication + cloud-saved roster persistence prerequisite:** implement/verify real account authentication and cloud-backed army-list storage before relying on branch-specific preview deployments. Preview builds must use the same authenticated data backend as production so a tester can sign in and access existing saved lists. Do not create an isolated preview data store by accident.
 Goal: Every major feature change must be verifiable before deployment.
 - 🟢 Catalogue audit
 - 🟢 Objective/scoring audit
