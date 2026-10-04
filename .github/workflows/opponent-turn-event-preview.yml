@@ -20,6 +20,8 @@ on:
       - 'js/ui/game-timer.js'
       - 'js/core/geometry.js'
       - 'tests/geometry.test.js'
+      - 'js/battle/primary-scoring-utils.js'
+      - 'tests/primary-scoring-utils.test.js'
       - 'tactical-charge-workflow.js'
   workflow_dispatch:
 
@@ -35,6 +37,9 @@ jobs:
 
       - name: Run geometry utility regression
         run: node tests/geometry.test.js
+
+      - name: Run primary scoring utility regression
+        run: node tests/primary-scoring-utils.test.js
 
       - name: Run opponent-turn resolver render bridge regression
         run: node tests/opponent-turn-render-bridge.test.js
@@ -109,6 +114,9 @@ jobs:
           geometry_target=out/'js'/'core'
           geometry_target.mkdir(parents=True,exist_ok=True)
           geometry_target.joinpath('geometry.js').write_text(Path('js/core/geometry.js').read_text(encoding='utf-8'),encoding='utf-8')
+          scoring_target=out/'js'/'battle'
+          scoring_target.mkdir(parents=True,exist_ok=True)
+          scoring_target.joinpath('primary-scoring-utils.js').write_text(Path('js/battle/primary-scoring-utils.js').read_text(encoding='utf-8'),encoding='utf-8')
 
           # Also emit a single-file preview for iPad/Safari testing. This keeps the
           # validated preview self-contained so the user does not need a web host.
@@ -125,6 +133,11 @@ jobs:
           standalone=standalone.replace(
               '<script src="js/core/geometry.js"></script>',
               '<script>\n'+Path('js/core/geometry.js').read_text(encoding='utf-8')+'\n</script>',
+              1
+          )
+          standalone=standalone.replace(
+              '<script src="js/battle/primary-scoring-utils.js"></script>',
+              '<script>\n'+Path('js/battle/primary-scoring-utils.js').read_text(encoding='utf-8')+'\n</script>',
               1
           )
           standalone=standalone.replace(
