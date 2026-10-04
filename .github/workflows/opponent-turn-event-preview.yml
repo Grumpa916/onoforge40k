@@ -22,6 +22,8 @@ on:
       - 'tests/geometry.test.js'
       - 'js/battle/primary-scoring-utils.js'
       - 'tests/primary-scoring-utils.test.js'
+      - 'js/data/saved-list-utils.js'
+      - 'tests/saved-list-utils.test.js'
       - 'tactical-charge-workflow.js'
   workflow_dispatch:
 
@@ -40,6 +42,9 @@ jobs:
 
       - name: Run primary scoring utility regression
         run: node tests/primary-scoring-utils.test.js
+
+      - name: Run saved-list utility regression
+        run: node tests/saved-list-utils.test.js
 
       - name: Run opponent-turn resolver render bridge regression
         run: node tests/opponent-turn-render-bridge.test.js
@@ -117,6 +122,9 @@ jobs:
           scoring_target=out/'js'/'battle'
           scoring_target.mkdir(parents=True,exist_ok=True)
           scoring_target.joinpath('primary-scoring-utils.js').write_text(Path('js/battle/primary-scoring-utils.js').read_text(encoding='utf-8'),encoding='utf-8')
+          saved_target=out/'js'/'data'
+          saved_target.mkdir(parents=True,exist_ok=True)
+          saved_target.joinpath('saved-list-utils.js').write_text(Path('js/data/saved-list-utils.js').read_text(encoding='utf-8'),encoding='utf-8')
 
           # Also emit a single-file preview for iPad/Safari testing. This keeps the
           # validated preview self-contained so the user does not need a web host.
@@ -138,6 +146,11 @@ jobs:
           standalone=standalone.replace(
               '<script src="js/battle/primary-scoring-utils.js"></script>',
               '<script>\n'+Path('js/battle/primary-scoring-utils.js').read_text(encoding='utf-8')+'\n</script>',
+              1
+          )
+          standalone=standalone.replace(
+              '<script src="js/data/saved-list-utils.js"></script>',
+              '<script>\n'+Path('js/data/saved-list-utils.js').read_text(encoding='utf-8')+'\n</script>',
               1
           )
           standalone=standalone.replace(
