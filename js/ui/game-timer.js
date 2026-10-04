@@ -41,31 +41,38 @@
     t[key]=Math.max(0,Number(t[key])||0)+delta;
     t.turnStartedGameMs=now;
   }
-  function toggleTurnPause(){
-    if(!host.battleMutationAllowed('timer changes'))return;
+  function pauseGameTimer(){
+    if(!host.battleMutationAllowed('timer changes'))return false;
     const t=ensureGameTimer();
-    if(t.finishedAt)return;
-    if(t.turnPaused){
-      t.startedAt=Date.now();
-      t.running=true;
-      t.paused=false;
-      t.pausedAt=0;
-      t.turnStartedGameMs=Number(t.elapsedMs)||0;
-      t.turnPaused=false;
-      if(gameTimerInterval)clearInterval(gameTimerInterval);
-      gameTimerInterval=setInterval(updateGameTimerDisplay,100);
-    }else{
-      finalizeCurrentTurnTime();
-      t.elapsedMs=gameTimerElapsed();
-      t.running=false;
-      t.paused=true;
-      t.pausedAt=Date.now();
-      t.turnStartedGameMs=t.elapsedMs;
-      if(gameTimerInterval){clearInterval(gameTimerInterval);gameTimerInterval=null;}
-    }
-    // Update the visible control immediately, before synchronous persistence.
+    if(t.finishedAt||t.turnPaused||!t.running)return false;
+    finalizeCurrentTurnTime();
+    t.elapsedMs=gameTimerElapsed();
+    t.running=false;
+    t.paused=true;
+    t.pausedAt=Date.now();
+    t.turnStartedGameMs=t.elapsedMs;
+    if(gameTimerInterval){clearInterval(gameTimerInterval);gameTimerInterval=null;}
     updateGameTimerDisplay();
     try{host.save();}catch(e){console.warn('OnoForge timer state save failed.',e);}
+    return true;
+  }
+  function resumeGameTimer(){
+    if(!host.battleMutationAllowed('timer changes'))return false;
+    const t=ensureGameTimer();
+    if(t.finishedAt||!t.turnPaused)return false;
+    t.startedAt=Date.now();
+    t.running=true;
+    t.paused=false;
+    t.pausedAt=0;
+    t.turnStartedGameMs=Number(t.elapsedMs)||0;
+    if(gameTimerInterval)clearInterval(gameTimerInterval);
+    gameTimerInterval=setInterval(updateGameTimerDisplay,100);
+    updateGameTimerDisplay();
+    try{host.save();}catch(e){console.warn('OnoForge timer state save failed.',e);}
+    return true;
+  }
+  function toggleTurnPause(){
+    return ensureGameTimer().turnPaused?resumeGameTimer():pauseGameTimer();
   }
   function switchTurnClock(next){
     const state=hState(),t=ensureGameTimer();
@@ -96,13 +103,6 @@
     if(status){
       const t=ensureGameTimer();
       status.textContent=t.finishedAt?'Finished':(t.turnPaused?'Game Paused':'Game Running');
-    }
-    const control=document.getElementById('game-timer-toggle');
-    if(control){
-      const t=ensureGameTimer();
-      control.textContent=t.finishedAt?'Finished':t.turnPaused?'Resume Game':'Pause Game';
-      control.className='btn '+(t.finishedAt?'':t.turnPaused?'primary':'danger');
-      control.disabled=!!t.finishedAt;
     }
     bindTimerControls();
   }
@@ -180,47 +180,35 @@
     }
   }
   function bindTimerControls(){
-    const toggle=document.getElementById('game-timer-toggle');
-    if(toggle){
-      toggle.onclick=function(ev){
-        ev.preventDefault();
-        ev.stopPropagation();
-        toggleGameTimer();
-        return false;
-      };
-    }
+    const pause=document.getElementById('game-timer-pause');
+    if(pause)pause.onclick=function(ev){
+      ev.preventDefault();ev.stopPropagation();pauseGameTimer();return false;
+    };
+    const resume=document.getElementById('game-timer-resume');
+    if(resume)resume.onclick=function(ev){
+      ev.preventDefault();ev.stopPropagation();resumeGameTimer();return false;
+    };
     const saveButton=document.getElementById('game-timer-save');
-    if(saveButton){
-      saveButton.onclick=function(ev){
-        ev.preventDefault();
-        ev.stopPropagation();
-        saveBattleFromTimer();
-        return false;
-      };
-    }
+    if(saveButton)saveButton.onclick=function(ev){
+      ev.preventDefault();ev.stopPropagation();saveBattleFromTimer();return false;
+    };
     const finish=document.getElementById('game-timer-finish');
-    if(finish){
-      finish.onclick=function(ev){
-        ev.preventDefault();
-        ev.stopPropagation();
-        finishGameTimer();
-        return false;
-      };
-    }
+    if(finish)finish.onclick=function(ev){
+      ev.preventDefault();ev.stopPropagation();finishGameTimer();return false;
+    };
   }
   function gameTimerHtml(){
     const state=hState(),t=ensureGameTimer();
-    const label=t.finishedAt?'Finished':t.turnPaused?'Resume Game':'Pause Game';
-    const action=t.finishedAt?'':`<button type="button" id="game-timer-toggle" class="btn ${t.turnPaused?'primary':'danger'}">${label}</button>`;
     return `<div class="game-timer" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 10px;padding:7px 9px;border:1px solid var(--border,#2d4055);border-radius:8px;background:var(--panel,#111c2b)">
     <strong>Game Time</strong>
     <span id="game-timer-value" style="font-variant-numeric:tabular-nums;font-weight:700">${formatGameTime(gameTimerElapsed())}</span>
-    <span id="game-timer-status" class="muted small">${t.finishedAt?'Finished':t.running?'Running':t.elapsedMs>0?'Paused':'Ready'}</span>
+    <span id="game-timer-status" class="muted small">${t.finishedAt?'Finished':t.turnPaused?'Game Paused':t.running?'Game Running':'Ready'}</span>
     <span class="muted small">Current Turn: ${host.esc(state.currentTurn==='opp'?state.oppName:state.myName)} <strong id="turn-timer-value">${formatGameTime(turnElapsedMs(state.currentTurn==='opp'?'opp':'my'))}</strong></span>
     <span class="muted small">${host.esc(state.myName)}: <strong id="my-turn-time-value">${formatGameTime(turnElapsedMs('my'))}</strong></span>
     <span class="muted small">${host.esc(state.oppName)}: <strong id="opp-turn-time-value">${formatGameTime(turnElapsedMs('opp'))}</strong></span>
-    ${action}
-    <button type="button" id="game-timer-save" class="btn primary">${state.cloudBattleSaving?'Saving…':'Save Battle'}</button>
+    <button type="button" id="game-timer-pause" class="btn danger">Pause Game</button>
+    <button type="button" id="game-timer-resume" class="btn primary">Resume Game</button>
+    <button type="button" id="game-timer-save" class="btn primary">Save Battle</button>
     <span id="game-timer-save-status" class="muted small" aria-live="polite"></span>
     <button type="button" id="game-timer-finish" class="btn" ${t.finishedAt?'disabled':''}>Finish</button>
   </div>`;
@@ -253,10 +241,10 @@
     host=nextHost;
     const api={
       ensureGameTimer,gameTimerElapsed,turnElapsedMs,finalizeCurrentTurnTime,
-      toggleTurnPause,switchTurnClock,formatGameTime,updateGameTimerDisplay,
-      ensureLiveGameTimerDisplay,startGameTimer,toggleGameTimer,finishGameTimer,
-      saveBattleFromTimer,gameTimerHtml,stopGameTimerRuntime,syncGameTimerRuntime,
-      handleGameTimerAction
+      pauseGameTimer,resumeGameTimer,toggleTurnPause,switchTurnClock,
+      formatGameTime,updateGameTimerDisplay,ensureLiveGameTimerDisplay,
+      startGameTimer,toggleGameTimer,finishGameTimer,saveBattleFromTimer,
+      gameTimerHtml,stopGameTimerRuntime,syncGameTimerRuntime,handleGameTimerAction
     };
     Object.keys(api).forEach(name=>{ global[name]=api[name]; });
     bindTimerControls();
