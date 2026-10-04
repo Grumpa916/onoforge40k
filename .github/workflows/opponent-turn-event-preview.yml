@@ -99,7 +99,27 @@ jobs:
           parser_target=out/'js'/'data'
           parser_target.mkdir(parents=True,exist_ok=True)
           parser_target.joinpath('bsdata-parser.js').write_text(Path('js/data/bsdata-parser.js').read_text(encoding='utf-8'),encoding='utf-8')
-          print('Built preview-site/index.html and bundled js/data/bsdata-parser.js')
+
+          # Also emit a single-file preview for iPad/Safari testing. This keeps the
+          # validated preview self-contained so the user does not need a web host.
+          standalone=html.replace(
+              '<script src="js/data/bsdata-parser.js"></script>',
+              '<script>\\n'+Path('js/data/bsdata-parser.js').read_text(encoding='utf-8')+'\\n</script>',
+              1
+          )
+          companion_json=data_src.read_text(encoding='utf-8')
+          standalone=standalone.replace(
+              '</head>',
+              '<script type="application/json" id="onoforge-companion-data">'+companion_json+'</script></head>',
+              1
+          )
+          standalone=standalone.replace(
+              "async function loadEventCompanionData(){\\n  try{\\n    const r=await fetch('./data/warhammer-event-companion-v1.2.json',{cache:'no-store'});\\n    if(!r.ok)throw new Error('Event Companion HTTP '+r.status);\\n    ONOFORGE_EVENT_COMPANION=await r.json();\\n  }catch(e){\\n    ONOFORGE_EVENT_COMPANION=null;\\n  }\\n  render();\\n}",
+              "async function loadEventCompanionData(){\\n  try{\\n    const el=document.getElementById('onoforge-companion-data');\\n    ONOFORGE_EVENT_COMPANION=el?JSON.parse(el.textContent):null;\\n  }catch(e){\\n    ONOFORGE_EVENT_COMPANION=null;\\n  }\\n  render();\\n}",
+              1
+          )
+          (out/'onoforge40k-standalone.html').write_text(standalone,encoding='utf-8')
+          print('Built preview-site/index.html, standalone iPad preview, and bundled js/data/bsdata-parser.js')
           PY
           node --check opponent-turn-event-layer.js
           node --check opponent-turn-capture.js
