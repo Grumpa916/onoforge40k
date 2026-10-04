@@ -10,6 +10,7 @@
 
   let gameTimerInterval=null;
   let host=null;
+  let timerClickHandlerInstalled=false;
 
   function hState(){ return host.getState(); }
   function ensureGameTimer(){
@@ -137,7 +138,7 @@
   function gameTimerHtml(){
     const state=hState(),t=ensureGameTimer();
     const label=t.finishedAt?'Finished':t.turnPaused?'Resume Game':'Pause Game';
-    const action=t.finishedAt?'':`<button type="button" class="btn ${t.turnPaused?'primary':'danger'}" onclick="toggleGameTimer();return false;">${label}</button>`;
+    const action=t.finishedAt?'':`<button type="button" class="btn ${t.turnPaused?'primary':'danger'}" data-game-timer-action="toggle">${label}</button>`;
     return `<div class="game-timer" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 10px;padding:7px 9px;border:1px solid var(--border,#2d4055);border-radius:8px;background:var(--panel,#111c2b)">
     <strong>Game Time</strong>
     <span id="game-timer-value" style="font-variant-numeric:tabular-nums;font-weight:700">${formatGameTime(gameTimerElapsed())}</span>
@@ -146,8 +147,8 @@
     <span class="muted small">${host.esc(state.myName)}: <strong id="my-turn-time-value">${formatGameTime(turnElapsedMs('my'))}</strong></span>
     <span class="muted small">${host.esc(state.oppName)}: <strong id="opp-turn-time-value">${formatGameTime(turnElapsedMs('opp'))}</strong></span>
     ${action}
-    <button type="button" class="btn primary" onclick="saveBattleFromTimer();return false;">${state.cloudBattleSaving?'Saving…':'Save Battle'}</button>
-    <button type="button" class="btn" onclick="finishGameTimer();return false;" ${t.finishedAt?'disabled':''}>Finish</button>
+    <button type="button" class="btn primary" data-game-timer-action="save">${state.cloudBattleSaving?'Saving…':'Save Battle'}</button>
+    <button type="button" class="btn" data-game-timer-action="finish" ${t.finishedAt?'disabled':''}>Finish</button>
   </div>`;
   }
   function stopGameTimerRuntime(){
@@ -166,8 +167,23 @@
     }
     updateGameTimerDisplay();
   }
+  function handleTimerClick(ev){
+    const button=ev.target.closest?.('[data-game-timer-action]');
+    if(!button)return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    if(button.disabled)return;
+    const action=button.dataset.gameTimerAction;
+    if(action==='toggle')toggleGameTimer();
+    else if(action==='save')saveBattleFromTimer();
+    else if(action==='finish')finishGameTimer();
+  }
   function install(nextHost){
     host=nextHost;
+    if(!timerClickHandlerInstalled){
+      document.addEventListener('click',handleTimerClick);
+      timerClickHandlerInstalled=true;
+    }
     const api={ensureGameTimer,gameTimerElapsed,turnElapsedMs,finalizeCurrentTurnTime,toggleTurnPause,switchTurnClock,formatGameTime,updateGameTimerDisplay,ensureLiveGameTimerDisplay,startGameTimer,toggleGameTimer,finishGameTimer,saveBattleFromTimer,gameTimerHtml,stopGameTimerRuntime,syncGameTimerRuntime};
     Object.keys(api).forEach(name=>{ global[name]=api[name]; });
     return api;
