@@ -8,6 +8,7 @@ on:
     paths:
       - 'index.html'
       - 'js/data/bsdata-parser.js'
+      - 'js/core/geometry.js'
       - 'tactical-advisor-engine.js'
       - 'tactical-advisor-adapter.js'
       - 'tactical-charge-workflow.js'
@@ -180,6 +181,12 @@ jobs:
           out = Path("preview-site")
           out.mkdir(parents=True, exist_ok=True)
           (out / "index.html").write_text(html, encoding="utf-8")
+          geometry_out = out / "js" / "core"
+          geometry_out.mkdir(parents=True, exist_ok=True)
+          (geometry_out / "geometry.js").write_text(
+              Path("js/core/geometry.js").read_text(encoding="utf-8"),
+              encoding="utf-8"
+          )
           data_out = out / "data"
           data_out.mkdir(parents=True, exist_ok=True)
           companion = Path("data/warhammer-event-companion-v1.2.json")
