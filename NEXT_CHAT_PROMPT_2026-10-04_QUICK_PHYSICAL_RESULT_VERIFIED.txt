@@ -1,0 +1,20 @@
+Resume OnoForge 40K from the latest authoritative save point.
+
+Repository: Grumpa916/onoforge40k
+Branch: feature/opponent-turn-history
+Save point: CHAT_SAVEPOINT_2026-10-04_QUICK_PHYSICAL_RESULT_FLOW_VERIFIED.md
+Current HEAD: ac63cfb88d9ef5adc721bb415872362394d91af7
+
+READ THE SAVEPOINT FIRST.
+
+PR #6 BSData parser extraction is already merged and verified.
+
+The quick physical-result regression is now fixed and browser-verified. The Saves quick counter correctly advances using failedSaves; the Damage screen is reached and damage is appropriately applied. Fresh Tactical Advisor Preview Validation and Opponent Turn Event Capture Preview CI runs for current HEAD are green.
+
+Do not repeat the already-passed Saves/Damage regression test unless a new change affects it.
+
+Next task: inspect index.html and identify the next small, genuinely self-contained extraction boundary. Do not start editing until the boundary, dependencies, callers, and browser/CI validation plan are understood.
+
+Keep main untouched. Do not casually merge/rebase feature/opponent-turn-history-clean-reset. Python is not installed locally; do not require Python.
+
+Continue with small, reversible changes and create another savepoint before a larger extraction.
