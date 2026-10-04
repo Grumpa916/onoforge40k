@@ -249,8 +249,17 @@
     else if(action==='finish')finishGameTimer();
     return false;
   }
-    const api={ensureGameTimer,gameTimerElapsed,turnElapsedMs,finalizeCurrentTurnTime,toggleTurnPause,switchTurnClock,formatGameTime,updateGameTimerDisplay,ensureLiveGameTimerDisplay,startGameTimer,toggleGameTimer,finishGameTimer,saveBattleFromTimer,gameTimerHtml,stopGameTimerRuntime,syncGameTimerRuntime,handleGameTimerAction};
+  function install(nextHost){
+    host=nextHost;
+    const api={
+      ensureGameTimer,gameTimerElapsed,turnElapsedMs,finalizeCurrentTurnTime,
+      toggleTurnPause,switchTurnClock,formatGameTime,updateGameTimerDisplay,
+      ensureLiveGameTimerDisplay,startGameTimer,toggleGameTimer,finishGameTimer,
+      saveBattleFromTimer,gameTimerHtml,stopGameTimerRuntime,syncGameTimerRuntime,
+      handleGameTimerAction
+    };
     Object.keys(api).forEach(name=>{ global[name]=api[name]; });
+    bindTimerControls();
     return api;
   }
 
