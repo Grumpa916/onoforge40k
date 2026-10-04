@@ -49,6 +49,7 @@
     t.elapsedMs=gameTimerElapsed();
     t.running=false;
     t.paused=true;
+    t.turnPaused=true;
     t.pausedAt=Date.now();
     t.turnStartedGameMs=t.elapsedMs;
     if(gameTimerInterval){clearInterval(gameTimerInterval);gameTimerInterval=null;}
@@ -63,6 +64,7 @@
     t.startedAt=Date.now();
     t.running=true;
     t.paused=false;
+    t.turnPaused=false;
     t.pausedAt=0;
     t.turnStartedGameMs=Number(t.elapsedMs)||0;
     if(gameTimerInterval)clearInterval(gameTimerInterval);
