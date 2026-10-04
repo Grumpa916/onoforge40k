@@ -68,6 +68,7 @@ const state2={
   }
 };
 context.stopGameTimerRuntime();
+now=2000000;
 context.OnoForgeGameTimer.install({
   getState:()=>state2,
   save:()=>{},
