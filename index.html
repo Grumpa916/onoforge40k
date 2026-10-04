@@ -7865,7 +7865,8 @@ function tacticalPreRollCheck(attackerUid,targetUid,weaponName,attackerSide='my'
   const c=engineContext(get(ae.unitId),w,targetUnit,{...(state.mathRules||{}),halfRange:halfRangeState.active===true,chargeMade:!!movement?.chargeMade,attackerEngagedWithTarget:ctx.engagement==='engaged',attackerEngagedAny:tacticalUnitIsEngagedAny(ae.uid),attackerMonsterVehicle:tacticalUnitIsMonsterVehicle(ae),engagedTargetMonsterVehicle:ctx.engagement==='engaged'&&tacticalUnitIsMonsterVehicle(te),movementDistanceInches:movement?.movementDistanceInches,heavyEligible:movement?.movement==='remained'&&movement?.setUpThisTurn!==true&&Number(movement?.movementDistanceInches||0)<=3});
   const precisionWeapon=(w.abilities||[]).some(a=>String(a||'').toUpperCase().includes('PRECISION'));
   const precisionSnap=combatSnapshot(targetSide,te),precisionCharacters=(precisionSnap?.characterModels||[]).filter(m=>m.alive!==false),precisionTargetId=String((state.mathRules||{}).precisionTargetModelId||''),precisionTarget=precisionCharacters.find(m=>String(m.id)===precisionTargetId),precisionVisible=(state.mathRules||{}).precisionTargetVisible===true;
-  if(precisionWeapon&&(!precisionTarget||!precisionVisible))warnings.push('Precision requires a selected visible CHARACTER allocation group before rolling.');
+  const targetHasCharacter=precisionCharacters.length>0;
+  if(precisionWeapon&&targetHasCharacter&&(!precisionTarget||!precisionVisible))warnings.push('Precision requires a selected visible CHARACTER allocation group before rolling.');
   const save=engineSaveDistribution(targetUnit,w,c,{...(state.mathRules||{})}),modifiers=[];
   if(c.closeQuartersHitPenalty)modifiers.push('-1 to Hit: close-quarters shooting condition');
   if(c.cover)modifiers.push('+1 to Hit needed: Cover / Indirect Fire');
