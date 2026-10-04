@@ -2172,7 +2172,7 @@ function stratagemsUI(){
 const ONOFORGE_RULES_DATA_PIN={schema:'onoforge.rules-data-pin.v1',unitSource:'BSData 11e',unitRevision:'current',unitRevisionDate:'',eventCompanion:'Warhammer Event Companion',eventCompanionVersion:'1.2',eventCompanionRevision:'1.2'};
 let state={
   savedArmyLists:[],tournamentLifecycle:'SETUP',battleResultLocked:false,battleResultVerified:false,battleResultVerifiedAt:null,
-  stratagemsMy:[], stratagemsOpp:[], stratagemsOpen:false,primaryMissionsOpen:false,secondaryMissionsOpen:false,page:'builder',myName:'My Army',oppName:'Opponent Army',faction:'Tyranids',detachment:'Invasion Fleet',detachmentSelections:['Invasion Fleet'],oppFaction:'Ultramarines',oppDetachment:'Gladius Task Force',oppDetachmentSelections:['Gladius Task Force'],limit:2000,my:[],opp:[],searchMy:'',searchOpp:'',configure:null,attacker:'norn',weapon:'Rupture Cannon',target:'marine',round:1,phase:'Command',myVP:0,oppVP:0,myCP:0,oppCP:0,phaseCP:{},battleReadyMy:false,battleReadyOpp:false,secondaryMy:'tactical',secondaryOpp:'tactical',secondaryMyCards:[],secondaryOppCards:[],secondaryMyDeck:[],secondaryOppDeck:[],secondaryMyDeckInitialized:false,secondaryOppDeckInitialized:false,secondaryMyDiscard:[],secondaryOppDiscard:[],newOrdersCompletedMy:false,newOrdersCompletedOpp:false,secondaryMyScored:[],secondaryOppScored:[],secondaryMyScoredVP:{},secondaryOppScoredVP:{},secondaryMyScoredVPByRound:{},secondaryOppScoredVPByRound:{},secondaryMyScoredRound:{},secondaryOppScoredRound:{},secondaryNewOrdersUsedMy:false,secondaryNewOrdersUsedOpp:false,secondaryPersonalPlans:{},secondaryPlanEdit:'',secondaryDetailSide:'',secondaryDetailName:'',gameReferencePersonal:{},rulesDataPin:null,myForceDisposition:'',oppForceDisposition:'',attackerSide:'my',firstTurn:'my',currentTurn:'my',objectives:{},objectiveMapLayout:'A',objectiveMapMissionKey:'',terrainSetupComplete:false,deletedSavedArmyLists:[],objectiveControlHistory:{},objectiveControlSources:{},objectiveMeta:{},deploymentTrackingSide:'my',battlefieldUnitPositions:{},deploymentMapPlacement:null,battlefieldMapPlacement:null,reserveDeclarations:{my:{},opp:{}},events:[],gameAssistantChecks:{},gameAssistantNotes:'',personalArmyNotes:'',lists:[],activeRosterId:'',activeOpponentRosterId:'',dataStatus:'BSData 11e structured source • embedded catalogue bootstrap fallback',source:'BSData 11e',revision:'current',cloud:{email:'',userId:'',status:'Not connected',lastSync:'',error:''},cloudBattles:[],rulesLog:[],mathRules:{},gameTimer:{elapsedMs:0,running:false,paused:false,startedAt:0,pausedAt:0,finishedAt:0,turnMyMs:0,turnOppMs:0,turnStartedGameMs:0,turnPaused:false},cloudPasswordRecovery:false,localSavedAt:''};
+  stratagemsMy:[], stratagemsOpp:[], stratagemsOpen:false,primaryMissionsOpen:false,secondaryMissionsOpen:false,page:'builder',myName:'My Army',oppName:'Opponent Army',faction:'Tyranids',detachment:'Invasion Fleet',detachmentSelections:['Invasion Fleet'],oppFaction:'Ultramarines',oppDetachment:'Gladius Task Force',oppDetachmentSelections:['Gladius Task Force'],limit:2000,my:[],opp:[],searchMy:'',searchOpp:'',configure:null,attacker:'norn',weapon:'Rupture Cannon',target:'marine',round:1,phase:'Command',myVP:0,oppVP:0,myCP:0,oppCP:0,phaseCP:{},battleReadyMy:false,battleReadyOpp:false,secondaryMy:'tactical',secondaryOpp:'tactical',secondaryMyCards:[],secondaryOppCards:[],secondaryMyDeck:[],secondaryOppDeck:[],secondaryMyDeckInitialized:false,secondaryOppDeckInitialized:false,secondaryMyDiscard:[],secondaryOppDiscard:[],newOrdersCompletedMy:false,newOrdersCompletedOpp:false,secondaryMyScored:[],secondaryOppScored:[],secondaryMyScoredVP:{},secondaryOppScoredVP:{},secondaryMyScoredVPByRound:{},secondaryOppScoredVPByRound:{},secondaryMyScoredRound:{},secondaryOppScoredRound:{},secondaryNewOrdersUsedMy:false,secondaryNewOrdersUsedOpp:false,secondaryPersonalPlans:{},secondaryPlanEdit:'',secondaryDetailSide:'',secondaryDetailName:'',gameReferencePersonal:{},rulesDataPin:null,myForceDisposition:'',oppForceDisposition:'',attackerSide:'my',firstTurn:'my',currentTurn:'my',objectives:{},objectiveMapLayout:'A',objectiveMapMissionKey:'',terrainSetupComplete:false,deletedSavedArmyLists:[],objectiveControlHistory:{},objectiveControlSources:{},objectiveMeta:{},deploymentTrackingSide:'my',battlefieldUnitPositions:{},deploymentMapPlacement:null,battlefieldMapPlacement:null,reserveDeclarations:{my:{},opp:{}},events:[],gameAssistantChecks:{},gameAssistantNotes:'',personalArmyNotes:'',lists:[],activeRosterId:'',activeOpponentRosterId:'',dataStatus:'BSData 11e structured source • embedded catalogue bootstrap fallback',source:'BSData 11e',revision:'current',cloud:{email:'',userId:'',status:'Not connected',lastSync:'',error:''},cloudBattles:[],rulesLog:[],mathRules:{},gameTimer:{elapsedMs:0,running:false,paused:false,startedAt:0,pausedAt:0,finishedAt:0,turnMyMs:0,turnOppMs:0,turnStartedGameMs:0,turnPaused:false,turnSide:null},cloudPasswordRecovery:false,localSavedAt:''};
 Object.defineProperty(window,'ONOFORGE_APP_STATE',{configurable:true,get:function(){return state;}});
 
 window.OnoForgeGameTimer.install({
@@ -2997,7 +2997,7 @@ function save(){
     const liveTimer=ensureGameTimer();
     if(liveTimer&&typeof liveTimer==='object'){
       const elapsed=gameTimerElapsed();
-      const currentSide=state.currentTurn==='opp'?'opp':'my';
+      const currentSide=liveTimer.turnSide==='opp'||liveTimer.turnSide==='my'?liveTimer.turnSide:(state.currentTurn==='opp'?'opp':'my');
       const turnKey=currentSide==='opp'?'turnOppMs':'turnMyMs';
       const savedTurn=Math.max(0,Number(liveTimer[turnKey])||0);
       const turnStarted=Math.max(0,Number(liveTimer.turnStartedGameMs)||0);
@@ -3008,6 +3008,7 @@ function save(){
       safeState.gameTimer[turnKey]=liveTurn;
       safeState.gameTimer.startedAt=liveTimer.running&&!liveTimer.finishedAt?Date.now():Number(liveTimer.startedAt)||0;
       safeState.gameTimer.turnStartedGameMs=liveTimer.running&&!liveTimer.finishedAt?elapsed:Math.max(0,Number(liveTimer.turnStartedGameMs)||0);
+      safeState.gameTimer.turnSide=currentSide;
     }
     safeState.events=(Array.isArray(safeState.events)?safeState.events:[]).slice(0,100);
     localStorage.setItem(STORAGE_KEY,JSON.stringify({state:safeState,DEMO}));
@@ -3019,7 +3020,7 @@ function save(){
         const compactTimer=ensureGameTimer();
         if(compactTimer&&typeof compactTimer==='object'){
           const elapsed=gameTimerElapsed();
-          const currentSide=state.currentTurn==='opp'?'opp':'my';
+          const currentSide=liveTimer.turnSide==='opp'||liveTimer.turnSide==='my'?liveTimer.turnSide:(state.currentTurn==='opp'?'opp':'my');
           const turnKey=currentSide==='opp'?'turnOppMs':'turnMyMs';
           const savedTurn=Math.max(0,Number(compactTimer[turnKey])||0);
           const turnStarted=Math.max(0,Number(compactTimer.turnStartedGameMs)||0);
@@ -3030,6 +3031,7 @@ function save(){
           compact.gameTimer[turnKey]=liveTurn;
           compact.gameTimer.startedAt=compactTimer.running&&!compactTimer.finishedAt?Date.now():Number(compactTimer.startedAt)||0;
           compact.gameTimer.turnStartedGameMs=compactTimer.running&&!compactTimer.finishedAt?elapsed:Math.max(0,Number(compactTimer.turnStartedGameMs)||0);
+          compact.gameTimer.turnSide=currentSide;
         }
         compact.events=(Array.isArray(compact.events)?compact.events:[]).slice(0,25).map(ev=>{const x={...ev};delete x.before;return x});
         localStorage.setItem(STORAGE_KEY,JSON.stringify({state:compact,DEMO}));
@@ -3116,6 +3118,7 @@ function load(){
     ?state.battleFirstTurn
     :(state.firstTurn==='opp'?'opp':'my');
   state.currentTurn=(state.currentTurn==='opp'||state.currentTurn==='my')?state.currentTurn:(state.battleFirstTurn==='opp'?'opp':'my');
+  if(state.gameTimer&&typeof state.gameTimer==='object'&&!(state.gameTimer.turnSide==='opp'||state.gameTimer.turnSide==='my'))state.gameTimer.turnSide=state.currentTurn==='opp'?'opp':'my';
   ensurePhaseCPState();
   state.secondaryDetailSide=(state.secondaryDetailSide==='opp'||state.secondaryDetailSide==='my')?state.secondaryDetailSide:'';
   state.secondaryDetailName=typeof state.secondaryDetailName==='string'?state.secondaryDetailName:'';
@@ -5049,7 +5052,7 @@ function snapshotForUndo(){
   const t=ensureGameTimer();
   if(t&&typeof t==='object'){
     const elapsed=gameTimerElapsed();
-    const currentSide=state.currentTurn==='opp'?'opp':'my';
+    const currentSide=liveTimer.turnSide==='opp'||liveTimer.turnSide==='my'?liveTimer.turnSide:(state.currentTurn==='opp'?'opp':'my');
     const turnKey=currentSide==='opp'?'turnOppMs':'turnMyMs';
     const otherKey=currentSide==='opp'?'turnMyMs':'turnOppMs';
     const savedTurn=Math.max(0,Number(t[turnKey])||0);

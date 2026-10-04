@@ -91,4 +91,33 @@ context.switchTurnClock('my','opp');
 assert.strictEqual(state2.gameTimer.turnMyMs,12000);
 assert.strictEqual(state2.gameTimer.turnOppMs,7000);
 
+// Active-side authority regression: currentTurn may already be mutated when
+// the timer boundary handler is called.
+context.stopGameTimerRuntime();
+now=5000000;
+const ordered={
+  myName:'My',oppName:'Opp',currentTurn:'my',
+  gameTimer:{elapsedMs:0,running:true,paused:false,startedAt:5000000,
+    pausedAt:0,finishedAt:0,turnMyMs:0,turnOppMs:0,
+    turnStartedGameMs:0,turnPaused:false,turnSide:'my'}
+};
+context.OnoForgeGameTimer.install({
+  getState:()=>ordered,save:()=>{},render:()=>{},
+  battleMutationAllowed:()=>true,cloudSaveCurrentBattle:()=>Promise.resolve(true),
+  esc:v=>String(v)
+});
+context.startGameTimer();
+now=5010000;
+ordered.currentTurn='opp';
+context.switchTurnClock('opp','my');
+assert.strictEqual(ordered.gameTimer.turnMyMs,10000);
+assert.strictEqual(ordered.gameTimer.turnOppMs,0);
+assert.strictEqual(ordered.gameTimer.turnSide,'opp');
+now=5017000;
+ordered.currentTurn='my';
+context.switchTurnClock('my','opp');
+assert.strictEqual(ordered.gameTimer.turnMyMs,10000);
+assert.strictEqual(ordered.gameTimer.turnOppMs,7000);
+assert.strictEqual(ordered.gameTimer.turnSide,'my');
+
 console.log('game-timer.test.js: PASS');

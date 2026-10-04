@@ -14,7 +14,7 @@
   function ensureGameTimer(){
     const state=hState();
     if(!state.gameTimer || typeof state.gameTimer!=='object'){
-      state.gameTimer={elapsedMs:0,running:false,paused:false,startedAt:0,pausedAt:0,finishedAt:0,turnMyMs:0,turnOppMs:0,turnStartedGameMs:0,turnPaused:false};
+      state.gameTimer={elapsedMs:0,running:false,paused:false,startedAt:0,pausedAt:0,finishedAt:0,turnMyMs:0,turnOppMs:0,turnStartedGameMs:0,turnPaused:false,turnSide:null};
     }
     return state.gameTimer;
   }
@@ -27,14 +27,15 @@
     const state=hState(),t=ensureGameTimer();
     const key=side==='opp'?'turnOppMs':'turnMyMs';
     const saved=Math.max(0,Number(t[key])||0);
+    const activeSide=t.turnSide==='opp'||t.turnSide==='my'?t.turnSide:(state.currentTurn==='opp'?'opp':'my');
     if(t.turnPaused)return saved;
-    if(state.currentTurn!==side)return saved;
+    if(activeSide!==side)return saved;
     return saved+Math.max(0,gameTimerElapsed()-(Number(t.turnStartedGameMs)||0));
   }
   function finalizeCurrentTurnTime(){
     const state=hState(),t=ensureGameTimer();
     if(t.turnPaused)return;
-    const side=state.currentTurn==='opp'?'opp':'my';
+    const side=t.turnSide==='opp'||t.turnSide==='my'?t.turnSide:(state.currentTurn==='opp'?'opp':'my');
     const key=side==='opp'?'turnOppMs':'turnMyMs';
     const now=gameTimerElapsed();
     const delta=Math.max(0,now-(Number(t.turnStartedGameMs)||0));
@@ -67,6 +68,7 @@
     t.turnPaused=false;
     t.pausedAt=0;
     t.turnStartedGameMs=Number(t.elapsedMs)||0;
+    t.turnSide=hState().currentTurn==='opp'?'opp':'my';
     if(gameTimerInterval)clearInterval(gameTimerInterval);
     gameTimerInterval=setInterval(updateGameTimerDisplay,100);
     updateGameTimerDisplay();
@@ -90,7 +92,8 @@
       t[key]=Math.max(0,Number(t[key])||0)+delta;
       t.turnStartedGameMs=now;
     }
-    state.currentTurn=next==='opp'?'opp':'my';
+    t.turnSide=next==='opp'?'opp':'my';
+    state.currentTurn=t.turnSide;
   }
   function formatGameTime(ms){
     const total=Math.max(0,Math.floor(Number(ms)||0)/1000);
@@ -128,6 +131,7 @@
     if(state.tournamentLifecycle==='LIVE'&&!state.battleEnded&&untouched){
       t.startedAt=Date.now();
       t.turnStartedGameMs=0;
+      t.turnSide=state.currentTurn==='opp'?'opp':'my';
       t.running=true;
       t.paused=false;
       if(host.save)host.save();
