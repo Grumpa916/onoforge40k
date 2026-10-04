@@ -8541,8 +8541,8 @@ m.woundsRemaining=Math.max(0,before-n);m.alive=m.woundsRemaining>0;
 }
 function tacticalPreRollCanQuickAggregateSave(s){
   const plan=s?.plan||{};
-  if(!plan.mixedSaveGroups)return true;
   if(plan.precision||plan.variableDamage||plan.devastating)return false;
+  if(!plan.mixedSaveGroups)return true;
   if(Number(plan.damageValue)!==Math.floor(Number(plan.damageValue)))return false;
   const te=entry('opp',s.targetEntryUid);
   if(!te)return false;
