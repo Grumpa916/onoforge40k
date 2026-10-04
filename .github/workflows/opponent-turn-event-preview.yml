@@ -24,6 +24,7 @@ on:
       - 'tests/primary-scoring-utils.test.js'
       - 'js/data/saved-list-utils.js'
       - 'tests/saved-list-utils.test.js'
+      - 'tests/game-timer.test.js'
       - 'tactical-charge-workflow.js'
   workflow_dispatch:
 
@@ -45,6 +46,9 @@ jobs:
 
       - name: Run saved-list utility regression
         run: node tests/saved-list-utils.test.js
+
+      - name: Run game timer turn-boundary regression
+        run: node tests/game-timer.test.js
 
       - name: Run opponent-turn resolver render bridge regression
         run: node tests/opponent-turn-render-bridge.test.js
