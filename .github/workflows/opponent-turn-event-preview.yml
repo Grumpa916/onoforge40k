@@ -26,7 +26,9 @@ on:
       - 'tests/unit-display-utils.test.js'
       - 'tests/unit-list-utils.test.js'
       - 'js/core/geometry.js'
+      - 'js/core/dice-utils.js'
       - 'tests/geometry.test.js'
+      - 'tests/dice-utils.test.js'
       - 'js/battle/primary-scoring-utils.js'
       - 'tests/primary-scoring-utils.test.js'
       - 'js/data/saved-list-utils.js'
@@ -47,6 +49,9 @@ jobs:
 
       - name: Run geometry utility regression
         run: node tests/geometry.test.js
+
+      - name: Run dice utility regression
+        run: node tests/dice-utils.test.js
 
       - name: Run primary scoring utility regression
         run: node tests/primary-scoring-utils.test.js
@@ -91,6 +96,9 @@ jobs:
 
       - name: Validate HTML utility syntax
         run: node --check js/ui/html-utils.js
+
+      - name: Validate dice utility syntax
+        run: node --check js/core/dice-utils.js
 
       - name: Validate unit list utility syntax
         run: node --check js/data/unit-list-utils.js
@@ -159,6 +167,7 @@ jobs:
           geometry_target=out/'js'/'core'
           geometry_target.mkdir(parents=True,exist_ok=True)
           geometry_target.joinpath('geometry.js').write_text(Path('js/core/geometry.js').read_text(encoding='utf-8'),encoding='utf-8')
+          geometry_target.joinpath('dice-utils.js').write_text(Path('js/core/dice-utils.js').read_text(encoding='utf-8'),encoding='utf-8')
           scoring_target=out/'js'/'battle'
           scoring_target.mkdir(parents=True,exist_ok=True)
           scoring_target.joinpath('primary-scoring-utils.js').write_text(Path('js/battle/primary-scoring-utils.js').read_text(encoding='utf-8'),encoding='utf-8')
@@ -187,6 +196,11 @@ jobs:
           standalone=standalone.replace(
               '<script src="js/core/geometry.js"></script>',
               '<script>\n'+Path('js/core/geometry.js').read_text(encoding='utf-8')+'\n</script>',
+              1
+          )
+          standalone=standalone.replace(
+              '<script src="js/core/dice-utils.js"></script>',
+              '<script>\n'+Path('js/core/dice-utils.js').read_text(encoding='utf-8')+'\n</script>',
               1
           )
           standalone=standalone.replace(
