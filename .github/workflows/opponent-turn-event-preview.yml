@@ -19,6 +19,8 @@ on:
       - 'js/data/bsdata-parser.js'
       - 'js/ui/game-timer.js'
       - 'js/data/unit-list-utils.js'
+      - 'js/ui/unit-display-utils.js'
+      - 'tests/unit-display-utils.test.js'
       - 'tests/unit-list-utils.test.js'
       - 'js/core/geometry.js'
       - 'tests/geometry.test.js'
@@ -55,6 +57,9 @@ jobs:
       - name: Run unit list utility regression
         run: node tests/unit-list-utils.test.js
 
+      - name: Run unit display utility regression
+        run: node tests/unit-display-utils.test.js
+
       - name: Run game timer turn-boundary regression
         run: node tests/game-timer.test.js
 
@@ -78,6 +83,9 @@ jobs:
 
       - name: Validate unit list utility syntax
         run: node --check js/data/unit-list-utils.js
+
+      - name: Validate unit display utility syntax
+        run: node --check js/ui/unit-display-utils.js
 
       - name: Validate inline JavaScript in index.html
         shell: bash
@@ -147,6 +155,7 @@ jobs:
           ui_target.mkdir(parents=True,exist_ok=True)
           ui_target.joinpath('html-utils.js').write_text(Path('js/ui/html-utils.js').read_text(encoding='utf-8'),encoding='utf-8')
           saved_target.joinpath('unit-list-utils.js').write_text(Path('js/data/unit-list-utils.js').read_text(encoding='utf-8'),encoding='utf-8')
+          ui_target.joinpath('unit-display-utils.js').write_text(Path('js/ui/unit-display-utils.js').read_text(encoding='utf-8'),encoding='utf-8')
 
           # Also emit a single-file preview for iPad/Safari testing. This keeps the
           # validated preview self-contained so the user does not need a web host.
@@ -183,6 +192,11 @@ jobs:
           standalone=standalone.replace(
               '<script src="js/data/unit-list-utils.js"></script>',
               '<script>\n'+Path('js/data/unit-list-utils.js').read_text(encoding='utf-8')+'\n</script>',
+              1
+          )
+          standalone=standalone.replace(
+              '<script src="js/ui/unit-display-utils.js"></script>',
+              '<script>\n'+Path('js/ui/unit-display-utils.js').read_text(encoding='utf-8')+'\n</script>',
               1
           )
           standalone=standalone.replace(
