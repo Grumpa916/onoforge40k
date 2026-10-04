@@ -114,8 +114,8 @@ jobs:
               1
           )
           standalone=standalone.replace(
-              "async function loadEventCompanionData(){\\n  try{\\n    const r=await fetch('./data/warhammer-event-companion-v1.2.json',{cache:'no-store'});\\n    if(!r.ok)throw new Error('Event Companion HTTP '+r.status);\\n    ONOFORGE_EVENT_COMPANION=await r.json();\\n  }catch(e){\\n    ONOFORGE_EVENT_COMPANION=null;\\n  }\\n  render();\\n}",
-              "async function loadEventCompanionData(){\\n  try{\\n    const el=document.getElementById('onoforge-companion-data');\\n    ONOFORGE_EVENT_COMPANION=el?JSON.parse(el.textContent):null;\\n  }catch(e){\\n    ONOFORGE_EVENT_COMPANION=null;\\n  }\\n  render();\\n}",
+              "const r=await fetch('./data/warhammer-event-companion-v1.2.json',{cache:'no-store'});",
+              "const r={ok:true,json:async()=>JSON.parse(document.getElementById('onoforge-companion-data').textContent)};",
               1
           )
           (out/'onoforge40k-standalone.html').write_text(standalone,encoding='utf-8')
