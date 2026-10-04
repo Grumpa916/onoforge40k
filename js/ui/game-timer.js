@@ -63,8 +63,9 @@
       t.turnStartedGameMs=t.elapsedMs;
       if(gameTimerInterval){clearInterval(gameTimerInterval);gameTimerInterval=null;}
     }
-    host.save();
+    // Update the visible control immediately, before synchronous persistence.
     updateGameTimerDisplay();
+    try{host.save();}catch(e){console.warn('OnoForge timer state save failed.',e);}
   }
   function switchTurnClock(next){
     const state=hState(),t=ensureGameTimer();
@@ -103,6 +104,7 @@
       control.className='btn '+(t.finishedAt?'':t.turnPaused?'primary':'danger');
       control.disabled=!!t.finishedAt;
     }
+    bindTimerControls();
   }
   function ensureLiveGameTimerDisplay(){
     const state=hState(),t=ensureGameTimer();
@@ -160,6 +162,17 @@
       if(current)current.textContent='';
     },1800);
   }
+  let saveStatusTimer=null;
+  function setTimerSaveStatus(message){
+    const el=document.getElementById('game-timer-save-status');
+    if(!el)return;
+    el.textContent=message;
+    if(saveStatusTimer)clearTimeout(saveStatusTimer);
+    saveStatusTimer=setTimeout(()=>{
+      const current=document.getElementById('game-timer-save-status');
+      if(current)current.textContent='';
+    },1800);
+  }
   function saveBattleFromTimer(){
     if(hState().cloud?.userId){
       setTimerSaveStatus('Saving…');
@@ -168,32 +181,48 @@
         .catch(()=>setTimerSaveStatus('Save failed'));
       return;
     }
-    const ok=host.save();
-    setTimerSaveStatus(ok===false?'Save failed':'Saved locally');
-  }
-  function syncTimerControlUi(){
-    const t=ensureGameTimer();
-    const button=document.querySelector('[data-game-timer-action="toggle"]');
-    if(button){
-      button.textContent=t.finishedAt?'Finished':t.turnPaused?'Resume Game':'Pause Game';
-      button.className='btn '+(t.finishedAt?'':t.turnPaused?'primary':'danger');
-      button.disabled=!!t.finishedAt;
+    setTimerSaveStatus('Saving…');
+    try{
+      const ok=host.save();
+      setTimerSaveStatus(ok===false?'Save failed':'Saved locally');
+    }catch(e){
+      console.warn('OnoForge local battle save failed.',e);
+      setTimerSaveStatus('Save failed');
     }
-    const status=document.getElementById('game-timer-status');
-    if(status)status.textContent=t.finishedAt?'Finished':(t.turnPaused?'Game Paused':'Game Running');
   }
-  function handleGameTimerAction(action,ev){
-    ev?.preventDefault?.();
-    ev?.stopPropagation?.();
-    if(action==='toggle')toggleGameTimer();
-    else if(action==='save')saveBattleFromTimer();
-    else if(action==='finish')finishGameTimer();
-    return false;
+  function bindTimerControls(){
+    const toggle=document.getElementById('game-timer-toggle');
+    if(toggle){
+      toggle.onclick=function(ev){
+        ev.preventDefault();
+        ev.stopPropagation();
+        toggleGameTimer();
+        return false;
+      };
+    }
+    const saveButton=document.getElementById('game-timer-save');
+    if(saveButton){
+      saveButton.onclick=function(ev){
+        ev.preventDefault();
+        ev.stopPropagation();
+        saveBattleFromTimer();
+        return false;
+      };
+    }
+    const finish=document.getElementById('game-timer-finish');
+    if(finish){
+      finish.onclick=function(ev){
+        ev.preventDefault();
+        ev.stopPropagation();
+        finishGameTimer();
+        return false;
+      };
+    }
   }
   function gameTimerHtml(){
     const state=hState(),t=ensureGameTimer();
     const label=t.finishedAt?'Finished':t.turnPaused?'Resume Game':'Pause Game';
-    const action=t.finishedAt?'':`<button type="button" class="btn ${t.turnPaused?'primary':'danger'}" onclick="return handleGameTimerAction('toggle',event);" data-game-timer-action="toggle">${label}</button>`;
+    const action=t.finishedAt?'':`<button type="button" id="game-timer-toggle" class="btn ${t.turnPaused?'primary':'danger'}">${label}</button>`;
     return `<div class="game-timer" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 10px;padding:7px 9px;border:1px solid var(--border,#2d4055);border-radius:8px;background:var(--panel,#111c2b)">
     <strong>Game Time</strong>
     <span id="game-timer-value" style="font-variant-numeric:tabular-nums;font-weight:700">${formatGameTime(gameTimerElapsed())}</span>
@@ -202,9 +231,9 @@
     <span class="muted small">${host.esc(state.myName)}: <strong id="my-turn-time-value">${formatGameTime(turnElapsedMs('my'))}</strong></span>
     <span class="muted small">${host.esc(state.oppName)}: <strong id="opp-turn-time-value">${formatGameTime(turnElapsedMs('opp'))}</strong></span>
     ${action}
-    <button type="button" class="btn primary" onclick="return handleGameTimerAction('save',event);" data-game-timer-action="save">${state.cloudBattleSaving?'Saving…':'Save Battle'}</button>
+    <button type="button" id="game-timer-save" class="btn primary">${state.cloudBattleSaving?'Saving…':'Save Battle'}</button>
     <span id="game-timer-save-status" class="muted small" aria-live="polite"></span>
-    <button type="button" class="btn" onclick="return handleGameTimerAction('finish',event);" data-game-timer-action="finish" ${t.finishedAt?'disabled':''}>Finish</button>
+    <button type="button" id="game-timer-finish" class="btn" ${t.finishedAt?'disabled':''}>Finish</button>
   </div>`;
   }
   function stopGameTimerRuntime(){
@@ -223,8 +252,14 @@
     }
     updateGameTimerDisplay();
   }
-  function install(nextHost){
-    host=nextHost;
+  function handleGameTimerAction(action,ev){
+    ev?.preventDefault?.();
+    ev?.stopPropagation?.();
+    if(action==='toggle')toggleGameTimer();
+    else if(action==='save')saveBattleFromTimer();
+    else if(action==='finish')finishGameTimer();
+    return false;
+  }
     const api={ensureGameTimer,gameTimerElapsed,turnElapsedMs,finalizeCurrentTurnTime,toggleTurnPause,switchTurnClock,formatGameTime,updateGameTimerDisplay,ensureLiveGameTimerDisplay,startGameTimer,toggleGameTimer,finishGameTimer,saveBattleFromTimer,gameTimerHtml,stopGameTimerRuntime,syncGameTimerRuntime,handleGameTimerAction};
     Object.keys(api).forEach(name=>{ global[name]=api[name]; });
     return api;
