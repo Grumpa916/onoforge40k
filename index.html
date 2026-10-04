@@ -693,7 +693,7 @@ body{overflow-x:hidden}
 #battle-view #onoforge-advisor-render .ta-decision-render{margin-bottom:10px;padding:11px}
 @media (min-width:701px){#battle-view #onoforge-advisor-render .ta-grid{grid-template-columns:repeat(8,minmax(0,1fr));gap:5px}#battle-view #onoforge-advisor-render .ta-metric{padding:6px}#battle-view #onoforge-advisor-render .ta-metric b{font-size:14px}}
 </style>
-<style id="ono-battle-ux-requested">.battle-layout>.objective-map-renderer{grid-column:1!important;grid-row:2!important}.battle-layout>.battle-state-column{grid-column:2!important;grid-row:1 / span 2!important}.battle-layout>.battle-log{grid-column:1 / -1!important;grid-row:3!important}@media (min-width:900px) and (max-width:1300px) and (orientation:landscape){.battle-layout{display:grid!important;grid-template-columns:minmax(0,1fr) 500px!important;grid-template-rows:auto auto auto!important;gap:12px!important}.battle-layout>div:first-child{grid-column:1!important;grid-row:1!important}.battle-layout>.objective-map-renderer{grid-column:1!important;grid-row:2!important}.battle-layout>.battle-state-column{grid-column:2!important;grid-row:1 / span 2!important}.battle-layout>.battle-state-column .army-state-grid{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)!important;gap:10px!important}.battle-layout>.battle-log{grid-column:1 / -1!important;grid-row:3!important}}</style></head><body><div id="app"></div><script src="js/data/bsdata-parser.js"></script><script>
+<style id="ono-battle-ux-requested">.battle-layout>.objective-map-renderer{grid-column:1!important;grid-row:2!important}.battle-layout>.battle-state-column{grid-column:2!important;grid-row:1 / span 2!important}.battle-layout>.battle-log{grid-column:1 / -1!important;grid-row:3!important}@media (min-width:900px) and (max-width:1300px) and (orientation:landscape){.battle-layout{display:grid!important;grid-template-columns:minmax(0,1fr) 500px!important;grid-template-rows:auto auto auto!important;gap:12px!important}.battle-layout>div:first-child{grid-column:1!important;grid-row:1!important}.battle-layout>.objective-map-renderer{grid-column:1!important;grid-row:2!important}.battle-layout>.battle-state-column{grid-column:2!important;grid-row:1 / span 2!important}.battle-layout>.battle-state-column .army-state-grid{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)!important;gap:10px!important}.battle-layout>.battle-log{grid-column:1 / -1!important;grid-row:3!important}}</style></head><body><div id="app"></div><script src="js/data/bsdata-parser.js"></script><script src="js/ui/game-timer.js"></script><script>
 window.addEventListener('error',function(ev){if(ev.target&&ev.target.tagName==='SCRIPT'&&ev.target.src===SUPABASE_SCRIPT_URL)return;var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var msg=String(ev.error?.message||ev.message||'Unknown error');a.innerHTML='<span class="error-title">OnoForge error</span><div class="error-detail">'+msg.replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</div><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});window.addEventListener('unhandledrejection',function(ev){var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var reason=ev.reason?.message||ev.reason||'Unhandled promise rejection';a.innerHTML='<span class="error-title">OnoForge error</span><div class="error-detail">'+String(reason).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</div><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});
 
 window.__ONOFORGE_DETACHMENTS = window.__ONOFORGE_DETACHMENTS || {}; function detachmentCatalog(){return window.__ONOFORGE_DETACHMENTS;}
@@ -2208,6 +2208,15 @@ let state={
   savedArmyLists:[],tournamentLifecycle:'SETUP',battleResultLocked:false,battleResultVerified:false,battleResultVerifiedAt:null,
   stratagemsMy:[], stratagemsOpp:[], stratagemsOpen:false,primaryMissionsOpen:false,secondaryMissionsOpen:false,page:'builder',myName:'My Army',oppName:'Opponent Army',faction:'Tyranids',detachment:'Invasion Fleet',detachmentSelections:['Invasion Fleet'],oppFaction:'Ultramarines',oppDetachment:'Gladius Task Force',oppDetachmentSelections:['Gladius Task Force'],limit:2000,my:[],opp:[],searchMy:'',searchOpp:'',configure:null,attacker:'norn',weapon:'Rupture Cannon',target:'marine',round:1,phase:'Command',myVP:0,oppVP:0,myCP:0,oppCP:0,phaseCP:{},battleReadyMy:false,battleReadyOpp:false,secondaryMy:'tactical',secondaryOpp:'tactical',secondaryMyCards:[],secondaryOppCards:[],secondaryMyDeck:[],secondaryOppDeck:[],secondaryMyDeckInitialized:false,secondaryOppDeckInitialized:false,secondaryMyDiscard:[],secondaryOppDiscard:[],newOrdersCompletedMy:false,newOrdersCompletedOpp:false,secondaryMyScored:[],secondaryOppScored:[],secondaryMyScoredVP:{},secondaryOppScoredVP:{},secondaryMyScoredVPByRound:{},secondaryOppScoredVPByRound:{},secondaryMyScoredRound:{},secondaryOppScoredRound:{},secondaryNewOrdersUsedMy:false,secondaryNewOrdersUsedOpp:false,secondaryPersonalPlans:{},secondaryPlanEdit:'',secondaryDetailSide:'',secondaryDetailName:'',gameReferencePersonal:{},rulesDataPin:null,myForceDisposition:'',oppForceDisposition:'',attackerSide:'my',firstTurn:'my',currentTurn:'my',objectives:{},objectiveMapLayout:'A',objectiveMapMissionKey:'',terrainSetupComplete:false,deletedSavedArmyLists:[],objectiveControlHistory:{},objectiveControlSources:{},objectiveMeta:{},deploymentTrackingSide:'my',battlefieldUnitPositions:{},deploymentMapPlacement:null,battlefieldMapPlacement:null,reserveDeclarations:{my:{},opp:{}},events:[],gameAssistantChecks:{},gameAssistantNotes:'',personalArmyNotes:'',lists:[],activeRosterId:'',activeOpponentRosterId:'',dataStatus:'BSData 11e structured source • embedded catalogue bootstrap fallback',source:'BSData 11e',revision:'current',cloud:{email:'',userId:'',status:'Not connected',lastSync:'',error:''},cloudBattles:[],rulesLog:[],mathRules:{},gameTimer:{elapsedMs:0,running:false,paused:false,startedAt:0,pausedAt:0,finishedAt:0,turnMyMs:0,turnOppMs:0,turnStartedGameMs:0,turnPaused:false},cloudPasswordRecovery:false,localSavedAt:''};
 Object.defineProperty(window,'ONOFORGE_APP_STATE',{configurable:true,get:function(){return state;}});
+
+window.OnoForgeGameTimer.install({
+  getState:function(){return state;},
+  save:function(){return save();},
+  render:function(){return render();},
+  battleMutationAllowed:function(action){return battleMutationAllowed(action);},
+  cloudSaveCurrentBattle:function(opts){return cloudSaveCurrentBattle(opts);},
+  esc:function(value){return esc(value);}
+});
 
 const GAME_REFERENCE_PHASES={Command:[],Movement:[],Shooting:[],Charge:[],Fight:[],End:[]};
 const GAME_REFERENCE_QUICK=[];
@@ -4674,144 +4683,6 @@ function setup(){
  <div class="row" style="margin-top:10px"><button class="btn" type="button" onclick="returnToTournamentSetup()" ${state.tournamentLifecycle==='DEPLOYMENT'?'':'disabled'}>Back to Setup</button><button class="btn primary" type="button" onclick="startBattle()" ${(['SETUP','DEPLOYMENT'].includes(state.tournamentLifecycle))?'':'disabled'}>Start Battle</button> </div></div>`
 }
 
-let gameTimerInterval=null;
-function ensureGameTimer(){
-  if(!state.gameTimer || typeof state.gameTimer!=='object'){
-    state.gameTimer={elapsedMs:0,running:false,paused:false,startedAt:0,pausedAt:0,finishedAt:0,turnMyMs:0,turnOppMs:0,turnStartedGameMs:0,turnPaused:false};
-  }
-  return state.gameTimer;
-}
-function gameTimerElapsed(){
-  const t=ensureGameTimer();
-  if(!t.running)return Math.max(0,Number(t.elapsedMs)||0);
-  return Math.max(0,(Number(t.elapsedMs)||0)+(Date.now()-(Number(t.startedAt)||Date.now())));
-}
-
-function turnElapsedMs(side){
-  const t=ensureGameTimer();
-  const key=side==='opp'?'turnOppMs':'turnMyMs';
-  const saved=Math.max(0,Number(t[key])||0);
-  if(t.turnPaused)return saved;
-  if(state.currentTurn!==side)return saved;
-  return saved+Math.max(0,gameTimerElapsed()-(Number(t.turnStartedGameMs)||0));
-}
-function finalizeCurrentTurnTime(){
-  const t=ensureGameTimer();
-  if(t.turnPaused)return;
-  const side=state.currentTurn==='opp'?'opp':'my';
-  const key=side==='opp'?'turnOppMs':'turnMyMs';
-  const now=gameTimerElapsed();
-  const delta=Math.max(0,now-(Number(t.turnStartedGameMs)||0));
-  t[key]=Math.max(0,Number(t[key])||0)+delta;
-  t.turnStartedGameMs=now;
-}
-function toggleTurnPause(){
-  if(!battleMutationAllowed('timer changes'))return;
-  const t=ensureGameTimer();
-  if(t.finishedAt)return;
-  if(t.turnPaused){
-    t.startedAt=Date.now();
-    t.running=true;
-    t.paused=false;
-    t.pausedAt=0;
-    t.turnStartedGameMs=Number(t.elapsedMs)||0;
-    t.turnPaused=false;
-    if(gameTimerInterval)clearInterval(gameTimerInterval);
-    gameTimerInterval=setInterval(updateGameTimerDisplay,100);
-  }else{
-    finalizeCurrentTurnTime();
-    t.elapsedMs=gameTimerElapsed();
-    t.running=false;
-    t.paused=true;
-    t.pausedAt=Date.now();
-    t.turnStartedGameMs=t.elapsedMs;
-    if(gameTimerInterval){clearInterval(gameTimerInterval);gameTimerInterval=null;}
-  }
-  save();
-  render();
-}
-function switchTurnClock(next){
-  const t=ensureGameTimer();
-  if(!t.turnPaused){
-    finalizeCurrentTurnTime();
-    t.turnStartedGameMs=gameTimerElapsed();
-  }
-  state.currentTurn=next==='opp'?'opp':'my';
-}
-function formatGameTime(ms){
-  const total=Math.max(0,Math.floor(Number(ms)||0)/1000);
-  const h=Math.floor(total/3600);
-  const m=Math.floor((total%3600)/60);
-  const s=Math.floor(total%60);
-  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-}
-function updateGameTimerDisplay(){
-  const el=document.getElementById('game-timer-value');
-  if(el)el.textContent=formatGameTime(gameTimerElapsed());
-  const turnEl=document.getElementById('turn-timer-value');
-  if(turnEl)turnEl.textContent=formatGameTime(turnElapsedMs(state.currentTurn==='opp'?'opp':'my'));
-  const myTurnEl=document.getElementById('my-turn-time-value');
-  if(myTurnEl)myTurnEl.textContent=formatGameTime(turnElapsedMs('my'));
-  const oppTurnEl=document.getElementById('opp-turn-time-value');
-  if(oppTurnEl)oppTurnEl.textContent=formatGameTime(turnElapsedMs('opp'));
-  const status=document.getElementById('game-timer-status');
-  if(status){
-    const t=ensureGameTimer();
-    status.textContent=t.finishedAt?'Finished':(t.turnPaused?'Game Paused':'Game Running');
-  }
-}
-function ensureLiveGameTimerDisplay(){
-  if(gameTimerInterval!==null)return;
-  const t=ensureGameTimer();
-  if(t.running && !t.finishedAt){
-    gameTimerInterval=setInterval(updateGameTimerDisplay,100);
-  }
-}
-
-function startGameTimer(){
-  const t=ensureGameTimer();
-  t.elapsedMs=0;
-  t.startedAt=Date.now();
-  t.pausedAt=0;
-  t.finishedAt=0;
-  t.running=true;
-  t.paused=false;
-  if(gameTimerInterval)clearInterval(gameTimerInterval);
-  gameTimerInterval=setInterval(updateGameTimerDisplay,100);
-  updateGameTimerDisplay();
-}
-function toggleGameTimer(){
-  toggleTurnPause();
-}
-function finishGameTimer(){
-  const t=ensureGameTimer();
-  if(t.finishedAt)return;
-  if(t.running){finalizeCurrentTurnTime();t.elapsedMs=gameTimerElapsed();}
-  t.running=false;
-  t.paused=false;
-  t.finishedAt=Date.now();
-  if(gameTimerInterval){clearInterval(gameTimerInterval);gameTimerInterval=null;}
-  save();
-  render();
-}
-function saveBattleFromTimer(){if(state.cloud?.userId){cloudSaveCurrentBattle({silent:false});return;}save();alert('Battle saved on this device.');}
-function gameTimerHtml(){
-  const t=ensureGameTimer();
-  const label=t.finishedAt?'Finished':t.turnPaused?'Resume Game':'Pause Game';
-  const action=t.finishedAt?'':`<button type="button" class="btn ${t.turnPaused?'primary':'danger'}" onclick="toggleGameTimer();return false;">${label}</button>`;
-  return `<div class="game-timer" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 10px;padding:7px 9px;border:1px solid var(--border,#2d4055);border-radius:8px;background:var(--panel,#111c2b)">
-    <strong>Game Time</strong>
-    <span id="game-timer-value" style="font-variant-numeric:tabular-nums;font-weight:700">${formatGameTime(gameTimerElapsed())}</span>
-    <span id="game-timer-status" class="muted small">${t.finishedAt?'Finished':t.running?'Running':t.elapsedMs>0?'Paused':'Ready'}</span>
-    <span class="muted small">Current Turn: ${esc(state.currentTurn==='opp'?state.oppName:state.myName)} <strong id="turn-timer-value">${formatGameTime(turnElapsedMs(state.currentTurn==='opp'?'opp':'my'))}</strong></span>
-    <span class="muted small">${esc(state.myName)}: <strong id="my-turn-time-value">${formatGameTime(turnElapsedMs('my'))}</strong></span>
-    <span class="muted small">${esc(state.oppName)}: <strong id="opp-turn-time-value">${formatGameTime(turnElapsedMs('opp'))}</strong></span>
-    ${action}
-    <button type="button" class="btn primary" onclick="saveBattleFromTimer();return false;">${state.cloudBattleSaving?'Saving…':'Save Battle'}</button>
-    <button type="button" class="btn" onclick="finishGameTimer();return false;" ${t.finishedAt?'disabled':''}>Finish</button>
-  </div>`;
-}
-
 function battleEndSummaryHtml(){
  const my=scoreTotalForSide('my'),opp=scoreTotalForSide('opp');
  const pmy=Number(state.primaryMyScoredVP)||0,popp=Number(state.primaryOppScoredVP)||0;
@@ -4947,7 +4818,7 @@ function endBattle(){
  finalizeCurrentTurnTime();
  const t=ensureGameTimer();
  if(t.running){t.elapsedMs=gameTimerElapsed();t.running=false;t.paused=false;t.finishedAt=Date.now();}
- if(gameTimerInterval){clearInterval(gameTimerInterval);gameTimerInterval=null;}
+ stopGameTimerRuntime();
  if(!setTournamentLifecycle('COMPLETED')){
   alert('The tournament could not transition to Completed.');
   return false;
@@ -5309,21 +5180,6 @@ function actionLabel(e){
  return labels[e?.kind]||String(e?.kind||'Action').replaceAll('_',' ');
 }
 function event(kind,payload,before){const p={...(payload||{})};if(!p.phase)p.phase=state.phase;if(!p.unit)p.unit=kind==='PHASE_CHANGED'?'Game':kind==='ROUND_CHANGED'?'Game':'Game';if(!p.action)p.action=actionLabel({kind,payload:p});const playerTurn=state.currentTurn==='opp'?'opp':'my';state.events.unshift({id:uid(),at:new Date().toISOString(),round:state.round,phase:state.phase,playerTurn,kind,payload:p,before:before||state._undoSnapshot||null});state.events=state.events.slice(0,100);state._undoSnapshot=null}
-function syncGameTimerRuntime(){
-  if(gameTimerInterval!==null){
-    clearInterval(gameTimerInterval);
-    gameTimerInterval=null;
-  }
-  const t=ensureGameTimer();
-  if(t.running&&!t.finishedAt){
-    // Undo restores a snapshot from the action boundary; resume from that
-    // boundary instead of charging time spent while the action was undone.
-    t.startedAt=Date.now();
-    t.turnStartedGameMs=Math.max(0,Number(t.elapsedMs)||0);
-    gameTimerInterval=setInterval(updateGameTimerDisplay,100);
-  }
-  updateGameTimerDisplay();
-}
 function undoLastAction(){
   const e=state.events[0];
   if(!e){alert('No action to undo.');return}
