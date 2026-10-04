@@ -8558,19 +8558,19 @@ function tacticalPreRollQuickCounterHtml(stage,value,max){
   const safe=Number.isFinite(current)?Math.max(0,Math.min(Number(max)||0,current)):0;
   const cap=Math.max(0,Number(max)||0);
   return '<div class="pr-quick-count">'+
-    '<button type="button" class="btn pr-count-btn" onclick="tacticalPreRollResolutionSet(\''+stage+'\',String(Math.max(0,'+safe+'-1)))">−</button>'+
+    '<button type="button" class="btn pr-count-btn" onclick="tacticalPreRollResolutionSet(\''+field+'\',String(Math.max(0,'+safe+'-1)))">−</button>'+
     '<div class="pr-count-value">'+safe+'</div>'+
-    '<button type="button" class="btn pr-count-btn" onclick="tacticalPreRollResolutionSet(\''+stage+'\',String(Math.min('+cap+','+safe+'+1)))">+</button>'+
+    '<button type="button" class="btn pr-count-btn" onclick="tacticalPreRollResolutionSet(\''+field+'\',String(Math.min('+cap+','+safe+'+1)))">+</button>'+
     '</div>'+
     '<div class="pr-count-presets">'+
-      '<button type="button" class="btn" onclick="tacticalPreRollResolutionSet(\''+stage+'\',\'0\')">0</button>'+
-      (cap>=1?'<button type="button" class="btn" onclick="tacticalPreRollResolutionSet(\''+stage+'\',\'1\')">1</button>':'')+
-      (cap>=2?'<button type="button" class="btn" onclick="tacticalPreRollResolutionSet(\''+stage+'\',\'2\')">2</button>':'')+
-      (cap>=3?'<button type="button" class="btn" onclick="tacticalPreRollResolutionSet(\''+stage+'\',\'3\')">3</button>':'')+
-      (cap>=4?'<button type="button" class="btn" onclick="tacticalPreRollResolutionSet(\''+stage+'\',\'4\')">4</button>':'')+
-      (cap>=5?'<button type="button" class="btn" onclick="tacticalPreRollResolutionSet(\''+stage+'\',\'5\')">5</button>':'')+
-      (cap>=6?'<button type="button" class="btn" onclick="tacticalPreRollResolutionSet(\''+stage+'\',\'6\')">6</button>':'')+
-      (cap>6?'<button type="button" class="btn" onclick="tacticalPreRollResolutionSet(\''+stage+'\',String('+cap+'))">MAX</button>':'')+
+      '<button type="button" class="btn" onclick="tacticalPreRollResolutionSet(\''+field+'\',\'0\')">0</button>'+
+      (cap>=1?'<button type="button" class="btn" onclick="tacticalPreRollResolutionSet(\''+field+'\',\'1\')">1</button>':'')+
+      (cap>=2?'<button type="button" class="btn" onclick="tacticalPreRollResolutionSet(\''+field+'\',\'2\')">2</button>':'')+
+      (cap>=3?'<button type="button" class="btn" onclick="tacticalPreRollResolutionSet(\''+field+'\',\'3\')">3</button>':'')+
+      (cap>=4?'<button type="button" class="btn" onclick="tacticalPreRollResolutionSet(\''+field+'\',\'4\')">4</button>':'')+
+      (cap>=5?'<button type="button" class="btn" onclick="tacticalPreRollResolutionSet(\''+field+'\',\'5\')">5</button>':'')+
+      (cap>=6?'<button type="button" class="btn" onclick="tacticalPreRollResolutionSet(\''+field+'\',\'6\')">6</button>':'')+
+      (cap>6?'<button type="button" class="btn" onclick="tacticalPreRollResolutionSet(\''+field+'\',String('+cap+'))">MAX</button>':'')+
     '</div>';
 }
 
