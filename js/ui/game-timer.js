@@ -76,14 +76,15 @@
   function toggleTurnPause(){
     return ensureGameTimer().turnPaused?resumeGameTimer():pauseGameTimer();
   }
-  function switchTurnClock(next){
+  function switchTurnClock(next,outgoingSide){
     const state=hState(),t=ensureGameTimer();
-    // Capture the outgoing side before changing currentTurn. Some application
-    // callers intentionally update state.currentTurn first; the timer must still
-    // attribute elapsed time to the side that was actually active.
-    const outgoingSide=state.currentTurn==='opp'?'opp':'my';
+    // Callers that already mutate currentTurn must pass the outgoing side.
+    // Older callers may omit it, in which case the current state is used.
+    const side=outgoingSide==='opp'||outgoingSide==='my'
+      ?outgoingSide
+      :(state.currentTurn==='opp'?'opp':'my');
     if(!t.turnPaused){
-      const key=outgoingSide==='opp'?'turnOppMs':'turnMyMs';
+      const key=side==='opp'?'turnOppMs':'turnMyMs';
       const now=gameTimerElapsed();
       const delta=Math.max(0,now-(Number(t.turnStartedGameMs)||0));
       t[key]=Math.max(0,Number(t[key])||0)+delta;

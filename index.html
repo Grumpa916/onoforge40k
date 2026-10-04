@@ -6262,7 +6262,7 @@ function advancePhase(){
       recordPrimaryScoringCandidates(endingTurn,'round-end');
       ensureObjectiveTurnSnapshot();
       recordObjectiveTurnState();
-      switchTurnClock(firstTurn);
+      switchTurnClock(firstTurn,endingTurn);
       ensureTacticalTurnDraw(firstTurn);
       syncPrimaryScoringRound();
       state.my=sortBattleState(state.my);
@@ -6283,7 +6283,7 @@ function advancePhase(){
     recordPrimaryScoringCandidates(endingTurn,'turn-end');
     ensureObjectiveTurnSnapshot();
     recordObjectiveTurnState();
-    switchTurnClock(otherTurn);
+    switchTurnClock(otherTurn,endingTurn);
     ensureTacticalTurnDraw(otherTurn);
     state.my=sortBattleState(state.my);
     state.opp=sortBattleState(state.opp);
@@ -6349,7 +6349,7 @@ function previousPhase(){
 
   rememberPhaseCP();
   if(state.currentTurn!==previousTurn){
-    switchTurnClock(previousTurn);
+    switchTurnClock(previousTurn,fromTurn);
   }
   state.round=previousRound;
   state.currentTurn=previousTurn;
@@ -6392,7 +6392,7 @@ function nextRound(){
  const nextTurn=state.battleFirstTurn==='opp'?'opp':'my';
  autoScorePrimaryEndOfTurn(endingTurn);
  rememberPhaseCP();
- if(state.currentTurn!==nextTurn)switchTurnClock(nextTurn);
+ if(state.currentTurn!==nextTurn)switchTurnClock(nextTurn,endingTurn);
  else if(!ensureGameTimer().turnPaused){finalizeCurrentTurnTime();ensureGameTimer().turnStartedGameMs=gameTimerElapsed();}
  state.round=nextRoundNumber;
  state.currentTurn=nextTurn;
@@ -6420,7 +6420,7 @@ function previousRound(){
  const nextRoundNumber=Math.max(1,current-1);
  const nextTurn=state.battleFirstTurn==='opp'?'opp':'my';
  rememberPhaseCP();
- if(state.currentTurn!==nextTurn)switchTurnClock(nextTurn);
+ if(state.currentTurn!==nextTurn)switchTurnClock(nextTurn,endingTurn);
  else if(!ensureGameTimer().turnPaused){finalizeCurrentTurnTime();ensureGameTimer().turnStartedGameMs=gameTimerElapsed();}
  state.round=nextRoundNumber;
  state.currentTurn=nextTurn;
