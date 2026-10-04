@@ -104,7 +104,7 @@ jobs:
           # validated preview self-contained so the user does not need a web host.
           standalone=html.replace(
               '<script src="js/data/bsdata-parser.js"></script>',
-              '<script>\\n'+Path('js/data/bsdata-parser.js').read_text(encoding='utf-8')+'\\n</script>',
+              '<script>\n'+Path('js/data/bsdata-parser.js').read_text(encoding='utf-8')+'\n</script>',
               1
           )
           companion_json=data_src.read_text(encoding='utf-8')
