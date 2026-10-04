@@ -63,9 +63,8 @@
       t.turnStartedGameMs=t.elapsedMs;
       if(gameTimerInterval){clearInterval(gameTimerInterval);gameTimerInterval=null;}
     }
-    syncTimerControlUi();
     host.save();
-    host.render();
+    updateGameTimerDisplay();
   }
   function switchTurnClock(next){
     const state=hState(),t=ensureGameTimer();
@@ -96,6 +95,13 @@
     if(status){
       const t=ensureGameTimer();
       status.textContent=t.finishedAt?'Finished':(t.turnPaused?'Game Paused':'Game Running');
+    }
+    const control=document.querySelector('[data-game-timer-action="toggle"]');
+    if(control){
+      const t=ensureGameTimer();
+      control.textContent=t.finishedAt?'Finished':t.turnPaused?'Resume Game':'Pause Game';
+      control.className='btn '+(t.finishedAt?'':t.turnPaused?'primary':'danger');
+      control.disabled=!!t.finishedAt;
     }
   }
   function ensureLiveGameTimerDisplay(){
@@ -143,10 +149,27 @@
     host.save();
     host.render();
   }
+  let saveStatusTimer=null;
+  function setTimerSaveStatus(message){
+    const el=document.getElementById('game-timer-save-status');
+    if(!el)return;
+    el.textContent=message;
+    if(saveStatusTimer)clearTimeout(saveStatusTimer);
+    saveStatusTimer=setTimeout(()=>{
+      const current=document.getElementById('game-timer-save-status');
+      if(current)current.textContent='';
+    },1800);
+  }
   function saveBattleFromTimer(){
-    if(hState().cloud?.userId){host.cloudSaveCurrentBattle({silent:false});return;}
-    host.save();
-    global.alert('Battle saved on this device.');
+    if(hState().cloud?.userId){
+      setTimerSaveStatus('Saving…');
+      Promise.resolve(host.cloudSaveCurrentBattle({silent:false}))
+        .then(()=>setTimerSaveStatus('Saved'))
+        .catch(()=>setTimerSaveStatus('Save failed'));
+      return;
+    }
+    const ok=host.save();
+    setTimerSaveStatus(ok===false?'Save failed':'Saved locally');
   }
   function syncTimerControlUi(){
     const t=ensureGameTimer();
@@ -180,6 +203,7 @@
     <span class="muted small">${host.esc(state.oppName)}: <strong id="opp-turn-time-value">${formatGameTime(turnElapsedMs('opp'))}</strong></span>
     ${action}
     <button type="button" class="btn primary" onclick="return handleGameTimerAction('save',event);" data-game-timer-action="save">${state.cloudBattleSaving?'Saving…':'Save Battle'}</button>
+    <span id="game-timer-save-status" class="muted small" aria-live="polite"></span>
     <button type="button" class="btn" onclick="return handleGameTimerAction('finish',event);" data-game-timer-action="finish" ${t.finishedAt?'disabled':''}>Finish</button>
   </div>`;
   }
