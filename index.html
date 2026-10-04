@@ -7369,7 +7369,7 @@ function tacticalWeaponPhaseEligible(w,phase,attackerEntry,targetEntry,attackerS
   const advanced=movementType==='advance';
   if(p==='Shooting'){
     if(!tacticalPhaseActionAvailable(attackerEntry?.uid,'Shooting',attackerSide))return false;
-    if(raw==='MELEE')return false;
+    if(!tacticalWeaponIsRanged(w))return false;
     if(movementType==='fallback')return false;
     if(tacticalWeaponIsIndirect(w)&&tacticalUnitIsEngagedAny(attackerEntry?.uid))return false;
     // Assault Shooting is the only core-rule shooting mode available to a unit
@@ -9017,11 +9017,12 @@ function opponentTurnTrackingHtml(){
   if(phase==='Shooting'){
     const ae=oppUnits.find(e=>e.uid===capture.attackerUid)||oppUnits[0]||null,te=myUnits.find(e=>e.uid===capture.targetUid)||myUnits[0]||null;
     const weapons=tacticalOpponentWeaponChoices('opp','my',ae,te,'Shooting'),selectedWeapon=weapons.find(w=>String(w.name)===String(capture.weaponName))||weapons[0]||null;
+    const weaponPlaceholder=weapons.length?'Choose weapon…':(ae&&!tacticalPhaseActionAvailable(ae.uid,'Shooting','opp')?'Shooting completed — choose another shooter…':'No eligible ranged weapons');
     specific='<div class="status" style="margin-top:8px"><b>Opponent Shooting Resolution</b><div class="tiny" style="margin-top:4px">Enter the physical dice result. The resolver writes ATTACK_RESOLUTION and updates the friendly target roster.</div>'+
       '<div class="grid3" style="margin-top:8px">'+
       '<div class="field"><label>Enemy shooter</label><select onchange="setOpponentTurnCapture(\'attackerUid\',this.value)"><option value="">Choose unit…</option>'+oppUnits.map(e=>'<option value="'+esc(e.uid)+'" '+(e.uid===ae?.uid?'selected':'')+'>'+esc(unitDisplayName('opp',e))+'</option>').join('')+'</select></div>'+
       '<div class="field"><label>My target</label><select onchange="setOpponentTurnCapture(\'targetUid\',this.value)"><option value="">Choose unit…</option>'+myUnits.map(e=>'<option value="'+esc(e.uid)+'" '+(e.uid===te?.uid?'selected':'')+'>'+esc(unitDisplayName('my',e))+'</option>').join('')+'</select></div>'+
-      '<div class="field"><label>Weapon profile</label><select onchange="setOpponentTurnCapture(\'weaponName\',this.value)"><option value="">Choose weapon…</option>'+weapons.map(w=>'<option value="'+esc(w.name)+'" '+(w.name===selectedWeapon?.name?'selected':'')+'>'+esc(w.name)+' • A '+esc(String(w.A??'?'))+' • BS '+esc(String(w.BS??'?'))+' • D '+esc(String(w.D??'?'))+'</option>').join('')+'</select></div>'+
+      '<div class="field"><label>Weapon profile</label><select onchange="setOpponentTurnCapture(\'weaponName\',this.value)"><option value="">'+esc(weaponPlaceholder)+'</option>'+weapons.map(w=>'<option value="'+esc(w.name)+'" '+(w.name===selectedWeapon?.name?'selected':'')+'>'+esc(w.name)+' • A '+esc(String(w.A??'?'))+' • BS '+esc(String(w.BS??'?'))+' • D '+esc(String(w.D??'?'))+'</option>').join('')+'</select></div>'+
       '</div><button type="button" class="btn primary" style="width:100%;margin-top:8px" '+(!ae||!te||!selectedWeapon?'disabled':'')+' onclick="tacticalOpenOpponentCombatResolution(\'Shooting\',\''+esc(ae?.uid||'')+'\',\''+esc(te?.uid||'')+'\',\''+esc(selectedWeapon?.name||'')+'\')">Enter Opponent Shooting Dice</button></div>';
   }else if(phase==='Charge'){
     const ae=oppUnits.find(e=>e.uid===capture.attackerUid)||oppUnits[0]||null,selected=new Set(capture.chargeTargets||[]);
