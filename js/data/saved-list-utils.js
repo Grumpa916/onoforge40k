@@ -18,10 +18,26 @@
     return d.toLocaleString(undefined,{year:'numeric',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
   }
 
+  function rosterCreatedLabel(value){
+    if(!value)return '';
+    const d=new Date(value);
+    if(Number.isNaN(d.getTime()))return '';
+    return d.toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+  }
+
+  function savedRosterDisplayName(x){
+    const stamp=rosterCreatedLabel(x?.created);
+    return (x?.name||'Unnamed Roster')+(stamp?' • '+stamp:'');
+  }
+
   global.isPermanentSampleArmy=isPermanentSampleArmy;
   global.formatSavedListDate=formatSavedListDate;
+  global.rosterCreatedLabel=rosterCreatedLabel;
+  global.savedRosterDisplayName=savedRosterDisplayName;
   global.OnoForgeSavedListUtils=Object.freeze({
     isPermanentSampleArmy,
-    formatSavedListDate
+    formatSavedListDate,
+    rosterCreatedLabel,
+    savedRosterDisplayName
   });
 })(typeof window!=='undefined'?window:globalThis);
