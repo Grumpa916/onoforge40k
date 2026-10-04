@@ -47,6 +47,9 @@ jobs:
       - name: Run saved-list utility regression
         run: node tests/saved-list-utils.test.js
 
+      - name: Run HTML utility regression
+        run: node tests/html-utils.test.js
+
       - name: Run game timer turn-boundary regression
         run: node tests/game-timer.test.js
 
@@ -64,6 +67,9 @@ jobs:
 
       - name: Validate resolver render bridge syntax
         run: node --check opponent-turn-render-fix.js
+
+      - name: Validate HTML utility syntax
+        run: node --check js/ui/html-utils.js
 
       - name: Validate inline JavaScript in index.html
         shell: bash
@@ -129,6 +135,9 @@ jobs:
           saved_target=out/'js'/'data'
           saved_target.mkdir(parents=True,exist_ok=True)
           saved_target.joinpath('saved-list-utils.js').write_text(Path('js/data/saved-list-utils.js').read_text(encoding='utf-8'),encoding='utf-8')
+          ui_target=out/'js'/'ui'
+          ui_target.mkdir(parents=True,exist_ok=True)
+          ui_target.joinpath('html-utils.js').write_text(Path('js/ui/html-utils.js').read_text(encoding='utf-8'),encoding='utf-8')
 
           # Also emit a single-file preview for iPad/Safari testing. This keeps the
           # validated preview self-contained so the user does not need a web host.
@@ -155,6 +164,11 @@ jobs:
           standalone=standalone.replace(
               '<script src="js/data/saved-list-utils.js"></script>',
               '<script>\n'+Path('js/data/saved-list-utils.js').read_text(encoding='utf-8')+'\n</script>',
+              1
+          )
+          standalone=standalone.replace(
+              '<script src="js/ui/html-utils.js"></script>',
+              '<script>\n'+Path('js/ui/html-utils.js').read_text(encoding='utf-8')+'\n</script>',
               1
           )
           standalone=standalone.replace(
