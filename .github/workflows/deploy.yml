@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - preview/today-opponent-turn-history
+  workflow_dispatch:
 
 concurrency:
   group: github-pages
