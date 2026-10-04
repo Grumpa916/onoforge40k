@@ -8945,7 +8945,9 @@ function setOpponentChargeTarget(uid,checked){
 }
 function tacticalOpponentWeaponChoices(attackerSide,targetSide,attackerEntry,targetEntry,phase){
   if(!attackerEntry||!targetEntry)return [];
-  const groups=attachedCombatWeaponGroups(attackerSide,attackerEntry,targetEntry)
+  // Use the same catalogue-aware weapon surface as Tactical Advisor so opponent-turn
+  // weapon selection cannot lose profiles when the combat snapshot is incomplete.
+  const groups=tacticalAdvisorWeaponGroups(attackerSide,attackerEntry,targetEntry)
     .filter(g=>tacticalWeaponPhaseEligible(g.weapon,phase,attackerEntry,targetEntry,attackerSide,targetSide));
   const out=[],seen=new Set();
   groups.forEach(g=>{
