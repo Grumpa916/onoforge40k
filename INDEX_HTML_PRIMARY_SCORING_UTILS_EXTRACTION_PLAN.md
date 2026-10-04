@@ -92,3 +92,9 @@ Browser:
 - verify a primary scoring action still calculates the same suggested VP and per-objective behavior.
 
 No combat or timer retest is needed unless a regression appears.
+
+
+## Implementation checkpoint
+
+The planned extraction was implemented in commit `ade3fd52062158802c387430cc6c8b69d8682546`.
+The module is loaded before the remaining inline scoring code, preserving the existing global helper names for compatibility.
