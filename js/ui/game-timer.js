@@ -206,8 +206,8 @@
     <span class="muted small">Current Turn: ${host.esc(state.currentTurn==='opp'?state.oppName:state.myName)} <strong id="turn-timer-value">${formatGameTime(turnElapsedMs(state.currentTurn==='opp'?'opp':'my'))}</strong></span>
     <span class="muted small">${host.esc(state.myName)}: <strong id="my-turn-time-value">${formatGameTime(turnElapsedMs('my'))}</strong></span>
     <span class="muted small">${host.esc(state.oppName)}: <strong id="opp-turn-time-value">${formatGameTime(turnElapsedMs('opp'))}</strong></span>
-    <button type="button" id="game-timer-pause" class="btn danger">Pause Game</button>
-    <button type="button" id="game-timer-resume" class="btn primary">Resume Game</button>
+    <button type="button" id="game-timer-pause" class="btn danger" onclick="pauseGameTimer();return false;">Pause Game</button>
+    <button type="button" id="game-timer-resume" class="btn primary" onclick="resumeGameTimer();return false;">Resume Game</button>
     <button type="button" id="game-timer-save" class="btn primary">Save Battle</button>
     <span id="game-timer-save-status" class="muted small" aria-live="polite"></span>
     <button type="button" id="game-timer-finish" class="btn" ${t.finishedAt?'disabled':''}>Finish</button>
