@@ -2997,7 +2997,7 @@ function save(){
     const liveTimer=ensureGameTimer();
     if(liveTimer&&typeof liveTimer==='object'){
       const elapsed=gameTimerElapsed();
-      const currentSide=liveTimer.turnSide==='opp'||liveTimer.turnSide==='my'?liveTimer.turnSide:(state.currentTurn==='opp'?'opp':'my');
+      const currentSide=t.turnSide==='opp'||t.turnSide==='my'?t.turnSide:(state.currentTurn==='opp'?'opp':'my');
       const turnKey=currentSide==='opp'?'turnOppMs':'turnMyMs';
       const savedTurn=Math.max(0,Number(liveTimer[turnKey])||0);
       const turnStarted=Math.max(0,Number(liveTimer.turnStartedGameMs)||0);
@@ -3020,7 +3020,7 @@ function save(){
         const compactTimer=ensureGameTimer();
         if(compactTimer&&typeof compactTimer==='object'){
           const elapsed=gameTimerElapsed();
-          const currentSide=liveTimer.turnSide==='opp'||liveTimer.turnSide==='my'?liveTimer.turnSide:(state.currentTurn==='opp'?'opp':'my');
+          const currentSide=compactTimer.turnSide==='opp'||compactTimer.turnSide==='my'?compactTimer.turnSide:(state.currentTurn==='opp'?'opp':'my');
           const turnKey=currentSide==='opp'?'turnOppMs':'turnMyMs';
           const savedTurn=Math.max(0,Number(compactTimer[turnKey])||0);
           const turnStarted=Math.max(0,Number(compactTimer.turnStartedGameMs)||0);
