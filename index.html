@@ -6419,8 +6419,9 @@ function previousRound(){
  const before=snapshotForUndo();
  const nextRoundNumber=Math.max(1,current-1);
  const nextTurn=state.battleFirstTurn==='opp'?'opp':'my';
+ const outgoingTurn=state.currentTurn==='opp'?'opp':'my';
  rememberPhaseCP();
- if(state.currentTurn!==nextTurn)switchTurnClock(nextTurn,endingTurn);
+ if(state.currentTurn!==nextTurn)switchTurnClock(nextTurn,outgoingTurn);
  else if(!ensureGameTimer().turnPaused){finalizeCurrentTurnTime();ensureGameTimer().turnStartedGameMs=gameTimerElapsed();}
  state.round=nextRoundNumber;
  state.currentTurn=nextTurn;
