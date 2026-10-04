@@ -4267,8 +4267,7 @@ function alphaLabel(n){
   return s;
 }
 function unitDisplayName(side,e){const arr=Array.isArray(state[side])?state[side]:[],same=arr.filter(x=>x.unitId===e.unitId),u=get(e.unitId);if(same.length<=1)return u?.name||e.unitId;const idx=Math.max(0,same.findIndex(x=>x.uid===e.uid));return (u?.name||e.unitId)+' '+alphaLabel(idx+1);}
-function rosterCreatedLabel(value){if(!value)return '';const d=new Date(value);if(Number.isNaN(d.getTime()))return '';return d.toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});}
-function savedRosterDisplayName(x){const stamp=rosterCreatedLabel(x?.created);return (x?.name||'Unnamed Roster')+(stamp?' • '+stamp:'');}
+
 function activeArmyDisplayName(side){const name=side==='my'?state.myName:state.oppName,id=side==='my'?state.activeRosterId:state.activeOpponentRosterId,list=(state.savedArmyLists||[]).find(x=>x.id===id);return savedRosterDisplayName({name,created:list?.created});}
 function unitHasSelectableWargear(u){return wargearGroups(u).some(g=>((g.type==='single'||g.type==='multi'||g.type==='count'||g.type==='allocation')&&Array.isArray(g.options)&&g.options.length>1))}
 function armyListDisplayEntries(side){
