@@ -17,6 +17,7 @@ on:
       - 'index.html'
       - 'data/warhammer-event-companion-v1.2.json'
       - 'js/data/bsdata-parser.js'
+      - 'js/ui/game-timer.js'
   workflow_dispatch:
 
 jobs:
@@ -107,6 +108,11 @@ jobs:
               '<script>\n'+Path('js/data/bsdata-parser.js').read_text(encoding='utf-8')+'\n</script>',
               1
           )
+          standalone=standalone.replace(
+              '<script src="js/ui/game-timer.js"></script>',
+              '<script>\n'+Path('js/ui/game-timer.js').read_text(encoding='utf-8')+'\n</script>',
+              1
+          )
           companion_json=data_src.read_text(encoding='utf-8')
           standalone=standalone.replace(
               '</head>',
@@ -125,6 +131,7 @@ jobs:
           node --check opponent-turn-capture.js
           node --check opponent-turn-render-fix.js
           node --check js/data/bsdata-parser.js
+          node --check js/ui/game-timer.js
 
       - name: Assert preview contains no literal backslash-n escape in injected scripts
         shell: bash
