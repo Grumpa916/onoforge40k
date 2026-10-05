@@ -123,6 +123,7 @@
 .primary-score-tracker>.btn{width:100%;padding:6px;font-size:11px}
 
 /* OnoForge detachment selector */
+.game-unit-reference-toggle{appearance:none;background:none;border:0;color:#f0f4f8;padding:0;text-align:left;font:inherit;font-weight:800;cursor:pointer;text-decoration:none}.game-unit-reference-toggle:hover{text-decoration:underline}.game-unit-reference-toggle::after{content:' ▸';font-size:10px;color:#7fc8ff}.game-unit-reference-toggle.open::after{content:' ▾'}.game-unit-reference-panel{grid-column:1 / -1;margin-top:2px;padding:8px 0 2px;border-top:1px solid #263244}.game-unit-reference-panel .add-unit-stats{margin-top:0}.game-unit-reference-source{margin-top:6px;font-size:9px;color:#8fa1b5}.game-unit-abilities{margin-top:8px;border:1px solid #2d4053;border-radius:7px;background:#0b1420}.game-unit-abilities summary{cursor:pointer;padding:6px 8px;color:#bcdcff;font-size:10px;font-weight:800}.game-unit-abilities-body{padding:0 8px 7px}.game-unit-ability{padding:6px 0;border-top:1px solid #223243;font-size:10px;line-height:1.35}.game-unit-ability:first-child{border-top:0}.game-unit-ability-name{font-weight:800;color:#eef5fb}.game-unit-ability-source{font-size:8px;color:#7e9bb5;margin-left:5px}.game-unit-stat-warning{margin-top:6px}.game-unit-reference-panel table{font-size:9px}.game-unit-reference-panel th,.game-unit-reference-panel td{padding:3px 4px}
 .game-unit-row{display:grid;grid-template-columns:minmax(170px,1fr) minmax(240px,290px);gap:10px;align-items:start;padding:9px 0;border-top:1px solid #26303e}.game-unit-stats{color:#9ca8b8;font-size:12px;white-space:nowrap;line-height:1.35}.game-unit-controls{min-width:0}.game-unit-actions{justify-content:flex-start;flex-wrap:wrap;gap:4px;margin-top:4px}.game-unit-actions .btn{white-space:nowrap;font-size:10px;line-height:1;padding:3px 5px;min-height:24px}.battleshock-badge{display:inline-block;margin-left:7px;padding:2px 7px;border-radius:999px;background:#6b2430;color:#ffd9de;border:1px solid #a94b58;font-size:11px;font-weight:800;letter-spacing:.03em}.game-unit-row.is-battleshocked{background:rgba(169,75,88,.08)}@media(max-width:700px){.game-unit-row{grid-template-columns:1fr;gap:6px}.game-unit-actions{justify-content:flex-start}.game-unit-stats{white-space:normal}}.unit-category{margin-top:12px}.unit-category-title{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;padding:8px 10px;margin:12px 0 6px;border-radius:8px;background:rgba(41,168,255,.14);color:#dff3ff;border:1px solid rgba(41,168,255,.28)}
 .detachment-box{margin-top:10px;padding:14px;border:1px solid #344052;border-radius:12px;background:#0b1018;color:#eef2f7;box-shadow:0 8px 18px rgba(0,0,0,.18);font-family:inherit}.detachment-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px}.detachment-head label{margin:0;color:#eaf2fb;font-weight:800}.detachment-dp{font-weight:800;padding:5px 10px;border-radius:999px;background:#1d3850;color:#dff0ff;border:1px solid #3e6e98}.detachment-selected{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}.detachment-selected .pill{padding:5px 9px;border-radius:999px;background:#1b3145;border:1px solid #3c6384;color:#f1f7fc;font-size:.9em}.detachment-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.detachment-options .detach-check{margin:0}.detachment-help{font-size:.82em;margin-top:8px;color:#a9b7c7}@media(max-width:700px){.detachment-options{grid-template-columns:1fr}}
 
@@ -5656,17 +5657,96 @@ function gameUnitReferenceHtml(u,phase){
  return '<div class="game-unit-reference">'+refs.map(r=>`<span class="game-unit-reference-pill"><b>${esc(r.tag)}</b> ${esc(r.text)}</span>`).join('')+'</div>';
 }
 function weaponCellSafe(w,key){return w[key]===undefined?'—':esc(w[key]);}
+const ONOFORGE_40K_APP_CROSSCHECK={
+  "Aggressor Squad":{
+    faction:"Ultramarines",
+    profile:{M:'5"',T:6,Sv:'3+',W:3,Ld:'6+',OC:1},
+    abilities:[
+      {name:"Close-quarters Firepower",summary:"Ranged attacks targeting the closest eligible enemy target improve their Armour Penetration by 1."}
+    ]
+  },
+  "Ballistus Dreadnought":{
+    faction:"Ultramarines",
+    profile:{M:'8"',T:10,Sv:'2+',W:12,Ld:'6+',OC:4},
+    abilities:[
+      {name:"Ballistus Strike",summary:"Ranged attacks against a target that is not Below Half-strength can re-roll the Hit roll."},
+      {name:"Damaged",summary:"While 1–4 wounds remain, attacks made by this model suffer -1 to Hit."}
+    ]
+  },
+  "Norn Emissary":{
+    faction:"Tyranids",
+    profile:{M:'10"',T:11,Sv:'2+',W:16,Ld:'7+',OC:5},
+    abilities:[
+      {name:"Singular Purpose",summary:"At the start of the first battle round, select an enemy unit for attack re-rolls, or an objective for enhanced Objective Control and Feel No Pain while nearby."},
+      {name:"Unnatural Resilience",summary:"This model has Feel No Pain 4+ against mortal wounds."},
+      {name:"Damaged",summary:"While 1–5 wounds remain, attacks made by this model suffer -1 to Hit."}
+    ]
+  },
+  "The Swarmlord":{
+    faction:"Tyranids",
+    profile:{M:'8"',T:10,Sv:'2+',W:10,Ld:'7+',OC:3},
+    abilities:[
+      {name:"Hive Commander",summary:"At the start of your Command phase, gain 1 CP while this model is on the battlefield."},
+      {name:"Malign Presence",summary:"Once per turn, when an opponent targets a nearby friendly unit with a Stratagem, that Stratagem costs 1 additional CP."},
+      {name:"Domination of the Hive Mind",summary:"Friendly Tyranids units within 9 inches are within Synapse Range."}
+    ]
+  },
+  "Intercessor Squad":{
+    faction:"Ultramarines",
+    profile:{M:'6"',T:4,Sv:'3+',W:2,Ld:'6+',OC:2},
+    abilities:[
+      {name:"Objective Secured",summary:"A controlled objective can remain under your control through the end of the phase unless the opponent's Level of Control becomes greater."},
+      {name:"Hail of Bolts",summary:"When selected to shoot, one visible enemy unit can be selected; Bolt Rifle attacks against it gain +2 Attacks."}
+    ]
+  }
+};
+
+function gameUnitReferenceData(u){
+ const app=ONOFORGE_40K_APP_CROSSCHECK[String(u?.name||'')];
+ if(!app||String(app.faction||'')!==String(u?.faction||''))return null;
+ return app;
+}
+function gameUnitReferenceOpenKey(side,e){return String(side||'my')+'|'+String(e?.uid||'');}
+function toggleGameUnitReference(side,uid){
+ const key=String(side||'my')+'|'+String(uid||'');
+ if(!state.openUnitReferences||typeof state.openUnitReferences!=='object')state.openUnitReferences={};
+ state.openUnitReferences[key]=!state.openUnitReferences[key];
+ render();
+}
 function gameUnitFullReferenceHtml(side,e,u){
  if(!u)return '';
- const profile={...(u.profile||{})};if(profile.M===undefined)profile.M=profile.Move??profile.Movement??u.M??u.Move??u.Movement;if(profile.Ld===undefined)profile.Ld=profile.LD??profile.Leadership??u.Ld??u.LD??u.Leadership;
- const statKeys=[['M','M'],['T','T'],['Sv','Sv'],['W','W'],['Ld','Ld'],['OC','OC']],stats=statKeys;
+ const profile={...(u.profile||{})};
+ if(profile.M===undefined)profile.M=profile.Move??profile.Movement??u.M??u.Move??u.Movement;
+ if(profile.Ld===undefined)profile.Ld=profile.LD??profile.Leadership??u.Ld??u.LD??u.Leadership;
  const supplemental=Array.isArray(window.SUPPLEMENTAL_UNIT_DATABASE)?window.SUPPLEMENTAL_UNIT_DATABASE.find(x=>String(x?.name||'')===String(u?.name||'')&&String(x?.faction||'')===String(u?.faction||'')):null;
- const supplementalProfile=supplemental?.profile||{};
- const profileWithFallback={...supplementalProfile,...profile};
- const activeNames=new Set(activeWeaponNames(e,u)),weapons=(Array.isArray(u.weapons)&&u.weapons.length?u.weapons:(Array.isArray(supplemental?.weapons)?supplemental.weapons:[])).filter(w=>!activeNames.size||activeNames.has(w.name));
+ const app=gameUnitReferenceData(u);
+ const profileWithFallback={...(app?.profile||{}),...(supplemental?.profile||{}),...profile};
+ const statKeys=[['M','M'],['T','T'],['Sv','Sv'],['W','W'],['Ld','Ld'],['OC','OC']];
+ const activeNames=new Set(activeWeaponNames(e,u));
+ const weaponSource=Array.isArray(u.weapons)&&u.weapons.length?u.weapons:(Array.isArray(supplemental?.weapons)?supplemental.weapons:[]);
+ const weapons=weaponSource.filter(w=>!activeNames.size||activeNames.has(w.name));
  const ranged=weapons.filter(w=>w.BS!==undefined&&w.BS!==''&&w.BS!=='—'),melee=weapons.filter(w=>w.WS!==undefined&&w.WS!==''&&w.WS!=='—'),other=weapons.filter(w=>!ranged.includes(w)&&!melee.includes(w));
  const renderWeapons=(title,list)=>list.length?'<div class="muted small" style="margin-top:7px">'+title+'</div><div style="overflow:auto"><table><thead><tr><th>Weapon</th><th>A</th><th>WS</th><th>BS</th><th>S</th><th>AP</th><th>D</th><th>Abilities</th></tr></thead><tbody>'+list.map(w=>'<tr><td><b>'+esc(w.name||'')+'</b></td><td>'+weaponCellSafe(w,'A')+'</td><td>'+weaponCellSafe(w,'WS')+'</td><td>'+weaponCellSafe(w,'BS')+'</td><td>'+weaponCellSafe(w,'S')+'</td><td>'+weaponCellSafe(w,'AP')+'</td><td>'+weaponCellSafe(w,'D')+'</td><td>'+esc(Array.isArray(w.abilities)?w.abilities.join(', '):w.abilities||'—')+'</td></tr>').join('')+'</tbody></table></div>':'';
- return '<details class="game-unit-full-reference"><summary>Full stat line &amp; weapons</summary><div class="game-unit-full-reference-body"><div class="add-unit-stats">'+stats.map(([k,label])=>'<div class="add-unit-stat"><b>'+esc(profileWithFallback[k]===undefined||profileWithFallback[k]===''?'—':profileWithFallback[k])+'</b><span>'+label+'</span></div>').join('')+'</div>'+((stats.some(([k])=>profileWithFallback[k]===undefined||profileWithFallback[k]===''))?'<div class="tiny stat-data-gap">Some stat characteristics are not present in the current unit data source.</div>':'')+renderWeapons('Ranged Weapons',ranged)+renderWeapons('Melee Weapons',melee)+renderWeapons('Other Weapons',other)+'</div></details>';
+ const abilityMap=new Map();
+ const addAbilities=(items,source)=>{
+   (Array.isArray(items)?items:[]).forEach(a=>{
+     const name=typeof a==='string'?a:String(a?.name||'').trim();
+     if(!name)return;
+     const existing=abilityMap.get(name)||{};
+     abilityMap.set(name,{name,summary:existing.summary||String(a?.description||a?.summary||''),source:existing.source||source});
+   });
+ };
+ addAbilities(u.abilities,'OnoForge canonical');
+ addAbilities(supplemental?.abilities,'BSData cross-check');
+ addAbilities(app?.abilities,'40k.app cross-check');
+ const abilities=[...abilityMap.values()];
+ const missing=statKeys.some(([k])=>profileWithFallback[k]===undefined||profileWithFallback[k]==='');
+ return '<div class="game-unit-reference-panel"><div class="add-unit-stats">'+statKeys.map(([k,label])=>'<div class="add-unit-stat"><b>'+esc(profileWithFallback[k]===undefined||profileWithFallback[k]===''?'—':profileWithFallback[k])+'</b><span>'+label+'</span></div>').join('')+'</div>'+
+   (missing?'<div class="tiny stat-data-gap game-unit-stat-warning">Some stat characteristics are not present in the available reference sources.</div>':'')+
+   renderWeapons('Ranged Weapons',ranged)+renderWeapons('Melee Weapons',melee)+renderWeapons('Other Weapons',other)+
+   (abilities.length?'<details class="game-unit-abilities"><summary>Abilities ('+abilities.length+')</summary><div class="game-unit-abilities-body">'+abilities.map(a=>'<div class="game-unit-ability"><div class="game-unit-ability-name">'+esc(a.name)+(a.source==='40k.app cross-check'?'<span class="game-unit-ability-source">40k.app cross-check</span>':'')+'</div>'+(a.summary?'<div>'+esc(a.summary)+'</div>':'')+'</div>').join('')+'</div></details>':'')+
+   (app?'<div class="game-unit-reference-source">40k.app used only as a non-canonical supplemental cross-check where authoritative data is missing.</div>':'')+
+   '</div>';
 }
 function gameRow(side,e){
   const u=get(e.unitId),displayName=unitDisplayName(side,e),perModelWounds=Math.max(1,Number(u.wounds)||1);
@@ -5683,6 +5763,7 @@ function gameRow(side,e){
     else if(g.wounds<maxWounds)g.status='Damaged';
     else g.status='Alive';
   }
+  const openKey=gameUnitReferenceOpenKey(side,e),isOpen=!!state.openUnitReferences?.[openKey];
   const modelControls=e.models>1&&!rosterTracked?'<button class="btn" type="button" onclick="changeUnit(\''+side+'\',\''+e.uid+'\',-1,0);return false;">M−</button><button class="btn" type="button" onclick="changeUnit(\''+side+'\',\''+e.uid+'\',1,0);return false;">M+</button>':'';
   const shockControl='<button class="btn'+(g.battleshocked?' danger':'')+'" type="button" onclick="toggleBattleshocked(\''+side+'\',\''+e.uid+'\');return false;">'+(g.battleshocked?'✓ Shocked':'Shock')+'</button>';
   const destroyedControl=rosterTracked?'':'<button class="btn'+(g.status==='Destroyed'?' danger':'')+'" type="button" onclick="setUnitDestroyed(\''+side+'\',\''+e.uid+'\');return false;">'+(g.status==='Destroyed'?'✓ Dead':'Dead')+'</button>';
@@ -5690,9 +5771,9 @@ function gameRow(side,e){
     ? (e.models>1?(g.models+'/'+e.models+' models'):'1 model')+' • '+g.status
     : (e.models>1?(g.models+'/'+e.models+' models • '):'')+g.wounds+'/'+maxWounds+' wounds • '+g.status;
   const reserveControl=(state.page==='battle'&&g.status!=='Destroyed'&&!isUnitReserved(side,e.uid))?'<button class="btn" type="button" onclick="returnUnitToReserves(\''+side+'\',\''+e.uid+'\');return false;">Reserve</button>':'';
-  const woundControls='';
-  return '<div class="game-unit-row '+(g.battleshocked?'is-battleshocked':'')+'" data-entry-id="'+esc(e.uid)+'"><div class="game-unit-name"><strong>'+esc(displayName)+'</strong>'+(g.battleshocked?'<span class="battleshock-badge">BATTLESHOCKED</span>':'')+'</div><div class="game-unit-controls"><div class="game-unit-stats">'+stats+'</div><div class="row game-unit-actions game-status-actions">'+shockControl+destroyedControl+reserveControl+'</div><div class="row game-unit-actions game-modifier-actions">'+modelControls+woundControls+'</div></div>'+gameUnitReferenceHtml(u,state.phase)+gameUnitFullReferenceHtml(side,e,u)+'</div>';
+  return '<div class="game-unit-row '+(g.battleshocked?'is-battleshocked':'')+'" data-entry-id="'+esc(e.uid)+'"><div class="game-unit-name"><button type="button" class="game-unit-reference-toggle '+(isOpen?'open':'')+'" onclick="toggleGameUnitReference(\''+side+'\',\''+e.uid+'\');return false;">'+esc(displayName)+'</button>'+(g.battleshocked?'<span class="battleshock-badge">BATTLESHOCKED</span>':'')+'</div><div class="game-unit-controls"><div class="game-unit-stats">'+stats+'</div><div class="row game-unit-actions game-status-actions">'+shockControl+destroyedControl+reserveControl+'</div><div class="row game-unit-actions game-modifier-actions">'+modelControls+'</div></div>'+(isOpen?gameUnitFullReferenceHtml(side,e,u):'')+'</div>';
 }
+
 function syncModelRosterBattleState(e,u){
   if(!e||!u)return;
   if(!e.game)e.game={entryId:e.uid,models:e.models,wounds:e.models*Math.max(1,Number(u.wounds)||1),status:'Alive',battleshocked:false};
