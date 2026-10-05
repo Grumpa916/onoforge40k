@@ -1,19 +1,15 @@
 # OnoForge 40K — Current Architecture Map & Refactoring Plan
 
-## Current controlled-reset architecture overlay — 2026-10-02
+Last mapped: 2026-09-26
+Repository: `Grumpa916/onoforge40k`
+Branch: `main`
+Baseline commit before this map: `0603fb8de11ba5e83c0fb0ac7c9fd585fbb11cbc` (`Fix shooting pre-roll model ID mapping`)
 
-This overlay is authoritative for the current deployment refactor and supersedes older branch/baseline/current-phase statements elsewhere in this historical architecture map.
+## Purpose
 
-- Authoritative development branch: `feature/opponent-turn-history-clean-reset`
-- Known-good gameplay checkpoint: `132551b340bdff635eeb9b193470f2c1a8e46ccd`
-- Current state pointer: newest `CHAT_SAVEPOINT_*.md` on the authoritative branch
-- Active extraction boundary: Deployment / reserves / battlefield map
-- First extracted seam: `deployment-state.js`
-- Immediate implementation target: compatibility bridge delegating to `OnoForgeDeploymentState`
-- Do not patch Live Deployment Tracking behavior as the primary task; use the observed panel-closing behavior as evidence of monolith/render coupling.
-- Preserve Event Companion battlefield geometry and the distinction between deployment planning state and live battlefield position state.
+This document maps the current application architecture before any structural refactor. It is a development reference, not a feature roadmap.
 
-This is a controlled extraction, not a project restart. Larger bounded extraction batches are permitted when they reduce monolith coupling and remain recoverable through Git history.
+The immediate goal is to make future changes safer and easier to locate without changing gameplay behavior.
 
 ## Current architecture at a glance
 
@@ -22,7 +18,7 @@ This is a controlled extraction, not a project restart. Larger bounded extractio
 - `index.html` is the application shell, UI, state store, rendering layer, game logic, rules/math logic, and event/logging implementation.
 - Current `index.html` size is approximately **1.03 MB**.
 - The HTML contains **one inline JavaScript block** of approximately **938 KB**.
-- There are currently **no external `<script src="...">` imports** in `index.html` in the historical baseline represented by this map. Current extracted modules may be integrated through controlled artifact/build seams; verify the current save point before assuming browser loading behavior.
+- There are currently **no external `<script src="...">` imports** in `index.html`.
 - A source scan identifies approximately **708 named JavaScript functions** in the inline application code.
 
 ### Supporting repository modules
@@ -38,8 +34,6 @@ The repository also contains separate JavaScript files for checkpoint/debug infr
 
 These currently expose diagnostic functions through `window.OnoForgeDebug`. They are not loaded by `index.html` through script imports, so they should be treated as supporting/test scaffolding until explicitly integrated.
 
-The deployment extraction adds `deployment-state.js` as an active state seam. Its current contract is state-only: no rendering, persistence, rules, reserves, or geometry.
-
 ### Data layer
 
 The `data/` directory contains versioned/provenance-oriented rules and event-companion data, including:
@@ -54,7 +48,7 @@ The repository has a single active GitHub Actions deployment workflow:
 
 - `.github/workflows/deploy.yml`
 
-It performs integrity/regression audits, JavaScript syntax validation, runtime/internal-symbol validation, deployment preparation, and GitHub Pages publication.
+It performs a large series of integrity/regression audits, JavaScript syntax validation, a runtime internal-symbol audit, a deployment-time Tactical Advisor render injection, then publishes to GitHub Pages.
 
 The obsolete shooting UI hotfix workflow was removed after it became clear that repeated post-build mutation was creating unnecessary deployment complexity.
 
@@ -151,8 +145,6 @@ The repository already contains deployment/map regression audits confirming sepa
 `battlefieldUnitPositions` are live authoritative position state.
 
 Do not merge these during refactoring.
-
-**Current extraction seam:** `deployment-state.js` owns the normalized deployment-plan and live-position access/mutation functions without owning the map renderer, reserves, persistence, or geometry. The next bridge must delegate to this seam rather than create a duplicate state store.
 
 ### 4. Tactical context / advisor
 
@@ -307,15 +299,13 @@ This flow is more important than any individual UI module.
 9. Run the existing repository audits after every extraction batch.
 10. Do not introduce a framework solely for modernization.
 
-The controlled-reset overlay modifies the size of an extraction batch, not these state/behavior boundaries.
-
 ## Recommended extraction order
 
 ### Phase 0 — Baseline
 
-- Preserve the known-good gameplay checkpoint `132551b340bdff635eeb9b193470f2c1a8e46ccd`.
-- Preserve `archive/deployment-redesign-2026-10-01` at `aee09c197b70af523bfad59d14d117fd79c8303c`.
-- Use the newest controlled-reset save point as the current state pointer.
+- Freeze current green live shooting behavior.
+- Keep `0603fb8` as the known baseline for this map.
+- No architecture edits until the architecture map is reviewed.
 
 ### Phase 1 — Shared contracts
 
@@ -336,7 +326,6 @@ Extract:
 - reserve state
 - live battlefield positions
 - map geometry/render helpers
-- compatibility bridge to the existing monolith
 
 This is the first major extraction because the subsystem boundary is already relatively clear and covered by dedicated audits.
 
@@ -425,26 +414,19 @@ onoforge40k/
 
 This is a target structure, not an instruction to create all of these files immediately.
 
-## Current immediate extraction batch
+## Immediate next development batch
 
-The current batch is the **Deployment compatibility bridge**.
+Before moving code, perform a read-only architecture audit that records:
 
-Purpose:
+- function counts by subsystem
+- state fields by subsystem
+- cross-subsystem function calls
+- model/unit/weapon identity boundaries
+- render entry points
+- current external-module usage
+- deployment workflow mutation points
 
-- provide a stable API to the existing application;
-- delegate state operations to `OnoForgeDeploymentState`;
-- preserve the existing deployment-plan/live-position distinction;
-- give future call sites a module boundary without requiring the entire `index.html` to move at once;
-- make the bridge testable independently of map rendering.
-
-The bridge must not:
-
-- render the map;
-- own terrain/objective geometry;
-- persist state independently;
-- create a second deployment state store;
-- infer tabletop distances;
-- alter existing deployment behavior.
+Then use those results to define the first extraction batch.
 
 ## Definition of success
 
