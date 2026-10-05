@@ -6665,8 +6665,18 @@ function objectiveRoleLabel(role,name){
   return ({central:'Central',expansion:'Expansion'})[role]||'Expansion';
 }
 function objectiveLayoutTypePlan(){
-  const purgeMissions=new Set(['Unstoppable Force','Meatgrinder','Punishment','Consecrate',"Destroyer's Wrath"]);
-  const six=purgeMissions.has(primaryMission('my'))||purgeMissions.has(primaryMission('opp'));
+  // Event Companion verified layouts use six objectives for these primary-mission families.
+  const sixMissions=new Set([
+    'Unstoppable Force','Immovable Object',
+    'Inescapable Dominion','Secure Asset',
+    'Meatgrinder',
+    'Punishment','Delaying Action',
+    'Consecrate','Triangulation',
+    "Destroyer's Wrath",'Vital Link',
+    'Smoke and Mirrors','Surveil the Foe',
+    'Gather Intel'
+  ]);
+  const six=sixMissions.has(primaryMission('my'))||sixMissions.has(primaryMission('opp'));
   return six?['home','expansion','central','central','expansion','home']:['home','expansion','central','expansion','home'];
 }
 function autoSeedObjectiveStructure(){
