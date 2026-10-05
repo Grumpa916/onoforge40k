@@ -641,9 +641,6 @@ body{overflow-x:hidden}
 .battle-layout>.battle-state-column .game-unit-actions .btn{font-size:9px!important;line-height:1!important;padding:3px 5px!important;min-height:21px!important;border-radius:5px!important}
 .battle-layout>.battle-state-column .game-unit-reference{grid-column:1 / -1!important;display:flex!important;gap:3px!important;margin:2px 0 0!important;flex-wrap:wrap!important}
 .battle-layout>.battle-state-column .game-unit-reference-pill{padding:3px 5px!important;font-size:8px!important;line-height:1.1!important}
-.battle-layout>.battle-state-column .model-roster-list{grid-column:1 / -1!important;margin-top:4px!important;padding:4px!important;gap:3px!important}
-.battle-layout>.battle-state-column .model-roster-title{font-size:8px!important;margin-bottom:2px!important}
-.battle-layout>.battle-state-column .model-roster-row{padding:4px 5px!important;gap:5px!important}
 @media(max-width:700px){
   .battle-layout>.battle-state-column .game-unit-row{grid-template-columns:minmax(80px,95px) minmax(0,1fr)!important}
 }
@@ -5707,13 +5704,6 @@ function syncModelRosterBattleState(e,u){
   e.game.wounds=Math.max(0,Math.min(maxWounds,wounds));
   e.game.status=alive.length===0?'Destroyed':(wounds<maxWounds?'Damaged':'Alive');
 }
-function modelRosterHtml(side,e,u){
- if(!modelRosterRule(u))return '';
- const roster=ensureModelRoster(e,u),max=Math.max(1,Number(u.wounds)||1),alive=roster.filter(m=>m.alive!==false),dead=roster.length-alive.length,wounded=alive.filter(m=>Number(m.woundsRemaining)<max),unwounded=alive.length-wounded.length;
- const woundedText=wounded.length?wounded.map(m=>String(m.role||('Model '+m.index))+': '+Math.max(0,Number(m.woundsRemaining)||0)+'/'+max+'W').join(' • '):'None';
- return '<details class="model-roster-list"><summary>Model status: '+alive.length+'/'+roster.length+' alive • '+unwounded+' unwounded • '+wounded.length+' wounded • '+dead+' dead</summary><div class="model-roster-body"><div class="tiny">Unwounded models: '+unwounded+' • Wounded models: '+wounded.length+' • Dead models: '+dead+'</div><div class="tiny" style="margin-top:4px">'+esc(wounded.length?'Wounded: '+woundedText:'No wounded models')+'</div></div></details>';
-}
-
 function setModelDestroyed(side,id,modelId){
   const fullBefore=snapshotForUndo(),e=entry(side,id);if(!e)return;
   const u=get(e.unitId);if(!u||!modelRosterRule(u))return;
