@@ -5669,42 +5669,56 @@ const ONOFORGE_40K_APP_CROSSCHECK={
     faction:"Ultramarines",
     profile:{M:'8"',T:10,Sv:'2+',W:12,Ld:'6+',OC:4},
     abilities:[
-      {name:"Ballistus Strike",summary:"Ranged attacks against a target that is not Below Half-strength can re-roll the Hit roll."},
-      {name:"Damaged",summary:"While 1–4 wounds remain, attacks made by this model suffer -1 to Hit."}
+      {name:"Ballistus Strike",summary:"Each time this model makes a ranged attack that targets a unit that is not Below Half-strength, you can re-roll the Hit roll."},
+      {name:"Damaged",summary:"While 1–4 wounds remain, each time this model makes an attack, subtract 1 from the Hit roll."}
+    ]
+  },
+  "Norn Assimilator":{
+    faction:"Tyranids",
+    profile:{M:'10"',T:11,Sv:'2+',W:16,Ld:'7+',OC:5},
+    abilities:[
+      {name:"Singular Purpose",summary:"At the start of the first battle round, select either one enemy unit for Hit and Wound re-rolls against it, or one objective marker that grants this model Feel No Pain 5+ and OC 15 while it is within range."},
+      {name:"Harpoon Barbs",summary:"Once per turn, when an enemy unit within Engagement Range is selected to Fall Back, roll one D6; on a 2+, that unit suffers D6 mortal wounds."},
+      {name:"Damaged",summary:"While 1–5 wounds remain, each time this model makes an attack, subtract 1 from the Hit roll."}
     ]
   },
   "Norn Emissary":{
     faction:"Tyranids",
     profile:{M:'10"',T:11,Sv:'2+',W:16,Ld:'7+',OC:5},
     abilities:[
-      {name:"Singular Purpose",summary:"At the start of the first battle round, select an enemy unit for attack re-rolls, or an objective for enhanced Objective Control and Feel No Pain while nearby."},
+      {name:"Singular Purpose",summary:"At the start of the first battle round, select either one enemy unit for Hit and Wound re-rolls against it, or one objective marker that grants this model Feel No Pain 5+ and OC 15 while it is within range."},
       {name:"Unnatural Resilience",summary:"This model has Feel No Pain 4+ against mortal wounds."},
-      {name:"Damaged",summary:"While 1–5 wounds remain, attacks made by this model suffer -1 to Hit."}
+      {name:"Damaged",summary:"While 1–5 wounds remain, each time this model makes an attack, subtract 1 from the Hit roll."}
     ]
   },
   "The Swarmlord":{
     faction:"Tyranids",
     profile:{M:'8"',T:10,Sv:'2+',W:10,Ld:'7+',OC:3},
     abilities:[
-      {name:"Hive Commander",summary:"At the start of your Command phase, gain 1 CP while this model is on the battlefield."},
-      {name:"Malign Presence",summary:"Once per turn, when an opponent targets a nearby friendly unit with a Stratagem, that Stratagem costs 1 additional CP."},
-      {name:"Domination of the Hive Mind",summary:"Friendly Tyranids units within 9 inches are within Synapse Range."}
+      {name:"Hive Commander",summary:"At the start of your Command phase, if this model is on the battlefield, you gain 1 CP."},
+      {name:"Malign Presence",summary:"Once per turn, when your opponent targets a unit from their army within 12 inches of this model with a Stratagem, you can increase the CP cost of that use by 1."},
+      {name:"Domination of the Hive Mind",summary:"While a friendly Tyranids unit is within 9 inches of this model, that unit is within your army's Synapse Range."}
     ]
   },
   "Intercessor Squad":{
     faction:"Ultramarines",
     profile:{M:'6"',T:4,Sv:'3+',W:2,Ld:'6+',OC:2},
     abilities:[
-      {name:"Objective Secured",summary:"A controlled objective can remain under your control through the end of the phase unless the opponent's Level of Control becomes greater."},
-      {name:"Hail of Bolts",summary:"When selected to shoot, one visible enemy unit can be selected; Bolt Rifle attacks against it gain +2 Attacks."}
+      {name:"Objective Secured",summary:"At the end of your Command phase, if this unit is within range of an objective you control, that objective remains under your control until your opponent's Level of Control over it is greater at the end of a phase."},
+      {name:"Hail of Bolts",summary:"In your Shooting phase, when this unit is selected to shoot, select up to one visible enemy unit; Bolt Rifle attacks targeting it have +2 Attacks."}
     ]
   }
 };
 
 function gameUnitReferenceData(u){
  const app=ONOFORGE_40K_APP_CROSSCHECK[String(u?.name||'')];
- if(!app||String(app.faction||'')!==String(u?.faction||''))return null;
- return app;
+ if(!app)return null;
+ const unitFaction=String(u?.faction||'');
+ const appFaction=String(app.faction||'');
+ const sameFaction=unitFaction===appFaction;
+ const spaceMarineFamily=(appFaction==='Ultramarines'&&['Ultramarines','Space Marines'].includes(unitFaction)) ||
+   (appFaction==='Space Marines'&&['Ultramarines','Space Marines'].includes(unitFaction));
+ return sameFaction||spaceMarineFamily ? app : null;
 }
 function gameUnitReferenceOpenKey(side,e){return String(side||'my')+'|'+String(e?.uid||'');}
 function toggleGameUnitReference(side,uid){
