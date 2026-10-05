@@ -5234,13 +5234,14 @@ function tournamentDeploymentZoneStatus(side,position){
   return {verified:true,inside:pointInsideDeploymentZone(position?.x,position?.y,zone)};
 }
 function tournamentDeploymentValidation(){
-  const missing=[],positions=ensureBattlefieldUnitPositions();
+  const missing=[],positions=ensureBattlefieldUnitPositions(),skipped=state.deploymentSkippedUnits&&typeof state.deploymentSkippedUnits==='object'?state.deploymentSkippedUnits:{};
   const reserves=state.reserves&&typeof state.reserves==='object'?state.reserves:{};
   for(const side of ['my','opp']){
     const list=Array.isArray(side==='my'?state.my:state.opp)?(side==='my'?state.my:state.opp):[];
     for(const entry of list.filter(e=>e&&!e.attachedTo)){
       const id=String(entry.uid);
       if(reserves[side]?.[id]===true)continue;
+      if(skipped[side+'|'+id]===true)continue;
       if(isUnitEmbarked(side,id))continue;
       const p=positions[id];
       if(!p||p.side!==side||!Number.isFinite(Number(p.x))||!Number.isFinite(Number(p.y))){
