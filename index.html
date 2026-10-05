@@ -5895,9 +5895,13 @@ const ONOFORGE_40K_APP_CROSSCHECK={
 };
 
 
-const __onoforgeGameUnitReferenceDataOriginal=gameUnitReferenceData;
 function gameUnitReferenceData(u){
-  const base=__onoforgeGameUnitReferenceDataOriginal(u)||{};
+  // The cross-check layer is supplemental; never call gameUnitReferenceData from itself.
+  const base={
+    profile:(u&&u.profile&&typeof u.profile==='object')?u.profile:{},
+    abilities:Array.isArray(u?.abilities)?u.abilities:[],
+    warning:u?.warning
+  };
   const rawNames=[
     u?.name,
     u?.displayName,
