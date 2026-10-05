@@ -55,7 +55,7 @@ if css.strip() not in s:
     s = s.replace(style_anchor, css + style_anchor, 1)
 
 # 4) Objective Control: show the exact map O# label beside the tracked objective.
-obj_helper_anchor = "function objectiveControlHtml("
+obj_helper_anchor = "function objectiveMapRendererHtml("
 obj_helper = r'''
 function objectiveMapLabelForTrackedName(name){
   try{
