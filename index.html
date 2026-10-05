@@ -1031,30 +1031,91 @@ function terrainReferenceImageHtml(model){
   return '<div class="terrain-reference-frame"><iframe src="'+esc(src)+'" title="Event Companion terrain layout '+esc(layout)+' • page '+page+'" loading="eager"></iframe></div>';
 }
 
-function objectiveMapLabelForTrackedName(name){
+function objectiveGeometryIdentity(name){
   const key=String(name||'').trim();
-  const names=Object.keys(state.objectives||{});
-  const role=objectiveRole(key);
-  if(role==='home')return objectiveHomeSide(key)==='opp'?'O6 • Opponent Home':'O1 • My Home';
-  if(role==='expansion'){
-    const expNames=names.filter(n=>objectiveRole(n)==='expansion');
-    return (expNames.indexOf(key)===0?'O2':'O5')+' • Expansion';
+  if(/^Attacker Home$/i.test(key))return {type:'home',side:state.attackerSide==='opp'?'opp':'my',ordinal:1};
+  if(/^Defender Home$/i.test(key))return {type:'home',side:state.attackerSide==='opp'?'my':'opp',ordinal:1};
+  const m=key.match(/^(Central|Expansion)\s+(\d+)$/i);
+  if(m)return {type:m[1].toLowerCase(),ordinal:Math.max(1,Number(m[2])||1)};
+  return null;
+}
+function objectiveTrackedIdentity(name){
+  const key=String(name||'').trim();
+  const meta=ensureObjectiveMeta()[key]||{};
+  if(meta.type==='home'&&['my','opp'].includes(meta.homeSide))return {type:'home',side:meta.homeSide,ordinal:1};
+  if(meta.type==='central'||meta.type==='expansion'){
+    const m=key.match(/^(?:Central|Expansion)\s+(\d+)$/i);
+    return {type:meta.type,ordinal:m?Math.max(1,Number(m[1])||1):1};
   }
-  if(role==='central'){
-    const centralNames=names.filter(n=>objectiveRole(n)==='central');
-    return (centralNames.indexOf(key)===0?'O3':'O4')+' • Central';
+  return objectiveGeometryIdentity(key);
+}
+function objectiveCanonicalNumber(identity){
+  const plan=objectiveLayoutTypePlan();
+  if(!identity)return null;
+  const slots=[];
+  plan.forEach((type,index)=>{if(type===identity.type)slots.push(index+1);});
+  if(!slots.length)return null;
+  if(identity.type==='home')return identity.side==='opp'?slots[slots.length-1]:slots[0];
+  return slots[Math.max(0,Math.min(slots.length-1,(Number(identity.ordinal)||1)-1))]||null;
+}
+function objectiveCanonicalLabelForGeometryName(name){
+  const identity=objectiveGeometryIdentity(name);
+  const number=objectiveCanonicalNumber(identity);
+  if(!number)return String(name||'');
+  const role=identity.type==='home'?(identity.side==='opp'?'Opponent Home':'My Home'):identity.type==='central'?'Central':'Expansion';
+  return 'O'+number+' • '+role;
+}
+function objectiveTrackedNameForGeometryName(name){
+  const identity=objectiveGeometryIdentity(name);
+  if(!identity)return String(name||'');
+  for(const tracked of Object.keys(state.objectives||{})){
+    const trackedIdentity=objectiveTrackedIdentity(tracked);
+    if(!trackedIdentity||trackedIdentity.type!==identity.type)continue;
+    if(identity.type==='home'&&trackedIdentity.side===identity.side)return tracked;
+    if(identity.type!=='home'&&trackedIdentity.ordinal===identity.ordinal)return tracked;
   }
-  const idx=names.indexOf(key);
-  return idx>=0?'O'+(idx+1)+' • '+objectiveRoleLabel(role,key):key;
+  return String(name||'');
+}
+function objectiveMapLabelForTrackedNameLegacy(name){
+  const key=String(name||'').trim();
+  const identity=objectiveTrackedIdentity(key);
+  const number=objectiveCanonicalNumber(identity);
+  if(number)return 'O'+number+' • '+(identity.type==='home'?(identity.side==='opp'?'Opponent Home':'My Home'):identity.type==='central'?'Central':'Expansion');
+  return key;
+}
+function objectiveMapLabelForTrackedName(name){
+  const geometry=objectiveBattlefieldGeometry();
+  if(geometry.verified)return objectiveCanonicalLabelForGeometryName(name);
+  return objectiveMapLabelForTrackedNameLegacy(name);
+}
+function objectiveMapEntries(){
+  const geometry=objectiveBattlefieldGeometry();
+  if(!geometry.verified)return Object.entries(state.objectives||{}).map(([name,owner])=>({name,stateName:name,owner:['my','opp','contested','none'].includes(owner)?owner:'none',position:null,label:objectiveMapLabelForTrackedNameLegacy(name),type:objectiveRole(name),territory:objectiveTerritory(name),deploymentZone:objectiveDeploymentZone(name)}));
+  return geometry.objectives.map(o=>{
+    const stateName=objectiveTrackedNameForGeometryName(o.name);
+    const owner=['my','opp','contested','none'].includes(state.objectives?.[stateName])?state.objectives[stateName]:'none';
+    return {...o,stateName,owner,label:objectiveCanonicalLabelForGeometryName(o.name)};
+  });
 }
 
-function objectiveMapRendererHtml(mode='battle'){const model=objectiveMapModel(mode),status=mode==='terrain'?'Official Event Companion reference':model.verified?'Verified geometry':'Geometry pending verification',pct=(n,max)=>Math.max(0,Math.min(100,(Number(n)/Number(max))*100)),point=p=>p&&Number.isFinite(Number(p.x))&&Number.isFinite(Number(p.y)),terrainSetup=mode==='terrain',setup=mode==='setup',deployment=mode==='deployment';const regionLabel=key=>{const k=String(key||'');if(k==='attackerDeployment')return (state.attackerSide==='opp'?state.oppName:state.myName)+' Deployment Zone';if(k==='defenderDeployment')return (state.attackerSide==='opp'?state.myName:state.oppName)+' Deployment Zone';if(k==='attackerTerritory')return (state.attackerSide==='opp'?state.oppName:state.myName)+' Territory';if(k==='defenderTerritory')return (state.attackerSide==='opp'?state.myName:state.oppName)+' Territory';return ({my:'My Deployment Zone',opp:'Opponent Deployment Zone',noMansLand:"No Man's Land",myTerritory:'My Territory',oppTerritory:'Opponent Territory'})[k]||k.replace(/([A-Z])/g,' $1').replace(/^./,s=>s.toUpperCase());};const regionClass=key=>{const k=String(key||'').toLowerCase();return k.includes('deployment')?'deployment':k.includes('territory')?'territory':'region';};const renderRegion=(key,r)=>{if(!r||typeof r!=='object')return '';if([r.x,r.y,r.width,r.height].every(v=>Number.isFinite(Number(v))))return '<div class="objective-map-region '+regionClass(key)+'" style="left:'+pct(r.x,60)+'%;top:'+pct(44-(Number(r.y)+Number(r.height)),44)+'%;width:'+pct(r.width,60)+'%;height:'+pct(r.height,44)+'%" title="'+esc(regionLabel(key))+'">'+esc(regionLabel(key))+'</div>';if(Array.isArray(r.points)&&r.points.every(point)){const pts=r.points.map(p=>pct(p.x,60)+','+pct(44-p.y,44)).join(' '),cx=r.points.reduce((s,p)=>s+Number(p.x),0)/r.points.length,cy=r.points.reduce((s,p)=>s+Number(p.y),0)/r.points.length,labelX=pct(cx,60),labelY=pct(44-cy,44);return '<svg class="objective-map-region-polygon '+regionClass(key)+'" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="'+esc(regionLabel(key))+'"><polygon points="'+pts+'"/><text x="'+labelX+'" y="'+labelY+'" text-anchor="middle">'+esc(regionLabel(key))+'</text></svg>';}return '';};const renderTerrain=(key,r)=>{if(!r||typeof r!=='object')return '';const label='Terrain '+String(key||'');if([r.x,r.y,r.width,r.height].every(v=>Number.isFinite(Number(v))))return '<div class="objective-map-terrain" style="left:'+pct(r.x,60)+'%;top:'+pct(44-(Number(r.y)+Number(r.height)),44)+'%;width:'+pct(r.width,60)+'%;height:'+pct(r.height,44)+'%" title="'+esc(label)+'"></div>';if(Array.isArray(r.points)&&r.points.every(point)){const pts=r.points.map(p=>pct(p.x,60)+'% '+pct(44-Number(p.y),44)+'%').join(',');return '<div class="objective-map-terrain-polygon" style="clip-path:polygon('+pts+')" title="'+esc(label)+'"></div>';}return '';};const regions=(!terrainSetup&&model.verified)?Object.entries(model.deploymentZones||{}).map(([k,v])=>renderRegion(k,v)).join(''):'';const terrain=model.verified?Object.entries(model.terrainGeometry||{}).map(([k,v])=>renderTerrain(k,v)).join(''):'';const ghostNodes=mode==='setup'?objectiveMapPlanGhostNodesHtml(model,pct):mode==='deployment'?armyNoMansLandTagsHtml(model,pct):'',unitNodes=terrainSetup?'':objectiveMapUnitNodesHtml(model,pct,mode),measurementToggle=terrainSetup?'<span class="pill">Measurements shown</span>':'',objectiveNodes=terrainSetup?'':Object.keys(state.objectives||{}).map(name=>{
-  const o={name,owner:['my','opp','contested','none'].includes(state.objectives?.[name])?state.objectives[name]:'none',position:objectivePositionFor(name)};
-  const p=o.position,x=point(p)?pct(p.x,60):null,y=point(p)?pct(44-p.y,44):null;
+function objectiveMapRendererHtml(mode='battle'){const model=objectiveMapModel(mode),status=mode==='terrain'?'Official Event Companion reference':model.verified?'Verified geometry':'Geometry pending verification',pct=(n,max)=>Math.max(0,Math.min(100,(Number(n)/Number(max))*100)),point=p=>p&&Number.isFinite(Number(p.x))&&Number.isFinite(Number(p.y)),terrainSetup=mode==='terrain',setup=mode==='setup',deployment=mode==='deployment';const regionLabel=key=>{const k=String(key||'');if(k==='attackerDeployment')return (state.attackerSide==='opp'?state.oppName:state.myName)+' Deployment Zone';if(k==='defenderDeployment')return (state.attackerSide==='opp'?state.myName:state.oppName)+' Deployment Zone';if(k==='attackerTerritory')return (state.attackerSide==='opp'?state.oppName:state.myName)+' Territory';if(k==='defenderTerritory')return (state.attackerSide==='opp'?state.myName:state.oppName)+' Territory';return ({my:'My Deployment Zone',opp:'Opponent Deployment Zone',noMansLand:"No Man's Land",myTerritory:'My Territory',oppTerritory:'Opponent Territory'})[k]||k.replace(/([A-Z])/g,' $1').replace(/^./,s=>s.toUpperCase());};const regionClass=key=>{const k=String(key||'').toLowerCase();return k.includes('deployment')?'deployment':k.includes('territory')?'territory':'region';};const renderRegion=(key,r)=>{
+  if(!r||typeof r!=='object')return '';
+  const label=regionLabel(key);
+  if([r.x,r.y,r.width,r.height].every(v=>Number.isFinite(Number(v))))
+    return '<div class="objective-map-region '+regionClass(key)+'" style="left:'+pct(r.x,60)+'%;top:'+pct(44-(Number(r.y)+Number(r.height)),44)+'%;width:'+pct(r.width,60)+'%;height:'+pct(r.height,44)+'%" title="'+esc(label)+'"></div>';
+  if(Array.isArray(r.points)&&r.points.every(point)){
+    const pts=r.points.map(p=>pct(p.x,60)+','+pct(44-p.y,44)).join(' ');
+    return '<svg class="objective-map-region-polygon '+regionClass(key)+'" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="'+esc(label)+'"><polygon points="'+pts+'"/></svg>';
+  }
+  return '';
+};
+const renderTerrain=(key,r)=>{if(!r||typeof r!=='object')return '';const label='Terrain '+String(key||'');if([r.x,r.y,r.width,r.height].every(v=>Number.isFinite(Number(v))))return '<div class="objective-map-terrain" style="left:'+pct(r.x,60)+'%;top:'+pct(44-(Number(r.y)+Number(r.height)),44)+'%;width:'+pct(r.width,60)+'%;height:'+pct(r.height,44)+'%" title="'+esc(label)+'"></div>';if(Array.isArray(r.points)&&r.points.every(point)){const pts=r.points.map(p=>pct(p.x,60)+'% '+pct(44-Number(p.y),44)+'%').join(',');return '<div class="objective-map-terrain-polygon" style="clip-path:polygon('+pts+')" title="'+esc(label)+'"></div>';}return '';};const regions=(!terrainSetup&&model.verified)?Object.entries(model.deploymentZones||{}).map(([k,v])=>renderRegion(k,v)).join(''):'';const terrain=model.verified?Object.entries(model.terrainGeometry||{}).map(([k,v])=>renderTerrain(k,v)).join(''):'';const ghostNodes=mode==='setup'?objectiveMapPlanGhostNodesHtml(model,pct):mode==='deployment'?armyNoMansLandTagsHtml(model,pct):'',unitNodes=terrainSetup?'':objectiveMapUnitNodesHtml(model,pct,mode),measurementToggle=terrainSetup?'<span class="pill">Measurements shown</span>':'',objectiveNodes=terrainSetup?'':objectiveMapEntries().map(o=>{
+  const key=o.stateName||o.name;
+  const p=o.position||objectivePositionFor(key),x=point(p)?pct(p.x,60):null,y=point(p)?pct(44-p.y,44):null;
   const ownerClass=o.owner==='my'?'my':o.owner==='opp'?'opp':o.owner==='contested'?'contested':'none';
-  const label=objectiveMapLabelForTrackedName(name);
-  return '<div class="objective-map-node '+ownerClass+'" data-map-objective="'+esc(name)+'" style="'+(x===null||y===null?'display:none;':'left:'+x+'%;top:'+y+'%;')+'" title="'+esc(name)+'"><span class="objective-map-label">'+esc(label)+'</span></div>';
-}).join(''),pending='<div class="status" style="margin-top:8px"><b>Map geometry pending verification.</b><div class="tiny" style="margin-top:4px">No deployment zone, territory, terrain, or objective position is inferred from the 60 × 44 table boundary. The Event Companion geometry must be verified first.</div></div>',title=terrainSetup?'Terrain Setup':setup?'Deployment Planning':deployment?'Deployment Tracking':'Battlefield Map',subtitle=terrainSetup?'Step 4 • Create the Battlefield • use the selected Event Companion layout as the terrain placement guide.':setup?'Step 8 preparation • plan opening positions separately from terrain setup.':deployment?'Record actual deployment positions • drag units after placement. Special deployment rules are recorded, not inferred.':'Live battlefield positions • drag units to record movement',controls=terrainSetup?'':setup?deploymentPlanMapControlsHtml(model):deployment?deploymentTrackingControlsHtml(model):'',reserveTray=(deployment||mode==='battle')?reserveTrayHtml():'',editor='';const battlefieldMarkup=terrainSetup?terrainReferenceImageHtml(model):'<div class="objective-map-canvas '+(setup?'terrain-measurement-map':(mode==='battle'&&state.attackerSide==='opp'?'perspective-rotated':''))+'" data-objective-map-canvas data-objective-map-mode="'+esc(mode)+'" role="application" aria-label="'+esc(title)+' 60 by 44 inch battlefield map">'+(model.verified?regions+terrain+objectiveNodes+ghostNodes+unitNodes:'<div class="objective-map-placeholder">Verified Event Companion geometry required</div>')+'</div>';
+  const label=o.label||objectiveMapLabelForTrackedName(key);
+  return '<div class="objective-map-node '+ownerClass+'" data-map-objective="'+esc(key)+'" style="'+(x===null||y===null?'display:none;':'left:'+x+'%;top:'+y+'%;')+'" title="'+esc(key)+'"><span class="objective-map-label">'+esc(label)+'</span></div>';
+}).join('')),pending='<div class="status" style="margin-top:8px"><b>Map geometry pending verification.</b><div class="tiny" style="margin-top:4px">No deployment zone, territory, terrain, or objective position is inferred from the 60 × 44 table boundary. The Event Companion geometry must be verified first.</div></div>',title=terrainSetup?'Terrain Setup':setup?'Deployment Planning':deployment?'Deployment Tracking':'Battlefield Map',subtitle=terrainSetup?'Step 4 • Create the Battlefield • use the selected Event Companion layout as the terrain placement guide.':setup?'Step 8 preparation • plan opening positions separately from terrain setup.':deployment?'Record actual deployment positions • drag units after placement. Special deployment rules are recorded, not inferred.':'Live battlefield positions • drag units to record movement',controls=terrainSetup?'':setup?deploymentPlanMapControlsHtml(model):deployment?deploymentTrackingControlsHtml(model):'',reserveTray=(deployment||mode==='battle')?reserveTrayHtml():'',editor='';const battlefieldMarkup=terrainSetup?terrainReferenceImageHtml(model):'<div class="objective-map-canvas '+(setup?'terrain-measurement-map':(mode==='battle'&&state.attackerSide==='opp'?'perspective-rotated':''))+'" data-objective-map-canvas data-objective-map-mode="'+esc(mode)+'" role="application" aria-label="'+esc(title)+' 60 by 44 inch battlefield map">'+(model.verified?regions+terrain+objectiveNodes+ghostNodes+unitNodes:'<div class="objective-map-placeholder">Verified Event Companion geometry required</div>')+'</div>';
 const footer=terrainSetup?'<div class="terrain-reference-note"><strong>Official Event Companion reference.</strong> This page is the selected mission/layout diagram. Use it directly to place the terrain areas and terrain features on the physical 60 × 44 battlefield. The app does not reconstruct or infer the diagram measurements.</div>':'<div class="objective-map-legend"><span><i class="objective-map-legend-swatch terrain"></i>Terrain</span><span><i class="objective-map-legend-swatch deployment"></i>Deployment</span><span><i class="objective-map-legend-swatch territory"></i>Territory</span><span><i class="objective-map-legend-swatch objective"></i>Objective</span></div><div class="tiny" style="margin-top:6px">60 × 44 inches • bottom-left origin • geometry and terrain are rendered only from verified Event Companion data. Line of sight is never inferred.</div>';
 return '<div class="card objective-map-renderer '+(setup?'terrain-planning-card':'')+'"><div class="split"><div><h3 style="margin:0">'+title+'</h3><div class="muted">'+subtitle+' • '+esc(model.missionKey)+' • Layout '+esc(model.layout)+' • Event Companion p.'+esc(String(model.page||'—'))+'</div></div><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span class="pill">'+status+'</span></div></div>'+controls+battlefieldMarkup+reserveTray+footer+(!terrainSetup&&!model.verified?pending:'')+'</div>';}
 function deploymentPlanMapControlsHtml(model){if(!model.verified)return '';const units=(Array.isArray(state.my)?state.my:[]).filter(e=>e&&!e.attachedTo),selected=state.deploymentMapPlacement||{},plan=deploymentPlanForCurrentMap(),plannedIds=new Set(Object.keys(plan).map(String)),availableUnits=units.filter(e=>!plannedIds.has(String(e.uid))),count=plannedIds.size,options=availableUnits.map(entry=>{const name=unitDisplayName('my',entry)||get(entry.unitId)?.name||entry.name||entry.unitId||'Unit';return '<option value="'+esc(entry.uid)+'" '+(String(selected.uid)===String(entry.uid)?'selected':'')+'>'+esc(name)+'</option>';}).join('');return '<div class="objective-map-controls"><div class="split"><div><strong>Deployment Planning</strong><div class="tiny">Only your army can be placed here. Select a unit, then tap/click its intended starting position.</div></div><span class="pill">'+count+' planned position'+(count===1?'':'s')+'</span></div><div class="objective-map-placement-row"><select class="objective-map-unit-select" data-map-mode="setup" aria-label="My unit to place in deployment plan"><option value="">Select your unit…</option>'+options+'</select><button type="button" class="btn primary" data-deployment-save-plan>Save Plan</button><button type="button" class="btn" data-deployment-load-plan>Load Saved</button><button type="button" class="btn danger" data-deployment-clear-plan>Clear Plan</button><button type="button" class="btn" data-deployment-placement-cancel '+(selected.uid?'':'disabled')+'>Cancel</button></div><div class="tiny" style="margin-top:6px">Plan key: '+esc(deploymentPlanKey())+' • Save the army list first so the deployment plan travels with it.</div></div>';}
@@ -5204,35 +5265,6 @@ function resetTournamentToSetup(){
   save();render();
   return true;
 }
-function pointInsideDeploymentZone(x,y,zone){
-  const nx=Number(x),ny=Number(y);
-  if(!Number.isFinite(nx)||!Number.isFinite(ny)||!zone)return false;
-  if([zone.x,zone.y,zone.width,zone.height].every(v=>Number.isFinite(Number(v)))){
-    return nx>=Number(zone.x)&&nx<=Number(zone.x)+Number(zone.width)&&ny>=Number(zone.y)&&ny<=Number(zone.y)+Number(zone.height);
-  }
-  const points=Array.isArray(zone.points)?zone.points:[];
-  if(points.length<3||!points.every(p=>Number.isFinite(Number(p?.x))&&Number.isFinite(Number(p?.y))))return false;
-  let inside=false;
-  for(let i=0,j=points.length-1;i<points.length;j=i++){
-    const xi=Number(points[i].x),yi=Number(points[i].y),xj=Number(points[j].x),yj=Number(points[j].y);
-    const intersects=((yi>ny)!==(yj>ny))&&(nx<(xj-xi)*(ny-yi)/((yj-yi)||Number.EPSILON)+xi);
-    if(intersects)inside=!inside;
-  }
-  return inside;
-}
-function tournamentDeploymentZoneForSide(side){
-  const geometry=objectiveBattlefieldGeometry();
-  if(!geometry.verified)return null;
-  const zones=geometry.source?.geometryEntry?.deploymentZones;
-  if(!zones)return null;
-  const physicalKey=side===state.attackerSide?'attackerDeployment':'defenderDeployment';
-  return zones[physicalKey]||null;
-}
-function tournamentDeploymentZoneStatus(side,position){
-  const zone=tournamentDeploymentZoneForSide(side);
-  if(!zone)return {verified:false,inside:null};
-  return {verified:true,inside:pointInsideDeploymentZone(position?.x,position?.y,zone)};
-}
 function tournamentDeploymentValidation(){
   const missing=[],positions=ensureBattlefieldUnitPositions(),skipped=state.deploymentSkippedUnits&&typeof state.deploymentSkippedUnits==='object'?state.deploymentSkippedUnits:{};
   const reserves=state.reserves&&typeof state.reserves==='object'?state.reserves:{};
@@ -6479,7 +6511,15 @@ function resolveEventCompanionObjectivePosition(geometryEntry,name){
 }
 function objectivePositionFor(name){
   const geometry=objectiveBattlefieldGeometry();
-  return geometry.verified?geometry.objectives.find(o=>o.name===name)?.position||null:null;
+  if(!geometry.verified)return null;
+  const exact=geometry.objectives.find(o=>o.name===String(name||''));
+  if(exact)return exact.position||null;
+  const identity=objectiveTrackedIdentity(name);
+  const match=geometry.objectives.find(o=>{
+    const oi=objectiveGeometryIdentity(o.name);
+    return oi&&identity&&oi.type===identity.type&&(oi.type==='home'?oi.side===identity.side:oi.ordinal===identity.ordinal);
+  });
+  return match?.position||null;
 }
 function objectiveBattlefieldGeometry(){
   const layoutInfo=ensureObjectiveLayoutForMission();
@@ -6491,7 +6531,6 @@ function objectiveBattlefieldGeometry(){
   const geometryLayouts=Array.isArray(geometrySource?.layouts)?geometrySource.layouts:[];
   const geometryValidation=validateEventCompanionGeometry();
   const geometryEntry=geometryLayouts.find(g=>g&&g.missionKey===missionKey&&g.layout===layout)||null;
-  const objectiveNames=[...new Set([...(Object.keys(state.objectives||{})),...Object.keys(geometryEntry?.objectivePositions||{})])];
   const verified=geometryValidation.ok&&geometryEntry?.verified===true;
   return {
     version:'geometry.v1',
@@ -6515,14 +6554,19 @@ function objectiveBattlefieldGeometry(){
       recommendedAreas:source.recommendedTerrainAreas||[],
       featureTypes:source.featureTypes||[]
     }:null,
-    objectives:objectiveNames.map(name=>({
-      name,
-      type:objectiveType(name),
-      territory:objectiveMetadataTerritory(name),
-      deploymentZone:objectiveMetadataDeploymentZone(name),
-      position:resolveEventCompanionObjectivePosition(geometryEntry,name),
-      positionVerified:verified
-    }))
+    objectives:(verified?Object.keys(geometryEntry?.objectivePositions||{}):Object.keys(state.objectives||{})).map(name=>{
+      const identity=objectiveGeometryIdentity(name);
+      return {
+        name,
+        type:identity?.type||objectiveType(name),
+        territory:identity?.type==='home'?(identity.side||'nml'):objectiveMetadataTerritory(name),
+        deploymentZone:identity?.type==='home'?(identity.side||'none'):'none',
+        position:resolveEventCompanionObjectivePosition(geometryEntry,name),
+        positionVerified:verified,
+        canonicalNumber:verified?objectiveCanonicalNumber(identity):null,
+        canonicalLabel:verified?objectiveCanonicalLabelForGeometryName(name):String(name||'')
+      };
+    })
   };
 }
 function objectiveSpatialClassification(name){
@@ -6782,9 +6826,10 @@ function objectiveControlTrackerHtml(){
   const oppCount=summary.filter(x=>x.owner==='opp').length;
   const contestedCount=summary.filter(x=>x.owner==='contested').length;
   const escName=name=>esc(String(name||'')).replace(/'/g,"\\'");
-  const rows=entries.length?entries.map(([name,owner])=>{
+  const trackedEntries=objectiveMapEntries().map(o=>[o.stateName||o.name,o.owner,o]);
+  const rows=trackedEntries.length?trackedEntries.map(([name,owner,mapEntry])=>{
     const current=['my','opp','contested','none'].includes(owner)?owner:'none';
-    const role=objectiveRole(name);
+    const role=mapEntry?.type||objectiveRole(name);
     const start=objectiveTurnStartOwner(name);
     const spatialRecord=objectiveStateRecord(name);
     const geometryLocked=spatialRecord.spatialVerified===true;
