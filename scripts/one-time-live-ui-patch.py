@@ -82,8 +82,8 @@ if obj_helper_anchor not in s:
 if "function objectiveMapLabelForTrackedName" not in s:
     s = s.replace(obj_helper_anchor, obj_helper + obj_helper_anchor, 1)
 
-old_label = '<div class="objective-control-row"><div class="objective-control-name"><b>'+esc(name)+'</b><span class="tiny">Start: '
-new_label = '<div class="objective-control-row"><div class="objective-control-name"><b>'+esc(objectiveMapLabelForTrackedName(name))+'</b><span class="tiny">Tracked: '+esc(name)+' • Start: '
+old_label = r'''<div class="objective-control-row"><div class="objective-control-name"><b>'+esc(name)+'</b><span class="tiny">Start: '''
+new_label = r'''<div class="objective-control-row"><div class="objective-control-name"><b>'+esc(objectiveMapLabelForTrackedName(name))+'</b><span class="tiny">Tracked: '+esc(name)+' • Start: '''
 if old_label not in s:
     raise SystemExit("objective control name template not found")
 s = s.replace(old_label, new_label, 1)
