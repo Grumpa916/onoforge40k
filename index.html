@@ -1085,7 +1085,14 @@ function objectiveMapLabelForTrackedNameLegacy(name){
 }
 function objectiveMapLabelForTrackedName(name){
   const geometry=objectiveBattlefieldGeometry();
-  if(geometry.verified)return objectiveCanonicalLabelForGeometryName(name);
+  if(geometry.verified){
+    const identity=objectiveTrackedIdentity(name);
+    const match=geometry.objectives.find(o=>{
+      const oi=objectiveGeometryIdentity(o.name);
+      return oi&&identity&&oi.type===identity.type&&(oi.type==='home'?oi.side===identity.side:oi.ordinal===identity.ordinal);
+    });
+    return match?objectiveCanonicalLabelForGeometryName(match.name):objectiveMapLabelForTrackedNameLegacy(name);
+  }
   return objectiveMapLabelForTrackedNameLegacy(name);
 }
 function objectiveMapEntries(){
