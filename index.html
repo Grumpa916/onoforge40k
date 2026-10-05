@@ -1050,13 +1050,17 @@ function objectiveTrackedIdentity(name){
   return objectiveGeometryIdentity(key);
 }
 function objectiveCanonicalNumber(identity){
-  const plan=objectiveLayoutTypePlan();
   if(!identity)return null;
-  const slots=[];
-  plan.forEach((type,index)=>{if(type===identity.type)slots.push(index+1);});
-  if(!slots.length)return null;
-  if(identity.type==='home')return identity.side==='opp'?slots[slots.length-1]:slots[0];
-  return slots[Math.max(0,Math.min(slots.length-1,(Number(identity.ordinal)||1)-1))]||null;
+  // Canonical Event Companion ordering:
+  // 5-objective layouts: O1 home, O2 expansion, O3 central, O4 expansion, O5 home.
+  // 6-objective layouts: O1 home, O2 expansion, O3/O4 central, O5 expansion, O6 home.
+  // Do not resolve the mission/layout here: this function is called while geometry is rendering.
+  const entries=Object.keys(state.objectives||{});
+  const six=entries.some(n=>/^Central 2$/i.test(String(n)))||entries.length>=6;
+  if(identity.type==='home')return identity.side==='opp'?(six?6:5):1;
+  if(identity.type==='expansion')return (Number(identity.ordinal)||1)===1?2:(six?5:4);
+  if(identity.type==='central')return (Number(identity.ordinal)||1)===1?3:4;
+  return null;
 }
 function objectiveCanonicalLabelForGeometryName(name){
   const identity=objectiveGeometryIdentity(name);
@@ -6570,8 +6574,8 @@ function objectiveBattlefieldGeometry(){
         deploymentZone:identity?.type==='home'?(identity.side||'none'):'none',
         position:resolveEventCompanionObjectivePosition(geometryEntry,name),
         positionVerified:verified,
-        canonicalNumber:verified?objectiveCanonicalNumber(identity):null,
-        canonicalLabel:verified?objectiveCanonicalLabelForGeometryName(name):String(name||'')
+        canonicalNumber:null,
+        canonicalLabel:String(name||'')
       };
     })
   };
