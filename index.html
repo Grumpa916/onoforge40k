@@ -992,6 +992,7 @@ function objectiveMapUnitNodesHtml(model,pct,mode='battle'){
  }).join('');
 }
 function objectiveMapPlanGhostNodesHtml(model,pct){if(!model.verified)return '';const plan=deploymentPlanForCurrentMap(),live=ensureBattlefieldUnitPositions();return Object.entries(plan).map(([uid,p])=>{if(live[String(uid)])return '';const entry=(Array.isArray(state.my)?state.my:[]).find(e=>String(e.uid)===String(uid));if(!entry)return '';const x=Math.round(Number(p.x)*10)/10,y=Math.round(Number(p.y)*10)/10;if(!Number.isFinite(x)||!Number.isFinite(y)||x<0||x>60||y<0||y>44)return '';return '<div class="objective-map-plan-ghost" data-map-plan-unit="my|'+esc(uid)+'" data-map-side="my" data-map-uid="'+esc(uid)+'" style="left:'+pct(x,60)+'%;top:'+pct(44-y,44)+'%;" title="Planned deployment only • drag to reposition">'+esc((unitDisplayName('my',entry)||'Unit').slice(0,8))+'</div>';}).join('');}
+function deploymentStagingNodesHtml(model,pct,side){if(!model.verified)return '';const entries=(Array.isArray(state?.[side])?state[side]:[]).filter(e=>e&&!e.attachedTo&&!isUnitReserved(side,e.uid)&&!battlefieldUnitPosition(side,e.uid,'deployment'));if(!entries.length)return '';const zoneKey=state.attackerSide===side?'attackerDeployment':'defenderDeployment',zone=model.deploymentZones?.[zoneKey];let minX=2,maxX=58,minY=2,maxY=42;if(zone){if([zone.x,zone.y,zone.width,zone.height].every(v=>Number.isFinite(Number(v)))){minX=Math.max(1,Number(zone.x));maxX=Math.min(59,minX+Number(zone.width));minY=Math.max(1,Number(zone.y));maxY=Math.min(43,minY+Number(zone.height));}else if(Array.isArray(zone.points)&&zone.points.length){const xs=zone.points.map(p=>Number(p.x)).filter(Number.isFinite),ys=zone.points.map(p=>Number(p.y)).filter(Number.isFinite);if(xs.length&&ys.length){minX=Math.max(1,Math.min(...xs));maxX=Math.min(59,Math.max(...xs));minY=Math.max(1,Math.min(...ys));maxY=Math.min(43,Math.max(...ys));}}}const cols=Math.max(1,Math.min(4,Math.ceil(Math.sqrt(entries.length)))),rows=Math.max(1,Math.ceil(entries.length/cols)),out=[];entries.forEach((entry,i)=>{const col=i%cols,row=Math.floor(i/cols),x=minX+(maxX-minX)*((col+1)/(cols+1)),y=minY+(maxY-minY)*((row+1)/(rows+1));out.push('<div class="objective-map-plan-ghost staging" data-map-unit="'+esc(side+'|'+entry.uid)+'" data-map-side="'+esc(side)+'" data-map-uid="'+esc(entry.uid)+'" style="left:'+pct(x,60)+'%;top:'+pct(44-y,44)+'%;" title="Staging placeholder • drag to actual tabletop position">'+esc((unitDisplayName(side,entry)||'Unit').slice(0,10))+'</div>');});return out.join('');}
 function terrainReferenceImageHtml(model){
   const page=Number(model?.page);
   const layout=String(model?.layout||'');
@@ -1000,7 +1001,7 @@ function terrainReferenceImageHtml(model){
   const src=pdf+'#page='+page+'&zoom=125';
   return '<div class="terrain-reference-frame"><iframe src="'+esc(src)+'" title="Event Companion terrain layout '+esc(layout)+' • page '+page+'" loading="eager"></iframe></div>';
 }
-function objectiveMapRendererHtml(mode='battle'){const model=objectiveMapModel(mode),status=mode==='terrain'?'Official Event Companion reference':model.verified?'Verified geometry':'Geometry pending verification',pct=(n,max)=>Math.max(0,Math.min(100,(Number(n)/Number(max))*100)),point=p=>p&&Number.isFinite(Number(p.x))&&Number.isFinite(Number(p.y)),terrainSetup=mode==='terrain',setup=mode==='setup',deployment=mode==='deployment';const regionLabel=key=>{const k=String(key||'');if(k==='attackerDeployment')return (state.attackerSide==='opp'?state.oppName:state.myName)+' Deployment Zone';if(k==='defenderDeployment')return (state.attackerSide==='opp'?state.myName:state.oppName)+' Deployment Zone';if(k==='attackerTerritory')return (state.attackerSide==='opp'?state.oppName:state.myName)+' Territory';if(k==='defenderTerritory')return (state.attackerSide==='opp'?state.myName:state.oppName)+' Territory';return ({my:'My Deployment Zone',opp:'Opponent Deployment Zone',noMansLand:"No Man's Land",myTerritory:'My Territory',oppTerritory:'Opponent Territory'})[k]||k.replace(/([A-Z])/g,' $1').replace(/^./,s=>s.toUpperCase());};const regionClass=key=>{const k=String(key||'').toLowerCase();return k.includes('deployment')?'deployment':k.includes('territory')?'territory':'region';};const renderRegion=(key,r)=>{if(!r||typeof r!=='object')return '';if([r.x,r.y,r.width,r.height].every(v=>Number.isFinite(Number(v))))return '<div class="objective-map-region '+regionClass(key)+'" style="left:'+pct(r.x,60)+'%;top:'+pct(44-(Number(r.y)+Number(r.height)),44)+'%;width:'+pct(r.width,60)+'%;height:'+pct(r.height,44)+'%" title="'+esc(regionLabel(key))+'">'+esc(regionLabel(key))+'</div>';if(Array.isArray(r.points)&&r.points.every(point)){const pts=r.points.map(p=>pct(p.x,60)+','+pct(44-p.y,44)).join(' '),cx=r.points.reduce((s,p)=>s+Number(p.x),0)/r.points.length,cy=r.points.reduce((s,p)=>s+Number(p.y),0)/r.points.length,labelX=pct(cx,60),labelY=pct(44-cy,44);return '<svg class="objective-map-region-polygon '+regionClass(key)+'" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="'+esc(regionLabel(key))+'"><polygon points="'+pts+'"/><text x="'+labelX+'" y="'+labelY+'" text-anchor="middle">'+esc(regionLabel(key))+'</text></svg>';}return '';};const renderTerrain=(key,r)=>{if(!r||typeof r!=='object')return '';const label='Terrain '+String(key||'');if([r.x,r.y,r.width,r.height].every(v=>Number.isFinite(Number(v))))return '<div class="objective-map-terrain" style="left:'+pct(r.x,60)+'%;top:'+pct(44-(Number(r.y)+Number(r.height)),44)+'%;width:'+pct(r.width,60)+'%;height:'+pct(r.height,44)+'%" title="'+esc(label)+'"></div>';if(Array.isArray(r.points)&&r.points.every(point)){const pts=r.points.map(p=>pct(p.x,60)+'% '+pct(44-Number(p.y),44)+'%').join(',');return '<div class="objective-map-terrain-polygon" style="clip-path:polygon('+pts+')" title="'+esc(label)+'"></div>';}return '';};const regions=(!terrainSetup&&model.verified)?Object.entries(model.deploymentZones||{}).map(([k,v])=>renderRegion(k,v)).join(''):'';const terrain=model.verified?Object.entries(model.terrainGeometry||{}).map(([k,v])=>renderTerrain(k,v)).join(''):'';const ghostNodes=(mode==='setup'||mode==='deployment')?objectiveMapPlanGhostNodesHtml(model,pct):'',unitNodes=terrainSetup?'':objectiveMapUnitNodesHtml(model,pct,mode),measurementToggle=terrainSetup?'<span class="pill">Measurements shown</span>':'',objectiveNodes=terrainSetup?'':model.objectives.map((o,index)=>{const p=o.position,x=point(p)?pct(p.x,60):null,y=point(p)?pct(44-p.y,44):null,ownerClass=o.owner==='my'?'my':o.owner==='opp'?'opp':o.owner==='contested'?'contested':'none';const label='O'+(index+1)+' • '+objectiveRoleLabel(objectiveRole(o.name),o.name);return '<div class="objective-map-node '+ownerClass+'" data-map-objective="'+esc(o.name)+'" style="'+(x===null||y===null?'display:none;':'left:'+x+'%;top:'+y+'%;')+'" title="'+esc(o.name)+'"><span class="objective-map-label">'+esc(label)+'</span></div>';}).join(''),pending='<div class="status" style="margin-top:8px"><b>Map geometry pending verification.</b><div class="tiny" style="margin-top:4px">No deployment zone, territory, terrain, or objective position is inferred from the 60 × 44 table boundary. The Event Companion geometry must be verified first.</div></div>',title=terrainSetup?'Terrain Setup':setup?'Deployment Planning':deployment?'Deployment Tracking':'Battlefield Map',subtitle=terrainSetup?'Step 4 • Create the Battlefield • use the selected Event Companion layout as the terrain placement guide.':setup?'Step 8 preparation • plan opening positions separately from terrain setup.':deployment?'Record actual alternating deployment positions • drag units after placement.':'Live battlefield positions • drag units to record movement',controls=terrainSetup?'':setup?deploymentPlanMapControlsHtml(model):deployment?deploymentTrackingControlsHtml(model):'',reserveTray=(deployment||mode==='battle')?reserveTrayHtml():'',editor='';const battlefieldMarkup=terrainSetup?terrainReferenceImageHtml(model):'<div class="objective-map-canvas '+(setup?'terrain-measurement-map':(mode==='battle'&&state.attackerSide==='opp'?'perspective-rotated':''))+'" data-objective-map-canvas data-objective-map-mode="'+esc(mode)+'" role="application" aria-label="'+esc(title)+' 60 by 44 inch battlefield map">'+(model.verified?regions+terrain+objectiveNodes+ghostNodes+unitNodes:'<div class="objective-map-placeholder">Verified Event Companion geometry required</div>')+'</div>';
+function objectiveMapRendererHtml(mode='battle'){const model=objectiveMapModel(mode),status=mode==='terrain'?'Official Event Companion reference':model.verified?'Verified geometry':'Geometry pending verification',pct=(n,max)=>Math.max(0,Math.min(100,(Number(n)/Number(max))*100)),point=p=>p&&Number.isFinite(Number(p.x))&&Number.isFinite(Number(p.y)),terrainSetup=mode==='terrain',setup=mode==='setup',deployment=mode==='deployment';const regionLabel=key=>{const k=String(key||'');if(k==='attackerDeployment')return (state.attackerSide==='opp'?state.oppName:state.myName)+' Deployment Zone';if(k==='defenderDeployment')return (state.attackerSide==='opp'?state.myName:state.oppName)+' Deployment Zone';if(k==='attackerTerritory')return (state.attackerSide==='opp'?state.oppName:state.myName)+' Territory';if(k==='defenderTerritory')return (state.attackerSide==='opp'?state.myName:state.oppName)+' Territory';return ({my:'My Deployment Zone',opp:'Opponent Deployment Zone',noMansLand:"No Man's Land",myTerritory:'My Territory',oppTerritory:'Opponent Territory'})[k]||k.replace(/([A-Z])/g,' $1').replace(/^./,s=>s.toUpperCase());};const regionClass=key=>{const k=String(key||'').toLowerCase();return k.includes('deployment')?'deployment':k.includes('territory')?'territory':'region';};const renderRegion=(key,r)=>{if(!r||typeof r!=='object')return '';if([r.x,r.y,r.width,r.height].every(v=>Number.isFinite(Number(v))))return '<div class="objective-map-region '+regionClass(key)+'" style="left:'+pct(r.x,60)+'%;top:'+pct(44-(Number(r.y)+Number(r.height)),44)+'%;width:'+pct(r.width,60)+'%;height:'+pct(r.height,44)+'%" title="'+esc(regionLabel(key))+'">'+esc(regionLabel(key))+'</div>';if(Array.isArray(r.points)&&r.points.every(point)){const pts=r.points.map(p=>pct(p.x,60)+','+pct(44-p.y,44)).join(' '),cx=r.points.reduce((s,p)=>s+Number(p.x),0)/r.points.length,cy=r.points.reduce((s,p)=>s+Number(p.y),0)/r.points.length,labelX=pct(cx,60),labelY=pct(44-cy,44);return '<svg class="objective-map-region-polygon '+regionClass(key)+'" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="'+esc(regionLabel(key))+'"><polygon points="'+pts+'"/><text x="'+labelX+'" y="'+labelY+'" text-anchor="middle">'+esc(regionLabel(key))+'</text></svg>';}return '';};const renderTerrain=(key,r)=>{if(!r||typeof r!=='object')return '';const label='Terrain '+String(key||'');if([r.x,r.y,r.width,r.height].every(v=>Number.isFinite(Number(v))))return '<div class="objective-map-terrain" style="left:'+pct(r.x,60)+'%;top:'+pct(44-(Number(r.y)+Number(r.height)),44)+'%;width:'+pct(r.width,60)+'%;height:'+pct(r.height,44)+'%" title="'+esc(label)+'"></div>';if(Array.isArray(r.points)&&r.points.every(point)){const pts=r.points.map(p=>pct(p.x,60)+'% '+pct(44-Number(p.y),44)+'%').join(',');return '<div class="objective-map-terrain-polygon" style="clip-path:polygon('+pts+')" title="'+esc(label)+'"></div>';}return '';};const regions=(!terrainSetup&&model.verified)?Object.entries(model.deploymentZones||{}).map(([k,v])=>renderRegion(k,v)).join(''):'';const terrain=model.verified?Object.entries(model.terrainGeometry||{}).map(([k,v])=>renderTerrain(k,v)).join(''):'';const ghostNodes=mode==='setup'?objectiveMapPlanGhostNodesHtml(model,pct):mode==='deployment'?(objectiveMapPlanGhostNodesHtml(model,pct)+deploymentStagingNodesHtml(model,pct,state.deploymentTrackingSide==='opp'?'opp':'my')):'',unitNodes=terrainSetup?'':objectiveMapUnitNodesHtml(model,pct,mode),measurementToggle=terrainSetup?'<span class="pill">Measurements shown</span>':'',objectiveNodes=terrainSetup?'':model.objectives.map((o,index)=>{const p=o.position,x=point(p)?pct(p.x,60):null,y=point(p)?pct(44-p.y,44):null,ownerClass=o.owner==='my'?'my':o.owner==='opp'?'opp':o.owner==='contested'?'contested':'none';const label='O'+(index+1)+' • '+objectiveRoleLabel(objectiveRole(o.name),o.name);return '<div class="objective-map-node '+ownerClass+'" data-map-objective="'+esc(o.name)+'" style="'+(x===null||y===null?'display:none;':'left:'+x+'%;top:'+y+'%;')+'" title="'+esc(o.name)+'"><span class="objective-map-label">'+esc(label)+'</span></div>';}).join(''),pending='<div class="status" style="margin-top:8px"><b>Map geometry pending verification.</b><div class="tiny" style="margin-top:4px">No deployment zone, territory, terrain, or objective position is inferred from the 60 × 44 table boundary. The Event Companion geometry must be verified first.</div></div>',title=terrainSetup?'Terrain Setup':setup?'Deployment Planning':deployment?'Deployment Tracking':'Battlefield Map',subtitle=terrainSetup?'Step 4 • Create the Battlefield • use the selected Event Companion layout as the terrain placement guide.':setup?'Step 8 preparation • plan opening positions separately from terrain setup.':deployment?'Record actual alternating deployment positions • drag units after placement.':'Live battlefield positions • drag units to record movement',controls=terrainSetup?'':setup?deploymentPlanMapControlsHtml(model):deployment?deploymentTrackingControlsHtml(model):'',reserveTray=(deployment||mode==='battle')?reserveTrayHtml():'',editor='';const battlefieldMarkup=terrainSetup?terrainReferenceImageHtml(model):'<div class="objective-map-canvas '+(setup?'terrain-measurement-map':(mode==='battle'&&state.attackerSide==='opp'?'perspective-rotated':''))+'" data-objective-map-canvas data-objective-map-mode="'+esc(mode)+'" role="application" aria-label="'+esc(title)+' 60 by 44 inch battlefield map">'+(model.verified?regions+terrain+objectiveNodes+ghostNodes+unitNodes:'<div class="objective-map-placeholder">Verified Event Companion geometry required</div>')+'</div>';
 const footer=terrainSetup?'<div class="terrain-reference-note"><strong>Official Event Companion reference.</strong> This page is the selected mission/layout diagram. Use it directly to place the terrain areas and terrain features on the physical 60 × 44 battlefield. The app does not reconstruct or infer the diagram measurements.</div>':'<div class="objective-map-legend"><span><i class="objective-map-legend-swatch terrain"></i>Terrain</span><span><i class="objective-map-legend-swatch deployment"></i>Deployment</span><span><i class="objective-map-legend-swatch territory"></i>Territory</span><span><i class="objective-map-legend-swatch objective"></i>Objective</span></div><div class="tiny" style="margin-top:6px">60 × 44 inches • bottom-left origin • geometry and terrain are rendered only from verified Event Companion data. Line of sight is never inferred.</div>';
 return '<div class="card objective-map-renderer '+(setup?'terrain-planning-card':'')+'"><div class="split"><div><h3 style="margin:0">'+title+'</h3><div class="muted">'+subtitle+' • '+esc(model.missionKey)+' • Layout '+esc(model.layout)+' • Event Companion p.'+esc(String(model.page||'—'))+'</div></div><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span class="pill">'+status+'</span></div></div>'+controls+battlefieldMarkup+reserveTray+footer+(!terrainSetup&&!model.verified?pending:'')+'</div>';}
 function deploymentPlanMapControlsHtml(model){if(!model.verified)return '';const units=(Array.isArray(state.my)?state.my:[]).filter(e=>e&&!e.attachedTo),selected=state.deploymentMapPlacement||{},plan=deploymentPlanForCurrentMap(),plannedIds=new Set(Object.keys(plan).map(String)),availableUnits=units.filter(e=>!plannedIds.has(String(e.uid))),count=plannedIds.size,options=availableUnits.map(entry=>{const name=unitDisplayName('my',entry)||get(entry.unitId)?.name||entry.name||entry.unitId||'Unit';return '<option value="'+esc(entry.uid)+'" '+(String(selected.uid)===String(entry.uid)?'selected':'')+'>'+esc(name)+'</option>';}).join('');return '<div class="objective-map-controls"><div class="split"><div><strong>Deployment Planning</strong><div class="tiny">Only your army can be placed here. Select a unit, then tap/click its intended starting position.</div></div><span class="pill">'+count+' planned position'+(count===1?'':'s')+'</span></div><div class="objective-map-placement-row"><select class="objective-map-unit-select" data-map-mode="setup" aria-label="My unit to place in deployment plan"><option value="">Select your unit…</option>'+options+'</select><button type="button" class="btn primary" data-deployment-save-plan>Save Plan</button><button type="button" class="btn" data-deployment-load-plan>Load Saved</button><button type="button" class="btn danger" data-deployment-clear-plan>Clear Plan</button><button type="button" class="btn" data-deployment-placement-cancel '+(selected.uid?'':'disabled')+'>Cancel</button></div><div class="tiny" style="margin-top:6px">Plan key: '+esc(deploymentPlanKey())+' • Save the army list first so the deployment plan travels with it.</div></div>';}
@@ -5658,6 +5659,93 @@ function gameUnitReferenceHtml(u,phase){
 }
 function weaponCellSafe(w,key){return w[key]===undefined?'—':esc(w[key]);}
 const ONOFORGE_40K_APP_CROSSCHECK={
+  "Termagants":{
+    faction:"Tyranids",
+    profile:{M:'6"',T:3,Sv:'5+',W:1,Ld:'8+',OC:2},
+    abilities:[
+      {name:"Skulking Horrors",summary:"During your opponent's Movement phase, if an enemy unit ends a move within 8 inches and this unit is not within Engagement Range, this unit can make a Normal move of up to D6 inches."}
+    ]
+  },
+  "Hormagaunts":{
+    faction:"Tyranids",
+    profile:{M:'10"',T:3,Sv:'5+',W:1,Ld:'8+',OC:2}
+  },
+  "Lictor":{
+    faction:"Tyranids",
+    profile:{M:'8"',T:6,Sv:'4+',W:6,Ld:'7+',OC:1},
+    abilities:[
+      {name:"Feeder Tendrils",summary:"Each time this model destroys an enemy Character model, you gain 1 CP."},
+      {name:"Pheromone Trail",summary:"Once per battle round, this model can be targeted by Rapid Ingress for 0 CP."}
+    ]
+  },
+  "Biovores":{
+    faction:"Tyranids",
+    profile:{M:'5"',T:6,Sv:'3+',W:5,Ld:'8+',OC:1},
+    abilities:[
+      {name:"Seed Spore Mines",summary:"Once per turn in the Shooting phase, this unit can forgo its ranged attacks to add a new Spore Mines unit to your army within 48 inches and more than 8 inches from enemy units."}
+    ]
+  },
+  "Exocrine":{
+    faction:"Tyranids",
+    profile:{M:'8"',T:10,Sv:'3+',W:14,Ld:'8+',OC:4},
+    abilities:[
+      {name:"Symbiotic Targeting",summary:"After this model shoots, select an enemy unit hit by its attacks; until the end of the phase, friendly Tyranids models can re-roll Hit rolls of 1 against that unit."},
+      {name:"Damaged",summary:"While 1–5 wounds remain, each time this model makes an attack, subtract 1 from the Hit roll."}
+    ]
+  },
+  "Tyrannofex":{
+    faction:"Tyranids",
+    profile:{M:'9"',T:12,Sv:'2+',W:16,Ld:'8+',OC:5},
+    abilities:[
+      {name:"Resilient Organism",summary:"Once per battle, when an attack is allocated to this model, you can change that attack's Damage characteristic to 0."},
+      {name:"Damaged",summary:"While 1–5 wounds remain, each time this model makes an attack, subtract 1 from the Hit roll."}
+    ]
+  },
+  "Captain":{
+    faction:"Ultramarines",
+    profile:{M:'6"',T:4,Sv:'3+',W:5,Ld:'6+',OC:1},
+    abilities:[
+      {name:"Rites of Battle",summary:"Once per battle round, when this model's unit is targeted by a Stratagem, reduce that Stratagem's CP cost by 1."},
+      {name:"Finest Hour",summary:"Once per battle at the start of the Fight phase, this model can gain additional melee attacks and Devastating Wounds for the phase."}
+    ]
+  },
+  "Assault Intercessor Squad":{
+    faction:"Ultramarines",
+    profile:{M:'6"',T:4,Sv:'3+',W:2,Ld:'6+',OC:2},
+    abilities:[
+      {name:"Targeted Intercession",summary:"Each time a model in this unit makes a melee attack, re-roll a Wound roll of 1; against an enemy unit within range of an objective, you can re-roll the Wound roll instead."}
+    ]
+  },
+  "Infernus Squad":{
+    faction:"Ultramarines",
+    profile:{M:'6"',T:4,Sv:'3+',W:2,Ld:'6+',OC:1},
+    abilities:[
+      {name:"Incendiary Terror",summary:"After this unit shoots, if a pyreblaster attack hit an enemy Infantry unit, that enemy unit must take a Battle-shock test with -1 to the test."}
+    ]
+  },
+  "Heavy Intercessor Squad":{
+    faction:"Ultramarines",
+    profile:{M:'5"',T:6,Sv:'3+',W:3,Ld:'6+',OC:2},
+    abilities:[
+      {name:"Unyielding in the Face of the Foe",summary:"While this unit is within range of an objective you control, Damage 1 attacks allocated to models in the unit grant +1 to their armour saving throws."}
+    ]
+  },
+  "Terminator Squad":{
+    faction:"Ultramarines",
+    profile:{M:'5"',T:5,Sv:'2+',W:3,Ld:'6+',OC:1},
+    abilities:[
+      {name:"Teleport Homer",summary:"At the start of the battle, this unit can place a Teleport Homer token outside the opponent's deployment zone for a once-per-battle 0CP Rapid Ingress option."},
+      {name:"Fury of the First",summary:"Each time a model in this unit attacks your Oath of Moment target, add 1 to the Hit roll."}
+    ]
+  },
+  "Redemptor Dreadnought":{
+    faction:"Ultramarines",
+    profile:{M:'8"',T:10,Sv:'2+',W:12,Ld:'6+',OC:4},
+    abilities:[
+      {name:"Duty Eternal",summary:"Each time an attack is allocated to this model, subtract 1 from that attack's Damage characteristic."},
+      {name:"Damaged",summary:"While 1–4 wounds remain, each time this model makes an attack, subtract 1 from the Hit roll."}
+    ]
+  },
   "Aggressor Squad":{
     faction:"Ultramarines",
     profile:{M:'5"',T:6,Sv:'3+',W:3,Ld:'6+',OC:1},
