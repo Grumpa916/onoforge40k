@@ -16,12 +16,25 @@ on:
       - '.github/workflows/tactical-advisor-preview.yml'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+      - name: Apply one-time live UI follow-up patch
+        run: python3 scripts/one-time-live-ui-patch.py
+      - name: Commit one-time live UI follow-up patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git add -A .github/workflows/tactical-advisor-preview.yml .github/workflows/one-time-live-ui-followup-patch.yml scripts/one-time-live-ui-patch.py
+          git commit -m "fix: refine deployment, objective labels, secondary scoring, unit data"
+          git push origin feature/opponent-turn-history-clean-reset
 
       - name: Run engagement evaluator tests
         run: node tests/tactical-advisor-engine.test.js
