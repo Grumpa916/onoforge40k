@@ -687,7 +687,7 @@ body{overflow-x:hidden}
 #battle-view #onoforge-advisor-render .ta-decision-render{margin-bottom:10px;padding:11px}
 @media (min-width:701px){#battle-view #onoforge-advisor-render .ta-grid{grid-template-columns:repeat(8,minmax(0,1fr));gap:5px}#battle-view #onoforge-advisor-render .ta-metric{padding:6px}#battle-view #onoforge-advisor-render .ta-metric b{font-size:14px}}
 </style>
-<style id="ono-battle-ux-requested">.battle-layout>.objective-map-renderer{grid-column:1!important;grid-row:2!important}.battle-layout>.battle-state-column{grid-column:2!important;grid-row:1 / span 2!important}.battle-layout>.battle-log{grid-column:1 / -1!important;grid-row:3!important}@media (min-width:900px) and (max-width:1300px) and (orientation:landscape){.battle-layout{display:grid!important;grid-template-columns:minmax(0,1fr) 500px!important;grid-template-rows:auto auto auto!important;gap:12px!important}.battle-layout>div:first-child{grid-column:1!important;grid-row:1!important}.battle-layout>.objective-map-renderer{grid-column:1!important;grid-row:2!important}.battle-layout>.battle-state-column{grid-column:2!important;grid-row:1 / span 2!important}.battle-layout>.battle-state-column .army-state-grid{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)!important;gap:10px!important}.battle-layout>.battle-log{grid-column:1 / -1!important;grid-row:3!important}}</style></head><body><div id="app"></div><script>
+<style id="ono-battle-ux-requested">.battle-layout>.objective-map-renderer{grid-column:1!important;grid-row:2!important}.battle-layout>.battle-state-column{grid-column:2!important;grid-row:1 / span 2!important}.battle-layout>.battle-log{grid-column:1 / -1!important;grid-row:3!important}@media (min-width:900px) and (max-width:1300px) and (orientation:landscape){.battle-layout{display:grid!important;grid-template-columns:minmax(0,1fr) 500px!important;grid-template-rows:auto auto auto!important;gap:12px!important}.battle-layout>div:first-child{grid-column:1!important;grid-row:1!important}.battle-layout>.objective-map-renderer{grid-column:1!important;grid-row:2!important}.battle-layout>.battle-state-column{grid-column:2!important;grid-row:1 / span 2!important}.battle-layout>.battle-state-column .army-state-grid{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)!important;gap:10px!important}.battle-layout>.battle-log{grid-column:1 / -1!important;grid-row:3!important}}</style><style id="onoforge-live-state-reference-fix">.game-unit-full-reference{grid-column:1 / -1!important;margin-top:4px;border-top:1px solid #26303e;padding-top:4px}.game-unit-full-reference summary{cursor:pointer;color:#9ecbff;font-size:9px;font-weight:800}.game-unit-full-reference-body{padding:6px 0 2px}.game-unit-full-reference-body .add-unit-stats{grid-template-columns:repeat(6,minmax(42px,1fr));display:grid;gap:4px;margin-top:5px}.game-unit-full-reference-body .add-unit-stat{background:#101a25;border:1px solid #2d4054;border-radius:5px;padding:4px;text-align:center}.game-unit-full-reference-body .add-unit-stat b{display:block;font-size:11px}.game-unit-full-reference-body .add-unit-stat span{display:block;font-size:7px;color:#9ca8b8}.game-unit-full-reference-body table{width:100%;border-collapse:collapse;font-size:8px;margin-top:3px}.game-unit-full-reference-body th,.game-unit-full-reference-body td{border-bottom:1px solid #26303e;padding:3px 4px;text-align:left;white-space:nowrap}.model-roster-list{grid-column:1 / -1!important}.model-roster-list summary{cursor:pointer;color:#9ecbff;font-size:9px}@media(max-width:700px){.game-unit-full-reference-body .add-unit-stats{grid-template-columns:repeat(3,minmax(42px,1fr))}}</style></head><body><div id="app"></div><script>
 window.addEventListener('error',function(ev){if(ev.target&&ev.target.tagName==='SCRIPT'&&ev.target.src===SUPABASE_SCRIPT_URL)return;var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var msg=String(ev.error?.message||ev.message||'Unknown error');a.innerHTML='<span class="error-title">OnoForge error</span><div class="error-detail">'+msg.replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</div><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});window.addEventListener('unhandledrejection',function(ev){var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var reason=ev.reason?.message||ev.reason||'Unhandled promise rejection';a.innerHTML='<span class="error-title">OnoForge error</span><div class="error-detail">'+String(reason).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</div><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});
 
 window.__ONOFORGE_DETACHMENTS = window.__ONOFORGE_DETACHMENTS || {}; function detachmentCatalog(){return window.__ONOFORGE_DETACHMENTS;}
@@ -848,7 +848,7 @@ function clearDeploymentPlanPosition(uid){const id=String(uid||''),plan=ensureDe
 function clearDeploymentPlanForCurrentMap(){const key=deploymentPlanKey(),plans=ensureDeploymentPlans();if(plans[key])delete plans[key];save();render();}
 function saveDeploymentPlan(){const id=String(state.activeRosterId||'');if(!id){alert('Save the current army list first, then save its deployment plan.');return;}const plans=ensureDeploymentPlans(),key=deploymentPlanKey();if(!plans[key])plans[key]={positions:{},missionKey:String(state.objectiveMapMissionKey||objectiveMissionKey()||''),layout:state.objectiveMapLayout||'A'};const saved=(state.savedArmyLists||[]).find(x=>String(x.id)===id),roster=(state.lists||[]).find(x=>String(x.id)===id);if(saved){saved.deploymentPlans=JSON.parse(JSON.stringify(plans));saved.updated=new Date().toISOString();cloudUpsertArmyList(saved).catch(()=>{});}if(roster)roster.deploymentPlans=JSON.parse(JSON.stringify(plans));save();render();}
 function loadDeploymentPlan(){const key=deploymentPlanKey(),id=String(state.activeRosterId||''),saved=(state.savedArmyLists||[]).find(x=>String(x.id)===id),roster=(state.lists||[]).find(x=>String(x.id)===id),source=saved?.deploymentPlans||roster?.deploymentPlans||null;if(source&&source[key])state.deploymentPlans=JSON.parse(JSON.stringify(source));const plan=ensureDeploymentPlans()[key];if(!plan){alert('No saved deployment plan exists for this mission and layout.');return;}save();render();}
-function objectiveMapModel(mode='battle'){const geometry=objectiveBattlefieldGeometry(),objectives=Object.keys(state.objectives||{}).map(objectiveStateRecord);return {version:'map.v1',mode,layout:geometry.layout,missionKey:geometry.missionKey,page:geometry.page,table:geometry.table,verified:geometry.verified,deploymentZones:geometry.verified?(geometry.source.geometryEntry?.deploymentZones||null):null,terrainGeometry:geometry.verified?(geometry.source.geometryEntry?.terrainGeometry||null):null,objectives:objectives.map(o=>({name:o.name,owner:o.owner,type:o.type,territory:o.territory,deploymentZone:o.deploymentZone,position:o.battlefieldPosition||null})),unitPositions:mode==='setup'?deploymentPlanForCurrentMap():ensureBattlefieldUnitPositions()};}
+function objectiveMapModel(mode='battle'){const geometry=objectiveBattlefieldGeometry(),objectives=geometry.objectives.map(o=>{const owner=['my','opp','contested','none'].includes(state.objectives?.[o.name])?state.objectives[o.name]:'none';return {...o,owner};});return {version:'map.v1',mode,layout:geometry.layout,missionKey:geometry.missionKey,page:geometry.page,table:geometry.table,verified:geometry.verified,deploymentZones:geometry.verified?(geometry.source.geometryEntry?.deploymentZones||null):null,terrainGeometry:geometry.verified?(geometry.source.geometryEntry?.terrainGeometry||null):null,objectives:objectives.map(o=>({name:o.name,owner:o.owner,type:o.type,territory:o.territory,deploymentZone:o.deploymentZone,position:o.battlefieldPosition||null})),unitPositions:mode==='setup'?deploymentPlanForCurrentMap():ensureBattlefieldUnitPositions()};}
 function ensureBattlefieldUnitPositions(){
   if(!state.battlefieldUnitPositions||typeof state.battlefieldUnitPositions!=='object'||Array.isArray(state.battlefieldUnitPositions))state.battlefieldUnitPositions={};
   return state.battlefieldUnitPositions;
@@ -862,7 +862,7 @@ function setBattlefieldUnitPosition(side,uid,x,y,source='manual'){
   if(source!=='reserve'&&isUnitReserved(nextSide,id))return false;
   const before=snapshotForUndo();
   const previous=ensureBattlefieldUnitPositions()[id]||null;ensureBattlefieldUnitPositions()[id]={x:nx,y:ny,side:nextSide,source,round:Math.max(1,Number(state.round)||1)};
-  event(source==='deployment'?'UNIT_DEPLOYED':source==='reserve'?'UNIT_DEPLOYED_FROM_RESERVE':'UNIT_BATTLEFIELD_POSITION_CHANGED',{unit:id,action:source==='deployment'?'Unit deployment position recorded':source==='reserve'?'Unit deployed from reserve':'Battlefield position moved',side:nextSide,from:source==='reserve'?'RESERVE':(previous?{x:previous.x,y:previous.y}:null),x:nx,y:ny,round:Math.max(1,Number(state.round)||1),phase:String(state.phase||'Command')},before);
+  const movedEntry=entry(nextSide,id),unitName=movedEntry?unitDisplayName(nextSide,movedEntry):id;event(source==='deployment'?'UNIT_DEPLOYED':source==='reserve'?'UNIT_DEPLOYED_FROM_RESERVE':'UNIT_BATTLEFIELD_POSITION_CHANGED',{unit:id,unitName,entryId:id,action:source==='deployment'?'Deployment position recorded':source==='reserve'?'Deployed from reserve':'Battlefield position moved',side:nextSide,from:source==='reserve'?'RESERVE':(previous?{x:previous.x,y:previous.y}:null),x:nx,y:ny,round:Math.max(1,Number(state.round)||1),phase:String(state.phase||'Command')},before);
   save();render();return true;
 }
 function clearBattlefieldUnitPosition(uid){
@@ -871,7 +871,7 @@ function clearBattlefieldUnitPosition(uid){
   if(!id||!Object.prototype.hasOwnProperty.call(ensureBattlefieldUnitPositions(),id))return;
   const before=snapshotForUndo();
   delete ensureBattlefieldUnitPositions()[id];
-  event('UNIT_BATTLEFIELD_POSITION_CLEARED',{unit:id,action:'Battlefield position cleared',round:Math.max(1,Number(state.round)||1),phase:String(state.phase||'Command')},before);
+  const clearedMy=entry('my',id),clearedOpp=entry('opp',id),clearedEntry=clearedMy||clearedOpp,clearedSide=clearedMy?'my':'opp';event('UNIT_BATTLEFIELD_POSITION_CLEARED',{unit:id,unitName:clearedEntry?unitDisplayName(clearedSide,clearedEntry):id,entryId:id,action:'Battlefield position cleared',round:Math.max(1,Number(state.round)||1),phase:String(state.phase||'Command')},before);
   save();render();
 }
 function battlefieldDistanceBetween(a,b){
@@ -935,7 +935,11 @@ function battlefieldPositionEditorHtml(){
   }).join('');
   return '<details class="card" style="margin-top:10px"><summary style="cursor:pointer;color:#9ecbff"><strong>Battlefield unit positions</strong><span class="tiny"> • manual tabletop coordinates only</span></summary><div class="tiny" style="margin-top:7px">Origin is the bottom-left of the 60″ × 44″ battlefield. Positions are never inferred. Use the map placement tool for touch-friendly placement or enter exact coordinates below.</div>'+rows+'</details>';
 }
-function deploymentTrackingControlsHtml(model){if(!model.verified)return '';const side=state.deploymentTrackingSide==='opp'?'opp':'my',units=(side==='opp'?state.opp:state.my)||[],selected=state.battlefieldMapPlacement||{},positions=ensureBattlefieldUnitPositions(),placedIds=new Set(Object.entries(positions).filter(([uid,p])=>p&&p.side===side).map(([uid])=>String(uid))),availableUnits=units.filter(e=>e&&!e.attachedTo&&!placedIds.has(String(e.uid))),options=availableUnits.map(entry=>{const name=unitDisplayName(side,entry)||get(entry.unitId)?.name||entry.name||entry.unitId||'Unit';return '<option value="'+esc(side+'|'+entry.uid)+'" '+(selected.side===side&&String(selected.uid)===String(entry.uid)?'selected':'')+'>'+esc(name)+'</option>';}).join('');return '<div class="objective-map-controls"><div class="split"><div><strong>Deployment Tracking</strong><div class="tiny">Clean live map. Record each unit where it is actually placed. Opponent placement can change your plan.</div></div><span class="pill">'+Object.keys(positions).length+' units placed</span></div><div class="objective-map-placement-row"><select class="objective-map-side-select" data-deployment-side aria-label="Deployment side"><option value="my" '+(side==='my'?'selected':'')+'>My army</option><option value="opp" '+(side==='opp'?'selected':'')+'>Opponent army</option></select><select class="objective-map-unit-select" data-map-mode="deployment" aria-label="Unit to place during deployment"><option value="">Select unit…</option>'+options+'</select><button type="button" class="btn" data-map-placement-cancel '+(selected.uid?'':'disabled')+'>Cancel</button></div><div class="tiny objective-map-placement-status">'+(selected.uid?'Placement active — tap the map or drag the selected unit.':'Select a newly deployed unit, then place it on the map. Existing icons can be dragged directly.')+'</div><div class="tiny" style="margin-top:6px">Optional strategy positions appear as faint ghosts when a saved deployment strategy exists.</div></div>';}
+function deploymentTrackingControlsHtml(model){
+ if(!model.verified)return '';
+ const side=state.deploymentTrackingSide==='opp'?'opp':'my',positions=ensureBattlefieldUnitPositions(),placedCount=Object.values(positions).filter(p=>p&&p.side===side).length;
+ return '<div class="objective-map-controls"><div class="split"><div><strong>Live Deployment Tracking</strong><div class="tiny">Drag any staged unit directly to its actual tabletop position. No unit-selection step is required.</div></div><span class="pill">'+placedCount+' '+(side==='my'?'my':'opponent')+' units recorded</span></div><div class="objective-map-placement-row"><select class="objective-map-side-select" data-deployment-side aria-label="Deployment side"><option value="my" '+(side==='my'?'selected':'')+'>My army</option><option value="opp" '+(side==='opp'?'selected':'')+'>Opponent army</option></select></div><div class="tiny objective-map-placement-status">Staging slots are visual placeholders only. A unit counts as deployed when its marker is dragged to the physical tabletop position.</div></div>';
+}
 function deploymentTrackingEditorHtml(){const units=[...(Array.isArray(state.my)?state.my:[]).filter(e=>e&&!e.attachedTo).map(e=>({side:'my',entry:e})),...(Array.isArray(state.opp)?state.opp:[]).filter(e=>e&&!e.attachedTo).map(e=>({side:'opp',entry:e}))];if(!units.length)return '';const rows=units.map(({side,entry})=>{const p=battlefieldUnitPosition(side,entry.uid)||{x:'',y:''},name=unitDisplayName(side,entry)||get(entry.unitId)?.name||entry.name||entry.unitId||'Unit',clear=p.x!==''&&p.y!==''?'<button type="button" class="btn" data-battlefield-clear="'+esc(entry.uid)+'">Clear</button>':'';return '<div class="unit battlefield-position-row"><div><strong>'+esc(name)+'</strong><div class="tiny">'+(p.x!==''?('Actual deployment: '+p.x+'″, '+p.y+'″'):'Not yet placed')+'</div></div><input inputmode="decimal" type="number" min="0" max="60" step="0.1" value="'+esc(String(p.x))+'" placeholder="X" data-battlefield-x="'+esc(side)+'" data-battlefield-uid="'+esc(entry.uid)+'"><input inputmode="decimal" type="number" min="0" max="44" step="0.1" value="'+esc(String(p.y))+'" placeholder="Y" data-battlefield-y="'+esc(side)+'"><button type="button" class="btn" data-battlefield-save="'+esc(side)+'" data-battlefield-uid="'+esc(entry.uid)+'">Set</button>'+clear+'</div>';}).join('');return '<details class="card" style="margin-top:10px"><summary style="cursor:pointer;color:#9ecbff"><strong>Deployment coordinates</strong><span class="tiny"> • 0.1″ precision fallback</span></summary><div class="tiny" style="margin-top:7px">Direct map dragging is the primary interaction. Use coordinates for precision corrections.</div>'+rows+'</details>';}
 function objectiveMapPlacementPanelHtml(model){
   const units=[...(Array.isArray(state.my)?state.my:[]).filter(e=>e&&!e.attachedTo).map(e=>({side:'my',entry:e})),...(Array.isArray(state.opp)?state.opp:[]).filter(e=>e&&!e.attachedTo).map(e=>({side:'opp',entry:e}))];
@@ -963,15 +967,15 @@ function battlefieldMapUnitTitle(side,unitEntry){
  const all=[...extras,...passengers].filter(Boolean);
  return all.length?base+' • '+all.join(', '):base;
 }
-function deploymentStagingPoint(side,model){
- const geometry=objectiveBattlefieldGeometry();
- if(!geometry.verified)return null;
- const key=side===state.attackerSide?'attackerDeployment':'defenderDeployment';
- const region=geometry.deploymentZones?.[key];
- if(!region)return null;
- if([region.x,region.y,region.width,region.height].every(v=>Number.isFinite(Number(v))))return {x:Number(region.x)+Number(region.width)/2,y:Number(region.y)+Number(region.height)/2};
- if(Array.isArray(region.points)&&region.points.length){const pts=region.points.filter(p=>p&&Number.isFinite(Number(p.x))&&Number.isFinite(Number(p.y)));if(pts.length)return {x:pts.reduce((n,p)=>n+Number(p.x),0)/pts.length,y:pts.reduce((n,p)=>n+Number(p.y),0)/pts.length};}
- return null;
+function deploymentStagingPoint(side,model,index=0,total=1){
+ const geometry=objectiveBattlefieldGeometry();if(!geometry.verified)return null;
+ const key=side===state.attackerSide?'attackerDeployment':'defenderDeployment',region=geometry.deploymentZones?.[key];if(!region)return null;
+ let minX,maxX,minY,maxY;
+ if([region.x,region.y,region.width,region.height].every(v=>Number.isFinite(Number(v)))){minX=Number(region.x);maxX=minX+Number(region.width);minY=Number(region.y);maxY=minY+Number(region.height);}
+ else if(Array.isArray(region.points)&&region.points.length){const pts=region.points.filter(p=>p&&Number.isFinite(Number(p.x))&&Number.isFinite(Number(p.y)));if(!pts.length)return null;minX=Math.min(...pts.map(p=>Number(p.x)));maxX=Math.max(...pts.map(p=>Number(p.x)));minY=Math.min(...pts.map(p=>Number(p.y)));maxY=Math.max(...pts.map(p=>Number(p.y)));}else return null;
+ const count=Math.max(1,Number(total)||1),idx=Math.max(0,Number(index)||0),cols=Math.max(1,Math.min(4,Math.ceil(Math.sqrt(count)))),rows=Math.max(1,Math.ceil(count/cols)),col=idx%cols,row=Math.floor(idx/cols);
+ const padX=Math.max(1,Math.min(3,(maxX-minX)*.12)),padY=Math.max(1,Math.min(3,(maxY-minY)*.12)),usableX=Math.max(.5,(maxX-minX)-padX*2),usableY=Math.max(.5,(maxY-minY)-padY*2);
+ return {x:minX+padX+usableX*((col+.5)/cols),y:minY+padY+usableY*((row+.5)/rows)};
 }
 function objectiveMapUnitNodesHtml(model,pct,mode='battle'){
  if(!model.verified)return '';
@@ -980,7 +984,7 @@ function objectiveMapUnitNodesHtml(model,pct,mode='battle'){
    if(!entry||entry.attachedTo||isUnitReserved(side,entry.uid)||isUnitEmbarked(side,entry.uid))return '';
    const game=entry.game||{},dead=game.status==='Destroyed';
    const savedPosition=battlefieldUnitPosition(side,entry.uid,mode==='setup'?'setup':'battle');
-   const p=savedPosition||(mode==='deployment'?deploymentStagingPoint(side,model):null);
+   const sameSideStaging=units.filter(x=>x.side===side&&x.entry&&!x.entry.attachedTo&&!isUnitReserved(side,x.entry.uid)&&!isUnitEmbarked(side,x.entry.uid)&&!battlefieldUnitPosition(side,x.entry.uid,'battle')).map(x=>String(x.entry.uid));const stagingIndex=sameSideStaging.indexOf(String(entry.uid));const p=savedPosition||(mode==='deployment'?deploymentStagingPoint(side,model,stagingIndex,sameSideStaging.length):null);
    if(!p)return '';
    const staging=!savedPosition&&mode==='deployment';
    const nearest=mode==='setup'?null:(Object.values(state.objectives||{}).length?Object.keys(state.objectives||{}).map(name=>({name,distance:objectiveDistanceFromUnit(side,entry.uid,name)})).filter(x=>x.distance!==null).sort((a,b)=>a.distance-b.distance)[0]:null);
@@ -1022,7 +1026,7 @@ const terrainBlock=complete
   ? '<div class="terrain-setup-locked"><div><strong>Step 4 • Terrain Setup</strong><span class="pill ok" style="margin-left:7px">Locked</span></div><div class="tiny" style="margin-top:3px">Layout '+esc(layout)+' • Event Companion p.'+esc(String(page))+' • Terrain placement recorded</div></div>'
   : '<div class="setup-section terrain-setup-section"><div class="split"><div><h3 style="margin:0">Step 4 — Create the Battlefield: Terrain Setup</h3><div class="muted terrain-setup-description" style="margin-top:4px">Set up the battlefield terrain using the selected Event Companion layout. Measurements are shown on this map only.</div></div><span class="pill">Terrain setup required</span></div><div class="objective-layout-panel" style="margin-top:10px"><div class="split"><div><strong>Recommended Battlefield Layout</strong><div class="tiny">'+esc(info.missions[0])+' ↔ '+esc(info.missions[1])+' • Layout '+esc(layout)+'</div></div><span class="pill">Event Companion p.'+esc(String(page))+'</span></div><div class="objective-layout-buttons">'+buttons+'<a class="btn" href="'+WARHAMMER_EVENT_COMPANION_PDF+'#page='+page+'" target="_blank" rel="noopener">Open Map</a></div></div>'+objectiveMapRendererHtml('terrain')+'<div class="row" style="margin-top:10px"><button type="button" class="btn primary" onclick="completeTerrainSetup();return false;">Terrain Setup Complete — Continue to Deployment Planning</button></div><div class="tiny" style="margin-top:7px">Complete this acknowledgement after the physical terrain has been placed. Changing Layout A/B/C resets the acknowledgement.</div></div>';
  const deploymentBlock=complete
-  ? '<div id="deployment-planning-section" class="setup-section" style="margin:10px 0 0"><div class="split"><div><h3 style="margin:0">Step 8 Preparation — Deployment Planning</h3><div class="muted" style="margin-top:4px">Plan your opening positions separately from the physical terrain setup. This is a plan only; actual alternating deployment is recorded after Begin Deployment.</div></div><span class="pill">Planning Map</span></div>'+objectiveMapRendererHtml('setup')+'<details class="card" '+(state.liveDeploymentPanelOpen===false?'':'open ')+'data-live-deployment-panel style="margin-top:10px"><summary style="cursor:pointer;color:#9ecbff"><strong>Live Deployment Tracking</strong><span class="tiny"> • actual placements</span></summary><div class="tiny" style="margin-top:7px">Use this after deployment begins to record the actual alternating placement. Opponent placement can change your plan.</div>'+objectiveMapRendererHtml('deployment')+'</details></div>'
+  ? '<div id="deployment-planning-section" class="setup-section" style="margin:10px 0 0"><div class="split"><div><h3 style="margin:0">Step 8 — Deployment</h3><div class="muted" style="margin-top:4px">The live deployment map stays open. Non-reserve units begin in staging slots; drag each unit directly to its actual tabletop position. Reserve units stay off the map.</div></div><span class="pill">Live Map</span></div>'+objectiveMapRendererHtml('setup')+objectiveMapRendererHtml('deployment')+'</div>'
   : '';
  return '<div>'+terrainBlock+deploymentBlock+'</div>';
 }
@@ -4823,8 +4827,6 @@ function setup(){
  ${reserveDeclarationSectionHtml('opp')}
  ${transportDeclarationSectionHtml('my')}
  ${transportDeclarationSectionHtml('opp')}
- ${deploymentStatusHtml()}
- ${tournamentSetupChecklistHtml()}
  <div class="setup-section"><h3>Battle Options</h3><div class="grid2">
    <div class="field compact-battle-menu"><label>My Army Battle Ready</label><select style="width:160px!important;max-width:160px!important;min-width:0!important" onchange="state.battleReadyMy=this.value==='yes';save();render()"><option value="no" ${!state.battleReadyMy?'selected':''}>No</option><option value="yes" ${state.battleReadyMy?'selected':''}>Yes — +10 VP</option></select></div>
    <div class="field compact-battle-menu"><label>Opponent Army Battle Ready</label><select style="width:160px!important;max-width:160px!important;min-width:0!important" onchange="state.battleReadyOpp=this.value==='yes';save();render()"><option value="no" ${!state.battleReadyOpp?'selected':''}>No</option><option value="yes" ${state.battleReadyOpp?'selected':''}>Yes — +10 VP</option></select></div>
@@ -4840,7 +4842,7 @@ function setup(){
  <div class="setup-panel"><h3>${esc(state.oppName)}</h3><div class="field"><label>Mission Type</label><select onchange="setSecondaryMode('opp',this.value)"><option value="fixed" ${state.secondaryOpp==='fixed'?'selected':''}>Fixed</option><option value="tactical" ${state.secondaryOpp==='tactical'?'selected':''}>Tactical</option></select></div>
  ${state.secondaryOpp==='fixed'?`<div class="secondary-grid">${SECONDARY_CARDS.filter(c=>c.fixed).map(c=>`<label class="secondary-card ${secState('opp').includes(c.name)?'selected':''}"><input type="checkbox" ${secState('opp').includes(c.name)?'checked':''} onchange="toggleFixedSecondary('opp','${esc(c.name)}')"><b>${esc(c.name)}</b><span>${esc(c.type)}</span></label>`).join('')}</div><div class="muted">Selected: ${secState('opp').length} / 2 active</div>`:``}</div>
  </div></div>
- <div class="row" style="margin-top:10px"><button class="btn" type="button" onclick="returnToTournamentSetup()" ${state.tournamentLifecycle==='DEPLOYMENT'?'':'disabled'}>Back to Setup</button><button class="btn primary" type="button" onclick="beginDeployment()">Begin Deployment</button><button class="btn primary" type="button" onclick="startBattle()" ${state.tournamentLifecycle==='DEPLOYMENT'?'':'disabled'}>Start Battle</button> </div></div>`
+ <div style="margin-top:12px">${tournamentSetupChecklistHtml()}${deploymentStatusHtml()}</div><div class="row" style="margin-top:10px"><button class="btn primary" type="button" onclick="startBattle()">Start Battle</button></div></div>`
 }
 
 let gameTimerInterval=null;
@@ -5036,7 +5038,7 @@ function setTournamentLifecycle(next){
  const allowed=['SETUP','DEPLOYMENT','LIVE','COMPLETED'];
  if(!allowed.includes(next))return false;
  const current=ensureTournamentLifecycle();
- const transitions={SETUP:['DEPLOYMENT'],DEPLOYMENT:['SETUP','LIVE'],LIVE:['COMPLETED'],COMPLETED:['SETUP']};
+ const transitions={SETUP:['DEPLOYMENT','LIVE'],DEPLOYMENT:['SETUP','LIVE'],LIVE:['COMPLETED'],COMPLETED:['SETUP']};
  if(current!==next&&!transitions[current].includes(next))return false;
  state.tournamentLifecycle=next;
  return true;
@@ -5213,16 +5215,15 @@ function tournamentDeploymentValidation(){
 }
 
 function deploymentStatusHtml(){
-  if(state.tournamentLifecycle!=='DEPLOYMENT')return '';
-  const check=tournamentDeploymentValidation();
-  return '<div class="setup-section"><div class="split"><div><h3 style="margin:0">Deployment Status</h3><div class="tiny">Every non-reserve unit must have its actual tabletop position recorded. Reserved units remain in the reserve tray.</div></div><span class="pill '+(check.ready?'ok':'warn')+'">'+(check.ready?'Deployment complete':'Deployment incomplete')+'</span></div>'+(check.ready?'<div class="ok">All units are accounted for. Starting the battle will lock the deployment map.</div>':'<div class="warn">Still unrecorded: '+check.missing.slice(0,8).map(esc).join(' • ')+(check.missing.length>8?' • +'+(check.missing.length-8)+' more':'')+'</div>')+'</div>';
+ if(!['SETUP','DEPLOYMENT'].includes(state.tournamentLifecycle))return '';
+ initializeLiveDeploymentFromPlan();
+ const check=tournamentDeploymentValidation();
+ return '<div class="setup-section"><div class="split"><div><h3 style="margin:0">Deployment Status</h3><div class="tiny">Staging markers are visual placeholders only. Every non-reserve unit must be dragged to its actual tabletop position before Start Battle. Reserved and embarked units remain off the map.</div></div><span class="pill '+(check.ready?'ok':'warn')+'">'+(check.ready?'Deployment ready':'Deployment incomplete')+'</span></div>'+(check.ready?'<div class="ok">All non-reserve units are accounted for. Start Battle will open Battle Mode.</div>':'<div class="warn">Still unrecorded: '+check.missing.slice(0,8).map(esc).join(' • ')+'</div>')+'</div>';
 }
-
 function initializeLiveDeploymentFromPlan(){
   const live=ensureBattlefieldUnitPositions(),plan=deploymentPlanForCurrentMap();
-  Object.keys(live).forEach(uid=>delete live[uid]);
   Object.entries(plan).forEach(([uid,p])=>{
-    if(!p||isUnitReserved('my',uid))return;
+    if(live[String(uid)]||!p||isUnitReserved('my',uid))return;
     const x=Math.round(Number(p.x)*10)/10,y=Math.round(Number(p.y)*10)/10;
     if(!Number.isFinite(x)||!Number.isFinite(y)||x<0||x>60||y<0||y>44)return;
     live[String(uid)]={x,y,side:'my',source:'deployment-plan',round:Math.max(1,Number(state.round)||1)};
@@ -5263,10 +5264,11 @@ function returnToTournamentSetup(){
 function startBattle(){
   const setupCheck=tournamentSetupValidation();
   if(!setupCheck.ready){alert('Tournament setup is incomplete:\n\n• '+setupCheck.missing.join('\n• '));return false;}
-  if(state.tournamentLifecycle!=='DEPLOYMENT'){
-    alert('Begin Deployment before starting the live battle.');
+  if(!['SETUP','DEPLOYMENT'].includes(state.tournamentLifecycle)){
+    alert('Start Battle is only available from tournament setup.');
     return false;
   }
+  ensureReserveState();ensureDeploymentPlans();initializeLiveDeploymentFromPlan();
   const deploymentCheck=tournamentDeploymentValidation();
   if(!deploymentCheck.ready){alert('Deployment is incomplete:\n\n• '+deploymentCheck.missing.join('\n• '));return false;}
   const before=snapshotForUndo();
@@ -5414,12 +5416,13 @@ function actionResultText(e){
  return parts.join(' • ');
 }
 function actionLogLine(e,i){
- const phase=e?.phase||'Unknown', round=e?.round||1, time=e?.at?new Date(e.at).toLocaleTimeString():'', turn=(e?.playerTurn||e?.payload?.playerTurn||e?.payload?.side||'').toLowerCase(), unit=e?.payload?.unit||e?.payload?.attacker||'Game';
- const turnLabel=turn==='my'?state.myName:turn==='opp'?state.oppName:'—';
- const action=actionText(e), result=actionResultText(e);
- return `<div class="action-line"><span class="action-turn">${esc(turnLabel)}</span><span class="action-phase">${esc(phase)}</span><span class="action-round">R${round}</span><span class="action-time">${esc(time)}</span><span class="action-unit">${esc(unit)}</span><span class="action-action">${esc(action)}</span>${result?`<span class="action-result">${esc(result)}</span>`:''}${i===0&&e?.before?'<button class="btn danger action-undo" onclick="undoLastAction()">Undo</button>':''}</div>`;
+ const p=e?.payload||{},phase=e?.phase||'Unknown',round=e?.round||1,time=e?.at?new Date(e.at).toLocaleTimeString():'';
+ const turn=(e?.playerTurn||p.playerTurn||p.side||'').toLowerCase(),turnLabel=turn==='my'?state.myName:turn==='opp'?state.oppName:'Game';
+ const rawUnit=p.unitName||p.unit||p.attacker||'Game';
+ const resolvedUnit=(()=>{if(rawUnit==='Game')return rawUnit;for(const s of (turn==='opp'?['opp','my']:turn==='my'?['my','opp']:['my','opp'])){const hit=(state[s]||[]).find(x=>String(x.uid)===String(rawUnit));if(hit)return unitDisplayName(s,hit);}return rawUnit;})();
+ const action=actionText(e),results=[];if(p.x!=null&&p.y!=null)results.push('Position '+Number(p.x).toFixed(1)+'″ × '+Number(p.y).toFixed(1)+'″');const generic=actionResultText(e);if(generic)results.push(generic);const result=results.join(' • ');
+ return '<div class="action-line"><span class="action-turn">'+esc(turnLabel)+'</span><span class="action-phase">'+esc(phase)+'</span><span class="action-round">R'+round+'</span><span class="action-time">'+esc(time)+'</span><span class="action-unit">'+esc(resolvedUnit)+'</span><span class="action-action">'+esc(action)+'</span>'+(result?'<span class="action-result">'+esc(result)+'</span>':'')+(i===0&&e?.before?'<button class="btn danger action-undo" onclick="undoLastAction()">Undo</button>':'')+'</div>';
 }
-
 const SCORING_EVENT_KINDS=new Set([
  'VP_CHANGED','CP_CHANGED',
  'PRIMARY_SCORED','PRIMARY_SCORE_RESET',
@@ -5655,6 +5658,16 @@ function gameUnitReferenceHtml(u,phase){
  if(!refs.length)return '';
  return '<div class="game-unit-reference">'+refs.map(r=>`<span class="game-unit-reference-pill"><b>${esc(r.tag)}</b> ${esc(r.text)}</span>`).join('')+'</div>';
 }
+function weaponCellSafe(w,key){return w[key]===undefined?'—':esc(w[key]);}
+function gameUnitFullReferenceHtml(side,e,u){
+ if(!u)return '';
+ const profile={...(u.profile||{})};if(profile.M===undefined)profile.M=profile.Move??profile.Movement??u.M??u.Move??u.Movement;
+ const statKeys=[['M','M'],['T','T'],['Sv','Sv'],['W','W'],['Ld','Ld'],['OC','OC']],stats=statKeys.filter(([k])=>profile[k]!==undefined);
+ const activeNames=new Set(activeWeaponNames(e,u)),weapons=(Array.isArray(u.weapons)?u.weapons:[]).filter(w=>!activeNames.size||activeNames.has(w.name));
+ const ranged=weapons.filter(w=>w.BS!==undefined&&w.BS!==''&&w.BS!=='—'),melee=weapons.filter(w=>w.WS!==undefined&&w.WS!==''&&w.WS!=='—'),other=weapons.filter(w=>!ranged.includes(w)&&!melee.includes(w));
+ const renderWeapons=(title,list)=>list.length?'<div class="muted small" style="margin-top:7px">'+title+'</div><div style="overflow:auto"><table><thead><tr><th>Weapon</th><th>A</th><th>WS</th><th>BS</th><th>S</th><th>AP</th><th>D</th><th>Abilities</th></tr></thead><tbody>'+list.map(w=>'<tr><td><b>'+esc(w.name||'')+'</b></td><td>'+weaponCellSafe(w,'A')+'</td><td>'+weaponCellSafe(w,'WS')+'</td><td>'+weaponCellSafe(w,'BS')+'</td><td>'+weaponCellSafe(w,'S')+'</td><td>'+weaponCellSafe(w,'AP')+'</td><td>'+weaponCellSafe(w,'D')+'</td><td>'+esc(Array.isArray(w.abilities)?w.abilities.join(', '):w.abilities||'—')+'</td></tr>').join('')+'</tbody></table></div>':'';
+ return '<details class="game-unit-full-reference"><summary>Full stat line &amp; weapons</summary><div class="game-unit-full-reference-body"><div class="add-unit-stats">'+(stats.length?stats.map(([k,label])=>'<div class="add-unit-stat"><b>'+esc(profile[k])+'</b><span>'+label+'</span></div>').join(''):'<span class="muted small">No stat profile available</span>')+'</div>'+renderWeapons('Ranged Weapons',ranged)+renderWeapons('Melee Weapons',melee)+renderWeapons('Other Weapons',other)+'</div></details>';
+}
 function gameRow(side,e){
   const u=get(e.unitId),displayName=unitDisplayName(side,e),perModelWounds=Math.max(1,Number(u.wounds)||1);
   const g=e.game||{models:e.models,wounds:e.models*perModelWounds,status:'Alive',battleshocked:false};
@@ -5677,8 +5690,8 @@ function gameRow(side,e){
     ? (e.models>1?(g.models+'/'+e.models+' models'):'1 model')+' • '+g.status
     : (e.models>1?(g.models+'/'+e.models+' models • '):'')+g.wounds+'/'+maxWounds+' wounds • '+g.status;
   const reserveControl=(state.page==='battle'&&g.status!=='Destroyed'&&!isUnitReserved(side,e.uid))?'<button class="btn" type="button" onclick="returnUnitToReserves(\''+side+'\',\''+e.uid+'\');return false;">Reserve</button>':'';
-  const woundControls=perModelWounds>1&&!rosterTracked?'<button class="btn" type="button" onclick="changeUnit(\''+side+'\',\''+e.uid+'\',0,-1);return false;">W−</button><button class="btn" type="button" onclick="changeUnit(\''+side+'\',\''+e.uid+'\',0,1);return false;">W+</button>':'';
-  return '<div class="game-unit-row '+(g.battleshocked?'is-battleshocked':'')+'" data-entry-id="'+esc(e.uid)+'"><div class="game-unit-name"><strong>'+esc(displayName)+'</strong>'+(g.battleshocked?'<span class="battleshock-badge">BATTLESHOCKED</span>':'')+'</div><div class="game-unit-controls"><div class="game-unit-stats">'+stats+'</div><div class="row game-unit-actions game-status-actions">'+shockControl+destroyedControl+reserveControl+'</div><div class="row game-unit-actions game-modifier-actions">'+modelControls+woundControls+'</div></div>'+gameUnitReferenceHtml(u,state.phase)+modelRosterHtml(side,e,u)+'</div>';
+  const woundControls='';
+  return '<div class="game-unit-row '+(g.battleshocked?'is-battleshocked':'')+'" data-entry-id="'+esc(e.uid)+'"><div class="game-unit-name"><strong>'+esc(displayName)+'</strong>'+(g.battleshocked?'<span class="battleshock-badge">BATTLESHOCKED</span>':'')+'</div><div class="game-unit-controls"><div class="game-unit-stats">'+stats+'</div><div class="row game-unit-actions game-status-actions">'+shockControl+destroyedControl+reserveControl+'</div><div class="row game-unit-actions game-modifier-actions">'+modelControls+woundControls+'</div></div>'+gameUnitReferenceHtml(u,state.phase)+gameUnitFullReferenceHtml(side,e,u)+modelRosterHtml(side,e,u)+'</div>';
 }
 function syncModelRosterBattleState(e,u){
   if(!e||!u)return;
@@ -5692,24 +5705,12 @@ function syncModelRosterBattleState(e,u){
   e.game.status=alive.length===0?'Destroyed':(wounds<maxWounds?'Damaged':'Alive');
 }
 function modelRosterHtml(side,e,u){
-  if(!modelRosterRule(u))return '';
-  const roster=ensureModelRoster(e,u);
-  const max=Math.max(1,Number(u.wounds)||1);
-  const aliveCount=roster.filter(m=>m.alive!==false).length;
-  const totalCount=roster.length;
-  const damagedCount=roster.filter(m=>m.alive!==false&&Number(m.woundsRemaining)<max).length;
-  const destroyedCount=totalCount-aliveCount;
-  const summary='Models ('+aliveCount+'/'+totalCount+')'+(damagedCount?' • '+damagedCount+' damaged':'')+(destroyedCount?' • '+destroyedCount+' dead':'');
-  return '<details class="model-roster-list"><summary>'+esc(summary)+'</summary><div class="model-roster-body">'+
-    roster.map(m=>{
-      const alive=m.alive!==false,remaining=Math.max(0,Math.min(max,Number(m.woundsRemaining)==null?max:Number(m.woundsRemaining)));
-      m.woundsRemaining=remaining;
-      const woundText=alive?(max>1?remaining+'/'+max+' W':'Alive'):'Destroyed';
-      const woundButtons=alive&&max>1?'<button class="btn" type="button" onclick="changeModelWounds(\''+side+'\',\''+e.uid+'\',\''+m.id+'\',-1);return false;">W−</button><button class="btn" type="button" onclick="changeModelWounds(\''+side+'\',\''+e.uid+'\',\''+m.id+'\',1);return false;">W+</button>':'';
-      const stateButton=alive?'<button class="btn danger" type="button" onclick="setModelDestroyed(\''+side+'\',\''+e.uid+'\',\''+m.id+'\');return false;">Dead</button>':'<button class="btn" type="button" onclick="restoreModel(\''+side+'\',\''+e.uid+'\',\''+m.id+'\');return false;">Restore</button>';
-      return '<div class="model-roster-row '+(alive?'':'destroyed')+'"><div><div class="model-roster-name">'+esc(m.role||('Model '+m.index))+'</div><div class="model-roster-wounds">'+woundText+'</div></div><div class="model-roster-actions">'+woundButtons+stateButton+'</div></div>';
-    }).join('')+'</div></details>';
+ if(!modelRosterRule(u))return '';
+ const roster=ensureModelRoster(e,u),max=Math.max(1,Number(u.wounds)||1),alive=roster.filter(m=>m.alive!==false),dead=roster.length-alive.length,wounded=alive.filter(m=>Number(m.woundsRemaining)<max),unwounded=alive.length-wounded.length;
+ const woundedText=wounded.length?wounded.map(m=>String(m.role||('Model '+m.index))+': '+Math.max(0,Number(m.woundsRemaining)||0)+'/'+max+'W').join(' • '):'None';
+ return '<details class="model-roster-list"><summary>Model status: '+alive.length+'/'+roster.length+' alive • '+unwounded+' unwounded • '+wounded.length+' wounded • '+dead+' dead</summary><div class="model-roster-body"><div class="tiny">Unwounded models: '+unwounded+' • Wounded models: '+wounded.length+' • Dead models: '+dead+'</div><div class="tiny" style="margin-top:4px">'+esc(wounded.length?'Wounded: '+woundedText:'No wounded models')+'</div></div></details>';
 }
+
 function setModelDestroyed(side,id,modelId){
   const fullBefore=snapshotForUndo(),e=entry(side,id);if(!e)return;
   const u=get(e.unitId);if(!u||!modelRosterRule(u))return;
@@ -6240,7 +6241,7 @@ function objectiveBattlefieldGeometry(){
   const geometryLayouts=Array.isArray(geometrySource?.layouts)?geometrySource.layouts:[];
   const geometryValidation=validateEventCompanionGeometry();
   const geometryEntry=geometryLayouts.find(g=>g&&g.missionKey===missionKey&&g.layout===layout)||null;
-  const objectiveNames=Object.keys(state.objectives||{});
+  const objectiveNames=[...new Set([...(Object.keys(state.objectives||{})),...Object.keys(geometryEntry?.objectivePositions||{})])];
   const verified=geometryValidation.ok&&geometryEntry?.verified===true;
   return {
     version:'geometry.v1',
