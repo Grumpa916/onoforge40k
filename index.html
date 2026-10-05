@@ -5283,7 +5283,7 @@ function tournamentDeploymentValidation(){
     const list=Array.isArray(side==='my'?state.my:state.opp)?(side==='my'?state.my:state.opp):[];
     for(const entry of list.filter(e=>e&&!e.attachedTo)){
       const id=String(entry.uid);
-      if(reserves[side]?.[id]===true)continue;
+      if(isUnitReserved(side,id))continue;
       if(skipped[side+'|'+id]===true)continue;
       if(isUnitEmbarked(side,id))continue;
       const p=positions[id];
