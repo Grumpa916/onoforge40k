@@ -160,8 +160,8 @@ function gameUnitReferenceData(u){
   const normalized=[];
   rawNames.forEach(n=>{
     normalized.push(n);
-    normalized.push(n.replace(/\\s+(?:[A-Z]|[α-ωΑ-Ω])$/u,'').trim());
-    normalized.push(n.replace(/\\s+(?:[A-Z]|[α-ωΑ-Ω])$/u,'').replace(/\\s+d+$/,'').trim());
+    normalized.push(n.replace(/\s+(?:[A-Z]|[α-ωΑ-Ω])$/u,'').trim());
+    normalized.push(n.replace(/\s+(?:[A-Z]|[α-ωΑ-Ω])$/u,'').trim());
   });
   let supplemental=null;
   for(const n of normalized){
@@ -210,10 +210,10 @@ function secondaryDetailHtml(side){
     const items=data?.[modeKey]||[];
     const scoredVP=Number((side==='my'?state.secondaryMyScoredVP:state.secondaryOppScoredVP)?.[name])||0;
     const first=items[0];
-    const firstVP=Number(String(first?.[0]||'').match(/\\d+/)?.[0]||0);
+    const firstVP=Number(String(first?.[0]||'').match(/\d+/)?.[0]||0);
     const firstCondition=String(first?.[1]||'');
     const endOfBattle=/end of battle/i.test(firstCondition);
-    const booleanFixed=items.length===1 && Number.isFinite(firstVP) && firstVP>0 && !/\\b(?:up to|per|for each|each|every|additional|more than|fewer than|choose|select|depending|based on)/i.test(firstCondition);
+    const booleanFixed=items.length===1 && Number.isFinite(firstVP) && firstVP>0 && !/\b(?:up to|per|for each|each|every|additional|more than|fewer than|choose|select|depending|based on)\b/i.test(firstCondition);
     const disabled=endOfBattle&&!state.battleEnded?' disabled':'';
     const detailPlan=secondaryPersonalPlanHtml(name);
     const quick=first?(
@@ -222,7 +222,7 @@ function secondaryDetailHtml(side){
         : '<div class="secondary-compact-quick"><span class="secondary-vp">'+esc(String(first[0]))+'</span><span class="secondary-quick-condition">'+esc(firstCondition)+(endOfBattle?' <span class="secondary-row-timing">END OF BATTLE</span>':'')+'</span><input type="number" min="1" max="20" step="1" value="'+firstVP+'" id="'+secondaryRowInputId(side,name,0)+'-quick" aria-label="Quick VP for '+esc(name)+'"><button type="button" class="btn primary" data-secondary-row-score="1" data-secondary-row-score-side="'+side+'" data-secondary-row-score-name="'+esc(name)+'" data-secondary-row-score-index="0"'+disabled+'>Record</button></div>'
     ):'';
     const fullRules=items.map((row,index)=>{
-      const vpText=String(row?.[0]||''),condition=String(row?.[1]||''),end=/end of battle/i.test(condition),fallback=Number(vpText.match(/\\d+/)?.[0]||0),bool=items.length===1 && booleanFixed;
+      const vpText=String(row?.[0]||''),condition=String(row?.[1]||''),end=/end of battle/i.test(condition),fallback=Number(vpText.match(/\d+/)?.[0]||0),bool=items.length===1 && booleanFixed;
       const dis=end&&!state.battleEnded?' disabled':'';
       return '<div class="secondary-compact-detail-row"><div><b>'+esc(vpText)+'</b> <span>'+esc(condition)+'</span>'+(end?'<span class="secondary-row-timing">END OF BATTLE</span>':'')+'</div><div class="secondary-row-action">'+(bool?'<button type="button" class="btn primary" data-secondary-row-score="1" data-secondary-row-score-side="'+side+'" data-secondary-row-score-name="'+esc(name)+'" data-secondary-row-score-index="'+index+'"'+dis+'>Record '+esc(vpText)+'</button>':'<input type="number" min="1" max="20" step="1" value="'+fallback+'" id="'+secondaryRowInputId(side,name,index)+'" aria-label="VP to score for '+esc(name)+' condition '+(index+1)+'"><button type="button" class="btn primary" data-secondary-row-score="1" data-secondary-row-score-side="'+side+'" data-secondary-row-score-name="'+esc(name)+'" data-secondary-row-score-index="'+index+'"'+dis+'>Record</button>')+'</div></div>';
     }).join('');
