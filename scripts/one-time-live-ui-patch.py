@@ -273,7 +273,14 @@ if "deploymentSkippedUnits" not in s[s.find("let state="):s.find("let state=")+5
     s = s.replace("battlefieldUnitPositions:{", "deploymentSkippedUnits:{},battlefieldUnitPositions:{", 1) if "battlefieldUnitPositions:{" in s else s
 # If the state shape is initialized elsewhere, runtime initialization above still handles old saves.
 
-# 10) Remove the one-time helper files after this patch has been applied.
+# 10) Remove the temporary workflow hook and helper files after this patch has been applied.
+wf=Path(".github/workflows/tactical-advisor-preview.yml")
+if wf.exists():
+    w=wf.read_text(encoding="utf-8")
+    w=w.replace("permissions:\n  contents: write\n\n","",1)
+    block=re.compile(r"\n      - name: Apply one-time live UI follow-up patch\n        run: python3 scripts/one-time-live-ui-patch\.py\n      - name: Commit one-time live UI follow-up patch\n        run: \|\n(?:          .*\n)+?          git push origin feature/opponent-turn-history-clean-reset\n", re.M)
+    w=block.sub("",w,1)
+    wf.write_text(w,encoding="utf-8")
 Path(".github/workflows/one-time-live-ui-followup-patch.yml").unlink(missing_ok=True)
 p.unlink()
 
