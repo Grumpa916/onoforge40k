@@ -27,10 +27,10 @@ for(const name of [
   if(count!==0)throw new Error('Extracted function still inline: '+name);
 }
 
-const tmpFiles=[
-  ['index-inline.js',()=>html.match(/<script(?:[ \\t\\r\\n][^>]*)?>(.*?)<\\/script>/gi)?.map((x)=>x.replace(/^<script(?:[^>]*)?>/i,'').replace(/<\\/script>$/i,''))||[]]
-];
-const inlineBlocks=tmpFiles[0][1]();
+const inlineBlocks=[];
+const scriptRegex=/<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script>/gi;
+let scriptMatch;
+while((scriptMatch=scriptRegex.exec(html))!==null)inlineBlocks.push(scriptMatch[1]);
 if(!inlineBlocks.length)throw new Error('No inline script blocks found');
 inlineBlocks.forEach((src,i)=>{
   const file=path.join('/tmp','onoforge-refactor-inline-'+i+'.js');
