@@ -1,0 +1,25 @@
+name: OnoForge Monolith Refactor Tests
+
+on:
+  push:
+    branches:
+      - refactor/clean-reset-monolith
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'index.html'
+      - 'js/data/bsdata-parser.js'
+      - 'js/utils/pure-utils.js'
+      - 'tests/monolith-refactor.test.js'
+      - '.github/workflows/monolith-refactor-tests.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Run monolith refactor validation
+        run: node tests/monolith-refactor.test.js
