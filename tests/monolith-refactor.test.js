@@ -62,6 +62,6 @@ if(d!==5)throw new Error('Distance helper regression: expected 5, got '+d);
 
 const m=new Map([['a',{id:'a',type:'unit',profiles:[]}]]); 
 const collected=sandbox.window.OnoForgeBSDataParser.collectBSDataObjects({id:'root',child:{id:'a'}});
-if(!(collected instanceof Map)||collected.get('a')?.id!=='a')throw new Error('Parser object collection regression');
+if(typeof collected?.get!=='function'||collected.get('a')?.id!=='a')throw new Error('Parser object collection regression');
 
 console.log('OnoForge monolith refactor checks passed.');
