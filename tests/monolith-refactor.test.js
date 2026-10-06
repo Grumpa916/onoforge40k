@@ -11,7 +11,7 @@ const utils=fs.readFileSync(path.join(root,'js/utils/pure-utils.js'),'utf8');
 const required=[
   '<script src="js/utils/pure-utils.js"></script>',
   '<script src="js/data/bsdata-parser.js"></script>',
-  'const {battlefieldDistanceBetween,formatSavedListDate}=window.OnoForgePureUtils;',
+  'const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;',
   'const {collectBSDataObjects,bsUnitFromEntry}=window.OnoForgeBSDataParser;'
 ];
 for(const marker of required){
