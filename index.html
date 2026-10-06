@@ -9397,8 +9397,11 @@ function tacticalPreRollHtml(){
   // Keep the selector and the pool-assignment controls on the same weapon set.
   // Otherwise a monster can correctly show its ranged pools while the selector
   // is still built from the older combat snapshot and ends up blank.
-  const eligibleWeapons=splitPools.map(p=>p.weapon).filter(Boolean);
-  const weaponOptions=Array.from(new Map(eligibleWeapons.map(w=>[String(w.name||''),w])).values()).map(w=>'<option value="'+esc(w.name)+'" '+(String(stored.weaponName||'')===String(w.name)?'selected':'')+'>'+esc(w.name)+'</option>').join('');
+  // Build the selector from the manifest's weapon names directly. The pool
+  // objects can carry different catalogue metadata after an attacker change,
+  // but the manifest name is the stable identity the selector needs.
+  const eligibleWeaponNames=Array.from(new Set(splitPools.map(p=>String(p?.weapon?.name||p?.weaponName||'').trim()).filter(Boolean)));
+  const weaponOptions=eligibleWeaponNames.map(name=>'<option value="'+esc(name)+'" '+(String(stored.weaponName||'')===name?'selected':'')+'>'+esc(name)+'</option>').join('');
   const selector=(phase==='Shooting'||phase==='Fight')?'<div class="field" style="margin-top:10px"><label>Weapon profile</label><select onchange="setTacticalPreRollWeapon(this.value)"><option value="">Choose a weapon…</option>'+weaponOptions+'</select></div>':'';
   const r=tacticalPreRollCheck(ae.uid,te.uid,stored.weaponName||null);
   const cls=(r.status==='ready'||r.status==='ready-with-warnings')?'ok':'warn';
