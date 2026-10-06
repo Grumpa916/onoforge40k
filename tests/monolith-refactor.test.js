@@ -21,7 +21,7 @@ for(const marker of required){
 for(const name of [
   'collectBSDataObjects','bsProfile','bsCharacteristics','bsAbilities',
   'normalize11eWeaponAbilities','bsWeapons','bsWargearOptions','bsUnitFromEntry',
-  'battlefieldDistanceBetween','formatSavedListDate'
+  'battlefieldDistanceBetween','formatSavedListDate','unitListCategory','unitListCategoryName','sortUnitList','wargearCostLabel','secondaryRowInputId','secondaryRowNeedsAmount'
 ]){
   const count=(html.match(new RegExp('function\\s+'+name+'\\s*\\(','g'))||[]).length;
   if(count!==0)throw new Error('Extracted function still inline: '+name);
@@ -56,6 +56,22 @@ if(typeof sandbox.window.OnoForgeBSDataParser?.collectBSDataObjects!=='function'
 if(typeof sandbox.window.OnoForgeBSDataParser?.bsUnitFromEntry!=='function')throw new Error('Parser module did not expose bsUnitFromEntry');
 if(typeof sandbox.window.OnoForgePureUtils?.battlefieldDistanceBetween!=='function')throw new Error('Utility module did not expose battlefieldDistanceBetween');
 if(typeof sandbox.window.OnoForgePureUtils?.formatSavedListDate!=='function')throw new Error('Utility module did not expose formatSavedListDate');
+for(const name of ['unitListCategory','unitListCategoryName','sortUnitList','wargearCostLabel','secondaryRowInputId','secondaryRowNeedsAmount']){
+  if(typeof sandbox.window.OnoForgePureUtils?.[name]!=='function')throw new Error('Utility module did not expose '+name);
+}
+const categories=[
+ {name:'Captain',keywords:['CHARACTER']},
+ {name:'Intercessors',keywords:['INFANTRY']},
+ {name:'Tyrannofex',keywords:['MONSTER']},
+ {name:'Servo Skulls',keywords:[]}
+];
+if(sandbox.window.OnoForgePureUtils.unitListCategory(categories[0])!==0)throw new Error('Unit category regression');
+if(sandbox.window.OnoForgePureUtils.unitListCategory(categories[1])!==1)throw new Error('Unit category regression');
+if(sandbox.window.OnoForgePureUtils.unitListCategory(categories[2])!==2)throw new Error('Unit category regression');
+if(sandbox.window.OnoForgePureUtils.unitListCategoryName(categories[3])!=='Other')throw new Error('Unit category label regression');
+if(sandbox.window.OnoForgePureUtils.sortUnitList([{name:'Zed',keywords:['INFANTRY']},{name:'Alpha',keywords:['CHARACTER']}])[0].name!=='Alpha')throw new Error('Unit sorting regression');
+if(sandbox.window.OnoForgePureUtils.wargearCostLabel(0)!=='Free'||sandbox.window.OnoForgePureUtils.wargearCostLabel(10)!=='+10 pts')throw new Error('Wargear cost label regression');
+
 
 const d=sandbox.window.OnoForgePureUtils.battlefieldDistanceBetween({x:0,y:0},{x:3,y:4});
 if(d!==5)throw new Error('Distance helper regression: expected 5, got '+d);
