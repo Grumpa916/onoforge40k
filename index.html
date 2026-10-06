@@ -693,8 +693,13 @@ body{overflow-x:hidden}
 #battle-view #onoforge-advisor-render .ta-decision-render{margin-bottom:10px;padding:11px}
 @media (min-width:701px){#battle-view #onoforge-advisor-render .ta-grid{grid-template-columns:repeat(8,minmax(0,1fr));gap:5px}#battle-view #onoforge-advisor-render .ta-metric{padding:6px}#battle-view #onoforge-advisor-render .ta-metric b{font-size:14px}}
 </style>
-<style id="ono-battle-ux-requested">.battle-layout>.objective-map-renderer{grid-column:1!important;grid-row:2!important}.battle-layout>.battle-state-column{grid-column:2!important;grid-row:1 / span 2!important}.battle-layout>.battle-log{grid-column:1 / -1!important;grid-row:3!important}@media (min-width:900px) and (max-width:1300px) and (orientation:landscape){.battle-layout{display:grid!important;grid-template-columns:minmax(0,1fr) 500px!important;grid-template-rows:auto auto auto!important;gap:12px!important}.battle-layout>div:first-child{grid-column:1!important;grid-row:1!important}.battle-layout>.objective-map-renderer{grid-column:1!important;grid-row:2!important}.battle-layout>.battle-state-column{grid-column:2!important;grid-row:1 / span 2!important}.battle-layout>.battle-state-column .army-state-grid{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)!important;gap:10px!important}.battle-layout>.battle-log{grid-column:1 / -1!important;grid-row:3!important}}</style><style id="onoforge-live-state-reference-fix">.game-unit-full-reference{grid-column:1 / -1!important;margin-top:4px;border-top:1px solid #26303e;padding-top:4px}.game-unit-full-reference summary{cursor:pointer;color:#9ecbff;font-size:9px;font-weight:800}.game-unit-full-reference-body{padding:6px 0 2px}.game-unit-full-reference-body .add-unit-stats{grid-template-columns:repeat(6,minmax(42px,1fr));display:grid;gap:4px;margin-top:5px}.game-unit-full-reference-body .add-unit-stat{background:#101a25;border:1px solid #2d4054;border-radius:5px;padding:4px;text-align:center}.game-unit-full-reference-body .add-unit-stat b{display:block;font-size:11px}.game-unit-full-reference-body .add-unit-stat span{display:block;font-size:7px;color:#9ca8b8}.game-unit-full-reference-body table{width:100%;border-collapse:collapse;font-size:8px;margin-top:3px}.game-unit-full-reference-body th,.game-unit-full-reference-body td{border-bottom:1px solid #26303e;padding:3px 4px;text-align:left;white-space:nowrap}.model-roster-list{grid-column:1 / -1!important}.model-roster-list summary{cursor:pointer;color:#9ecbff;font-size:9px}@media(max-width:700px){.game-unit-full-reference-body .add-unit-stats{grid-template-columns:repeat(3,minmax(42px,1fr))}}</style><style id="onoforge-stat-data-gap">.stat-data-gap{margin-top:5px;color:#c5a36a}</style></head><body><div id="app"></div><script src="js/utils/pure-utils.js"></script><script src="js/data/bsdata-parser.js"></script><script>
+<style id="ono-battle-ux-requested">.battle-layout>.objective-map-renderer{grid-column:1!important;grid-row:2!important}.battle-layout>.battle-state-column{grid-column:2!important;grid-row:1 / span 2!important}.battle-layout>.battle-log{grid-column:1 / -1!important;grid-row:3!important}@media (min-width:900px) and (max-width:1300px) and (orientation:landscape){.battle-layout{display:grid!important;grid-template-columns:minmax(0,1fr) 500px!important;grid-template-rows:auto auto auto!important;gap:12px!important}.battle-layout>div:first-child{grid-column:1!important;grid-row:1!important}.battle-layout>.objective-map-renderer{grid-column:1!important;grid-row:2!important}.battle-layout>.battle-state-column{grid-column:2!important;grid-row:1 / span 2!important}.battle-layout>.battle-state-column .army-state-grid{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)!important;gap:10px!important}.battle-layout>.battle-log{grid-column:1 / -1!important;grid-row:3!important}}</style><style id="onoforge-live-state-reference-fix">.game-unit-full-reference{grid-column:1 / -1!important;margin-top:4px;border-top:1px solid #26303e;padding-top:4px}.game-unit-full-reference summary{cursor:pointer;color:#9ecbff;font-size:9px;font-weight:800}.game-unit-full-reference-body{padding:6px 0 2px}.game-unit-full-reference-body .add-unit-stats{grid-template-columns:repeat(6,minmax(42px,1fr));display:grid;gap:4px;margin-top:5px}.game-unit-full-reference-body .add-unit-stat{background:#101a25;border:1px solid #2d4054;border-radius:5px;padding:4px;text-align:center}.game-unit-full-reference-body .add-unit-stat b{display:block;font-size:11px}.game-unit-full-reference-body .add-unit-stat span{display:block;font-size:7px;color:#9ca8b8}.game-unit-full-reference-body table{width:100%;border-collapse:collapse;font-size:8px;margin-top:3px}.game-unit-full-reference-body th,.game-unit-full-reference-body td{border-bottom:1px solid #26303e;padding:3px 4px;text-align:left;white-space:nowrap}.model-roster-list{grid-column:1 / -1!important}.model-roster-list summary{cursor:pointer;color:#9ecbff;font-size:9px}@media(max-width:700px){.game-unit-full-reference-body .add-unit-stats{grid-template-columns:repeat(3,minmax(42px,1fr))}}</style><style id="onoforge-stat-data-gap">.stat-data-gap{margin-top:5px;color:#c5a36a}</style></head><body><div id="app"></div><script src="js/utils/pure-utils.js"></script>
+<script src="js/state/reserve-state.js"></script>
+<script src="js/data/bsdata-parser.js"></script><script>
 const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;
+const {createReserveStateController}=window.OnoForgeReserveState;
+const reserveStateController=createReserveStateController({getState:()=>state,snapshotForUndo,event,save,render});
+const {ensureReserveState,isUnitReserved,reserveUnitsForSide,clearReserveDeclarationsForSide,setReserveDeclaration}=reserveStateController;
 const {collectBSDataObjects,bsUnitFromEntry}=window.OnoForgeBSDataParser;
 window.addEventListener('error',function(ev){if(ev.target&&ev.target.tagName==='SCRIPT'&&ev.target.src===SUPABASE_SCRIPT_URL)return;var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var msg=String(ev.error?.message||ev.message||'Unknown error'),stack=String(ev.error?.stack||'');var detail=(stack&&stack!==msg?msg+'\\n\\n'+stack:msg).slice(0,6000);a.innerHTML='<span class="error-title">OnoForge error</span><pre class="error-detail" style="white-space:pre-wrap;max-height:45vh;overflow:auto;margin:6px 0 0;font:11px/1.35 monospace">'+detail.replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</pre><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});window.addEventListener('unhandledrejection',function(ev){var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var reason=ev.reason?.message||ev.reason||'Unhandled promise rejection';a.innerHTML='<span class="error-title">OnoForge error</span><div class="error-detail">'+String(reason).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</div><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});
 
@@ -736,33 +741,11 @@ function setObjectiveMapLayout(layout){const next=['A','B','C'].includes(layout)
 function objectiveLayoutPage(){const info=ensureObjectiveLayoutForMission();if(!info)return null;const i=['A','B','C'].indexOf(state.objectiveMapLayout);return info.pages[i<0?0:i];}
 function deploymentPlanKey(){const mission=String(state.objectiveMapMissionKey||objectiveMissionKey()||'unselected'),layout=['A','B','C'].includes(state.objectiveMapLayout)?state.objectiveMapLayout:'A';return mission+'|'+layout;}
 
-function ensureReserveState(){
-  if(!state.reserveDeclarations||typeof state.reserveDeclarations!=='object'||Array.isArray(state.reserveDeclarations))state.reserveDeclarations={my:{},opp:{}};
-  if(!state.reserveDeclarations.my||typeof state.reserveDeclarations.my!=='object')state.reserveDeclarations.my={};
-  if(!state.reserveDeclarations.opp||typeof state.reserveDeclarations.opp!=='object')state.reserveDeclarations.opp={};
-  return state.reserveDeclarations;
-}
-function isUnitReserved(side,uid){return ensureReserveState()[side==='opp'?'opp':'my'][String(uid)]===true;}
-function reserveUnitsForSide(side){const list=side==='opp'?state.opp:state.my;return (Array.isArray(list)?list:[]).filter(e=>e&&!e.attachedTo&&isUnitReserved(side,e.uid));}
-function clearReserveDeclarationsForSide(side){
-  const s=side==='opp'?'opp':'my';
-  ensureReserveState()[s]={};
-  const list=s==='opp'?state.opp:state.my;
-  const live=state.battlefieldUnitPositions||{};
-  (Array.isArray(list)?list:[]).forEach(e=>{if(e&&!e.attachedTo)delete live[String(e.uid)]});
-}
-function setReserveDeclaration(side,uid,declared){
-  const s=side==='opp'?'opp':'my',id=String(uid||'');
-  if(!id||state.page==='battle')return false;
-  const list=s==='opp'?state.opp:state.my;
-  const entry=(Array.isArray(list)?list:[]).find(e=>String(e?.uid)===id);
-  if(!entry||entry.attachedTo)return false;
-  const before=snapshotForUndo();
-  if(declared)ensureReserveState()[s][id]=true;else delete ensureReserveState()[s][id];
-  if(declared&&state.battlefieldUnitPositions)delete state.battlefieldUnitPositions[id];
-  event(declared?'RESERVE_DECLARED':'RESERVE_DECLARATION_REMOVED',{unit:id,side:s,action:declared?'Unit declared for reserves':'Unit removed from declared reserves',round:Math.max(1,Number(state.round)||1),phase:String(state.phase||'Command')},before);
-  save();render();return true;
-}
+
+
+
+
+
 function reserveDeclarationSectionHtml(side){
   const s=side==='opp'?'opp':'my',list=s==='opp'?state.opp:state.my;
   const units=(Array.isArray(list)?list:[]).filter(e=>e&&!e.attachedTo);
