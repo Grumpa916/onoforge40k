@@ -28,9 +28,15 @@ for(const name of [
 }
 
 const inlineBlocks=[];
-const scriptRegex=/<script>([\\s\\S]*?)<\\/script>/gi;
-let scriptMatch;
-while((scriptMatch=scriptRegex.exec(html))!==null)inlineBlocks.push(scriptMatch[1]);
+const openTag='<script>';
+const closeTag='</script>';
+let scan=0;
+while((scan=html.indexOf(openTag,scan))!==-1){
+  const end=html.indexOf(closeTag,scan+openTag.length);
+  if(end===-1)break;
+  inlineBlocks.push(html.slice(scan+openTag.length,end));
+  scan=end+closeTag.length;
+}
 if(!inlineBlocks.length)throw new Error('No inline script blocks found');
 inlineBlocks.forEach((src,i)=>{
   const file=path.join('/tmp','onoforge-refactor-inline-'+i+'.js');
