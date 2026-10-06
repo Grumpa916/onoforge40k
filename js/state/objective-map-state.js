@@ -1,0 +1,10 @@
+function createObjectiveMapStateController({getState,primaryMission,layoutIndex,snapshotForUndo,autoSeedObjectiveStructure,event,save,render}){
+  const OBJECTIVE_LAYOUT_INDEX=Array.isArray(layoutIndex)?layoutIndex:[];
+  function objectiveMissionKey(){return [primaryMission('my'),primaryMission('opp')].filter(Boolean).sort().join(' ↔ ');}
+  function objectiveLayoutInfo(){const m=[primaryMission('my'),primaryMission('opp')];if(m.length<2||m.some(x=>!x))return null;const s=m.slice().sort();return OBJECTIVE_LAYOUT_INDEX.find(x=>x.missions[0]===s[0]&&x.missions[1]===s[1])||null;}
+  function ensureObjectiveLayoutForMission(){const state=getState(),key=objectiveMissionKey();if(!key)return null;if(state.objectiveMapMissionKey!==key){state.objectiveMapMissionKey=key;state.objectiveMapLayout='A';}state.objectiveMapLayout=['A','B','C'].includes(state.objectiveMapLayout)?state.objectiveMapLayout:'A';return objectiveLayoutInfo();}
+  function setObjectiveMapLayout(layout){const state=getState(),next=['A','B','C'].includes(layout)?layout:null;if(!next)return;const info=ensureObjectiveLayoutForMission();if(!info)return;const before=snapshotForUndo();const previous=state.objectiveMapLayout||'A';state.objectiveMapLayout=next;state.objectiveMapMissionKey=objectiveMissionKey();state.terrainSetupComplete=false;if(Object.keys(state.objectives||{}).length===0)autoSeedObjectiveStructure();event('OBJECTIVE_LAYOUT_CHANGED',{unit:'Battlefield Layout',action:'Layout '+next+' selected',previous,after:next,round:Math.max(1,Number(state.round)||1),primaryMissions:[primaryMission('my'),primaryMission('opp')],missionKey:state.objectiveMapMissionKey,page:objectiveLayoutPage()},before);save();render();}
+  function objectiveLayoutPage(){const state=getState(),info=ensureObjectiveLayoutForMission();if(!info)return null;const i=['A','B','C'].indexOf(state.objectiveMapLayout);return info.pages[i<0?0:i];}
+  return Object.freeze({objectiveMissionKey,objectiveLayoutInfo,ensureObjectiveLayoutForMission,setObjectiveMapLayout,objectiveLayoutPage});
+}
+window.OnoForgeObjectiveMapState=Object.freeze({createObjectiveMapStateController});
