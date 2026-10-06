@@ -7907,7 +7907,10 @@ function tacticalWeaponPhaseEligible(w,phase,attackerEntry,targetEntry,attackerS
   const advanced=movementType==='advance';
   if(p==='Shooting'){
     if(!tacticalPhaseActionAvailable(attackerEntry?.uid,'Shooting',attackerSide))return false;
-    if(raw==='MELEE')return false;
+    // Catalogue melee profiles may omit an explicit "MELEE" range and
+    // identify themselves only with WS. Treat WS-only weapons as melee here;
+    // otherwise they leak into the Shooting selector.
+    if(raw==='MELEE'||(w.WS!=null&&w.BS==null))return false;
     if(movementType==='fallback')return false;
     if(tacticalWeaponIsIndirect(w)&&tacticalUnitIsEngagedAny(attackerEntry?.uid))return false;
     // Assault Shooting is the only core-rule shooting mode available to a unit
