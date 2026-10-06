@@ -22,7 +22,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-
       - name: Run engagement evaluator tests
         run: node tests/tactical-advisor-engine.test.js
 
