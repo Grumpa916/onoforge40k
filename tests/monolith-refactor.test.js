@@ -9,6 +9,7 @@ const parser=fs.readFileSync(path.join(root,'js/data/bsdata-parser.js'),'utf8');
 const reserve=fs.readFileSync(path.join(root,'js/state/reserve-state.js'),'utf8');
 const deploymentPlan=fs.readFileSync(path.join(root,'js/state/deployment-plan-state.js'),'utf8');
 const objectiveMap=fs.readFileSync(path.join(root,'js/state/objective-map-state.js'),'utf8');
+const objectiveMetadata=fs.readFileSync(path.join(root,'js/state/objective-metadata-state.js'),'utf8');
 const utils=fs.readFileSync(path.join(root,'js/utils/pure-utils.js'),'utf8');
 
 const required=[
@@ -17,6 +18,7 @@ const required=[
   '<script src="js/state/reserve-state.js"></script>',
   '<script src="js/state/deployment-plan-state.js"></script>',
   '<script src="js/state/objective-map-state.js"></script>',
+  '<script src="js/state/objective-metadata-state.js"></script>',
   'const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;',
   'const {collectBSDataObjects,bsUnitFromEntry}=window.OnoForgeBSDataParser;',
   'const {createReserveStateController}=window.OnoForgeReserveState;',
@@ -32,7 +34,8 @@ for(const name of [
   'battlefieldDistanceBetween','formatSavedListDate','unitListCategory','unitListCategoryName','sortUnitList','wargearCostLabel','secondaryRowInputId','secondaryRowNeedsAmount',
   'ensureReserveState','isUnitReserved','reserveUnitsForSide','clearReserveDeclarationsForSide','setReserveDeclaration',
   'ensureDeploymentPlans','deploymentPlanForCurrentMap','deploymentPlanPosition','setDeploymentPlanPosition','clearDeploymentPlanPosition','clearDeploymentPlanForCurrentMap','saveDeploymentPlan','loadDeploymentPlan',
-  'objectiveMissionKey','objectiveLayoutInfo','ensureObjectiveLayoutForMission','setObjectiveMapLayout','objectiveLayoutPage'
+  'objectiveMissionKey','objectiveLayoutInfo','ensureObjectiveLayoutForMission','setObjectiveMapLayout','objectiveLayoutPage',
+  'ensureObjectiveMeta','objectiveRole','objectiveType','objectiveHomeSide','objectiveMetadataTerritory','objectiveMetadataDeploymentZone'
 ]){
   const count=(html.match(new RegExp('function\\s+'+name+'\\s*\\(','g'))||[]).length;
   if(count!==0)throw new Error('Extracted function still inline: '+name);
@@ -66,6 +69,7 @@ vm.runInNewContext(utils,sandbox,{filename:'js/utils/pure-utils.js'});
 vm.runInNewContext(reserve,sandbox,{filename:'js/state/reserve-state.js'});
 vm.runInNewContext(deploymentPlan,sandbox,{filename:'js/state/deployment-plan-state.js'});
 vm.runInNewContext(objectiveMap,sandbox,{filename:'js/state/objective-map-state.js'});
+vm.runInNewContext(objectiveMetadata,sandbox,{filename:'js/state/objective-metadata-state.js'});
 if(typeof sandbox.window.OnoForgeBSDataParser?.collectBSDataObjects!=='function')throw new Error('Parser module did not expose collectBSDataObjects');
 if(typeof sandbox.window.OnoForgeBSDataParser?.bsUnitFromEntry!=='function')throw new Error('Parser module did not expose bsUnitFromEntry');
 if(typeof sandbox.window.OnoForgePureUtils?.battlefieldDistanceBetween!=='function')throw new Error('Utility module did not expose battlefieldDistanceBetween');
@@ -74,6 +78,7 @@ if(typeof sandbox.window.OnoForgeReserveState?.createReserveStateController!=='f
 if(typeof sandbox.window.OnoForgeDeploymentPlanState?.createDeploymentPlanStateController!=='function')throw new Error('Deployment plan module did not expose createDeploymentPlanStateController');
 if(typeof sandbox.window.OnoForgeDeploymentPlanState?.createDeploymentPlanStateController({getState:()=>({}),save:()=>{},render:()=>{},cloudUpsertArmyList:()=>Promise.resolve(),notify:()=>{},objectiveMissionKey:()=>''}).deploymentPlanKey!=='function')throw new Error('Deployment plan module did not expose deploymentPlanKey');
 if(typeof sandbox.window.OnoForgeObjectiveMapState?.createObjectiveMapStateController!=='function')throw new Error('Objective map module did not expose createObjectiveMapStateController');
+if(typeof sandbox.window.OnoForgeObjectiveMetadataState?.createObjectiveMetadataStateController!=='function')throw new Error('Objective metadata module did not expose createObjectiveMetadataStateController');
 
 const reserveState={page:'setup',my:[{uid:'u1',name:'Unit One'}],opp:[{uid:'u2',name:'Unit Two'}],reserveDeclarations:{my:{},opp:{}},battlefieldUnitPositions:{}};
 const reserveController=sandbox.window.OnoForgeReserveState.createReserveStateController({getState:()=>reserveState,snapshotForUndo:()=>({}),event:()=>{},save:()=>{},render:()=>{}});
@@ -117,6 +122,15 @@ deploymentController.clearDeploymentPlanForCurrentMap();
 if(deploymentController.deploymentPlanForCurrentMap().u2)throw new Error('Deployment plan map clear regression');
 if(deploymentSaves<4||deploymentRenders<3||notifications.length!==0)throw new Error('Deployment plan controller lifecycle regression');
 
+const objectiveMetadataState={objectiveMeta:{home:{type:'home',homeSide:'my'},central:{type:'central',territory:'nml'},expansion:{role:'expansion'}}};
+const objectiveMetadataController=sandbox.window.OnoForgeObjectiveMetadataState.createObjectiveMetadataStateController({getState:()=>objectiveMetadataState});
+if(objectiveMetadataController.objectiveRole('home')!=='home')throw new Error('Objective role regression');
+if(objectiveMetadataController.objectiveType('central')!=='central')throw new Error('Objective type regression');
+if(objectiveMetadataController.objectiveHomeSide('home')!=='my')throw new Error('Objective home side regression');
+if(objectiveMetadataController.objectiveMetadataTerritory('home')!=='my')throw new Error('Objective territory fallback regression');
+if(objectiveMetadataController.objectiveMetadataDeploymentZone('home')!=='my')throw new Error('Objective deployment fallback regression');
+if(objectiveMetadataController.objectiveMetadataTerritory('central')!=='nml')throw new Error('Objective explicit territory regression');
+if(objectiveMetadataController.objectiveMetadataDeploymentZone('unknown')!=='none')throw new Error('Objective deployment default regression');
 const objectiveMapState={objectiveMapMissionKey:'',objectiveMapLayout:'A',terrainSetupComplete:true,objectives:{}};
 let objectiveSaves=0,objectiveRenders=0,objectiveEvents=[];
 const objectiveLayoutIndex=[{missions:['Alpha Mission','Beta Mission'],pages:[101,102,103]}];
