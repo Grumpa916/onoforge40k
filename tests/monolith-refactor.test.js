@@ -72,6 +72,7 @@ if(typeof sandbox.window.OnoForgePureUtils?.battlefieldDistanceBetween!=='functi
 if(typeof sandbox.window.OnoForgePureUtils?.formatSavedListDate!=='function')throw new Error('Utility module did not expose formatSavedListDate');
 if(typeof sandbox.window.OnoForgeReserveState?.createReserveStateController!=='function')throw new Error('Reserve module did not expose createReserveStateController');
 if(typeof sandbox.window.OnoForgeDeploymentPlanState?.createDeploymentPlanStateController!=='function')throw new Error('Deployment plan module did not expose createDeploymentPlanStateController');
+if(typeof sandbox.window.OnoForgeDeploymentPlanState?.createDeploymentPlanStateController({getState:()=>({}),save:()=>{},render:()=>{},cloudUpsertArmyList:()=>Promise.resolve(),notify:()=>{},objectiveMissionKey:()=>''}).deploymentPlanKey!=='function')throw new Error('Deployment plan module did not expose deploymentPlanKey');
 if(typeof sandbox.window.OnoForgeObjectiveMapState?.createObjectiveMapStateController!=='function')throw new Error('Objective map module did not expose createObjectiveMapStateController');
 
 const reserveState={page:'setup',my:[{uid:'u1',name:'Unit One'}],opp:[{uid:'u2',name:'Unit Two'}],reserveDeclarations:{my:{},opp:{}},battlefieldUnitPositions:{}};
@@ -99,6 +100,7 @@ const deploymentController=sandbox.window.OnoForgeDeploymentPlanState.createDepl
   notify:(message)=>notifications.push(message),
   objectiveMissionKey:()=> 'fallback-mission'
 });
+if(deploymentController.deploymentPlanKey()!=='test-mission|B')throw new Error('Deployment plan key regression');
 if(!deploymentController.setDeploymentPlanPosition('u1',12.3,7.8))throw new Error('Deployment plan position set failed');
 const savedPosition=deploymentController.deploymentPlanPosition('u1');
 if(savedPosition?.x!==12.3||savedPosition?.y!==7.8||savedPosition?.side!=='my')throw new Error('Deployment plan position regression');
