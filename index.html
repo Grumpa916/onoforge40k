@@ -868,6 +868,19 @@ function setBattlefieldUnitPosition(side,uid,x,y,source='manual'){
   if(source!=='reserve'&&isUnitReserved(nextSide,id))return false;
   const before=snapshotForUndo();
   const previous=ensureBattlefieldUnitPositions()[id]||null;ensureBattlefieldUnitPositions()[id]={x:nx,y:ny,side:nextSide,source,round:Math.max(1,Number(state.round)||1)};
+  // A moved unit invalidates any manually stored exact pair distance involving
+  // that unit. Otherwise Tactical Advisor can keep using the old distance even
+  // though the verified battlefield geometry has changed.
+  const tactical=ensureTacticalState();
+  Object.entries(tactical.pairs||{}).forEach(([key,pair])=>{
+    if(!pair||typeof pair!=='object')return;
+    if(String(pair.attackerUid)===id||String(pair.targetUid)===id){
+      const updated={...pair};
+      delete updated.distanceInches;
+      delete updated.distanceBand;
+      tactical.pairs[key]=updated;
+    }
+  });
   const movedEntry=entry(nextSide,id),unitName=movedEntry?unitDisplayName(nextSide,movedEntry):id;event(source==='deployment'?'UNIT_DEPLOYED':source==='reserve'?'UNIT_DEPLOYED_FROM_RESERVE':'UNIT_BATTLEFIELD_POSITION_CHANGED',{unit:id,unitName,entryId:id,action:source==='deployment'?'Deployment position recorded':source==='reserve'?'Deployed from reserve':'Battlefield position moved',side:nextSide,from:source==='reserve'?'RESERVE':(previous?{x:previous.x,y:previous.y}:null),x:nx,y:ny,round:Math.max(1,Number(state.round)||1),phase:String(state.phase||'Command')},before);
   save();render();return true;
 }
@@ -877,6 +890,16 @@ function clearBattlefieldUnitPosition(uid){
   if(!id||!Object.prototype.hasOwnProperty.call(ensureBattlefieldUnitPositions(),id))return;
   const before=snapshotForUndo();
   delete ensureBattlefieldUnitPositions()[id];
+  const tactical=ensureTacticalState();
+  Object.entries(tactical.pairs||{}).forEach(([key,pair])=>{
+    if(!pair||typeof pair!=='object')return;
+    if(String(pair.attackerUid)===id||String(pair.targetUid)===id){
+      const updated={...pair};
+      delete updated.distanceInches;
+      delete updated.distanceBand;
+      tactical.pairs[key]=updated;
+    }
+  });
   const clearedMy=entry('my',id),clearedOpp=entry('opp',id),clearedEntry=clearedMy||clearedOpp,clearedSide=clearedMy?'my':'opp';event('UNIT_BATTLEFIELD_POSITION_CLEARED',{unit:id,unitName:clearedEntry?unitDisplayName(clearedSide,clearedEntry):id,entryId:id,action:'Battlefield position cleared',round:Math.max(1,Number(state.round)||1),phase:String(state.phase||'Command')},before);
   save();render();
 }
