@@ -8495,7 +8495,23 @@ function setTacticalPreRollPoolAllocation(poolId,index,field,value){
 }
 function tacticalPreRollWeaponState(attackerUid,targetUid,attackerSide='my',targetSide='opp'){
   const t=ensureTacticalState(),raw=t.preRoll?.[tacticalPairKey(attackerUid,targetUid)];
-  return raw&&typeof raw==='object'?{weaponName:String(raw.weaponName||''),poolId:String(raw.poolId||'')}:{weaponName:'',poolId:''};
+  if(!raw||typeof raw!=='object')return {weaponName:'',poolId:''};
+  const weaponName=String(raw.weaponName||''),poolId=String(raw.poolId||'');
+  if(!weaponName)return {weaponName:'',poolId:''};
+  // Pre-roll weapon selection is phase-scoped. A weapon selected in Fight
+  // (for example Powerful limbs) must not survive into Shooting and leave the
+  // Shooting selector showing only its placeholder while the check still uses
+  // the stale melee weapon.
+  const ae=entry(attackerSide,attackerUid),te=entry(targetSide,targetUid);
+  if(ae){
+    const phase=String(state.phase||'Command');
+    const groups=attachedCombatWeaponGroups(attackerSide,ae,te);
+    const match=groups.find(g=>String(g.weapon?.name||'')===weaponName);
+    if((phase==='Shooting'||phase==='Fight')&&(!match||!tacticalWeaponPhaseEligible(match.weapon,phase,match.entry,te,attackerSide,targetSide))){
+      return {weaponName:'',poolId:''};
+    }
+  }
+  return {weaponName,poolId};
 }
 function setTacticalPreRollWeapon(weaponName){
   const ae=tacticalAdvisorAttackerEntry(),teUid=state.tactical?.selectedTargetUid;
