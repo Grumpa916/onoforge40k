@@ -109,3 +109,31 @@ The goal is not merely a smaller file. The goal is a smaller file with:
 - reversible commits;
 - preserved data/state contracts;
 - a clear path to a maintainable application structure.
+
+
+## 2026-10-06 continuation checkpoint
+
+Active branch: `refactor/clean-reset-monolith`
+
+Latest validated refactor work:
+- `494002c4` — BSData parser extracted from `index.html` into `js/data/bsdata-parser.js` with explicit `objectMap` context.
+- `c16907b9` — first pure utility extraction into `js/utils/pure-utils.js`.
+- `ebf58ef2` — expanded pure utility boundary; `index.html` reduced to 1,101,862 characters.
+- `a780952c` — refactor CI coverage updated for the expanded utility boundary.
+
+Pure utility module currently owns:
+- `battlefieldDistanceBetween`
+- `formatSavedListDate`
+- `unitListCategory`
+- `unitListCategoryName`
+- `sortUnitList`
+- `wargearCostLabel`
+- `secondaryRowInputId`
+- `secondaryRowNeedsAmount`
+
+Validation:
+- Dedicated workflow: `.github/workflows/monolith-refactor-tests.yml`
+- Latest run: GitHub Actions run 9, commit `a780952c`, conclusion: success.
+- Validator checks module syntax, inline-script syntax, extraction markers, absence of extracted inline function definitions, module exports, parser collection behavior, distance calculation, unit categorization/sorting, and cost formatting.
+
+Current refactor rule remains: do not change gameplay/UI behavior during this workstream. Select the next extraction by dependency risk and explicit contracts, then validate before proceeding.
