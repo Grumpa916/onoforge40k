@@ -8452,10 +8452,30 @@ function tacticalPreRollPoolAvailableModelIds(g,side='my'){
   return ids.filter(id=>uid&&tacticalWeaponModelAvailable(uid,id,g.weapon,state.round,state.phase,side)&&!tacticalWeaponModelModeConflict(uid,id,g.weapon,g.entry,state.round,state.phase,side));
 }
 function tacticalPreRollPoolManifest(ae,attackerSide='my'){
-  const phase=String(state.phase||'Shooting'),groups=attachedCombatWeaponGroups(attackerSide,ae,null).filter(g=>tacticalWeaponPhaseEligible(g.weapon,phase,g.entry,null,attackerSide,'opp'));
+  const phase=String(state.phase||'Shooting');
+  // Use the Tactical Advisor weapon groups here rather than the legacy combat
+  // snapshot alone. Fixed-weapon monsters can legally use several profiles,
+  // while the older snapshot records only one selected profile per model.
+  const groups=tacticalAdvisorWeaponGroups(attackerSide,ae,null).filter(g=>tacticalWeaponPhaseEligible(g.weapon,phase,g.entry,null,attackerSide,'opp'));
   const t=ensureTacticalState(),saved=t.preRollPools&&typeof t.preRollPools==='object'?t.preRollPools:{};
   return groups.filter(g=>g.weapon?.name).map(g=>{
-    const modelIds=tacticalPreRollPoolAvailableModelIds(g,attackerSide),pool={...g,modelIds,count:modelIds.length},key=tacticalPreRollPoolIdentity(pool),raw=saved[key]||{},allocations=tacticalPreRollNormalizePoolAllocations(pool,raw);
+    let modelIds=Array.isArray(g.modelIds)?g.modelIds.map(String):[];
+    if(!modelIds.length&&g.entry){
+      const u=get(g.entry.unitId),roster=survivingModelRoster(g.entry,u),snap=combatSnapshot(attackerSide,g.entry);
+      const wanted=String(g.weapon.name);
+      const rosterMatches=roster.filter(m=>(m.weapons||[]).some(w=>String(w)===wanted));
+      const snapModels=(snap?.models||[]).filter(m=>String(m.sourceEntryUid||'')===String(g.entry.uid));
+      const indexByRosterId=new Map(roster.map((m,i)=>[String(m.id),i]));
+      modelIds=rosterMatches.map(m=>{
+        const i=indexByRosterId.get(String(m.id));
+        return i!=null&&snapModels[i]?String(snapModels[i].id):String(m.id);
+      }).filter(Boolean);
+    }
+    const poolBase={...g,modelIds,count:modelIds.length};
+    const modelPool={...poolBase};
+    const available=tacticalPreRollPoolAvailableModelIds(modelPool,attackerSide);
+    const pool={...poolBase,modelIds:available,count:available.length};
+    const key=tacticalPreRollPoolIdentity(pool),raw=saved[key]||{},allocations=tacticalPreRollNormalizePoolAllocations(pool,raw);
     return {...pool,key,allocations,targetUid:allocations.find(x=>x.targetUid)?.targetUid||null};
   }).filter(p=>p.modelIds.length);
 }
