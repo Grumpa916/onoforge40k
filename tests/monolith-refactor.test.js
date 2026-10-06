@@ -6,6 +6,7 @@ const cp=require('child_process');
 const root=process.cwd();
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const parser=fs.readFileSync(path.join(root,'js/data/bsdata-parser.js'),'utf8');
+const reserve=fs.readFileSync(path.join(root,'js/state/reserve-state.js'),'utf8');
 const utils=fs.readFileSync(path.join(root,'js/utils/pure-utils.js'),'utf8');
 
 const required=[
@@ -43,7 +44,7 @@ inlineBlocks.forEach((src,i)=>{
   fs.writeFileSync(file,src);
   cp.execFileSync(process.execPath,['--check',file],{stdio:'inherit'});
 });
-for(const [name,src] of [['bsdata-parser.js',parser],['pure-utils.js',utils]]){
+for(const [name,src] of [['bsdata-parser.js',parser],['pure-utils.js',utils],['reserve-state.js',reserve]]){
   const file=path.join('/tmp','onoforge-refactor-'+name);
   fs.writeFileSync(file,src);
   cp.execFileSync(process.execPath,['--check',file],{stdio:'inherit'});
@@ -56,6 +57,14 @@ if(typeof sandbox.window.OnoForgeBSDataParser?.collectBSDataObjects!=='function'
 if(typeof sandbox.window.OnoForgeBSDataParser?.bsUnitFromEntry!=='function')throw new Error('Parser module did not expose bsUnitFromEntry');
 if(typeof sandbox.window.OnoForgePureUtils?.battlefieldDistanceBetween!=='function')throw new Error('Utility module did not expose battlefieldDistanceBetween');
 if(typeof sandbox.window.OnoForgePureUtils?.formatSavedListDate!=='function')throw new Error('Utility module did not expose formatSavedListDate');
+if(typeof sandbox.window.OnoForgeReserveState?.createReserveStateController!=='function')throw new Error('Reserve module did not expose createReserveStateController');
+const reserveState={page:'setup',my:[{uid:'u1',name:'Unit One'}],opp:[{uid:'u2',name:'Unit Two'}],reserveDeclarations:{my:{},opp:{}},battlefieldUnitPositions:{}};
+const reserveController=sandbox.window.OnoForgeReserveState.createReserveStateController({getState:()=>reserveState,snapshotForUndo:()=>({}),event:()=>{},save:()=>{},render:()=>{}});
+if(!reserveController.setReserveDeclaration('my','u1',true))throw new Error('Reserve declaration failed');
+if(!reserveController.isUnitReserved('my','u1'))throw new Error('Reserve declaration was not retained');
+if(reserveController.reserveUnitsForSide('my').length!==1)throw new Error('Reserve unit filtering regression');
+reserveController.clearReserveDeclarationsForSide('my');
+if(reserveController.isUnitReserved('my','u1'))throw new Error('Reserve clear regression');
 for(const name of ['unitListCategory','unitListCategoryName','sortUnitList','wargearCostLabel','secondaryRowInputId','secondaryRowNeedsAmount']){
   if(typeof sandbox.window.OnoForgePureUtils?.[name]!=='function')throw new Error('Utility module did not expose '+name);
 }
