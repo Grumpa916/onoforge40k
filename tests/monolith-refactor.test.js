@@ -7,15 +7,18 @@ const root=process.cwd();
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const parser=fs.readFileSync(path.join(root,'js/data/bsdata-parser.js'),'utf8');
 const reserve=fs.readFileSync(path.join(root,'js/state/reserve-state.js'),'utf8');
+const deploymentPlan=fs.readFileSync(path.join(root,'js/state/deployment-plan-state.js'),'utf8');
 const utils=fs.readFileSync(path.join(root,'js/utils/pure-utils.js'),'utf8');
 
 const required=[
   '<script src="js/utils/pure-utils.js"></script>',
   '<script src="js/data/bsdata-parser.js"></script>',
   '<script src="js/state/reserve-state.js"></script>',
+  '<script src="js/state/deployment-plan-state.js"></script>',
   'const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;',
   'const {collectBSDataObjects,bsUnitFromEntry}=window.OnoForgeBSDataParser;',
-  'const {createReserveStateController}=window.OnoForgeReserveState;'
+  'const {createReserveStateController}=window.OnoForgeReserveState;',
+  'const {createDeploymentPlanStateController}=window.OnoForgeDeploymentPlanState;'
 ];
 for(const marker of required){
   if(!html.includes(marker))throw new Error('Missing refactor marker: '+marker);
@@ -25,7 +28,8 @@ for(const name of [
   'collectBSDataObjects','bsProfile','bsCharacteristics','bsAbilities',
   'normalize11eWeaponAbilities','bsWeapons','bsWargearOptions','bsUnitFromEntry',
   'battlefieldDistanceBetween','formatSavedListDate','unitListCategory','unitListCategoryName','sortUnitList','wargearCostLabel','secondaryRowInputId','secondaryRowNeedsAmount',
-  'ensureReserveState','isUnitReserved','reserveUnitsForSide','clearReserveDeclarationsForSide','setReserveDeclaration'
+  'ensureReserveState','isUnitReserved','reserveUnitsForSide','clearReserveDeclarationsForSide','setReserveDeclaration',
+  'ensureDeploymentPlans','deploymentPlanForCurrentMap','deploymentPlanPosition','setDeploymentPlanPosition','clearDeploymentPlanPosition','clearDeploymentPlanForCurrentMap','saveDeploymentPlan','loadDeploymentPlan'
 ]){
   const count=(html.match(new RegExp('function\\s+'+name+'\\s*\\(','g'))||[]).length;
   if(count!==0)throw new Error('Extracted function still inline: '+name);
@@ -47,7 +51,7 @@ inlineBlocks.forEach((src,i)=>{
   fs.writeFileSync(file,src);
   cp.execFileSync(process.execPath,['--check',file],{stdio:'inherit'});
 });
-for(const [name,src] of [['bsdata-parser.js',parser],['pure-utils.js',utils],['reserve-state.js',reserve]]){
+for(const [name,src] of [['bsdata-parser.js',parser],['pure-utils.js',utils],['reserve-state.js',reserve],['deployment-plan-state.js',deploymentPlan]]){
   const file=path.join('/tmp','onoforge-refactor-'+name);
   fs.writeFileSync(file,src);
   cp.execFileSync(process.execPath,['--check',file],{stdio:'inherit'});
@@ -57,11 +61,13 @@ const sandbox={window:{},console};
 vm.runInNewContext(parser,sandbox,{filename:'js/data/bsdata-parser.js'});
 vm.runInNewContext(utils,sandbox,{filename:'js/utils/pure-utils.js'});
 vm.runInNewContext(reserve,sandbox,{filename:'js/state/reserve-state.js'});
+vm.runInNewContext(deploymentPlan,sandbox,{filename:'js/state/deployment-plan-state.js'});
 if(typeof sandbox.window.OnoForgeBSDataParser?.collectBSDataObjects!=='function')throw new Error('Parser module did not expose collectBSDataObjects');
 if(typeof sandbox.window.OnoForgeBSDataParser?.bsUnitFromEntry!=='function')throw new Error('Parser module did not expose bsUnitFromEntry');
 if(typeof sandbox.window.OnoForgePureUtils?.battlefieldDistanceBetween!=='function')throw new Error('Utility module did not expose battlefieldDistanceBetween');
 if(typeof sandbox.window.OnoForgePureUtils?.formatSavedListDate!=='function')throw new Error('Utility module did not expose formatSavedListDate');
 if(typeof sandbox.window.OnoForgeReserveState?.createReserveStateController!=='function')throw new Error('Reserve module did not expose createReserveStateController');
+if(typeof sandbox.window.OnoForgeDeploymentPlanState?.createDeploymentPlanStateController!=='function')throw new Error('Deployment plan module did not expose createDeploymentPlanStateController');
 
 const reserveState={page:'setup',my:[{uid:'u1',name:'Unit One'}],opp:[{uid:'u2',name:'Unit Two'}],reserveDeclarations:{my:{},opp:{}},battlefieldUnitPositions:{}};
 const reserveController=sandbox.window.OnoForgeReserveState.createReserveStateController({getState:()=>reserveState,snapshotForUndo:()=>({}),event:()=>{},save:()=>{},render:()=>{}});
@@ -70,6 +76,39 @@ if(!reserveController.isUnitReserved('my','u1'))throw new Error('Reserve declara
 if(reserveController.reserveUnitsForSide('my').length!==1)throw new Error('Reserve unit filtering regression');
 reserveController.clearReserveDeclarationsForSide('my');
 if(reserveController.isUnitReserved('my','u1'))throw new Error('Reserve clear regression');
+
+const deploymentState={
+  objectiveMapMissionKey:'test-mission',
+  objectiveMapLayout:'B',
+  deploymentPlans:{},
+  activeRosterId:'r1',
+  savedArmyLists:[{id:'r1'}],
+  lists:[{id:'r1'}]
+};
+let deploymentSaves=0, deploymentRenders=0, notifications=[];
+const deploymentController=sandbox.window.OnoForgeDeploymentPlanState.createDeploymentPlanStateController({
+  getState:()=>deploymentState,
+  save:()=>{deploymentSaves++},
+  render:()=>{deploymentRenders++},
+  cloudUpsertArmyList:()=>Promise.resolve(),
+  notify:(message)=>notifications.push(message),
+  objectiveMissionKey:()=> 'fallback-mission'
+});
+if(!deploymentController.setDeploymentPlanPosition('u1',12.3,7.8))throw new Error('Deployment plan position set failed');
+const savedPosition=deploymentController.deploymentPlanPosition('u1');
+if(savedPosition?.x!==12.3||savedPosition?.y!==7.8||savedPosition?.side!=='my')throw new Error('Deployment plan position regression');
+if(deploymentController.deploymentPlanForCurrentMap().u1?.source!=='deployment-plan')throw new Error('Deployment plan map lookup regression');
+deploymentController.clearDeploymentPlanPosition('u1');
+if(deploymentController.deploymentPlanPosition('u1')!==null)throw new Error('Deployment plan position clear regression');
+deploymentController.setDeploymentPlanPosition('u2',10,10);
+deploymentController.saveDeploymentPlan();
+if(!deploymentState.savedArmyLists[0].deploymentPlans)throw new Error('Deployment plan save regression');
+deploymentState.deploymentPlans={};
+deploymentController.loadDeploymentPlan();
+if(!deploymentController.deploymentPlanPosition('u2'))throw new Error('Deployment plan load regression');
+deploymentController.clearDeploymentPlanForCurrentMap();
+if(deploymentController.deploymentPlanForCurrentMap().u2)throw new Error('Deployment plan map clear regression');
+if(deploymentSaves<4||deploymentRenders<3||notifications.length!==0)throw new Error('Deployment plan controller lifecycle regression');
 
 for(const name of ['unitListCategory','unitListCategoryName','sortUnitList','wargearCostLabel','secondaryRowInputId','secondaryRowNeedsAmount']){
   if(typeof sandbox.window.OnoForgePureUtils?.[name]!=='function')throw new Error('Utility module did not expose '+name);
