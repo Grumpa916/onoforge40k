@@ -704,7 +704,7 @@ const reserveStateController=createReserveStateController({getState:()=>state,sn
 const {ensureReserveState,isUnitReserved,reserveUnitsForSide,clearReserveDeclarationsForSide,setReserveDeclaration}=reserveStateController;
 const {createDeploymentPlanStateController}=window.OnoForgeDeploymentPlanState;
 const deploymentPlanStateController=createDeploymentPlanStateController({getState:()=>state,save,render,cloudUpsertArmyList,notify:message=>alert(message),objectiveMissionKey:()=>objectiveMissionKey()});
-const {ensureDeploymentPlans,deploymentPlanForCurrentMap,deploymentPlanPosition,setDeploymentPlanPosition,clearDeploymentPlanPosition,clearDeploymentPlanForCurrentMap,saveDeploymentPlan,loadDeploymentPlan}=deploymentPlanStateController;
+const {deploymentPlanKey,ensureDeploymentPlans,deploymentPlanForCurrentMap,deploymentPlanPosition,setDeploymentPlanPosition,clearDeploymentPlanPosition,clearDeploymentPlanForCurrentMap,saveDeploymentPlan,loadDeploymentPlan}=deploymentPlanStateController;
 const {createObjectiveMapStateController}=window.OnoForgeObjectiveMapState;
 const objectiveMapStateController=createObjectiveMapStateController({getState:()=>state,primaryMission,layoutIndex:OBJECTIVE_LAYOUT_INDEX,snapshotForUndo,autoSeedObjectiveStructure,event,save,render});
 const {objectiveMissionKey,objectiveLayoutInfo,ensureObjectiveLayoutForMission,setObjectiveMapLayout,objectiveLayoutPage}=objectiveMapStateController;
@@ -747,7 +747,7 @@ const WARHAMMER_EVENT_COMPANION_PDF='https://assets.warhammer-community.com/eng_
 
 
 
-function deploymentPlanKey(){const mission=String(state.objectiveMapMissionKey||objectiveMissionKey()||'unselected'),layout=['A','B','C'].includes(state.objectiveMapLayout)?state.objectiveMapLayout:'A';return mission+'|'+layout;}
+
 
 
 
