@@ -697,6 +697,7 @@ body{overflow-x:hidden}
 <script src="js/state/reserve-state.js"></script>
 <script src="js/state/deployment-plan-state.js"></script>
  <script src="js/state/objective-map-state.js"></script>
+<script src="js/state/objective-metadata-state.js"></script>
 <script src="js/data/bsdata-parser.js"></script><script>
 const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;
 const {createReserveStateController}=window.OnoForgeReserveState;
@@ -708,6 +709,9 @@ const {deploymentPlanKey,ensureDeploymentPlans,deploymentPlanForCurrentMap,deplo
 const {createObjectiveMapStateController}=window.OnoForgeObjectiveMapState;
 const objectiveMapStateController=createObjectiveMapStateController({getState:()=>state,primaryMission,layoutIndex:OBJECTIVE_LAYOUT_INDEX,snapshotForUndo,autoSeedObjectiveStructure,event,save,render});
 const {objectiveMissionKey,objectiveLayoutInfo,ensureObjectiveLayoutForMission,setObjectiveMapLayout,objectiveLayoutPage}=objectiveMapStateController;
+const {createObjectiveMetadataStateController}=window.OnoForgeObjectiveMetadataState;
+const objectiveMetadataStateController=createObjectiveMetadataStateController({getState:()=>state});
+const {ensureObjectiveMeta,objectiveRole,objectiveType,objectiveHomeSide,objectiveMetadataTerritory,objectiveMetadataDeploymentZone}=objectiveMetadataStateController;
 const {collectBSDataObjects,bsUnitFromEntry}=window.OnoForgeBSDataParser;
 window.addEventListener('error',function(ev){if(ev.target&&ev.target.tagName==='SCRIPT'&&ev.target.src===SUPABASE_SCRIPT_URL)return;var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var msg=String(ev.error?.message||ev.message||'Unknown error'),stack=String(ev.error?.stack||'');var detail=(stack&&stack!==msg?msg+'\\n\\n'+stack:msg).slice(0,6000);a.innerHTML='<span class="error-title">OnoForge error</span><pre class="error-detail" style="white-space:pre-wrap;max-height:45vh;overflow:auto;margin:6px 0 0;font:11px/1.35 monospace">'+detail.replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</pre><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});window.addEventListener('unhandledrejection',function(ev){var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var reason=ev.reason?.message||ev.reason||'Unhandled promise rejection';a.innerHTML='<span class="error-title">OnoForge error</span><div class="error-detail">'+String(reason).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</div><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});
 
@@ -6198,31 +6202,6 @@ function recordObjectiveTurnState(){
 function objectiveTurnStartOwner(name){
   const snap=ensureObjectiveTurnSnapshot();
   return snap[String(name||'')]||'none';
-}
-function ensureObjectiveMeta(){
-  if(!state.objectiveMeta||typeof state.objectiveMeta!=='object')state.objectiveMeta={};
-  return state.objectiveMeta;
-}
-function objectiveRole(name){
-  const meta=ensureObjectiveMeta()[String(name||'')]||{};
-  if(meta.type==='home')return 'home';
-  if(meta.type==='central')return 'central';
-  if(meta.type==='expansion')return 'expansion';
-  return ['home','central','expansion'].includes(meta.role)?meta.role:'expansion';
-}
-function objectiveType(name){return objectiveRole(name);}
-function objectiveHomeSide(name){return ensureObjectiveMeta()[String(name||'')]?.homeSide||null;}
-function objectiveMetadataTerritory(name){
-  const meta=ensureObjectiveMeta()[String(name||'')]||{};
-  if(['my','opp','nml'].includes(meta.territory))return meta.territory;
-  if(meta.type==='home'&&['my','opp'].includes(meta.homeSide))return meta.homeSide;
-  return 'nml';
-}
-function objectiveMetadataDeploymentZone(name){
-  const meta=ensureObjectiveMeta()[String(name||'')]||{};
-  if(['my','opp','none'].includes(meta.deploymentZone))return meta.deploymentZone;
-  if(meta.type==='home'&&['my','opp'].includes(meta.homeSide))return meta.homeSide;
-  return 'none';
 }
 function objectiveTerritory(name){
   const geometry=objectiveBattlefieldGeometry();
