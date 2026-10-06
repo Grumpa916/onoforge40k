@@ -12,8 +12,10 @@ const utils=fs.readFileSync(path.join(root,'js/utils/pure-utils.js'),'utf8');
 const required=[
   '<script src="js/utils/pure-utils.js"></script>',
   '<script src="js/data/bsdata-parser.js"></script>',
+  '<script src="js/state/reserve-state.js"></script>',
   'const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;',
-  'const {collectBSDataObjects,bsUnitFromEntry}=window.OnoForgeBSDataParser;'
+  'const {collectBSDataObjects,bsUnitFromEntry}=window.OnoForgeBSDataParser;',
+  'const {createReserveStateController}=window.OnoForgeReserveState;'
 ];
 for(const marker of required){
   if(!html.includes(marker))throw new Error('Missing refactor marker: '+marker);
@@ -22,7 +24,8 @@ for(const marker of required){
 for(const name of [
   'collectBSDataObjects','bsProfile','bsCharacteristics','bsAbilities',
   'normalize11eWeaponAbilities','bsWeapons','bsWargearOptions','bsUnitFromEntry',
-  'battlefieldDistanceBetween','formatSavedListDate','unitListCategory','unitListCategoryName','sortUnitList','wargearCostLabel','secondaryRowInputId','secondaryRowNeedsAmount'
+  'battlefieldDistanceBetween','formatSavedListDate','unitListCategory','unitListCategoryName','sortUnitList','wargearCostLabel','secondaryRowInputId','secondaryRowNeedsAmount',
+  'ensureReserveState','isUnitReserved','reserveUnitsForSide','clearReserveDeclarationsForSide','setReserveDeclaration'
 ]){
   const count=(html.match(new RegExp('function\\s+'+name+'\\s*\\(','g'))||[]).length;
   if(count!==0)throw new Error('Extracted function still inline: '+name);
@@ -53,11 +56,13 @@ for(const [name,src] of [['bsdata-parser.js',parser],['pure-utils.js',utils],['r
 const sandbox={window:{},console};
 vm.runInNewContext(parser,sandbox,{filename:'js/data/bsdata-parser.js'});
 vm.runInNewContext(utils,sandbox,{filename:'js/utils/pure-utils.js'});
+vm.runInNewContext(reserve,sandbox,{filename:'js/state/reserve-state.js'});
 if(typeof sandbox.window.OnoForgeBSDataParser?.collectBSDataObjects!=='function')throw new Error('Parser module did not expose collectBSDataObjects');
 if(typeof sandbox.window.OnoForgeBSDataParser?.bsUnitFromEntry!=='function')throw new Error('Parser module did not expose bsUnitFromEntry');
 if(typeof sandbox.window.OnoForgePureUtils?.battlefieldDistanceBetween!=='function')throw new Error('Utility module did not expose battlefieldDistanceBetween');
 if(typeof sandbox.window.OnoForgePureUtils?.formatSavedListDate!=='function')throw new Error('Utility module did not expose formatSavedListDate');
 if(typeof sandbox.window.OnoForgeReserveState?.createReserveStateController!=='function')throw new Error('Reserve module did not expose createReserveStateController');
+
 const reserveState={page:'setup',my:[{uid:'u1',name:'Unit One'}],opp:[{uid:'u2',name:'Unit Two'}],reserveDeclarations:{my:{},opp:{}},battlefieldUnitPositions:{}};
 const reserveController=sandbox.window.OnoForgeReserveState.createReserveStateController({getState:()=>reserveState,snapshotForUndo:()=>({}),event:()=>{},save:()=>{},render:()=>{}});
 if(!reserveController.setReserveDeclaration('my','u1',true))throw new Error('Reserve declaration failed');
@@ -65,6 +70,7 @@ if(!reserveController.isUnitReserved('my','u1'))throw new Error('Reserve declara
 if(reserveController.reserveUnitsForSide('my').length!==1)throw new Error('Reserve unit filtering regression');
 reserveController.clearReserveDeclarationsForSide('my');
 if(reserveController.isUnitReserved('my','u1'))throw new Error('Reserve clear regression');
+
 for(const name of ['unitListCategory','unitListCategoryName','sortUnitList','wargearCostLabel','secondaryRowInputId','secondaryRowNeedsAmount']){
   if(typeof sandbox.window.OnoForgePureUtils?.[name]!=='function')throw new Error('Utility module did not expose '+name);
 }
@@ -81,11 +87,9 @@ if(sandbox.window.OnoForgePureUtils.unitListCategoryName(categories[3])!=='Other
 if(sandbox.window.OnoForgePureUtils.sortUnitList([{name:'Zed',keywords:['INFANTRY']},{name:'Alpha',keywords:['CHARACTER']}])[0].name!=='Alpha')throw new Error('Unit sorting regression');
 if(sandbox.window.OnoForgePureUtils.wargearCostLabel(0)!=='Free'||sandbox.window.OnoForgePureUtils.wargearCostLabel(10)!=='+10 pts')throw new Error('Wargear cost label regression');
 
-
 const d=sandbox.window.OnoForgePureUtils.battlefieldDistanceBetween({x:0,y:0},{x:3,y:4});
 if(d!==5)throw new Error('Distance helper regression: expected 5, got '+d);
 
-const m=new Map([['a',{id:'a',type:'unit',profiles:[]}]]); 
 const collected=sandbox.window.OnoForgeBSDataParser.collectBSDataObjects({id:'root',child:{id:'a'}});
 if(typeof collected?.get!=='function'||collected.get('a')?.id!=='a')throw new Error('Parser object collection regression');
 
