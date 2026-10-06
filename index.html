@@ -7575,10 +7575,10 @@ function clearTacticalPair(attackerUid,targetUid){
   save();render();
 }
 function tacticalAdvisorActionState(entryUid){
-  if(!entryUid)return {movement:'unknown',movementDistanceInches:null,setUpThisTurn:null,shootingDone:false,chargeDone:false,chargeMade:false,fightDone:false,enemyFightBackDone:false,round:Math.max(1,Number(state.round)||1),playerTurn:state.currentTurn};
+  if(!entryUid)return {movement:'unknown',movementDistanceInches:null,setUpThisTurn:null,shootingDone:false,chargeDone:false,chargeMade:false,chargeTargets:[],fightDone:false,enemyFightBackDone:false,round:Math.max(1,Number(state.round)||1),playerTurn:state.currentTurn};
   const t=ensureTacticalState(),raw=t.unitActions[String(entryUid)];
   if(!raw||raw.round!==Math.max(1,Number(state.round)||1)||raw.playerTurn!==state.currentTurn){
-    return {movement:'unknown',movementDistanceInches:null,setUpThisTurn:null,shootingDone:false,chargeDone:false,chargeMade:false,fightDone:false,round:Math.max(1,Number(state.round)||1),playerTurn:state.currentTurn};
+    return {movement:'unknown',movementDistanceInches:null,setUpThisTurn:null,shootingDone:false,chargeDone:false,chargeMade:false,chargeTargets:[],fightDone:false,round:Math.max(1,Number(state.round)||1),playerTurn:state.currentTurn};
   }
   return {
     movement:['unknown','remained','normal','advance','fallback'].includes(raw.movement)?raw.movement:'unknown',
@@ -7587,6 +7587,7 @@ function tacticalAdvisorActionState(entryUid){
     shootingDone:!!raw.shootingDone,
     chargeDone:!!raw.chargeDone,
     chargeMade:!!raw.chargeMade,
+    chargeTargets:Array.isArray(raw.chargeTargets)?raw.chargeTargets.map(String):[],
     fightDone:!!raw.fightDone,
     enemyFightBackDone:!!raw.enemyFightBackDone,
     fightTargetUid:raw.fightTargetUid==null?'':String(raw.fightTargetUid),
@@ -7630,6 +7631,42 @@ function setTacticalUnitAction(entryUid,field,value){
   event('TACTICAL_ACTION_STATE_CHANGED',{entryUid,field,value:next[field]??next.movement,action:'Unit '+field+' changed',before:old,after:next},before);
   save();render();
 }
+function recordTacticalChargeResult(result,attackerUid){
+  if(state.currentTurn!=='my'||String(state.phase||'')!=='Charge')return;
+  const normalized=String(result||'').toLowerCase()==='success'?'Successful':String(result||'').toLowerCase()==='failed'?'Failed':'';
+  if(!attackerUid){alert('Select the charging unit first.');return;}
+  if(!normalized){alert('Choose Successful or Failed.');return;}
+  const checked=[...document.querySelectorAll('input[data-onoforge-charge-target]:checked')]
+    .map(el=>String(el.getAttribute('data-onoforge-charge-target')||'')).filter(Boolean);
+  const fallback=String(ensureTacticalState().selectedTargetUid||'');
+  const ids=[...new Set((checked.length?checked:[fallback]).map(String).filter(Boolean))];
+  const valid=ids.filter(id=>entry('opp',id)&&!tacticalUnitState('opp',entry('opp',id))?.destroyed);
+  if(!valid.length){alert('Select at least one valid enemy charge target.');return;}
+  const before=snapshotForUndo(),t=ensureTacticalState(),round=Math.max(1,Number(state.round)||1),ae=entry('my',attackerUid);
+  if(!ae){alert('The selected charging unit is no longer available.');return;}
+  const oldAction=tacticalAdvisorActionState(attackerUid);
+  t.unitActions[String(attackerUid)]={...oldAction,round,playerTurn:'my',chargeDone:true,chargeMade:normalized==='Successful',chargeTargets:valid};
+  const targets=valid.map(id=>entry('opp',id)).filter(Boolean);
+  let firstDistance=null;
+  valid.forEach(targetUid=>{
+    const key=tacticalPairKey(attackerUid,targetUid),oldPair=t.pairs[key]&&typeof t.pairs[key]==='object'?t.pairs[key]:{};
+    const pair=tacticalCombatPairState('my','opp',attackerUid,targetUid);
+    const d=Number(pair?.distanceInches);
+    if(firstDistance===null&&Number.isFinite(d)&&d>=0)firstDistance=Math.round(d*10)/10;
+    t.pairs[key]={...oldPair,attackerUid:String(attackerUid),targetUid:String(targetUid),engagement:normalized==='Successful'?'engaged':'notEngaged'};
+  });
+  event('CHARGE_RESOLUTION',{
+    side:'my',attackerSide:'my',targetSide:'opp',attackerEntryUid:String(attackerUid),
+    attacker:ae?.name||get(ae?.unitId)?.name||String(attackerUid),targetEntryUids:valid,
+    targets:targets.map(e=>unitDisplayName('opp',e)),result:normalized,
+    requiredRoll:null,rolledTotal:null,measuredDistance:firstDistance,
+    engagementState:normalized==='Successful'?'engaged':'notEngaged',
+    movementObserved:'unknown',chargeMoveInferred:false
+  },before);
+  save();render();
+}
+window.recordTacticalChargeResult=recordTacticalChargeResult;
+
 function setTacticalUnitAdvanced(entryUid,advanced){
   setTacticalUnitAction(entryUid,'movement',advanced?'advance':'remained');
 }
