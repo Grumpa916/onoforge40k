@@ -11,6 +11,9 @@ on:
       - 'index.html'
       - 'js/data/bsdata-parser.js'
       - 'js/utils/pure-utils.js'
+      - 'js/state/reserve-state.js'
+      - 'js/state/deployment-plan-state.js'
+      - 'js/state/objective-map-state.js'
       - 'tests/monolith-refactor.test.js'
       - '.github/workflows/monolith-refactor-tests.yml'
   workflow_dispatch:
