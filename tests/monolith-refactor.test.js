@@ -28,7 +28,7 @@ for(const name of [
 }
 
 const inlineBlocks=[];
-const scriptRegex=/<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script>/gi;
+const scriptRegex=/<script>([\\s\\S]*?)<\\/script>/gi;
 let scriptMatch;
 while((scriptMatch=scriptRegex.exec(html))!==null)inlineBlocks.push(scriptMatch[1]);
 if(!inlineBlocks.length)throw new Error('No inline script blocks found');
