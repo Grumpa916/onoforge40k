@@ -7556,8 +7556,13 @@ function tacticalDistanceBandFromInches(value){
 function battlefieldTerrainContextBetweenUnits(attackerSide,attackerUid,targetSide,targetUid){
   const geometry=objectiveBattlefieldGeometry();
   const a=battlefieldUnitPosition(attackerSide,attackerUid),b=battlefieldUnitPosition(targetSide,targetUid);
-  if(!geometry.verified||!a||!b)return {verified:false,distanceInches:null,terrainIntersections:[],losInference:'blocked'};
-  return {verified:true,distanceInches:battlefieldDistanceBetween(a,b),terrainIntersections:battlefieldTerrainPathIntersections(a,b),losInference:'not-inferred'};
+  // Explicit live unit coordinates are sufficient to calculate direct distance.
+  // Event Companion geometry verification is only required for terrain-path
+  // intersections; it must not turn a known unit-to-unit distance into "unknown".
+  if(!a||!b)return {verified:false,distanceInches:null,terrainIntersections:[],losInference:'blocked'};
+  const distanceInches=battlefieldDistanceBetween(a,b);
+  if(!geometry.verified)return {verified:false,distanceInches,terrainIntersections:[],losInference:'not-inferred'};
+  return {verified:true,distanceInches,terrainIntersections:battlefieldTerrainPathIntersections(a,b),losInference:'not-inferred'};
 }
 function tacticalCombatPairState(attackerSide,targetSide,attackerUid,targetUid){
   const as=attackerSide==='opp'?'opp':'my',ts=targetSide==='my'?'my':'opp';
