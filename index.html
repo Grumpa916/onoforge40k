@@ -5921,24 +5921,6 @@ function changeUnit(side,id,dm,dw){
   const action=dm?('Models '+(dm>0?'+':'')+dm):('Wounds '+(dw>0?'+':'')+dw);
   event('UNIT_STATE_CHANGED',{side,unitId:e.unitId,entryId:id,unit:u.name,action,modelsBefore:oldModels,modelsAfter:e.game.models,woundsBefore:oldWounds,woundsAfter:e.game.wounds,statusBefore:before.status,statusAfter:e.game.status,before,after:e.game},fullBefore);save();render();
 }
-function ensureScoreLedger(){
-  const sides=['my','opp'];
-  sides.forEach(side=>{
-    const pk=side==='my'?'primaryMyScoredVP':'primaryOppScoredVP';
-    const sk=side==='my'?'secondaryMyScoredVP':'secondaryOppScoredVP';
-    const mk=side==='my'?'manualVPMy':'manualVPOpp';
-    const totalKey=side==='my'?'myVP':'oppVP';
-    if(!Number.isFinite(Number(state[pk])))state[pk]=0;
-    if(!state[sk]||typeof state[sk]!=='object')state[sk]={};
-    const secondary=Object.values(state[sk]).reduce((s,v)=>s+Math.max(0,Number(v)||0),0);
-    state[pk]=Math.max(0,Math.min(45,Number(state[pk])||0));
-    const expected= (side==='my'?(state.battleReadyMy?10:0):(state.battleReadyOpp?10:0))+Math.min(45,Number(state[pk])||0)+Math.min(45,secondary);
-    if(!Number.isFinite(Number(state[mk])))state[mk]=Math.max(0,(Number(state[totalKey])||0)-expected);
-    state[mk]=Math.max(0,Math.min(100,Number(state[mk])||0));
-    state[totalKey]=Math.min(100,expected+state[mk]);
-  });
-  return state;
-}
 function scoreTotalForSide(side){
   ensureScoreLedger();
   const primary=Math.max(0,Math.min(45,Number(state[side==='my'?'primaryMyScoredVP':'primaryOppScoredVP'])||0));
