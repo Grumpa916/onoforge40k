@@ -772,6 +772,7 @@ const {
 <script src="js/state/battle-deployment-start-state.js"></script>
 <script src="js/state/battle-end-state.js"></script>
 <script src="js/state/undo-snapshot-state.js"></script>
+<script src="js/state/game-timer-runtime-state.js"></script>
 <script src="js/state/game-reference-editor-state.js"></script>
 <script src="js/state/game-assistant-state.js"></script>
 <script src="js/state/tactical-pre-roll-state.js"></script>
@@ -1274,6 +1275,13 @@ const {endBattle}=battleEndStateController;
 const {createUndoSnapshotStateController}=window.OnoForgeUndoSnapshotState;
 const undoSnapshotStateController=createUndoSnapshotStateController({state,ensureGameTimer,gameTimerElapsed});
 const {snapshotForUndo}=undoSnapshotStateController;
+const {createGameTimerRuntimeStateController}=window.OnoForgeGameTimerRuntimeState;
+const gameTimerRuntimeStateController=createGameTimerRuntimeStateController({
+  ensureGameTimer,updateGameTimerDisplay,
+  getGameTimerInterval:()=>gameTimerInterval,
+  setGameTimerInterval:value=>{gameTimerInterval=value}
+});
+const {syncGameTimerRuntime}=gameTimerRuntimeStateController;
 
 const PRIMARY_SCORING={
 "Battlefield Dominance":[["R1–2 • End of turn","2 VP","Control more objectives than your opponent"],["R2+ • Command phase / R5","3 VP","Per objective you control"],["R2+ • Command phase / R5","+2 VP","Per objective excluding home if you control your home objective"]],
@@ -4478,21 +4486,7 @@ function actionLabel(e){
  return labels[e?.kind]||String(e?.kind||'Action').replaceAll('_',' ');
 }
 function event(kind,payload,before){const p={...(payload||{})};if(!p.phase)p.phase=state.phase;if(!p.unit)p.unit=kind==='PHASE_CHANGED'?'Game':kind==='ROUND_CHANGED'?'Game':'Game';if(!p.action)p.action=actionLabel({kind,payload:p});const playerTurn=state.currentTurn==='opp'?'opp':'my';state.events.unshift({id:uid(),at:new Date().toISOString(),round:state.round,phase:state.phase,playerTurn,kind,payload:p,before:before||state._undoSnapshot||null});state.events=state.events.slice(0,100);state._undoSnapshot=null}
-function syncGameTimerRuntime(){
-  if(gameTimerInterval!==null){
-    clearInterval(gameTimerInterval);
-    gameTimerInterval=null;
-  }
-  const t=ensureGameTimer();
-  if(t.running&&!t.finishedAt){
-    // Undo restores a snapshot from the action boundary; resume from that
-    // boundary instead of charging time spent while the action was undone.
-    t.startedAt=Date.now();
-    t.turnStartedGameMs=Math.max(0,Number(t.elapsedMs)||0);
-    gameTimerInterval=setInterval(updateGameTimerDisplay,100);
-  }
-  updateGameTimerDisplay();
-}
+
 function undoLastAction(){
   const e=state.events[0];
   if(!e){alert('No action to undo.');return}
