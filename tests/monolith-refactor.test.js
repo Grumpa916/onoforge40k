@@ -29,6 +29,7 @@ const gameReferenceEditor=fs.readFileSync(path.join(root,'js/state/game-referenc
 const gameAssistant=fs.readFileSync(path.join(root,'js/state/game-assistant-state.js'),'utf8');
 const tacticalPreRoll=fs.readFileSync(path.join(root,'js/state/tactical-pre-roll-state.js'),'utf8');
 const tacticalAdvisor=fs.readFileSync(path.join(root,'js/state/tactical-advisor-state.js'),'utf8');
+const opponentTurnTracking=fs.readFileSync(path.join(root,'js/state/opponent-turn-tracking-state.js'),'utf8');
 const objectiveMap=fs.readFileSync(path.join(root,'js/state/objective-map-state.js'),'utf8');
 const objectiveLayout=fs.readFileSync(path.join(root,'js/state/objective-layout-state.js'),'utf8');
 const objectiveMetadata=fs.readFileSync(path.join(root,'js/state/objective-metadata-state.js'),'utf8');
@@ -90,6 +91,7 @@ const required=[
   '<script src="js/state/game-assistant-state.js"></script>',
   '<script src="js/state/tactical-pre-roll-state.js"></script>',
   '<script src="js/state/tactical-advisor-state.js"></script>',
+  '<script src="js/state/opponent-turn-tracking-state.js"></script>',
   '<script src="js/state/objective-map-state.js"></script>',
   '<script src="js/state/objective-layout-state.js"></script>',
   '<script src="js/state/army-no-mans-land-tags-state.js"></script>',
@@ -205,6 +207,7 @@ vm.runInNewContext(gameReferenceEditor,sandbox,{filename:'js/state/game-referenc
 vm.runInNewContext(gameAssistant,sandbox,{filename:'js/state/game-assistant-state.js'});
 vm.runInNewContext(tacticalPreRoll,sandbox,{filename:'js/state/tactical-pre-roll-state.js'});
 vm.runInNewContext(tacticalAdvisor,sandbox,{filename:'js/state/tactical-advisor-state.js'});
+vm.runInNewContext(opponentTurnTracking,sandbox,{filename:'js/state/opponent-turn-tracking-state.js'});
 vm.runInNewContext(objectiveMap,sandbox,{filename:'js/state/objective-map-state.js'});
 vm.runInNewContext(objectiveLayout,sandbox,{filename:'js/state/objective-layout-state.js'});
 vm.runInNewContext(objectiveMetadata,sandbox,{filename:'js/state/objective-metadata-state.js'});
@@ -300,6 +303,9 @@ if(typeof sandbox.window.OnoForgeTacticalPreRollState?.createTacticalPreRollStat
 const tacticalAdvisorController=sandbox.window.OnoForgeTacticalAdvisorState.createTacticalAdvisorStateController({getState:()=>({phase:'Command',my:[]}),tacticalAdvisorAttackerEntry:()=>null,tacticalUnitState:()=>null,esc:v=>String(v),unitDisplayName:()=>'',tacticalObjectiveAdvisorHtml:()=>'',objectiveTacticalSummary:()=>'',objectiveBattlefieldGeometry:()=>null,getTacticalAdvisorResult:()=>null,tacticalAdvisorActionState:()=>({}),entry:()=>null,setTacticalAdvisorAttacker:()=>{},enrichAdvisor:x=>x,confidenceClass:()=>'',recordTacticalChargeResult:()=>{},ensureTacticalState:()=>{},save:()=>{},render:()=>{}});
 if(tacticalAdvisorController.tacticalAdvisorHtml()!=='')throw new Error('Tactical advisor command-phase regression');
 if(typeof sandbox.window.OnoForgeTacticalAdvisorState?.createTacticalAdvisorStateController!=='function')throw new Error('Tactical advisor module did not expose createTacticalAdvisorStateController');
+if(typeof sandbox.window.OnoForgeOpponentTurnTrackingState?.createOpponentTurnTrackingStateController!=='function')throw new Error('Opponent turn tracking module did not expose createOpponentTurnTrackingStateController');
+const opponentTurnTrackingController=sandbox.window.OnoForgeOpponentTurnTrackingState.createOpponentTurnTrackingStateController({getState:()=>({phase:'Command',opponent:[]}),tacticalUnitState:()=>null,ensureOpponentTurnCaptureState:()=>({}),tacticalUnitMovementType:()=>'',unitDisplayName:()=>'',setTacticalUnitAction:()=>{},esc:v=>String(v),btn:()=>'',tacticalOpponentWeaponChoices:()=>[],setOpponentTurnCapture:()=>{},recordOpponentTacticalAttackInteractionFromUi:()=>{},setOpponentChargeTarget:()=>{},roll:()=>0,recordOpponentChargeResult:()=>{},getElementById:()=>null,tacticalFightResolvedForSide:()=>false,tacticalFightUnitState:()=>({}),setTacticalFightUnitState:()=>{}});
+if(opponentTurnTrackingController.opponentTurnTrackingHtml()!=='')throw new Error('Opponent turn tracking command-phase regression');
 const rendererState={myName:'Me',oppName:'Them',primaryMyScoredVP:10,primaryOppScoredVP:8,round:5,events:[1,2],battleResultVerified:false,battleReadyMy:true,battleReadyOpp:false,objectiveMapMissionKey:'M',objectiveMapLayout:'A'};
 const battleEndController=sandbox.window.OnoForgeBattleEndSummaryState.createBattleEndSummaryStateController({scoreTotalForSide:s=>s==='my'?25:18,secondaryTotalScoredVP:s=>s==='my'?5:4,esc:v=>String(v),objectiveMissionKey:()=> 'M',reserveUnitsForSide:()=>[],getState:()=>rendererState});
 if(!battleEndController.battleEndSummaryHtml().includes('Battle Report')||!battleEndController.battleEndSummaryHtml().includes('Verify &amp; Lock Result'))throw new Error('Battle end summary renderer regression');
