@@ -27,6 +27,7 @@ const primaryScoringIsPer=fs.readFileSync(path.join(root,'js/state/primary-scori
 const primaryScoringMax=fs.readFileSync(path.join(root,'js/state/primary-scoring-max-state.js'),'utf8');
 const primaryScoringEffectiveMax=fs.readFileSync(path.join(root,'js/state/primary-scoring-effective-max-state.js'),'utf8');
 const primaryScoringExclusiveGroup=fs.readFileSync(path.join(root,'js/state/primary-scoring-exclusive-group-state.js'),'utf8');
+const primaryScoringOriginalIndex=fs.readFileSync(path.join(root,'js/state/primary-scoring-original-index-state.js'),'utf8');
 const utils=fs.readFileSync(path.join(root,'js/utils/pure-utils.js'),'utf8');
 
 const required=[
@@ -53,6 +54,7 @@ const required=[
   '<script src="js/state/primary-scoring-max-state.js"></script>',
   '<script src="js/state/primary-scoring-effective-max-state.js"></script>',
   '<script src="js/state/primary-scoring-exclusive-group-state.js"></script>',
+  '<script src="js/state/primary-scoring-original-index-state.js"></script>',
   'const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;',
   'const {collectBSDataObjects,bsUnitFromEntry}=window.OnoForgeBSDataParser;',
   'const {createReserveStateController}=window.OnoForgeReserveState;',
@@ -97,7 +99,7 @@ inlineBlocks.forEach((src,i)=>{
   fs.writeFileSync(file,src);
   cp.execFileSync(process.execPath,['--check',file],{stdio:'inherit'});
 });
-for(const [name,src] of [['bsdata-parser.js',parser],['pure-utils.js',utils],['reserve-state.js',reserve],['deployment-plan-state.js',deploymentPlan],['objective-map-state.js',objectiveMap],['objective-metadata-state.js',objectiveMetadata],['transport-state.js',transport],['stratagem-state.js',stratagem],['game-timer-state.js',gameTimer],['phase-cp-state.js',phaseCP],['objective-control-history-state.js',objectiveControlHistory],['objective-control-sources-state.js',objectiveControlSources],['secondary-round-ledger-state.js',secondaryRoundLedger],['score-ledger-state.js',scoreLedger],['secondary-score-state.js',secondaryScore],['score-calculation-state.js',scoreCalculation],['primary-round-score-state.js',primaryRoundScore],['primary-round-score-cap-state.js',primaryRoundScoreCap],['primary-scoring-vp-state.js',primaryScoringVP],['primary-scoring-is-per-state.js',primaryScoringIsPer],['primary-scoring-max-state.js',primaryScoringMax],['primary-scoring-effective-max-state.js',primaryScoringEffectiveMax],['primary-scoring-exclusive-group-state.js',primaryScoringExclusiveGroup]]){
+for(const [name,src] of [['bsdata-parser.js',parser],['pure-utils.js',utils],['reserve-state.js',reserve],['deployment-plan-state.js',deploymentPlan],['objective-map-state.js',objectiveMap],['objective-metadata-state.js',objectiveMetadata],['transport-state.js',transport],['stratagem-state.js',stratagem],['game-timer-state.js',gameTimer],['phase-cp-state.js',phaseCP],['objective-control-history-state.js',objectiveControlHistory],['objective-control-sources-state.js',objectiveControlSources],['secondary-round-ledger-state.js',secondaryRoundLedger],['score-ledger-state.js',scoreLedger],['secondary-score-state.js',secondaryScore],['score-calculation-state.js',scoreCalculation],['primary-round-score-state.js',primaryRoundScore],['primary-round-score-cap-state.js',primaryRoundScoreCap],['primary-scoring-vp-state.js',primaryScoringVP],['primary-scoring-is-per-state.js',primaryScoringIsPer],['primary-scoring-max-state.js',primaryScoringMax],['primary-scoring-effective-max-state.js',primaryScoringEffectiveMax],['primary-scoring-exclusive-group-state.js',primaryScoringExclusiveGroup],['primary-scoring-original-index-state.js',primaryScoringOriginalIndex]]){
   const file=path.join('/tmp','onoforge-refactor-'+name);
   fs.writeFileSync(file,src);
   cp.execFileSync(process.execPath,['--check',file],{stdio:'inherit'});
@@ -127,7 +129,9 @@ vm.runInNewContext(primaryScoringIsPer,sandbox,{filename:'js/state/primary-scori
 vm.runInNewContext(primaryScoringMax,sandbox,{filename:'js/state/primary-scoring-max-state.js'});
 vm.runInNewContext(primaryScoringEffectiveMax,sandbox,{filename:'js/state/primary-scoring-effective-max-state.js'});
 vm.runInNewContext(primaryScoringExclusiveGroup,sandbox,{filename:'js/state/primary-scoring-exclusive-group-state.js'});
+vm.runInNewContext(primaryScoringOriginalIndex,sandbox,{filename:'js/state/primary-scoring-original-index-state.js'});
 if(typeof sandbox.window.OnoForgePrimaryScoringExclusiveGroupState?.createPrimaryScoringExclusiveGroupStateController!=='function')throw new Error('Primary scoring exclusive group module did not expose createPrimaryScoringExclusiveGroupStateController');
+if(typeof sandbox.window.OnoForgePrimaryScoringOriginalIndexState?.createPrimaryScoringOriginalIndexStateController!=='function')throw new Error('Primary scoring original index module did not expose createPrimaryScoringOriginalIndexStateController');
 if(typeof sandbox.window.OnoForgePrimaryScoringEffectiveMaxState?.createPrimaryScoringEffectiveMaxStateController!=='function')throw new Error('Primary scoring effective max module did not expose createPrimaryScoringEffectiveMaxStateController');
 if(typeof sandbox.window.OnoForgePrimaryScoringMaxState?.createPrimaryScoringMaxStateController!=='function')throw new Error('Primary scoring max module did not expose createPrimaryScoringMaxStateController');
 if(typeof sandbox.window.OnoForgePrimaryScoringIsPerState?.createPrimaryScoringIsPerStateController!=='function')throw new Error('Primary scoring per module did not expose createPrimaryScoringIsPerStateController');
@@ -341,6 +345,10 @@ const primaryScoringExclusiveGroupController=sandbox.window.OnoForgePrimaryScori
 if(primaryScoringExclusiveGroupController.primaryScoringExclusiveGroup('Purge and Secure',0)!=='purge-secure-kill'||primaryScoringExclusiveGroupController.primaryScoringExclusiveGroup('Purge and Secure',2)!=='')throw new Error('Primary scoring exclusive group purge regression');
 if(primaryScoringExclusiveGroupController.primaryScoringExclusiveGroup('Consecrate',1)!=='consecrate-tier'||primaryScoringExclusiveGroupController.primaryScoringExclusiveGroup('Reconnaissance Sweep',1)!=='recon-sweep-tier')throw new Error('Primary scoring exclusive group mission regression');
 if(primaryScoringExclusiveGroupController.primaryScoringExclusiveGroup('Triangulation',1)!=='triangulation-tier'||primaryScoringExclusiveGroupController.primaryScoringExclusiveGroup('Triangulation',3)!=='triangulation-tier'||primaryScoringExclusiveGroupController.primaryScoringExclusiveGroup('Triangulation',4)!=='')throw new Error('Primary scoring exclusive group triangulation regression');
+const originalRows=[['first'],['second'],['third']];
+const visibleRows=[originalRows[1],originalRows[2]];
+const primaryScoringOriginalIndexController=sandbox.window.OnoForgePrimaryScoringOriginalIndexState.createPrimaryScoringOriginalIndexStateController({getPrimaryScoringRows:()=>originalRows,getVisiblePrimaryScoringRows:()=>visibleRows});
+if(primaryScoringOriginalIndexController.primaryScoringOriginalIndex('Any Mission',0)!==1||primaryScoringOriginalIndexController.primaryScoringOriginalIndex('Any Mission',1)!==2||primaryScoringOriginalIndexController.primaryScoringOriginalIndex('Any Mission',2)!==-1)throw new Error('Primary scoring original index regression');
 
 const objectiveMetadataState={objectiveMeta:{home:{type:'home',homeSide:'my'},central:{type:'central',territory:'nml'},expansion:{role:'expansion'}}};
 const objectiveMetadataController=sandbox.window.OnoForgeObjectiveMetadataState.createObjectiveMetadataStateController({getState:()=>objectiveMetadataState});
