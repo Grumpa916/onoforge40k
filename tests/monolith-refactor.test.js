@@ -77,6 +77,7 @@ const required=[
   '<script src="js/state/deployment-plan-position-editor-state.js"></script>',
   '<script src="js/state/deployment-tracking-editor-state.js"></script>',
   '<script src="js/state/deployment-tracking-controls-state.js"></script>',
+  '<script src="js/state/tournament-setup-checklist-state.js"></script>',
   '<script src="js/state/objective-map-state.js"></script>',
   '<script src="js/state/objective-layout-state.js"></script>',
   '<script src="js/state/army-no-mans-land-tags-state.js"></script>',
