@@ -28,6 +28,7 @@ const primaryMissionRules=fs.readFileSync(path.join(root,'js/state/primary-missi
 const gameReferenceEditor=fs.readFileSync(path.join(root,'js/state/game-reference-editor-state.js'),'utf8');
 const gameAssistant=fs.readFileSync(path.join(root,'js/state/game-assistant-state.js'),'utf8');
 const tacticalPreRoll=fs.readFileSync(path.join(root,'js/state/tactical-pre-roll-state.js'),'utf8');
+const tacticalAdvisor=fs.readFileSync(path.join(root,'js/state/tactical-advisor-state.js'),'utf8');
 const objectiveMap=fs.readFileSync(path.join(root,'js/state/objective-map-state.js'),'utf8');
 const objectiveLayout=fs.readFileSync(path.join(root,'js/state/objective-layout-state.js'),'utf8');
 const objectiveMetadata=fs.readFileSync(path.join(root,'js/state/objective-metadata-state.js'),'utf8');
@@ -88,6 +89,7 @@ const required=[
   '<script src="js/state/game-reference-editor-state.js"></script>',
   '<script src="js/state/game-assistant-state.js"></script>',
   '<script src="js/state/tactical-pre-roll-state.js"></script>',
+  '<script src="js/state/tactical-advisor-state.js"></script>',
   '<script src="js/state/objective-map-state.js"></script>',
   '<script src="js/state/objective-layout-state.js"></script>',
   '<script src="js/state/army-no-mans-land-tags-state.js"></script>',
@@ -152,7 +154,7 @@ for(const name of [
   'ensureGameTimer','gameTimerElapsed','turnElapsedMs','finalizeCurrentTurnTime','switchTurnClock',
   'ensurePhaseCPState','phaseCPKey','rememberPhaseCP','restorePhaseCP',
   'ensureObjectiveControlHistory','objectivePreviousTurnKey','objectivePreviousTurnOwner',
-  'ensureObjectiveControlSources','objectiveControlSourceIds','ensureSecondaryRoundLedger','ensureScoreLedger','secondaryTotalScoredVP','scoreTotalForSide','armyNoMansLandTagsHtml','objectiveMapPlacementPanelHtml','objectiveMapRendererHtml','completeTerrainSetup','unitDatabase','canonicalUnitDatabase','bootstrapUnitDatabase','mergeSupplementalUnits','saveCurrentArmyList','loadSavedArmyList','deleteSavedArmyList','undoDeletedSavedArmyList','currentMyListSnapshot','reserveTrayHtml','deploymentPlanMapControlsHtml','transportDeclarationSectionHtml','objectiveLayoutHtml','reserveDeclarationSectionHtml','deploymentPlanPositionEditorHtml','deploymentTrackingEditorHtml','deploymentTrackingControlsHtml','deploymentStatusHtml','tournamentDeploymentValidation','tournamentSetupChecklistHtml','battleEndSummaryHtml','primaryMissionRulesHtml','gameReferenceEditorHtml','gameAssistantHtml','tacticalPreRollHtml','actionLogFiltersHtml','battleNotesHtml','dataSyncStatusHtml'
+  'ensureObjectiveControlSources','objectiveControlSourceIds','ensureSecondaryRoundLedger','ensureScoreLedger','secondaryTotalScoredVP','scoreTotalForSide','armyNoMansLandTagsHtml','objectiveMapPlacementPanelHtml','objectiveMapRendererHtml','completeTerrainSetup','unitDatabase','canonicalUnitDatabase','bootstrapUnitDatabase','mergeSupplementalUnits','saveCurrentArmyList','loadSavedArmyList','deleteSavedArmyList','undoDeletedSavedArmyList','currentMyListSnapshot','reserveTrayHtml','deploymentPlanMapControlsHtml','transportDeclarationSectionHtml','objectiveLayoutHtml','reserveDeclarationSectionHtml','deploymentPlanPositionEditorHtml','deploymentTrackingEditorHtml','deploymentTrackingControlsHtml','deploymentStatusHtml','tournamentDeploymentValidation','tournamentSetupChecklistHtml','battleEndSummaryHtml','primaryMissionRulesHtml','gameReferenceEditorHtml','gameAssistantHtml','tacticalPreRollHtml','tacticalAdvisorHtml','actionLogFiltersHtml','battleNotesHtml','dataSyncStatusHtml'
 ]){
   const count=(html.match(new RegExp('function\s+'+name+'\s*\\(','g'))||[]).length;
   if(count!==0)throw new Error('Extracted function still inline: '+name);
@@ -202,6 +204,7 @@ vm.runInNewContext(primaryMissionRules,sandbox,{filename:'js/state/primary-missi
 vm.runInNewContext(gameReferenceEditor,sandbox,{filename:'js/state/game-reference-editor-state.js'});
 vm.runInNewContext(gameAssistant,sandbox,{filename:'js/state/game-assistant-state.js'});
 vm.runInNewContext(tacticalPreRoll,sandbox,{filename:'js/state/tactical-pre-roll-state.js'});
+vm.runInNewContext(tacticalAdvisor,sandbox,{filename:'js/state/tactical-advisor-state.js'});
 vm.runInNewContext(objectiveMap,sandbox,{filename:'js/state/objective-map-state.js'});
 vm.runInNewContext(objectiveLayout,sandbox,{filename:'js/state/objective-layout-state.js'});
 vm.runInNewContext(objectiveMetadata,sandbox,{filename:'js/state/objective-metadata-state.js'});
@@ -294,6 +297,9 @@ if(typeof sandbox.window.OnoForgeGameAssistantState?.createGameAssistantStateCon
 const tacticalPreRollController=sandbox.window.OnoForgeTacticalPreRollState.createTacticalPreRollStateController({getState:()=>({phase:'Command',tactical:{selectedTargetUid:''},opp:[]}),tacticalAdvisorAttackerEntry:()=>null,entry:()=>null,tacticalPreRollPoolManifest:()=>[],tacticalUnitState:()=>null,esc:v=>String(v),unitDisplayName:()=>'',setTacticalPreRollPoolTarget:()=>{},tacticalPreRollWeaponState:()=>({}),setTacticalPreRollWeapon:()=>{},tacticalPreRollCheck:()=>({}),combatSnapshot:()=>null,setTacticalPreRollPoolAllocation:()=>{},recordMyTacticalAttackInteractionFromUi:()=>{},tacticalPreRollOpenResolution:()=>{}});
 if(tacticalPreRollController.tacticalPreRollHtml()!=='')throw new Error('Tactical pre-roll empty-state regression');
 if(typeof sandbox.window.OnoForgeTacticalPreRollState?.createTacticalPreRollStateController!=='function')throw new Error('Tactical pre-roll module did not expose createTacticalPreRollStateController');
+const tacticalAdvisorController=sandbox.window.OnoForgeTacticalAdvisorState.createTacticalAdvisorStateController({getState:()=>({phase:'Command',my:[]}),tacticalAdvisorAttackerEntry:()=>null,tacticalUnitState:()=>null,esc:v=>String(v),unitDisplayName:()=>'',tacticalObjectiveAdvisorHtml:()=>'',objectiveTacticalSummary:()=>'',objectiveBattlefieldGeometry:()=>null,getTacticalAdvisorResult:()=>null,tacticalAdvisorActionState:()=>({}),entry:()=>null,setTacticalAdvisorAttacker:()=>{},enrichAdvisor:x=>x,confidenceClass:()=>'',recordTacticalChargeResult:()=>{},ensureTacticalState:()=>{},save:()=>{},render:()=>{}});
+if(tacticalAdvisorController.tacticalAdvisorHtml()!=='')throw new Error('Tactical advisor command-phase regression');
+if(typeof sandbox.window.OnoForgeTacticalAdvisorState?.createTacticalAdvisorStateController!=='function')throw new Error('Tactical advisor module did not expose createTacticalAdvisorStateController');
 const rendererState={myName:'Me',oppName:'Them',primaryMyScoredVP:10,primaryOppScoredVP:8,round:5,events:[1,2],battleResultVerified:false,battleReadyMy:true,battleReadyOpp:false,objectiveMapMissionKey:'M',objectiveMapLayout:'A'};
 const battleEndController=sandbox.window.OnoForgeBattleEndSummaryState.createBattleEndSummaryStateController({scoreTotalForSide:s=>s==='my'?25:18,secondaryTotalScoredVP:s=>s==='my'?5:4,esc:v=>String(v),objectiveMissionKey:()=> 'M',reserveUnitsForSide:()=>[],getState:()=>rendererState});
 if(!battleEndController.battleEndSummaryHtml().includes('Battle Report')||!battleEndController.battleEndSummaryHtml().includes('Verify &amp; Lock Result'))throw new Error('Battle end summary renderer regression');
