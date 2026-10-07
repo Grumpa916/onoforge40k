@@ -455,9 +455,9 @@ if(primaryObjectiveConditionShortLabelController.primaryObjectiveConditionShortL
 if(primaryObjectiveConditionShortLabelController.primaryObjectiveConditionShortLabel({type:'one-or-more',requiresTurnChange:false,met:false})!=='No qualifying objective currently controlled')throw new Error('Primary objective condition short label one-or-more regression');
 if(primaryObjectiveConditionShortLabelController.primaryObjectiveConditionShortLabel({type:'central-and-expansion',met:false})!=='Need at least 1 central and 1 expansion objective')throw new Error('Primary objective condition short label geometry regression');
 const primaryScoringRoundRangeController=sandbox.window.OnoForgePrimaryScoringRoundRangeState.createPrimaryScoringRoundRangeStateController();
-const roundRange=primaryScoringRoundRangeController.primaryScoringRoundRange('R1–R3');
+const roundRange=primaryScoringRoundRangeController.primaryScoringRoundRange('R1–3');
 if(roundRange.min!==1||roundRange.max!==3)throw new Error('Primary scoring round range range regression');
-const dashRange=primaryScoringRoundRangeController.primaryScoringRoundRange('R2-R4');
+const dashRange=primaryScoringRoundRangeController.primaryScoringRoundRange('R2-4');
 if(dashRange.min!==2||dashRange.max!==4)throw new Error('Primary scoring round range dash regression');
 const plusRange=primaryScoringRoundRangeController.primaryScoringRoundRange('R3+');
 if(plusRange.min!==3||plusRange.max!==5)throw new Error('Primary scoring round range plus regression');
