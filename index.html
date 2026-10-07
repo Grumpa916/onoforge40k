@@ -702,7 +702,7 @@ body{overflow-x:hidden}
 <script src="js/state/stratagem-state.js"></script>
 <script src="js/state/game-timer-state.js"></script>
 <script src="js/state/phase-cp-state.js"></script>
-<script src="js/state/objective-control-history-state.js"></script><script src="js/state/objective-control-sources-state.js"></script><script src="js/state/secondary-round-ledger-state.js"></script><script src="js/state/score-ledger-state.js"></script><script src="js/state/secondary-score-state.js"></script><script src="js/state/score-calculation-state.js"></script><script src="js/state/primary-round-score-state.js"></script><script src="js/state/primary-round-score-cap-state.js"></script><script src="js/state/primary-scoring-vp-state.js"></script><script src="js/state/primary-scoring-is-per-state.js"></script><script src="js/state/primary-scoring-max-state.js"></script><script src="js/state/primary-objective-condition-text-state.js"></script><script src="js/state/primary-objective-qualifying-list-state.js"></script><script src="js/state/objective-counts-state.js"></script><script src="js/state/primary-objective-condition-status-state.js"></script><script src="js/state/primary-scoring-objective-count-state.js"></script><script src="js/state/primary-scoring-objective-amount-state.js"></script><script src="js/state/primary-scoring-effective-max-state.js"></script><script src="js/state/primary-scoring-exclusive-group-state.js"></script><script src="js/state/primary-scoring-original-index-state.js"></script><script src="js/state/primary-objective-condition-short-label-state.js"></script><script src="js/state/primary-scoring-round-range-state.js"></script><script src="js/state/primary-scoring-row-available-state.js"></script><script src="js/state/primary-scoring-rows-for-round-state.js"></script><script src="js/state/primary-scoring-checkpoint-rows-state.js"></script><script src="js/state/primary-scoring-objective-link-html-state.js"></script><script src="js/state/primary-scoring-evidence-state.js"></script><script src="js/state/primary-scoring-html-state.js"></script>
+<script src="js/state/objective-control-history-state.js"></script><script src="js/state/objective-control-sources-state.js"></script><script src="js/state/secondary-round-ledger-state.js"></script><script src="js/state/score-ledger-state.js"></script><script src="js/state/secondary-score-state.js"></script><script src="js/state/score-calculation-state.js"></script><script src="js/state/primary-round-score-state.js"></script><script src="js/state/primary-round-score-cap-state.js"></script><script src="js/state/primary-scoring-vp-state.js"></script><script src="js/state/primary-scoring-is-per-state.js"></script><script src="js/state/primary-scoring-max-state.js"></script><script src="js/state/primary-objective-condition-text-state.js"></script><script src="js/state/primary-objective-qualifying-list-state.js"></script><script src="js/state/objective-counts-state.js"></script><script src="js/state/primary-objective-condition-status-state.js"></script><script src="js/state/primary-scoring-objective-count-state.js"></script><script src="js/state/primary-scoring-objective-amount-state.js"></script><script src="js/state/primary-scoring-effective-max-state.js"></script><script src="js/state/primary-scoring-exclusive-group-state.js"></script><script src="js/state/primary-scoring-original-index-state.js"></script><script src="js/state/primary-objective-condition-short-label-state.js"></script><script src="js/state/primary-scoring-round-range-state.js"></script><script src="js/state/primary-scoring-row-available-state.js"></script><script src="js/state/primary-scoring-rows-for-round-state.js"></script><script src="js/state/primary-scoring-checkpoint-rows-state.js"></script><script src="js/state/primary-scoring-objective-link-html-state.js"></script><script src="js/state/primary-scoring-evidence-state.js"></script><script src="js/state/primary-scoring-html-state.js"></script><script src="js/state/primary-scoring-catalogue-audit-state.js"></script>
 <script src="js/data/bsdata-parser.js"></script><script>
 const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;
 const {createReserveStateController}=window.OnoForgeReserveState;
@@ -830,6 +830,9 @@ const {primaryScoringEvidence}=primaryScoringEvidenceStateController;
 const {createPrimaryScoringHtmlStateController}=window.OnoForgePrimaryScoringHtmlState;
 const primaryScoringHtmlStateController=createPrimaryScoringHtmlStateController({getState:()=>state,getPrimaryScoringRows:mission=>PRIMARY_SCORING[mission],primaryScoringRowAvailable,esc});
 const {primaryScoringHtml}=primaryScoringHtmlStateController;
+const {createPrimaryScoringCatalogueAuditStateController}=window.OnoForgePrimaryScoringCatalogueAuditState;
+const primaryScoringCatalogueAuditStateController=createPrimaryScoringCatalogueAuditStateController({getEventCompanion:()=>ONOFORGE_EVENT_COMPANION,primaryScoring:PRIMARY_SCORING});
+const {primaryScoringCatalogueAudit}=primaryScoringCatalogueAuditStateController;
 const phaseCPStateController=createPhaseCPStateController({getState:()=>state});
 const {ensurePhaseCPState,phaseCPKey,rememberPhaseCP,restorePhaseCP}=phaseCPStateController;
 const gameTimerStateController=createGameTimerStateController({getState:()=>state});
@@ -11355,20 +11358,7 @@ function eventCompanionGeometryVerificationConsoleHtml(){
     '<div class="unit"><strong>Next verification input</strong><div class="tiny" style="margin-top:4px">When the official Event Companion artwork is available, record exact measurements for one layout at a time. Keep the source page number attached to every geometry record. Do not estimate from screenshots or generic battlefield proportions.</div></div>'+
     '<div class="tiny" style="margin-top:10px">Recommended order: Layout A → Layout B → Layout C for each mission pair, then run the structural audit before enabling objective-control distance/scoring dependencies.</div></div>';
 }
-function primaryScoringCatalogueAudit(){
-  const expected=Array.isArray(ONOFORGE_EVENT_COMPANION?.layoutIndex)?[...new Set(ONOFORGE_EVENT_COMPANION.layoutIndex.flatMap(x=>Array.isArray(x)?x.slice(0,2):(x?.missions||[])))]:[];
-  const catalogue=PRIMARY_SCORING&&typeof PRIMARY_SCORING==='object'?PRIMARY_SCORING:{};
-  const missing=expected.filter(m=>!Object.prototype.hasOwnProperty.call(catalogue,m));
-  const malformed=[];
-  Object.entries(catalogue).forEach(([mission,rows])=>{
-    if(!Array.isArray(rows))return malformed.push(mission+' is not an array');
-    rows.forEach((row,i)=>{
-      if(!Array.isArray(row)||row.length<3)malformed.push(mission+' row '+i+' malformed');
-      else if(!String(row[0]||'').trim()||!String(row[1]||'').trim()||!String(row[2]||'').trim())malformed.push(mission+' row '+i+' incomplete');
-    });
-  });
-  return {ok:missing.length===0&&malformed.length===0,expectedMissionCount:expected.length,missing,malformed};
-}
+
 function eventCompanionMapRegressionAudit(){
   const layouts=Array.isArray(ONOFORGE_EVENT_COMPANION?.layoutGeometry?.layouts)?ONOFORGE_EVENT_COMPANION.layoutGeometry.layouts:[];
   const index=Array.isArray(ONOFORGE_EVENT_COMPANION?.layoutIndex)?ONOFORGE_EVENT_COMPANION.layoutIndex:[];
