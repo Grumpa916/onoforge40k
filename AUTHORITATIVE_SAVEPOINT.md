@@ -2,14 +2,14 @@
 
 **Permanent authoritative continuity file:** `AUTHORITATIVE_SAVEPOINT.md`
 
-This document is the current reusable save point for the OnoForge 40K monolith-refactor workstream. Update this file in place at future logical milestones. The dated save point `AUTHORITATIVE_SAVEPOINT.md` remains as a historical snapshot.
+This document is the current reusable save point for the OnoForge 40K monolith-refactor workstream. Update this file in place at future logical milestones. The dated save point `AUTHORITATIVE_SAVEPOINT_2026-10-07_MONOLITH_REFACTOR.md` remains as a historical snapshot.
 
 ## 1. Authoritative project state
 
 - Repository: `Grumpa916/onoforge40k`
 - Active/authoritative branch: `refactor/clean-reset-monolith`
-- Current branch HEAD: `fc9afbf0a242de93785a320816deb8b54f31aac5`
-- Latest commit: `test: guard undo action extraction`
+- Current branch HEAD: `b857cb3470042cd8d022e2ab8003d3f6ae6439e6`
+- Latest commit: `docs: make authoritative save point reusable`
 - Current `index.html` blob SHA: `01c965961c559ca557b83e709078b5e66d6f5fd2`
 - Current `index.html` size: 722,479 characters
 - Main branch: **must remain untouched**
@@ -178,7 +178,7 @@ Use this prompt at the start of every new chat:
 > Branch: `refactor/clean-reset-monolith`
 >
 > **First read:**
-> `AUTHORITATIVE_SAVEPOINT_2026-10-07_MONOLITH_REFACTOR.md`
+> `AUTHORITATIVE_SAVEPOINT.md`
 >
 > Do NOT restart, redesign, undo, revert, or re-extract completed work.
 > Do NOT touch main.
