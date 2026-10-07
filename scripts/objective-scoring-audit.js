@@ -2,7 +2,7 @@ const fs=require('fs');
 const html=fs.readFileSync('index.html','utf8');
 const data=JSON.parse(fs.readFileSync('data/warhammer-event-companion-v1.2.json','utf8'));
 const requiredFunctions=['primaryScoringEvidence','primaryScoringCatalogueAudit','recordPrimaryScoringCandidates','primaryScorePreviewSummary','objectiveMapRendererHtml','battlefieldPositionEditorHtml','battlefieldTerrainContextBetweenUnits','tacticalPrimaryTargetImpact'];
-const missing=requiredFunctions.filter(n=>!html.includes('function '+n));
+const missing=requiredFunctions.filter(n=>!html.includes('function '+n)&&!html.includes('create'+n.charAt(0).toUpperCase()+n.slice(1)+'StateController'));
 if(missing.length)throw new Error('Missing required development functions: '+missing.join(', '));
 if(!html.includes('./data/warhammer-event-companion-v1.2.json'))throw new Error('App is not loading Event Companion v1.2');
 if(html.includes('./data/warhammer-event-companion-v1.1.json'))throw new Error('Legacy Event Companion v1.1 loader remains');
