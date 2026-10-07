@@ -22,6 +22,7 @@ const deploymentTrackingEditor=fs.readFileSync(path.join(root,'js/state/deployme
 const deploymentStatus=fs.readFileSync(path.join(root,'js/state/deployment-status-state.js'),'utf8');
 const tournamentDeploymentValidation=fs.readFileSync(path.join(root,'js/state/tournament-deployment-validation-state.js'),'utf8');
 const deploymentTrackingControls=fs.readFileSync(path.join(root,'js/state/deployment-tracking-controls-state.js'),'utf8');
+const tournamentSetupChecklist=fs.readFileSync(path.join(root,'js/state/tournament-setup-checklist-state.js'),'utf8');
 const objectiveMap=fs.readFileSync(path.join(root,'js/state/objective-map-state.js'),'utf8');
 const objectiveLayout=fs.readFileSync(path.join(root,'js/state/objective-layout-state.js'),'utf8');
 const objectiveMetadata=fs.readFileSync(path.join(root,'js/state/objective-metadata-state.js'),'utf8');
@@ -140,7 +141,7 @@ for(const name of [
   'ensureGameTimer','gameTimerElapsed','turnElapsedMs','finalizeCurrentTurnTime','switchTurnClock',
   'ensurePhaseCPState','phaseCPKey','rememberPhaseCP','restorePhaseCP',
   'ensureObjectiveControlHistory','objectivePreviousTurnKey','objectivePreviousTurnOwner',
-  'ensureObjectiveControlSources','objectiveControlSourceIds','ensureSecondaryRoundLedger','ensureScoreLedger','secondaryTotalScoredVP','scoreTotalForSide','armyNoMansLandTagsHtml','objectiveMapPlacementPanelHtml','objectiveMapRendererHtml','completeTerrainSetup','unitDatabase','canonicalUnitDatabase','bootstrapUnitDatabase','mergeSupplementalUnits','saveCurrentArmyList','loadSavedArmyList','deleteSavedArmyList','undoDeletedSavedArmyList','currentMyListSnapshot','reserveTrayHtml','deploymentPlanMapControlsHtml','transportDeclarationSectionHtml','objectiveLayoutHtml','reserveDeclarationSectionHtml','deploymentPlanPositionEditorHtml','deploymentTrackingEditorHtml','deploymentTrackingControlsHtml','deploymentStatusHtml','tournamentDeploymentValidation','actionLogFiltersHtml','battleNotesHtml','dataSyncStatusHtml'
+  'ensureObjectiveControlSources','objectiveControlSourceIds','ensureSecondaryRoundLedger','ensureScoreLedger','secondaryTotalScoredVP','scoreTotalForSide','armyNoMansLandTagsHtml','objectiveMapPlacementPanelHtml','objectiveMapRendererHtml','completeTerrainSetup','unitDatabase','canonicalUnitDatabase','bootstrapUnitDatabase','mergeSupplementalUnits','saveCurrentArmyList','loadSavedArmyList','deleteSavedArmyList','undoDeletedSavedArmyList','currentMyListSnapshot','reserveTrayHtml','deploymentPlanMapControlsHtml','transportDeclarationSectionHtml','objectiveLayoutHtml','reserveDeclarationSectionHtml','deploymentPlanPositionEditorHtml','deploymentTrackingEditorHtml','deploymentTrackingControlsHtml','deploymentStatusHtml','tournamentDeploymentValidation','tournamentSetupChecklistHtml','actionLogFiltersHtml','battleNotesHtml','dataSyncStatusHtml'
 ]){
   const count=(html.match(new RegExp('function\s+'+name+'\s*\\(','g'))||[]).length;
   if(count!==0)throw new Error('Extracted function still inline: '+name);
@@ -184,6 +185,7 @@ vm.runInNewContext(deploymentTrackingEditor,sandbox,{filename:'js/state/deployme
 vm.runInNewContext(deploymentStatus,sandbox,{filename:'js/state/deployment-status-state.js'});
 vm.runInNewContext(tournamentDeploymentValidation,sandbox,{filename:'js/state/tournament-deployment-validation-state.js'});
 vm.runInNewContext(deploymentTrackingControls,sandbox,{filename:'js/state/deployment-tracking-controls-state.js'});
+vm.runInNewContext(tournamentSetupChecklist,sandbox,{filename:'js/state/tournament-setup-checklist-state.js'});
 vm.runInNewContext(objectiveMap,sandbox,{filename:'js/state/objective-map-state.js'});
 vm.runInNewContext(objectiveLayout,sandbox,{filename:'js/state/objective-layout-state.js'});
 vm.runInNewContext(objectiveMetadata,sandbox,{filename:'js/state/objective-metadata-state.js'});
@@ -268,6 +270,7 @@ if(typeof sandbox.window.OnoForgeDeploymentPlanMapControlsState?.createDeploymen
 if(typeof sandbox.window.OnoForgeDeploymentPlanPositionEditorState?.createDeploymentPlanPositionEditorStateController!=='function')throw new Error('Deployment plan position editor module did not expose createDeploymentPlanPositionEditorStateController');
 if(typeof sandbox.window.OnoForgeDeploymentTrackingEditorState?.createDeploymentTrackingEditorStateController!=='function')throw new Error('Deployment tracking editor module did not expose createDeploymentTrackingEditorStateController');
 if(typeof sandbox.window.OnoForgeDeploymentTrackingControlsState?.createDeploymentTrackingControlsStateController!=='function')throw new Error('Deployment tracking controls module did not expose createDeploymentTrackingControlsStateController');
+if(typeof sandbox.window.OnoForgeTournamentSetupChecklistState?.createTournamentSetupChecklistStateController!=='function')throw new Error('Tournament setup checklist module did not expose createTournamentSetupChecklistStateController');
 if(typeof sandbox.window.OnoForgeDeploymentPlanState?.createDeploymentPlanStateController({getState:()=>({}),save:()=>{},render:()=>{},cloudUpsertArmyList:()=>Promise.resolve(),notify:()=>{},objectiveMissionKey:()=>''}).deploymentPlanKey!=='function')throw new Error('Deployment plan module did not expose deploymentPlanKey');
 if(typeof sandbox.window.OnoForgeObjectiveMapState?.createObjectiveMapStateController!=='function')throw new Error('Objective map module did not expose createObjectiveMapStateController');
 if(typeof sandbox.window.OnoForgeObjectiveMetadataState?.createObjectiveMetadataStateController!=='function')throw new Error('Objective metadata module did not expose createObjectiveMetadataStateController');
@@ -500,6 +503,18 @@ if(!deploymentStatusHtml.includes('data-deployment-skip-uid="u2"'))throw new Err
 deploymentStatusState.deploymentSkippedUnits['my|u2']=true;
 const deploymentStatusSkippedHtml=deploymentStatusController.deploymentStatusHtml({});
 if(!deploymentStatusSkippedHtml.includes('Deployment complete')||!deploymentStatusSkippedHtml.includes('Skipped 1'))throw new Error('Deployment status skipped state regression');
+const tournamentSetupChecklistController=sandbox.window.OnoForgeTournamentSetupChecklistState.createTournamentSetupChecklistStateController({
+  tournamentSetupValidation:()=>({ready:false,missing:['Mission','First turn']}),
+  esc:value=>String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')
+});
+const tournamentSetupChecklistHtml=tournamentSetupChecklistController.tournamentSetupChecklistHtml();
+if(!tournamentSetupChecklistHtml.includes('Setup incomplete')||!tournamentSetupChecklistHtml.includes('Mission • First turn'))throw new Error('Tournament setup checklist incomplete-state regression');
+const tournamentSetupChecklistReadyController=sandbox.window.OnoForgeTournamentSetupChecklistState.createTournamentSetupChecklistStateController({
+  tournamentSetupValidation:()=>({ready:true,missing:[]}),
+  esc:value=>String(value)
+});
+const tournamentSetupChecklistReadyHtml=tournamentSetupChecklistReadyController.tournamentSetupChecklistHtml();
+if(!tournamentSetupChecklistReadyHtml.includes('Ready to start the tournament battle'))throw new Error('Tournament setup checklist ready-state regression');
 const deploymentTrackingControlsController=sandbox.window.OnoForgeDeploymentTrackingControlsState.createDeploymentTrackingControlsStateController({
   getState:()=>({deploymentTrackingSide:'opp'}),
   ensureBattlefieldUnitPositions:()=>({a:{side:'opp'},b:{side:'opp'},c:{side:'my'}})
