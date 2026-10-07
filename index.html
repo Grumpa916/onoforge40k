@@ -702,7 +702,7 @@ body{overflow-x:hidden}
 <script src="js/state/stratagem-state.js"></script>
 <script src="js/state/game-timer-state.js"></script>
 <script src="js/state/phase-cp-state.js"></script>
-<script src="js/state/objective-control-history-state.js"></script><script src="js/state/objective-control-sources-state.js"></script><script src="js/state/secondary-round-ledger-state.js"></script><script src="js/state/score-ledger-state.js"></script><script src="js/state/secondary-score-state.js"></script><script src="js/state/score-calculation-state.js"></script><script src="js/state/primary-round-score-state.js"></script><script src="js/state/primary-round-score-cap-state.js"></script><script src="js/state/primary-scoring-vp-state.js"></script>
+<script src="js/state/objective-control-history-state.js"></script><script src="js/state/objective-control-sources-state.js"></script><script src="js/state/secondary-round-ledger-state.js"></script><script src="js/state/score-ledger-state.js"></script><script src="js/state/secondary-score-state.js"></script><script src="js/state/score-calculation-state.js"></script><script src="js/state/primary-round-score-state.js"></script><script src="js/state/primary-round-score-cap-state.js"></script><script src="js/state/primary-scoring-vp-state.js"></script><script src="js/state/primary-scoring-is-per-state.js"></script>
 <script src="js/data/bsdata-parser.js"></script><script>
 const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;
 const {createReserveStateController}=window.OnoForgeReserveState;
@@ -750,6 +750,9 @@ const {primaryRoundCapRemaining}=primaryRoundScoreCapStateController;
 const {createPrimaryScoringVPStateController}=window.OnoForgePrimaryScoringVPState;
 const primaryScoringVPStateController=createPrimaryScoringVPStateController();
 const {primaryScoringVP}=primaryScoringVPStateController;
+const {createPrimaryScoringIsPerStateController}=window.OnoForgePrimaryScoringIsPerState;
+const primaryScoringIsPerStateController=createPrimaryScoringIsPerStateController();
+const {primaryScoringIsPer}=primaryScoringIsPerStateController;
 const phaseCPStateController=createPhaseCPStateController({getState:()=>state});
 const {ensurePhaseCPState,phaseCPKey,rememberPhaseCP,restorePhaseCP}=phaseCPStateController;
 const gameTimerStateController=createGameTimerStateController({getState:()=>state});
@@ -1503,10 +1506,6 @@ function primaryScoringRowsForRound(mission){
   const rows=PRIMARY_SCORING[mission]||[];
   const round=Math.max(1,Math.min(5,Number(state.round)||1));
   return rows.filter(r=>primaryScoringRowAvailable(r?.[0],round));
-}
-function primaryScoringIsPer(row){
-  const text=String(row?.[2]||'').toLowerCase();
-  return /\bper\b|\bfor each\b/.test(text);
 }
 function objectiveCountsForSide(side){
   const player=side==='opp'?'opp':'my';
