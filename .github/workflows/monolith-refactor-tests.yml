@@ -15,6 +15,7 @@ on:
       - 'js/state/deployment-plan-state.js'
       - 'js/state/objective-map-state.js'
       - 'js/state/objective-metadata-state.js'
+      - 'js/state/transport-state.js'
       - 'tests/monolith-refactor.test.js'
       - '.github/workflows/monolith-refactor-tests.yml'
   workflow_dispatch:
