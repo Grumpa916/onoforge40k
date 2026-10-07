@@ -723,7 +723,7 @@ body{overflow-x:hidden}
 <script src="js/state/saved-army-list-state.js"></script>
 <script src="js/state/saved-army-list-deletion-state.js"></script>
 <script src="js/state/current-my-list-snapshot-state.js"></script><script src="js/state/terrain-reference-image-state.js"></script><script src="js/state/objective-geometry-identity-state.js"></script><script src="js/state/objective-tracked-identity-state.js"></script><script src="js/state/objective-canonical-label-state.js"></script><script src="js/state/objective-map-entries-state.js"></script><script src="js/state/primary-scoring-preview-summary-state.js"></script><script src="js/state/primary-scoring-html-state.js"></script><script src="js/state/primary-scoring-catalogue-audit-state.js"></script><script src="js/state/event-companion-map-regression-audit-state.js"></script>
-<script src="js/data/bsdata-parser.js"></script><script src="js/state/battle-notes-state.js"></script><script src="js/state/action-log-filters-state.js"></script><script>
+<script src="js/data/bsdata-parser.js"></script><script src="js/state/data-sync-status-state.js"></script><script src="js/state/battle-notes-state.js"></script><script src="js/state/action-log-filters-state.js"></script><script>
 const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;
 const {createReserveStateController}=window.OnoForgeReserveState;
 const reserveStateController=createReserveStateController({getState:()=>state,snapshotForUndo,event,save,render});
@@ -3817,23 +3817,9 @@ function localDataSavedLabel(){
   const d=new Date(state.localSavedAt);
   return Number.isNaN(d.getTime())?'Saved locally':formatSavedListDate(state.localSavedAt);
 }
-function dataSyncStatusHtml(){
-  const cloudReady=cloudConfigReady();
-  const connected=!!state.cloud?.userId;
-  const localLabel=localDataSavedLabel();
-  const cloudLabel=state.cloud?.lastSync?formatSavedListDate(state.cloud.lastSync):'Not synced yet';
-  const battleLabel=state.cloudBattleSavedAt?formatSavedListDate(state.cloudBattleSavedAt):'Not saved';
-  const cloudClass=connected?'ok':cloudReady?'warn':'';
-  return `<div class="data-sync-status">
-    <div class="data-sync-title"><strong>Data Status</strong><span class="tiny">Local-first • Cloud Sync optional</span></div>
-    <div class="data-sync-grid">
-      <div class="data-sync-item"><span class="data-sync-label">This Computer</span><strong>Saved locally</strong><span class="tiny">${esc(localLabel)}</span></div>
-      <div class="data-sync-item ${cloudClass}"><span class="data-sync-label">Cloud Sync</span><strong>${connected?'Connected':'Not connected'}</strong><span class="tiny">${connected?'Last sync: '+esc(cloudLabel):cloudReady?'Connection configured • sign in to sync':'Connect a Supabase account to sync'}</span></div>
-      <div class="data-sync-item"><span class="data-sync-label">Battle Snapshot</span><strong>${state.cloudBattleSavedAt?'Saved to cloud':'Local only'}</strong><span class="tiny">${esc(battleLabel)}</span></div>
-    </div>
-    <div class="data-sync-note">Moving computers: sign into the same Cloud Sync account to bring over saved army lists. Use <b>Save Battle</b> to copy your current battle state to the cloud.</div>
-  </div>`;
-}
+const {createDataSyncStatusStateController}=window.OnoForgeDataSyncStatusState;
+const dataSyncStatusStateController=createDataSyncStatusStateController({getState:()=>state,cloudConfigReady,localDataSavedLabel,formatSavedListDate,esc});
+const {dataSyncStatusHtml}=dataSyncStatusStateController;
 function nav(){const tools=[['rules','Rules Engine'],['data','Data Sources'],['manage','Data Management'],['log','Action Log']];const toolOpen=tools.some(([id])=>state.page===id);return '<div class="nav"><div class="nav-main">'+[['builder','List Builder'],['saved','Saved Lists'],['setup','Battle Setup'],['battle','Battle Mode'],['math','Mathhammer']].map(([id,n])=>`<button class="${state.page===id?'active':''}" onclick="state.page='${id}';state.builderView='full';render()">${n}</button>`).join('')+'</div><details class="nav-tools" ${toolOpen?"open":""}><summary>Tools</summary><div class="nav-tools-menu">'+tools.map(([id,n])=>`<button class="${state.page===id?'active':''}" onclick="state.page='${id}';state.builderView='full';render()">${n}</button>`).join('')+'</div></details></div>'}
 function addUnit(side,id){if(side!=='my'&&side!=='opp')return;const u=get(id);if(!u)return;state[side].push(makeEntry(u));save();render()}
 function removeUnit(side,id){
