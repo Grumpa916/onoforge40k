@@ -26,6 +26,7 @@ const primaryScoringVP=fs.readFileSync(path.join(root,'js/state/primary-scoring-
 const primaryScoringIsPer=fs.readFileSync(path.join(root,'js/state/primary-scoring-is-per-state.js'),'utf8');
 const primaryScoringMax=fs.readFileSync(path.join(root,'js/state/primary-scoring-max-state.js'),'utf8');
 const primaryScoringObjectiveCount=fs.readFileSync(path.join(root,'js/state/primary-scoring-objective-count-state.js'),'utf8');
+const primaryScoringObjectiveAmount=fs.readFileSync(path.join(root,'js/state/primary-scoring-objective-amount-state.js'),'utf8');
 const primaryScoringEffectiveMax=fs.readFileSync(path.join(root,'js/state/primary-scoring-effective-max-state.js'),'utf8');
 const primaryScoringExclusiveGroup=fs.readFileSync(path.join(root,'js/state/primary-scoring-exclusive-group-state.js'),'utf8');
 const primaryScoringOriginalIndex=fs.readFileSync(path.join(root,'js/state/primary-scoring-original-index-state.js'),'utf8');
@@ -55,6 +56,7 @@ const required=[
   '<script src="js/state/primary-scoring-is-per-state.js"></script>',
   '<script src="js/state/primary-scoring-max-state.js"></script>',
   '<script src="js/state/primary-scoring-objective-count-state.js"></script>',
+  '<script src="js/state/primary-scoring-objective-amount-state.js"></script>',
   '<script src="js/state/primary-scoring-effective-max-state.js"></script>',
   '<script src="js/state/primary-scoring-exclusive-group-state.js"></script>',
   '<script src="js/state/primary-scoring-original-index-state.js"></script>',
@@ -103,7 +105,7 @@ inlineBlocks.forEach((src,i)=>{
   fs.writeFileSync(file,src);
   cp.execFileSync(process.execPath,['--check',file],{stdio:'inherit'});
 });
-for(const [name,src] of [['bsdata-parser.js',parser],['pure-utils.js',utils],['reserve-state.js',reserve],['deployment-plan-state.js',deploymentPlan],['objective-map-state.js',objectiveMap],['objective-metadata-state.js',objectiveMetadata],['transport-state.js',transport],['stratagem-state.js',stratagem],['game-timer-state.js',gameTimer],['phase-cp-state.js',phaseCP],['objective-control-history-state.js',objectiveControlHistory],['objective-control-sources-state.js',objectiveControlSources],['secondary-round-ledger-state.js',secondaryRoundLedger],['score-ledger-state.js',scoreLedger],['secondary-score-state.js',secondaryScore],['score-calculation-state.js',scoreCalculation],['primary-round-score-state.js',primaryRoundScore],['primary-round-score-cap-state.js',primaryRoundScoreCap],['primary-scoring-vp-state.js',primaryScoringVP],['primary-scoring-is-per-state.js',primaryScoringIsPer],['primary-scoring-max-state.js',primaryScoringMax],['primary-scoring-objective-count-state.js',primaryScoringObjectiveCount],['primary-scoring-effective-max-state.js',primaryScoringEffectiveMax],['primary-scoring-exclusive-group-state.js',primaryScoringExclusiveGroup],['primary-scoring-original-index-state.js',primaryScoringOriginalIndex],['primary-objective-condition-short-label-state.js',primaryObjectiveConditionShortLabel]]){
+for(const [name,src] of [['bsdata-parser.js',parser],['pure-utils.js',utils],['reserve-state.js',reserve],['deployment-plan-state.js',deploymentPlan],['objective-map-state.js',objectiveMap],['objective-metadata-state.js',objectiveMetadata],['transport-state.js',transport],['stratagem-state.js',stratagem],['game-timer-state.js',gameTimer],['phase-cp-state.js',phaseCP],['objective-control-history-state.js',objectiveControlHistory],['objective-control-sources-state.js',objectiveControlSources],['secondary-round-ledger-state.js',secondaryRoundLedger],['score-ledger-state.js',scoreLedger],['secondary-score-state.js',secondaryScore],['score-calculation-state.js',scoreCalculation],['primary-round-score-state.js',primaryRoundScore],['primary-round-score-cap-state.js',primaryRoundScoreCap],['primary-scoring-vp-state.js',primaryScoringVP],['primary-scoring-is-per-state.js',primaryScoringIsPer],['primary-scoring-max-state.js',primaryScoringMax],['primary-scoring-objective-count-state.js',primaryScoringObjectiveCount],['primary-scoring-objective-amount-state.js',primaryScoringObjectiveAmount],['primary-scoring-effective-max-state.js',primaryScoringEffectiveMax],['primary-scoring-exclusive-group-state.js',primaryScoringExclusiveGroup],['primary-scoring-original-index-state.js',primaryScoringOriginalIndex],['primary-objective-condition-short-label-state.js',primaryObjectiveConditionShortLabel]]){
   const file=path.join('/tmp','onoforge-refactor-'+name);
   fs.writeFileSync(file,src);
   cp.execFileSync(process.execPath,['--check',file],{stdio:'inherit'});
@@ -132,6 +134,7 @@ vm.runInNewContext(primaryScoringVP,sandbox,{filename:'js/state/primary-scoring-
 vm.runInNewContext(primaryScoringIsPer,sandbox,{filename:'js/state/primary-scoring-is-per-state.js'});
 vm.runInNewContext(primaryScoringMax,sandbox,{filename:'js/state/primary-scoring-max-state.js'});
 vm.runInNewContext(primaryScoringObjectiveCount,sandbox,{filename:'js/state/primary-scoring-objective-count-state.js'});
+vm.runInNewContext(primaryScoringObjectiveAmount,sandbox,{filename:'js/state/primary-scoring-objective-amount-state.js'});
 vm.runInNewContext(primaryScoringEffectiveMax,sandbox,{filename:'js/state/primary-scoring-effective-max-state.js'});
 vm.runInNewContext(primaryScoringExclusiveGroup,sandbox,{filename:'js/state/primary-scoring-exclusive-group-state.js'});
 vm.runInNewContext(primaryScoringOriginalIndex,sandbox,{filename:'js/state/primary-scoring-original-index-state.js'});
@@ -142,6 +145,7 @@ if(typeof sandbox.window.OnoForgePrimaryObjectiveConditionShortLabelState?.creat
 if(typeof sandbox.window.OnoForgePrimaryScoringEffectiveMaxState?.createPrimaryScoringEffectiveMaxStateController!=='function')throw new Error('Primary scoring effective max module did not expose createPrimaryScoringEffectiveMaxStateController');
 if(typeof sandbox.window.OnoForgePrimaryScoringMaxState?.createPrimaryScoringMaxStateController!=='function')throw new Error('Primary scoring max module did not expose createPrimaryScoringMaxStateController');
 if(typeof sandbox.window.OnoForgePrimaryScoringObjectiveCountState?.createPrimaryScoringObjectiveCountStateController!=='function')throw new Error('Primary scoring objective count module did not expose createPrimaryScoringObjectiveCountStateController');
+if(typeof sandbox.window.OnoForgePrimaryScoringObjectiveAmountState?.createPrimaryScoringObjectiveAmountStateController!=='function')throw new Error('Primary scoring objective amount module did not expose createPrimaryScoringObjectiveAmountStateController');
 if(typeof sandbox.window.OnoForgePrimaryScoringIsPerState?.createPrimaryScoringIsPerStateController!=='function')throw new Error('Primary scoring per module did not expose createPrimaryScoringIsPerStateController');
 if(typeof sandbox.window.OnoForgePrimaryScoringVPState?.createPrimaryScoringVPStateController!=='function')throw new Error('Primary scoring VP module did not expose createPrimaryScoringVPStateController');
 if(typeof sandbox.window.OnoForgePrimaryRoundScoreCapState?.createPrimaryRoundScoreCapStateController!=='function')throw new Error('Primary round score cap module did not expose createPrimaryRoundScoreCapStateController');
@@ -360,6 +364,10 @@ const primaryScoringObjectiveCountController=sandbox.window.OnoForgePrimaryScori
 if(primaryScoringObjectiveCountController.primaryScoringObjectiveCount('my',['Score 2 VP',[1,2]])!==null)throw new Error('Primary scoring objective count non-objective regression');
 if(primaryScoringObjectiveCountController.primaryScoringObjectiveCount('my',['Score 2 VP per objective',[1,2,3]])!==3)throw new Error('Primary scoring objective count per regression');
 if(primaryScoringObjectiveCountController.primaryScoringObjectiveCount('my',['Score 2 VP for each objective',[1]])!==1)throw new Error('Primary scoring objective count each regression');
+const primaryScoringObjectiveAmountController=sandbox.window.OnoForgePrimaryScoringObjectiveAmountState.createPrimaryScoringObjectiveAmountStateController({
+  primaryScoringObjectiveCount:(side,row)=>row[0]
+});
+if(primaryScoringObjectiveAmountController.primaryScoringObjectiveAmount('my',[3])!==3||primaryScoringObjectiveAmountController.primaryScoringObjectiveAmount('my',[null])!==1)throw new Error('Primary scoring objective amount regression');
 const originalRows=[['first'],['second'],['third']];
 const visibleRows=[originalRows[1],originalRows[2]];
 const primaryScoringOriginalIndexController=sandbox.window.OnoForgePrimaryScoringOriginalIndexState.createPrimaryScoringOriginalIndexStateController({getPrimaryScoringRows:()=>originalRows,getVisiblePrimaryScoringRows:()=>visibleRows});
