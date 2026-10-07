@@ -1090,7 +1090,6 @@ async function refreshCurrentUnitDatabase(showMessage=true){
     if(showMessage)alert('Unit database update failed: '+(err.message||err));
   }
 }
-function undoDeletedSavedArmyList(){const deleted=Array.isArray(state.deletedSavedArmyLists)?state.deletedSavedArmyLists:[];const list=deleted.pop();if(!list)return;delete list.deletedAt;if(!Array.isArray(state.savedArmyLists))state.savedArmyLists=[];if(!state.savedArmyLists.some(x=>x.id===list.id))state.savedArmyLists.push(list);state.deletedSavedArmyLists=deleted;save();render();cloudUpsertArmyList(list).catch(()=>{});}
 
 function ensurePermanentSampleArmies(){
   if(!Array.isArray(state.savedArmyLists))state.savedArmyLists=[];
