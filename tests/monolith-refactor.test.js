@@ -151,7 +151,7 @@ for(const moduleScript of [
   'js/state/battle-end-summary-state.js','js/state/primary-mission-rules-state.js','js/state/game-reference-editor-state.js','js/state/game-assistant-state.js','js/state/tactical-pre-roll-state.js','js/state/tactical-advisor-state.js','js/state/tactical-context-html-body-state.js','js/state/tactical-pre-roll-resolution-modal-state.js','js/state/tactical-shooting-result-state.js','js/state/opponent-turn-tracking-state.js'
 ]){
   const tag='<script src="'+moduleScript+'></script>',count=html.split(tag).length-1,mainScript=html.indexOf('const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;');
-  if(count!==1||mainScript<0||html.indexOf(tag)>=mainScript)throw new Error('Extracted module script must load before main app script: '+moduleScript);
+  if(count!==1||mainScript<0||html.indexOf(tag)>=mainScript)throw new Error('Extracted module script must load before main app script: '+moduleScript+' | count='+count+' mainScript='+mainScript+' moduleScriptPos='+html.indexOf(tag));
 }
 
 for(const name of [
