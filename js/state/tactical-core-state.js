@@ -1,7 +1,7 @@
 (function(global){
   function createTacticalCoreStateController(deps={}){
     const {
-      state,entry,get,esc,event,
+      state,entry,get,esc,event,save,render,snapshotForUndo,
       TACTICAL_RENDER_CACHE,ONOFORGE_SOURCE_POLICY_11E,
       activeWeaponNames,attachedCombatEntries,attachedCombatWeaponGroups,
       bodyguardLeaders,bodyguardSupports,buildModelRoster,
