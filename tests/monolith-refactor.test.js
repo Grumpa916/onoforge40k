@@ -32,6 +32,7 @@ const tacticalAdvisor=fs.readFileSync(path.join(root,'js/state/tactical-advisor-
 const tacticalAdvisorContext=fs.readFileSync(path.join(root,'js/state/tactical-advisor-context-state.js'),'utf8');
 const mathCombatEngine=fs.readFileSync(path.join(root,'js/state/math-combat-engine-state.js'),'utf8');
 const mathCombatExecution=fs.readFileSync(path.join(root,'js/state/math-combat-execution-state.js'),'utf8');
+const forceDisposition=fs.readFileSync(path.join(root,'js/state/force-disposition-state.js'),'utf8');
 const tacticalCore=fs.readFileSync(path.join(root,'js/state/tactical-core-state.js'),'utf8');
 const stratagemUI=fs.readFileSync(path.join(root,'js/state/stratagem-ui-state.js'),'utf8');
 const tacticalContextHtmlBody=fs.readFileSync(path.join(root,'js/state/tactical-context-html-body-state.js'),'utf8');
@@ -102,6 +103,7 @@ const required=[
   '<script src="js/state/tactical-advisor-context-state.js"></script>',
   '<script src="js/state/math-combat-engine-state.js"></script>',
   '<script src="js/state/math-combat-execution-state.js"></script>',
+  '<script src="js/state/force-disposition-state.js"></script>',
   '<script src="js/state/tactical-core-state.js"></script>',
   '<script src="js/state/stratagem-ui-state.js"></script>',
   '<script src="js/state/tactical-context-html-body-state.js"></script>',
@@ -237,6 +239,7 @@ vm.runInNewContext(tacticalAdvisor,sandbox,{filename:'js/state/tactical-advisor-
 vm.runInNewContext(tacticalAdvisorContext,sandbox,{filename:'js/state/tactical-advisor-context-state.js'});
 vm.runInNewContext(mathCombatEngine,sandbox,{filename:'js/state/math-combat-engine-state.js'});
 vm.runInNewContext(mathCombatExecution,sandbox,{filename:'js/state/math-combat-execution-state.js'});
+vm.runInNewContext(forceDisposition,sandbox,{filename:'js/state/force-disposition-state.js'});
 vm.runInNewContext(tacticalCore,sandbox,{filename:'js/state/tactical-core-state.js'});
 vm.runInNewContext(stratagemUI,sandbox,{filename:'js/state/stratagem-ui-state.js'});
 vm.runInNewContext(tacticalContextHtmlBody,sandbox,{filename:'js/state/tactical-context-html-body-state.js'});
@@ -342,6 +345,8 @@ if(typeof sandbox.window.OnoForgeTacticalContextHtmlBodyState?.createTacticalCon
 if(typeof sandbox.window.OnoForgeTacticalAdvisorContextState?.createTacticalAdvisorContextStateController!=='function')throw new Error('Tactical advisor context module did not expose createTacticalAdvisorContextStateController');
 if(typeof sandbox.window.OnoForgeMathCombatEngineState?.createMathCombatEngineStateController!=='function')throw new Error('Math combat engine module did not expose createMathCombatEngineStateController');
 if(typeof sandbox.window.OnoForgeMathCombatExecutionState?.createMathCombatExecutionStateController!=='function')throw new Error('Math combat execution module did not expose createMathCombatExecutionStateController');
+if(typeof sandbox.window.OnoForgeForceDispositionState?.createForceDispositionStateController!=='function')throw new Error('Force disposition module did not expose createForceDispositionStateController');
+for(const name of ['forceDispositionNameForDetachment','availableForceDispositions','forceDisposition','primaryMission','setForceDisposition']){if((html.match(new RegExp('function\\s+'+name+'\\s*\\(','g'))||[]).length!==0)throw new Error('Force disposition function still inline: '+name);}
 for(const name of ['engineOneAttack','engineMonteCarlo','simulateOne']){if((html.match(new RegExp('function\\s+'+name+'\\s*\\(','g'))||[]).length!==0)throw new Error('Math combat execution function still inline: '+name);}
 if(typeof sandbox.window.OnoForgeTacticalCoreState?.createTacticalCoreStateController!=='function')throw new Error('Tactical core module did not expose createTacticalCoreStateController');
 if(typeof sandbox.window.OnoForgeStratagemUIState?.createStratagemUIStateController!=='function')throw new Error('Stratagem UI module did not expose createStratagemUIStateController');
