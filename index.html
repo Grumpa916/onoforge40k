@@ -4137,14 +4137,7 @@ function builder(){
    <div class="row" style="margin-top:10px"><div class="field"><label>Points Limit</label><input type="number" value="${state.limit}" onchange="state.limit=+this.value||2000;save();render()"></div><div class="field"><label>My Points</label><div class="metric">${total('my')} / ${state.limit}</div></div></div>
  </div>
  <div class="card"><h2>My List <span class="big">${total('my')} pts</span></h2>${state.my.length?armyListDisplayEntries('my').map(e=>unitRow('my',e,true)).join(''):'<div class="empty">No units added.</div>'}</div>
- <div class="card"><div class="split"><h3 style="margin:0">Add My Unn JSON.stringify({
-    name:String(state.myName||'').trim(),
-    faction:String(state.faction||''),
-    detachment:String(state.detachment||''),
-    detachmentSelections:Array.isArray(state.detachmentSelections)?[...state.detachmentSelections]:[],
-    limit:Number(state.limit)||2000,
-    units:Array.isArray(state.my)?state.my:[]
-  });
+ <div class="card"><div class="split"><h3 style="margin:0">Add My Units</h3><button class="btn" type="button" onclick="refreshCurrentUnitDatabase(true)">Refresh BSData Cross-Check</button></div><div id="my-unit-results">${renderUnitSections(myCat,'my')}</div></div>${configureModal()}${leaderAttachmentModal()}${bodyguardAttachmentModal()}${supportAttachmentModal()}${supportBodyguardAttachmentModal()}`
 }
 function canSaveCurrentList(){
   return currentMyListSnapshot()!==String(state.savedMyListSnapshot||'');
