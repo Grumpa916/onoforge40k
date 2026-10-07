@@ -702,7 +702,7 @@ body{overflow-x:hidden}
 <script src="js/state/stratagem-state.js"></script>
 <script src="js/state/game-timer-state.js"></script>
 <script src="js/state/phase-cp-state.js"></script>
-<script src="js/state/objective-control-history-state.js"></script><script src="js/state/objective-control-sources-state.js"></script><script src="js/state/secondary-round-ledger-state.js"></script><script src="js/state/score-ledger-state.js"></script><script src="js/state/secondary-score-state.js"></script><script src="js/state/score-calculation-state.js"></script><script src="js/state/primary-round-score-state.js"></script><script src="js/state/primary-round-score-cap-state.js"></script><script src="js/state/primary-scoring-vp-state.js"></script><script src="js/state/primary-scoring-is-per-state.js"></script><script src="js/state/primary-scoring-max-state.js"></script><script src="js/state/primary-objective-condition-text-state.js"></script><script src="js/state/primary-objective-qualifying-list-state.js"></script><script src="js/state/objective-counts-state.js"></script><script src="js/state/primary-objective-condition-status-state.js"></script><script src="js/state/primary-scoring-objective-count-state.js"></script><script src="js/state/primary-scoring-objective-amount-state.js"></script><script src="js/state/primary-scoring-effective-max-state.js"></script><script src="js/state/primary-scoring-exclusive-group-state.js"></script><script src="js/state/primary-scoring-original-index-state.js"></script><script src="js/state/primary-objective-condition-short-label-state.js"></script>
+<script src="js/state/objective-control-history-state.js"></script><script src="js/state/objective-control-sources-state.js"></script><script src="js/state/secondary-round-ledger-state.js"></script><script src="js/state/score-ledger-state.js"></script><script src="js/state/secondary-score-state.js"></script><script src="js/state/score-calculation-state.js"></script><script src="js/state/primary-round-score-state.js"></script><script src="js/state/primary-round-score-cap-state.js"></script><script src="js/state/primary-scoring-vp-state.js"></script><script src="js/state/primary-scoring-is-per-state.js"></script><script src="js/state/primary-scoring-max-state.js"></script><script src="js/state/primary-objective-condition-text-state.js"></script><script src="js/state/primary-objective-qualifying-list-state.js"></script><script src="js/state/objective-counts-state.js"></script><script src="js/state/primary-objective-condition-status-state.js"></script><script src="js/state/primary-scoring-objective-count-state.js"></script><script src="js/state/primary-scoring-objective-amount-state.js"></script><script src="js/state/primary-scoring-effective-max-state.js"></script><script src="js/state/primary-scoring-exclusive-group-state.js"></script><script src="js/state/primary-scoring-original-index-state.js"></script><script src="js/state/primary-objective-condition-short-label-state.js"></script><script src="js/state/primary-scoring-round-range-state.js"></script>
 <script src="js/data/bsdata-parser.js"></script><script>
 const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;
 const {createReserveStateController}=window.OnoForgeReserveState;
@@ -809,6 +809,9 @@ const {primaryScoringOriginalIndex}=primaryScoringOriginalIndexStateController;
 const {createPrimaryObjectiveConditionShortLabelStateController}=window.OnoForgePrimaryObjectiveConditionShortLabelState;
 const primaryObjectiveConditionShortLabelStateController=createPrimaryObjectiveConditionShortLabelStateController();
 const {primaryObjectiveConditionShortLabel}=primaryObjectiveConditionShortLabelStateController;
+const {createPrimaryScoringRoundRangeStateController}=window.OnoForgePrimaryScoringRoundRangeState;
+const primaryScoringRoundRangeStateController=createPrimaryScoringRoundRangeStateController();
+const {primaryScoringRoundRange}=primaryScoringRoundRangeStateController;
 const phaseCPStateController=createPhaseCPStateController({getState:()=>state});
 const {ensurePhaseCPState,phaseCPKey,rememberPhaseCP,restorePhaseCP}=phaseCPStateController;
 const gameTimerStateController=createGameTimerStateController({getState:()=>state});
@@ -1540,16 +1543,6 @@ function syncPrimaryScoringRound(){
   if(!state.primaryScoringValuesByRoundOpp[roundKey] || typeof state.primaryScoringValuesByRoundOpp[roundKey]!=='object') state.primaryScoringValuesByRoundOpp[roundKey]={};
   state.primaryScoredItemsMy=[...state.primaryScoringByRoundMy[roundKey]];
   state.primaryScoredItemsOpp=[...state.primaryScoringByRoundOpp[roundKey]];
-}
-function primaryScoringRoundRange(timing){
-  const text=String(timing||'').toUpperCase();
-  const m=text.match(/R(\\d+)\\s*[–—-]\\s*(\\d+)/);
-  if(m)return {min:Number(m[1]),max:Number(m[2])};
-  const plus=text.match(/R(\\d+)\\s*\\+/);
-  if(plus)return {min:Number(plus[1]),max:5};
-  const single=text.match(/R(\\d+)\\b/);
-  if(single)return {min:Number(single[1]),max:Number(single[1])};
-  return {min:1,max:5};
 }
 function primaryScoringRowAvailable(timing,round){
   const timingText=String(timing||'').toLowerCase();
