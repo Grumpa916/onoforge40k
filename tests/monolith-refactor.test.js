@@ -404,24 +404,6 @@ if(primaryObjectiveQualifyingListController.primaryObjectiveQualifyingList('my',
 if(primaryObjectiveQualifyingListController.primaryObjectiveQualifyingList('my',['enemy territory']).length!==1||primaryObjectiveQualifyingListController.primaryObjectiveQualifyingList('my',['enemy territory'])[0].name!=='expansion')throw new Error('Primary objective qualifying list territory regression');
 if(primaryObjectiveQualifyingListController.primaryObjectiveQualifyingList('my',['deployment zone']).length!==1||primaryObjectiveQualifyingListController.primaryObjectiveQualifyingList('my',['deployment zone'])[0].name!=='central')throw new Error('Primary objective qualifying list deployment regression');
 if(primaryObjectiveQualifyingListController.primaryObjectiveQualifyingList('my',['did not control at the start of the turn']).length!==1||primaryObjectiveQualifyingListController.primaryObjectiveQualifyingList('my',['did not control at the start of the turn'])[0].name!=='central')throw new Error('Primary objective qualifying list transition regression');
-const conditionState={
-  objectives:{home:'my','opp-home':'opp',central:'my',expansion:'my'}
-};
-const primaryObjectiveConditionStatusController=sandbox.window.OnoForgePrimaryObjectiveConditionStatusState.createPrimaryObjectiveConditionStatusStateController({
-  getState:()=>conditionState,
-  objectiveCountsForSide:(side)=>side==='my'?[{name:'central',type:'central'},{name:'expansion',type:'expansion'}]:[{name:'opp-home',type:'home'}],
-  primaryObjectiveQualifyingList:(side,row)=>side==='my'?[{name:'central',type:'central'},{name:'expansion',type:'expansion'}]:[],
-  objectiveHomeSide:(name)=>name==='opp-home'?'opp':'my',
-  objectiveStateRecord:(name)=>({name,type:name==='opp-home'?'home':'central'}),
-  objectiveTurnStartOwner:(name)=>name==='central'?'opp':'my',
-  primaryObjectiveConditionText:(row)=>row[0]
-});
-const centralExpansion=primaryObjectiveConditionStatusController.primaryObjectiveConditionStatus('my',['Control central and expansion objectives']);
-if(centralExpansion?.type!=='central-and-expansion'||centralExpansion.count!==2||!centralExpansion.met)throw new Error('Primary objective condition status central-expansion regression');
-const moreThanOpponent=primaryObjectiveConditionStatusController.primaryObjectiveConditionStatus('my',['Control more objectives than your opponent']);
-if(moreThanOpponent?.type!=='more-than-opponent'||moreThanOpponent.opponentCount!==1||!moreThanOpponent.met)throw new Error('Primary objective condition status opponent-count regression');
-const opponentHome=primaryObjectiveConditionStatusController.primaryObjectiveConditionStatus('my',["Control your opponent's home objective"]);
-if(opponentHome?.type!=='opponent-home'||opponentHome.count!==0||opponentHome.met)throw new Error('Primary objective condition status home regression');
 const statusObjectives={homeOpp:'my',homeMine:'my'};
 const primaryObjectiveConditionStatusController=sandbox.window.OnoForgePrimaryObjectiveConditionStatusState.createPrimaryObjectiveConditionStatusStateController({
   getState:()=>({objectives:statusObjectives}),
