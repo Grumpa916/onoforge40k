@@ -13,11 +13,9 @@
       objectivePrimaryScoringImpact,objectiveStateRecord,objectiveTacticalSummary,
       objectiveTurnStartOwner,primaryMission,primaryScoringRowsForRound,
       reserveUnitsForSide,survivingModelRoster,survivingModels,
-      tacticalAdvisorBattleStateContext,tacticalAdvisorStateSignature,tacticalAdvisorStateSnapshot,
-      tacticalAdvisorStratagemPressure,tacticalAdvisorV1,tacticalAdvisorV2,tacticalContextHtmlBody,
-      tacticalLegalityForUnit,tacticalObjectiveAdvisor,tacticalObjectiveAdvisorHtml,
-      tacticalObjectiveValueForTarget,tacticalPairKey,tacticalPairState,tacticalPreRollOpenResolutionForSides,
-      tacticalPrimaryTargetImpact,tacticalTargetLegality,tacticalUnitActionState,tacticalUnitState,
+      tacticalContextHtmlBody,
+      tacticalPairKey,tacticalPairState,tacticalPreRollOpenResolutionForSides,
+      tacticalTargetLegality,
       tacticalWeaponModelAvailable,tacticalWeaponModelModeConflict,tacticalWeaponPhaseEligible,
       tacticalWeaponRange,unitDatabase,unitDisplayName
     }=deps;
@@ -462,12 +460,7 @@ const {tacticalUnitState,tacticalBattleState,tacticalUnitActionState,tacticalLeg
 const {createTacticalAdvisorRenderStateController}=window.OnoForgeTacticalAdvisorRenderState;
 const tacticalAdvisorRenderStateController=createTacticalAdvisorRenderStateController({state,tacticalAdvisorStateSignature,TACTICAL_RENDER_CACHE,tacticalTargetLegality,tacticalAdvisorWeaponGroups,tacticalPairState,missionDecisionContext,reserveUnitsForSide,get,advisorStratagemPressure});
 const {prepareTacticalRenderCache,getTacticalAdvisorResult,getTacticalAdvisorV2Result,getTacticalTargetLegalityCached,getTacticalRenderBundle,tacticalAdvisorBattleStateContext,tacticalAdvisorStratagemPressure,tacticalAdvisorV2,tacticalAdvisorV1}=tacticalAdvisorRenderStateController;
-const TACTICAL_RENDER_CACHE={
-  signature:'',
-  advisor:new Map(),
-  weaponGroups:new Map(),
-  legality:new Map()
-};
+
 
 
 
