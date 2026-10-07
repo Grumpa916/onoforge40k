@@ -278,7 +278,7 @@ scoreLedgerController.ensureScoreLedger();
 if(scoreLedgerState.primaryMyScoredVP!==45||scoreLedgerState.primaryOppScoredVP!==0)throw new Error('Score ledger primary normalization regression');
 if(scoreLedgerState.secondaryMyScoredVP.A!==10||scoreLedgerState.secondaryMyScoredVP.B!=='bad')throw new Error('Score ledger secondary preservation regression');
 if(!scoreLedgerState.secondaryOppScoredVP||typeof scoreLedgerState.secondaryOppScoredVP!=='object'||Array.isArray(scoreLedgerState.secondaryOppScoredVP))throw new Error('Score ledger secondary initialization regression');
-if(scoreLedgerState.manualVPMy!==0||scoreLedgerState.manualVPOpp!==0)throw new Error('Score ledger manual VP initialization regression');
+if(scoreLedgerState.manualVPMy!==34||scoreLedgerState.manualVPOpp!==7)throw new Error('Score ledger manual VP derivation regression');
 if(scoreLedgerState.myVP!==65||scoreLedgerState.oppVP!==0)throw new Error('Score ledger total normalization regression');
 
 const objectiveMetadataState={objectiveMeta:{home:{type:'home',homeSide:'my'},central:{type:'central',territory:'nml'},expansion:{role:'expansion'}}};
