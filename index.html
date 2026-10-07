@@ -702,7 +702,7 @@ body{overflow-x:hidden}
 <script src="js/state/stratagem-state.js"></script>
 <script src="js/state/game-timer-state.js"></script>
 <script src="js/state/phase-cp-state.js"></script>
-<script src="js/state/objective-control-history-state.js"></script><script src="js/state/objective-control-sources-state.js"></script><script src="js/state/secondary-round-ledger-state.js"></script><script src="js/state/score-ledger-state.js"></script><script src="js/state/secondary-score-state.js"></script><script src="js/state/score-calculation-state.js"></script><script src="js/state/primary-round-score-state.js"></script><script src="js/state/primary-round-score-cap-state.js"></script><script src="js/state/primary-scoring-vp-state.js"></script><script src="js/state/primary-scoring-is-per-state.js"></script>
+<script src="js/state/objective-control-history-state.js"></script><script src="js/state/objective-control-sources-state.js"></script><script src="js/state/secondary-round-ledger-state.js"></script><script src="js/state/score-ledger-state.js"></script><script src="js/state/secondary-score-state.js"></script><script src="js/state/score-calculation-state.js"></script><script src="js/state/primary-round-score-state.js"></script><script src="js/state/primary-round-score-cap-state.js"></script><script src="js/state/primary-scoring-vp-state.js"></script><script src="js/state/primary-scoring-is-per-state.js"></script><script src="js/state/primary-scoring-max-state.js"></script>
 <script src="js/data/bsdata-parser.js"></script><script>
 const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;
 const {createReserveStateController}=window.OnoForgeReserveState;
@@ -753,6 +753,9 @@ const {primaryScoringVP}=primaryScoringVPStateController;
 const {createPrimaryScoringIsPerStateController}=window.OnoForgePrimaryScoringIsPerState;
 const primaryScoringIsPerStateController=createPrimaryScoringIsPerStateController();
 const {primaryScoringIsPer}=primaryScoringIsPerStateController;
+const {createPrimaryScoringMaxStateController}=window.OnoForgePrimaryScoringMaxState;
+const primaryScoringMaxStateController=createPrimaryScoringMaxStateController();
+const {primaryScoringMax}=primaryScoringMaxStateController;
 const phaseCPStateController=createPhaseCPStateController({getState:()=>state});
 const {ensurePhaseCPState,phaseCPKey,rememberPhaseCP,restorePhaseCP}=phaseCPStateController;
 const gameTimerStateController=createGameTimerStateController({getState:()=>state});
@@ -1744,11 +1747,6 @@ function primaryObjectiveConditionShortLabel(condition){
   if(condition.type==='one-or-more')return condition.requiresTurnChange?(condition.met?'✓ '+condition.transitionCount+' objective'+(condition.transitionCount===1?'':'s')+' newly controlled this turn':'No newly controlled qualifying objective'):condition.met?'✓ At least one qualifying objective controlled':'No qualifying objective currently controlled';
   if(condition.type==='central-and-expansion')return condition.met?'✓ Central + expansion objective controlled':'Need at least 1 central and 1 expansion objective';
   return '';
-}
-function primaryScoringMax(row){
-  const text=String(row?.[2]||'')+' '+String(row?.[3]||'');
-  const m=text.match(/(?:up to|maximum|max(?:imum)?(?: of)?)[^0-9]{0,12}(\d+)/i);
-  return m?Math.max(1,Number(m[1])||1):null;
 }
 function primaryScoringExclusiveGroup(mission,index){
   if(mission==='Purge and Secure' && index<=1)return 'purge-secure-kill';
