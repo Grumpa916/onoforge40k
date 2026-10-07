@@ -17,6 +17,7 @@ on:
       - 'js/state/objective-metadata-state.js'
       - 'js/state/transport-state.js'
       - 'js/state/stratagem-state.js'
+      - 'js/state/game-timer-state.js'
       - 'tests/monolith-refactor.test.js'
       - '.github/workflows/monolith-refactor-tests.yml'
   workflow_dispatch:
