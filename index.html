@@ -816,11 +816,11 @@ const {createPrimaryScoringRowAvailableStateController}=window.OnoForgePrimarySc
 const primaryScoringRowAvailableStateController=createPrimaryScoringRowAvailableStateController({primaryScoringRoundRange});
 const {primaryScoringRowAvailable}=primaryScoringRowAvailableStateController;
 const {createPrimaryScoringRowsForRoundStateController}=window.OnoForgePrimaryScoringRowsForRoundState;
+const primaryScoringRowsForRoundStateController=createPrimaryScoringRowsForRoundStateController({getState:()=>state,getPrimaryScoringRows:mission=>PRIMARY_SCORING[mission],primaryScoringRowAvailable});
+const {primaryScoringRowsForRound}=primaryScoringRowsForRoundStateController;
 const {createPrimaryScoringCheckpointRowsStateController}=window.OnoForgePrimaryScoringCheckpointRowsState;
 const primaryScoringCheckpointRowsStateController=createPrimaryScoringCheckpointRowsStateController({getState:()=>state,primaryScoringRowsForRound});
 const {primaryScoringCheckpointRows}=primaryScoringCheckpointRowsStateController;
-const primaryScoringRowsForRoundStateController=createPrimaryScoringRowsForRoundStateController({getState:()=>state,getPrimaryScoringRows:mission=>PRIMARY_SCORING[mission],primaryScoringRowAvailable});
-const {primaryScoringRowsForRound}=primaryScoringRowsForRoundStateController;
 const phaseCPStateController=createPhaseCPStateController({getState:()=>state});
 const {ensurePhaseCPState,phaseCPKey,rememberPhaseCP,restorePhaseCP}=phaseCPStateController;
 const gameTimerStateController=createGameTimerStateController({getState:()=>state});
