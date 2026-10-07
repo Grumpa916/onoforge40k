@@ -626,3 +626,54 @@ When choosing between two implementation approaches, prefer the one that:
 6. preserves verified behavior.
 
 This document should evolve as V2 architecture decisions are made. Significant deviations from these guidelines should be documented rather than silently introduced.
+
+
+---
+
+## 22. GitHub and Supabase infrastructure guidelines
+
+V2 should retain GitHub and Supabase rather than replacing them, but use them with deliberate V2 boundaries.
+
+### GitHub
+
+- Keep the existing `Grumpa916/onoforge40k` repository as the V1/reference application.
+- Create a dedicated `Grumpa916/onoforge40k-v2` repository for the new application.
+- Do not destabilize V1 merely to prepare V2.
+- Use GitHub for V2 source control, documentation, issues, pull requests, releases, and CI/CD.
+- Use GitHub Actions as the authoritative automated validation/deployment gate.
+- Prefer development → staging → production environments with appropriate GitHub secrets/environment controls.
+- Do not put production secrets in source code.
+
+### Supabase
+
+- Retain Supabase as the preferred V2 backend platform.
+- Do not initially point V2 at the V1 production database unless an explicit migration decision is made.
+- Prefer a dedicated V2 development Supabase project/environment while the data model is being designed.
+- Establish deliberate V2 PostgreSQL schemas rather than inheriting V1 database assumptions.
+- Use Supabase Auth where appropriate, but keep authentication/infrastructure outside the core game engine.
+- Use PostgreSQL Row Level Security deliberately for user/game data.
+- Never expose Supabase service-role or secret credentials to browser code.
+- Keep database changes version-controlled as migration files in GitHub.
+- Treat database migrations as part of the CI/CD process rather than relying on undocumented dashboard changes.
+
+### Environment model
+
+Preferred long-term structure:
+
+```
+GitHub
+  ↓
+GitHub Actions
+  ↓
+V2 Development → V2 Staging → V2 Production
+                         ↓
+                      Supabase
+                         ↓
+              PostgreSQL / Auth / Storage
+```
+
+The V2 game engine must remain infrastructure-independent. It should be possible to run the engine against test fixtures, local/in-memory state, replay data, or Supabase-backed application data without changing game-rule code.
+
+### Infrastructure migration principle
+
+Do not make infrastructure changes to V1 merely because V2 is being planned. V1 remains the behavioral reference and should remain independently usable while V2 is designed and built.
