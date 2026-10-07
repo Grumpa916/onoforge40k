@@ -19,6 +19,7 @@ on:
       - 'js/state/stratagem-state.js'
       - 'js/state/game-timer-state.js'
       - 'js/state/phase-cp-state.js'
+      - 'js/state/objective-control-history-state.js'
       - 'tests/monolith-refactor.test.js'
       - '.github/workflows/monolith-refactor-tests.yml'
   workflow_dispatch:
