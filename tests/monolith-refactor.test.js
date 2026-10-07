@@ -11,6 +11,7 @@ const deploymentPlan=fs.readFileSync(path.join(root,'js/state/deployment-plan-st
 const objectiveMap=fs.readFileSync(path.join(root,'js/state/objective-map-state.js'),'utf8');
 const objectiveMetadata=fs.readFileSync(path.join(root,'js/state/objective-metadata-state.js'),'utf8');
 const transport=fs.readFileSync(path.join(root,'js/state/transport-state.js'),'utf8');
+const stratagem=fs.readFileSync(path.join(root,'js/state/stratagem-state.js'),'utf8');
 const utils=fs.readFileSync(path.join(root,'js/utils/pure-utils.js'),'utf8');
 
 const required=[
@@ -21,6 +22,7 @@ const required=[
   '<script src="js/state/objective-map-state.js"></script>',
   '<script src="js/state/objective-metadata-state.js"></script>',
   '<script src="js/state/transport-state.js"></script>',
+  '<script src="js/state/stratagem-state.js"></script>',
   'const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;',
   'const {collectBSDataObjects,bsUnitFromEntry}=window.OnoForgeBSDataParser;',
   'const {createReserveStateController}=window.OnoForgeReserveState;',
@@ -38,7 +40,8 @@ for(const name of [
   'ensureDeploymentPlans','deploymentPlanForCurrentMap','deploymentPlanPosition','setDeploymentPlanPosition','clearDeploymentPlanPosition','clearDeploymentPlanForCurrentMap','saveDeploymentPlan','loadDeploymentPlan',
   'objectiveMissionKey','objectiveLayoutInfo','ensureObjectiveLayoutForMission','setObjectiveMapLayout','objectiveLayoutPage',
   'ensureObjectiveMeta','objectiveRole','objectiveType','objectiveHomeSide','objectiveMetadataTerritory','objectiveMetadataDeploymentZone',
-  'ensureTransportEmbarkations','transportEntry','isUnitEmbarked','transportPassengers','clearTransportEmbarkation','setTransportEmbarkation'
+  'ensureTransportEmbarkations','transportEntry','isUnitEmbarked','transportPassengers','clearTransportEmbarkation','setTransportEmbarkation',
+  'ensureStratagemState','stratagemUseHistory','stratagemUsedThisPhase','resetStratagemPhaseUses','stratagemUsedThisBattle','armyStratagemDetachment'
 ]){
   const count=(html.match(new RegExp('function\\s+'+name+'\\s*\\(','g'))||[]).length;
   if(count!==0)throw new Error('Extracted function still inline: '+name);
@@ -60,7 +63,7 @@ inlineBlocks.forEach((src,i)=>{
   fs.writeFileSync(file,src);
   cp.execFileSync(process.execPath,['--check',file],{stdio:'inherit'});
 });
-for(const [name,src] of [['bsdata-parser.js',parser],['pure-utils.js',utils],['reserve-state.js',reserve],['deployment-plan-state.js',deploymentPlan],['objective-map-state.js',objectiveMap],['objective-metadata-state.js',objectiveMetadata],['transport-state.js',transport]]){
+for(const [name,src] of [['bsdata-parser.js',parser],['pure-utils.js',utils],['reserve-state.js',reserve],['deployment-plan-state.js',deploymentPlan],['objective-map-state.js',objectiveMap],['objective-metadata-state.js',objectiveMetadata],['transport-state.js',transport],['stratagem-state.js',stratagem]]){
   const file=path.join('/tmp','onoforge-refactor-'+name);
   fs.writeFileSync(file,src);
   cp.execFileSync(process.execPath,['--check',file],{stdio:'inherit'});
@@ -74,6 +77,7 @@ vm.runInNewContext(deploymentPlan,sandbox,{filename:'js/state/deployment-plan-st
 vm.runInNewContext(objectiveMap,sandbox,{filename:'js/state/objective-map-state.js'});
 vm.runInNewContext(objectiveMetadata,sandbox,{filename:'js/state/objective-metadata-state.js'});
 vm.runInNewContext(transport,sandbox,{filename:'js/state/transport-state.js'});
+vm.runInNewContext(stratagem,sandbox,{filename:'js/state/stratagem-state.js'});
 if(typeof sandbox.window.OnoForgeBSDataParser?.collectBSDataObjects!=='function')throw new Error('Parser module did not expose collectBSDataObjects');
 if(typeof sandbox.window.OnoForgeBSDataParser?.bsUnitFromEntry!=='function')throw new Error('Parser module did not expose bsUnitFromEntry');
 if(typeof sandbox.window.OnoForgePureUtils?.battlefieldDistanceBetween!=='function')throw new Error('Utility module did not expose battlefieldDistanceBetween');
@@ -84,6 +88,7 @@ if(typeof sandbox.window.OnoForgeDeploymentPlanState?.createDeploymentPlanStateC
 if(typeof sandbox.window.OnoForgeObjectiveMapState?.createObjectiveMapStateController!=='function')throw new Error('Objective map module did not expose createObjectiveMapStateController');
 if(typeof sandbox.window.OnoForgeObjectiveMetadataState?.createObjectiveMetadataStateController!=='function')throw new Error('Objective metadata module did not expose createObjectiveMetadataStateController');
 if(typeof sandbox.window.OnoForgeTransportState?.createTransportStateController!=='function')throw new Error('Transport module did not expose createTransportStateController');
+if(typeof sandbox.window.OnoForgeStratagemState?.createStratagemStateController!=='function')throw new Error('Stratagem module did not expose createStratagemStateController');
 
 const reserveState={page:'setup',my:[{uid:'u1',name:'Unit One'}],opp:[{uid:'u2',name:'Unit Two'}],reserveDeclarations:{my:{},opp:{}},battlefieldUnitPositions:{}};
 const reserveController=sandbox.window.OnoForgeReserveState.createReserveStateController({getState:()=>reserveState,snapshotForUndo:()=>({}),event:()=>{},save:()=>{},render:()=>{}});
@@ -169,6 +174,20 @@ if(transportController.setTransportEmbarkation('my','tr1','tr2',true))throw new 
 if(!transportController.setTransportEmbarkation('my','tr1','p2',false))throw new Error('Transport disembarkation failed');
 if(transportController.transportPassengers('my','tr1').length!==0)throw new Error('Transport disembarkation state regression');
 if(transportSaves<3||transportRenders<3)throw new Error('Transport controller lifecycle regression');
+
+const stratagemState={round:2,phase:'Shooting',faction:'Space Marines',oppFaction:'Tyranids',detachmentSelections:["Gladius Task Force"],oppDetachmentSelections:[],detachment:'Fallback',oppDetachment:'Opponent Fallback',stratagemUsesMy:[{name:'Fire Overwatch',round:2,phase:'Shooting',playerTurn:'my'}],stratagemUsesOpp:[],stratagemPhaseUsesMy:['legacy'],stratagemPhaseUsesOpp:['legacy'],stratagemsMy:[],stratagemsOpp:[]};
+const stratagemController=sandbox.window.OnoForgeStratagemState.createStratagemStateController({getState:()=>stratagemState});
+stratagemController.ensureStratagemState();
+if(!Array.isArray(stratagemState.stratagemsMy)||!Array.isArray(stratagemState.stratagemUsesOpp))throw new Error('Stratagem state initialization regression');
+if(stratagemController.stratagemUseHistory('my')[0]?.name!=='Fire Overwatch')throw new Error('Stratagem history regression');
+if(!stratagemController.stratagemUsedThisPhase('my','Fire Overwatch'))throw new Error('Stratagem phase lookup regression');
+if(stratagemController.stratagemUsedThisPhase('my','Fire Overwatch')!==true)throw new Error('Stratagem phase persistence regression');
+if(!stratagemController.stratagemUsedThisBattle('my','Fire Overwatch'))throw new Error('Stratagem battle lookup regression');
+if(stratagemController.stratagemUsedThisBattle('my','Unknown'))throw new Error('Stratagem unknown lookup regression');
+if(stratagemController.armyStratagemDetachment('my')!=='Space Marines — Gladius Task Force')throw new Error('Stratagem detachment lookup regression');
+if(stratagemController.armyStratagemDetachment('opp')!=='')throw new Error('Opponent stratagem detachment fallback regression');
+stratagemController.resetStratagemPhaseUses();
+if(stratagemState.stratagemPhaseUsesMy.length!==0||stratagemState.stratagemPhaseUsesOpp.length!==0)throw new Error('Stratagem phase reset regression');
 
 const objectiveMetadataState={objectiveMeta:{home:{type:'home',homeSide:'my'},central:{type:'central',territory:'nml'},expansion:{role:'expansion'}}};
 const objectiveMetadataController=sandbox.window.OnoForgeObjectiveMetadataState.createObjectiveMetadataStateController({getState:()=>objectiveMetadataState});
