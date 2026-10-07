@@ -21,6 +21,7 @@ const scoreLedger=fs.readFileSync(path.join(root,'js/state/score-ledger-state.js
 const secondaryScore=fs.readFileSync(path.join(root,'js/state/secondary-score-state.js'),'utf8');
 const scoreCalculation=fs.readFileSync(path.join(root,'js/state/score-calculation-state.js'),'utf8');
 const primaryRoundScore=fs.readFileSync(path.join(root,'js/state/primary-round-score-state.js'),'utf8');
+const primaryRoundScoreCap=fs.readFileSync(path.join(root,'js/state/primary-round-score-cap-state.js'),'utf8');
 const utils=fs.readFileSync(path.join(root,'js/utils/pure-utils.js'),'utf8');
 
 const required=[
@@ -41,6 +42,7 @@ const required=[
   '<script src="js/state/secondary-score-state.js"></script>',
   '<script src="js/state/score-calculation-state.js"></script>',
   '<script src="js/state/primary-round-score-state.js"></script>',
+  '<script src="js/state/primary-round-score-cap-state.js"></script>',
   'const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;',
   'const {collectBSDataObjects,bsUnitFromEntry}=window.OnoForgeBSDataParser;',
   'const {createReserveStateController}=window.OnoForgeReserveState;',
@@ -85,7 +87,7 @@ inlineBlocks.forEach((src,i)=>{
   fs.writeFileSync(file,src);
   cp.execFileSync(process.execPath,['--check',file],{stdio:'inherit'});
 });
-for(const [name,src] of [['bsdata-parser.js',parser],['pure-utils.js',utils],['reserve-state.js',reserve],['deployment-plan-state.js',deploymentPlan],['objective-map-state.js',objectiveMap],['objective-metadata-state.js',objectiveMetadata],['transport-state.js',transport],['stratagem-state.js',stratagem],['game-timer-state.js',gameTimer],['phase-cp-state.js',phaseCP],['objective-control-history-state.js',objectiveControlHistory],['objective-control-sources-state.js',objectiveControlSources],['secondary-round-ledger-state.js',secondaryRoundLedger],['score-ledger-state.js',scoreLedger],['secondary-score-state.js',secondaryScore],['score-calculation-state.js',scoreCalculation],['primary-round-score-state.js',primaryRoundScore]]){
+for(const [name,src] of [['bsdata-parser.js',parser],['pure-utils.js',utils],['reserve-state.js',reserve],['deployment-plan-state.js',deploymentPlan],['objective-map-state.js',objectiveMap],['objective-metadata-state.js',objectiveMetadata],['transport-state.js',transport],['stratagem-state.js',stratagem],['game-timer-state.js',gameTimer],['phase-cp-state.js',phaseCP],['objective-control-history-state.js',objectiveControlHistory],['objective-control-sources-state.js',objectiveControlSources],['secondary-round-ledger-state.js',secondaryRoundLedger],['score-ledger-state.js',scoreLedger],['secondary-score-state.js',secondaryScore],['score-calculation-state.js',scoreCalculation],['primary-round-score-state.js',primaryRoundScore],['primary-round-score-cap-state.js',primaryRoundScoreCap]]){
   const file=path.join('/tmp','onoforge-refactor-'+name);
   fs.writeFileSync(file,src);
   cp.execFileSync(process.execPath,['--check',file],{stdio:'inherit'});
@@ -109,6 +111,8 @@ vm.runInNewContext(scoreLedger,sandbox,{filename:'js/state/score-ledger-state.js
 vm.runInNewContext(secondaryScore,sandbox,{filename:'js/state/secondary-score-state.js'});
 vm.runInNewContext(scoreCalculation,sandbox,{filename:'js/state/score-calculation-state.js'});
 vm.runInNewContext(primaryRoundScore,sandbox,{filename:'js/state/primary-round-score-state.js'});
+vm.runInNewContext(primaryRoundScoreCap,sandbox,{filename:'js/state/primary-round-score-cap-state.js'});
+if(typeof sandbox.window.OnoForgePrimaryRoundScoreCapState?.createPrimaryRoundScoreCapStateController!=='function')throw new Error('Primary round score cap module did not expose createPrimaryRoundScoreCapStateController');
 if(typeof sandbox.window.OnoForgePrimaryRoundScoreState?.createPrimaryRoundScoreStateController!=='function')throw new Error('Primary round score module did not expose createPrimaryRoundScoreStateController');
 if(typeof sandbox.window.OnoForgeBSDataParser?.collectBSDataObjects!=='function')throw new Error('Parser module did not expose collectBSDataObjects');
 if(typeof sandbox.window.OnoForgeBSDataParser?.bsUnitFromEntry!=='function')throw new Error('Parser module did not expose bsUnitFromEntry');
@@ -303,6 +307,8 @@ if(scoreCalculationController.scoreTotalForSide('my')!==100||scoreCalculationCon
 const primaryRoundScoreState={round:2,primaryScoringValuesByRoundMy:{'1':{A:5},'2':{A:10,B:'bad',C:-3}},primaryScoringValuesByRoundOpp:{'2':{A:7,B:4}}};
 const primaryRoundScoreController=sandbox.window.OnoForgePrimaryRoundScoreState.createPrimaryRoundScoreStateController({getState:()=>primaryRoundScoreState});
 if(primaryRoundScoreController.primaryRoundScoredVP('my')!==10||primaryRoundScoreController.primaryRoundScoredVP('opp')!==11)throw new Error('Primary round score calculation regression');
+const primaryRoundScoreCapController=sandbox.window.OnoForgePrimaryRoundScoreCapState.createPrimaryRoundScoreCapStateController({primaryRoundScoredVP:(side)=>side==='my'?10:16});
+if(primaryRoundScoreCapController.primaryRoundCapRemaining('my')!==5||primaryRoundScoreCapController.primaryRoundCapRemaining('opp')!==0)throw new Error('Primary round score cap regression');
 
 const objectiveMetadataState={objectiveMeta:{home:{type:'home',homeSide:'my'},central:{type:'central',territory:'nml'},expansion:{role:'expansion'}}};
 const objectiveMetadataController=sandbox.window.OnoForgeObjectiveMetadataState.createObjectiveMetadataStateController({getState:()=>objectiveMetadataState});
