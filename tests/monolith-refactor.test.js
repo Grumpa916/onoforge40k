@@ -259,7 +259,7 @@ if(objectiveControlSourcesController.objectiveControlSourceIds('B').length!==0)t
 objectiveControlSourcesState.objectiveControlSources=null;
 if(Object.keys(objectiveControlSourcesController.ensureObjectiveControlSources()).length!==0)throw new Error('Objective control source initialization regression');
 
-const secondaryRoundLedgerState={secondaryMyScoredVPByRound:{'1':{A:5,B:'bad'},'2':null},secondaryMyScoredRound:null,secondaryOppScoredVPByRound:null,secondaryOppScoredRound:[]};
+const secondaryRoundLedgerState={secondaryMyScoredVPByRound:{'1':{A:5,B:'bad'},'2':null},secondaryMyScoredRound:null,secondaryOppScoredVPByRound:null,secondaryOppScoredRound:null};
 const secondaryRoundLedgerController=sandbox.window.OnoForgeSecondaryRoundLedgerState.createSecondaryRoundLedgerStateController({getState:()=>secondaryRoundLedgerState});
 secondaryRoundLedgerController.ensureSecondaryRoundLedger();
 if(secondaryRoundLedgerState.secondaryMyScoredVPByRound['1'].A!==5||secondaryRoundLedgerState.secondaryMyScoredVPByRound['1'].B!==0)throw new Error('Secondary round ledger normalization regression');
