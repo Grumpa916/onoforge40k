@@ -3,9 +3,9 @@
     const {
       state,entry,get,esc,event,save,render,snapshotForUndo,
       TACTICAL_RENDER_CACHE,ONOFORGE_SOURCE_POLICY_11E,
-      activeWeaponNames,attachedCombatEntries,attachedCombatWeaponGroups,
+      activeWeaponNames,
       bodyguardLeaders,bodyguardSupports,buildModelRoster,
-      calculateMath,combatComponentRole,
+      calculateMath,
       ensureObjectiveLayoutForMission,getTacticalAdvisorResult,getTacticalAdvisorV2Result,
       getTacticalRenderBundle,getTacticalTargetLegalityCached,isLeaderUnit,isSupportUnit,
       modelRosterRule,modelRosterWeaponCounts,objectiveBattlefieldGeometry,objectiveControlSourceIds,
