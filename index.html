@@ -1042,25 +1042,6 @@ function clearBattlefieldUnitPosition(uid){
 
 
 
-function completeTerrainSetup(){
- const before=snapshotForUndo();
- state.terrainSetupComplete=true;
- state.liveDeploymentPanelOpen=false;
- event('TERRAIN_SETUP_COMPLETED',{side:'my',unit:'Battlefield',action:'Terrain setup completed; deployment planning unlocked',round:Math.max(1,Number(state.round)||1)},before);
- save();render();
- setTimeout(()=>document.getElementById('deployment-planning-section')?.scrollIntoView({behavior:'smooth',block:'start'}),0);
-}
-
-const CURRENT_11E_DATA_SOURCES={
-  Tyranids:'https://raw.githubusercontent.com/BSData/wh40k-11e/main/Tyranids.json',
-  Ultramarines:'https://raw.githubusercontent.com/BSData/wh40k-11e/main/Imperium%20-%20Ultramarines.json'
-};
-const ONOFORGE_SOURCE_POLICY_11E={
-  canonical:{name:'OnoForge verified runtime snapshot',role:'authoritative-verified'},
-  supplemental:[{name:'BSData 11e',role:'structured-cross-check'}],
-  bootstrap:[{name:'Embedded catalogue',variable:'EXPANDED_CATALOGUE',role:'bootstrap'}]
-};
-window.ONOFORGE_SOURCE_POLICY_11E=ONOFORGE_SOURCE_POLICY_11E;
 
 function unitDatabase(){
   // Runtime canonical data wins. The embedded expanded catalogue is bootstrap-only
