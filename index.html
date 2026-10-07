@@ -1026,8 +1026,22 @@ function clearBattlefieldUnitPosition(uid){
   const tactical=ensureTacticalState();
   Object.entries(tactical.pairs||{}).forEach(([key,pair])=>{
     if(!pair||typeof pair!=='object')return;
-    if(String(pa rendered only from verified Event Companion data. Line of sight is never inferred.</div>';
-reter+(!terrainSetup&&!model.verified?pending:'')+'</div>';}
+    if(String(pair.attackerUid)===id||String(pair.targetUid)===id){
+      const updated={...pair};
+      delete updated.distanceInches;
+      delete updated.distanceBand;
+      tactical.pairs[key]=updated;
+    }
+  });
+  const clearedMy=entry('my',id),clearedOpp=entry('opp',id),clearedEntry=clearedMy||clearedOpp,clearedSide=clearedMy?'my':'opp';event('UNIT_BATTLEFIELD_POSITION_CLEARED',{unit:id,unitName:clearedEntry?unitDisplayName(clearedSide,clearedEntry):id,entryId:id,action:'Battlefield position cleared',round:Math.max(1,Number(state.round)||1),phase:String(state.phase||'Command')},before);
+  save();render();
+}
+
+
+
+
+
+
 function completeTerrainSetup(){
  const before=snapshotForUndo();
  state.terrainSetupComplete=true;
