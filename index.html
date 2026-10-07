@@ -723,7 +723,7 @@ body{overflow-x:hidden}
 <script src="js/state/saved-army-list-state.js"></script>
 <script src="js/state/saved-army-list-deletion-state.js"></script>
 <script src="js/state/current-my-list-snapshot-state.js"></script><script src="js/state/terrain-reference-image-state.js"></script><script src="js/state/objective-geometry-identity-state.js"></script><script src="js/state/objective-tracked-identity-state.js"></script><script src="js/state/objective-canonical-label-state.js"></script><script src="js/state/objective-map-entries-state.js"></script><script src="js/state/primary-scoring-preview-summary-state.js"></script><script src="js/state/primary-scoring-html-state.js"></script><script src="js/state/primary-scoring-catalogue-audit-state.js"></script><script src="js/state/event-companion-map-regression-audit-state.js"></script>
-<script src="js/data/bsdata-parser.js"></script><script src="js/state/action-log-filters-state.js"></script><script>
+<script src="js/data/bsdata-parser.js"></script><script src="js/state/battle-notes-state.js"></script><script src="js/state/action-log-filters-state.js"></script><script>
 const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;
 const {createReserveStateController}=window.OnoForgeReserveState;
 const reserveStateController=createReserveStateController({getState:()=>state,snapshotForUndo,event,save,render});
@@ -2013,12 +2013,9 @@ function gameAssistantHtml(){
    '<details class="game-assistant-notes"><summary>Live Notes</summary><textarea rows="2" placeholder="Temporary game note..." onchange="state.gameAssistantNotes=this.value;save()">'+esc(state.gameAssistantNotes||'')+'</textarea></details>'+
   '</div></details>';
 }
-function battleNotesHtml(){
- return '<details class="card battle-notes-card" '+(state.gameAssistantNotesOpen===true?'open':'')+' ontoggle="state.gameAssistantNotesOpen=this.open;save()">'+
-  '<summary><span style="font-size:11px;font-weight:800">Notes</span></summary>'+
-  '<textarea rows="2" placeholder="Temporary game note..." onchange="state.gameAssistantNotes=this.value;save()">'+esc(state.gameAssistantNotes||'')+'</textarea>'+
-  '</details>';
-}
+const {createBattleNotesStateController}=window.OnoForgeBattleNotesState;
+const battleNotesStateController=createBattleNotesStateController({getState:()=>state,esc});
+const {battleNotesHtml}=battleNotesStateController;
 function toggleGameAssistantCheck(key,checked){
  if(!state.gameAssistantChecks||typeof state.gameAssistantChecks!=='object')state.gameAssistantChecks={};
  state.gameAssistantChecks[key]=!!checked;
