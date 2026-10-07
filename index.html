@@ -701,6 +701,7 @@ body{overflow-x:hidden}
 <script src="js/state/transport-state.js"></script>
 <script src="js/state/stratagem-state.js"></script>
 <script src="js/state/game-timer-state.js"></script>
+<script src="js/state/phase-cp-state.js"></script>
 <script src="js/data/bsdata-parser.js"></script><script>
 const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;
 const {createReserveStateController}=window.OnoForgeReserveState;
@@ -720,6 +721,9 @@ const transportStateController=createTransportStateController({getState:()=>stat
 const {ensureTransportEmbarkations,transportEntry,isUnitEmbarked,transportPassengers,clearTransportEmbarkation,setTransportEmbarkation}=transportStateController;
 const {createStratagemStateController}=window.OnoForgeStratagemState;
 const {createGameTimerStateController}=window.OnoForgeGameTimerState;
+const {createPhaseCPStateController}=window.OnoForgePhaseCPState;
+const phaseCPStateController=createPhaseCPStateController({getState:()=>state});
+const {ensurePhaseCPState,phaseCPKey,rememberPhaseCP,restorePhaseCP}=phaseCPStateController;
 const gameTimerStateController=createGameTimerStateController({getState:()=>state});
 const {ensureGameTimer,gameTimerElapsed,turnElapsedMs,finalizeCurrentTurnTime,switchTurnClock}=gameTimerStateController;
 const stratagemStateController=createStratagemStateController({getState:()=>state});
@@ -6592,28 +6596,6 @@ function objectiveControlTrackerHtml(){
     '<div class="objective-control-list" style="margin-top:8px">'+rows+'</div>'+
     '<div class="tiny" style="margin-top:8px">Start shows control at the beginning of this player turn. Ownership changes are written to the Action Log and support mission/Tactical Advisor context.</div>'+
   '</details>';
-}
-function ensurePhaseCPState(){
- if(!state.phaseCP||typeof state.phaseCP!=='object')state.phaseCP={};
-}
-function phaseCPKey(round,turn,phase){
- return `${Math.max(1,Number(round)||1)}|${turn==='opp'?'opp':'my'}|${String(phase||'Command')}`;
-}
-function rememberPhaseCP(){
- ensurePhaseCPState();
- const key=phaseCPKey(state.round,state.currentTurn,state.phase);
- state.phaseCP[key]={my:Math.max(0,Number(state.myCP)||0),opp:Math.max(0,Number(state.oppCP)||0)};
-}
-function restorePhaseCP(round,turn,phase){
- ensurePhaseCPState();
- const key=phaseCPKey(round,turn,phase);
- const saved=state.phaseCP[key];
- if(saved&&typeof saved==='object'){
-   state.myCP=Math.max(0,Number(saved.my)||0);
-   state.oppCP=Math.max(0,Number(saved.opp)||0);
- }else{
-   state.phaseCP[key]={my:Math.max(0,Number(state.myCP)||0),opp:Math.max(0,Number(state.oppCP)||0)};
- }
 }
 function changeCP(side,d){if(!battleMutationAllowed('CP changes'))return;d=Number(d)||0;const fullBefore=snapshotForUndo();const before=side==='my'?Number(state.myCP)||0:Number(state.oppCP)||0;const after=Math.max(0,before+d);const delta=after-before;if(side==='my')state.myCP=after;else state.oppCP=after;rememberPhaseCP();event('CP_CHANGED',{side,unit:side==='my'?'My CP':'Opponent CP',action:'CP '+(delta>0?'+':'')+delta,before,after,delta},fullBefore);save();render()}
 function autoScorePrimaryEndOfTurn(side){ const player=side==='opp'?'opp':'my'; const mission=primaryMission(player); if(!mission)return []; const rows=primaryScoringRowsForRound(mission); const scored=[]; rows.forEach((row,index)=>{ const timing=String(row?.[0]||'').toLowerCase(); if(!/end of turn/.test(timing))return; const evidence=primaryScoringEvidence(player,index,mission); if(!evidence.eligible)return; scorePrimaryItem(player,index,mission); scored.push({index,scoringItem:String(row?.[2]||''),vp:Number(evidence.allowedVP)||0}); }); return scored; }
