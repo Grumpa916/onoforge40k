@@ -702,7 +702,7 @@ body{overflow-x:hidden}
 <script src="js/state/stratagem-state.js"></script>
 <script src="js/state/game-timer-state.js"></script>
 <script src="js/state/phase-cp-state.js"></script>
-<script src="js/state/objective-control-history-state.js"></script><script src="js/state/objective-control-sources-state.js"></script><script src="js/state/secondary-round-ledger-state.js"></script><script src="js/state/score-ledger-state.js"></script><script src="js/state/secondary-score-state.js"></script><script src="js/state/score-calculation-state.js"></script><script src="js/state/primary-round-score-state.js"></script><script src="js/state/primary-round-score-cap-state.js"></script><script src="js/state/primary-scoring-vp-state.js"></script><script src="js/state/primary-scoring-is-per-state.js"></script><script src="js/state/primary-scoring-max-state.js"></script><script src="js/state/primary-objective-condition-text-state.js"></script><script src="js/state/primary-objective-qualifying-list-state.js"></script><script src="js/state/objective-counts-state.js"></script><script src="js/state/primary-objective-condition-status-state.js"></script><script src="js/state/primary-scoring-objective-count-state.js"></script><script src="js/state/primary-scoring-objective-amount-state.js"></script><script src="js/state/primary-scoring-effective-max-state.js"></script><script src="js/state/primary-scoring-exclusive-group-state.js"></script><script src="js/state/primary-scoring-original-index-state.js"></script><script src="js/state/primary-objective-condition-short-label-state.js"></script><script src="js/state/primary-scoring-round-range-state.js"></script><script src="js/state/primary-scoring-row-available-state.js"></script><script src="js/state/primary-scoring-rows-for-round-state.js"></script><script src="js/state/primary-scoring-checkpoint-rows-state.js"></script><script src="js/state/primary-scoring-objective-link-html-state.js"></script><script src="js/state/primary-scoring-evidence-state.js"></script><script src="js/state/primary-objective-scoring-candidates-state.js"></script><script src="js/state/primary-objective-scoring-candidate-summary-state.js"></script><script src="js/state/primary-scoring-preview-summary-state.js"></script><script src="js/state/primary-scoring-html-state.js"></script><script src="js/state/primary-scoring-catalogue-audit-state.js"></script><script src="js/state/event-companion-map-regression-audit-state.js"></script>
+<script src="js/state/objective-control-history-state.js"></script><script src="js/state/objective-control-sources-state.js"></script><script src="js/state/secondary-round-ledger-state.js"></script><script src="js/state/score-ledger-state.js"></script><script src="js/state/secondary-score-state.js"></script><script src="js/state/score-calculation-state.js"></script><script src="js/state/primary-round-score-state.js"></script><script src="js/state/primary-round-score-cap-state.js"></script><script src="js/state/primary-scoring-vp-state.js"></script><script src="js/state/primary-scoring-is-per-state.js"></script><script src="js/state/primary-scoring-max-state.js"></script><script src="js/state/primary-objective-condition-text-state.js"></script><script src="js/state/primary-objective-qualifying-list-state.js"></script><script src="js/state/objective-counts-state.js"></script><script src="js/state/primary-objective-condition-status-state.js"></script><script src="js/state/primary-scoring-objective-count-state.js"></script><script src="js/state/primary-scoring-objective-amount-state.js"></script><script src="js/state/primary-scoring-effective-max-state.js"></script><script src="js/state/primary-scoring-exclusive-group-state.js"></script><script src="js/state/primary-scoring-original-index-state.js"></script><script src="js/state/primary-objective-condition-short-label-state.js"></script><script src="js/state/primary-scoring-round-range-state.js"></script><script src="js/state/primary-scoring-row-available-state.js"></script><script src="js/state/primary-scoring-rows-for-round-state.js"></script><script src="js/state/primary-scoring-checkpoint-rows-state.js"></script><script src="js/state/primary-scoring-objective-link-html-state.js"></script><script src="js/state/primary-scoring-evidence-state.js"></script><script src="js/state/primary-objective-scoring-candidates-state.js"></script><script src="js/state/primary-objective-scoring-candidate-summary-state.js"></script><script src="js/state/primary-objective-score-snapshot-state.js"></script><script src="js/state/primary-scoring-preview-summary-state.js"></script><script src="js/state/primary-scoring-html-state.js"></script><script src="js/state/primary-scoring-catalogue-audit-state.js"></script><script src="js/state/event-companion-map-regression-audit-state.js"></script>
 <script src="js/data/bsdata-parser.js"></script><script>
 const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;
 const {createReserveStateController}=window.OnoForgeReserveState;
@@ -833,6 +833,9 @@ const {primaryObjectiveScoringCandidates}=primaryObjectiveScoringCandidatesState
 const {createPrimaryObjectiveScoringCandidateSummaryStateController}=window.OnoForgePrimaryObjectiveScoringCandidateSummaryState;
 const primaryObjectiveScoringCandidateSummaryStateController=createPrimaryObjectiveScoringCandidateSummaryStateController({primaryObjectiveScoringCandidates});
 const {primaryObjectiveScoringCandidateSummary}=primaryObjectiveScoringCandidateSummaryStateController;
+const {createPrimaryObjectiveScoreSnapshotStateController}=window.OnoForgePrimaryObjectiveScoreSnapshotState;
+const primaryObjectiveScoreSnapshotStateController=createPrimaryObjectiveScoreSnapshotStateController({getState:()=>state,primaryMission,primaryScoringObjectiveCount,primaryObjectiveConditionStatus,primaryObjectiveQualifyingList});
+const {ensurePrimaryObjectiveScoreSnapshots,primaryObjectiveScoreSnapshotKey,capturePrimaryObjectiveScoreSnapshot,primaryObjectiveScoreSnapshot,clearPrimaryObjectiveScoreSnapshot}=primaryObjectiveScoreSnapshotStateController;
 const {createPrimaryScorePreviewSummaryStateController}=window.OnoForgePrimaryScorePreviewSummaryState;
 const primaryScoringPreviewSummaryStateController=createPrimaryScorePreviewSummaryStateController({getState:()=>state,primaryScoringRowsForRound,primaryRoundCapRemaining,primaryScoringEvidence});
 const {primaryScorePreviewSummary}=primaryScoringPreviewSummaryStateController;
@@ -1588,34 +1591,6 @@ function recordPrimaryScoringCandidates(side,trigger){
   if(candidates.length)event('PRIMARY_SCORING_CANDIDATE',{side:player,unit:'Primary Mission',action:'Primary scoring candidate checkpoint',mission,round:Math.max(1,Number(state.round)||1),trigger:String(trigger||'state-change'),candidates});
   return candidates;
 }
-function ensurePrimaryObjectiveScoreSnapshots(){
-  if(!state.primaryObjectiveScoreSnapshots||typeof state.primaryObjectiveScoreSnapshots!=='object')state.primaryObjectiveScoreSnapshots={};
-  return state.primaryObjectiveScoreSnapshots;
-}
-function primaryObjectiveScoreSnapshotKey(side,round,index){
-  return String(Math.max(1,Number(round)||1))+'|'+(side==='opp'?'opp':'my')+'|'+String(index);
-}
-function capturePrimaryObjectiveScoreSnapshot(side,index,row){
-  const round=Math.max(1,Number(state.round)||1);
-  const perCount=primaryScoringObjectiveCount(side,row);
-  const condition=primaryObjectiveConditionStatus(side,row);
-  const count=perCount===null?(condition?condition.count:null):perCount;
-  if(count===null)return null;
-  const qualifyingRaw=perCount!==null?primaryObjectiveQualifyingList(side,row):(condition?.qualifying||[]);
-  const qualifying=qualifyingRaw.map(o=>({name:o.name,owner:o.owner,type:o.type,territory:o.territory,deploymentZone:o.deploymentZone}));
-  const snap={round,side,index,mission:primaryMission(side),condition:String(row?.[2]||''),qualifyingCount:count,required:condition?.required||null,conditionType:condition?.type||'per-objective',conditionMet:condition?!!condition.met:true,opponentCount:condition?.opponentCount??null,requiresTurnChange:!!condition?.requiresTurnChange,transitionCount:condition?.transitionCount??null,transitionType:condition?.transitionType||null,transitionObjectives:(condition?.transitionObjectives||[]).map(o=>({name:o.name,owner:o.owner,startOwner:o.startOwner,changeType:o.changeType})),qualifyingObjectives:qualifying,capturedAtPhase:String(state.phase||'Command'),capturedAtTurn:state.currentTurn==='opp'?'opp':'my'};
-  ensurePrimaryObjectiveScoreSnapshots()[primaryObjectiveScoreSnapshotKey(side,round,index)]=snap;
-  return snap;
-}
-function primaryObjectiveScoreSnapshot(side,index){
-  const round=Math.max(1,Number(state.round)||1);
-  return ensurePrimaryObjectiveScoreSnapshots()[primaryObjectiveScoreSnapshotKey(side,round,index)]||null;
-}
-function clearPrimaryObjectiveScoreSnapshot(side,index){
-  const round=Math.max(1,Number(state.round)||1);
-  delete ensurePrimaryObjectiveScoreSnapshots()[primaryObjectiveScoreSnapshotKey(side,round,index)];
-}
-
 function missionDecisionContext(){
   ensureScoreLedger();
   const my=scoreTotalForSide('my'),opp=scoreTotalForSide('opp');
