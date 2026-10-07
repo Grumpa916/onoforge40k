@@ -699,6 +699,7 @@ body{overflow-x:hidden}
  <script src="js/state/objective-map-state.js"></script>
 <script src="js/state/objective-metadata-state.js"></script>
 <script src="js/state/transport-state.js"></script>
+<script src="js/state/stratagem-state.js"></script>
 <script src="js/data/bsdata-parser.js"></script><script>
 const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;
 const {createReserveStateController}=window.OnoForgeReserveState;
@@ -716,6 +717,9 @@ const {ensureObjectiveMeta,objectiveRole,objectiveType,objectiveHomeSide,objecti
 const {createTransportStateController}=window.OnoForgeTransportState;
 const transportStateController=createTransportStateController({getState:()=>state,entry,get,snapshotForUndo,event,save,render,unitDisplayName});
 const {ensureTransportEmbarkations,transportEntry,isUnitEmbarked,transportPassengers,clearTransportEmbarkation,setTransportEmbarkation}=transportStateController;
+const {createStratagemStateController}=window.OnoForgeStratagemState;
+const stratagemStateController=createStratagemStateController({getState:()=>state});
+const {ensureStratagemState,stratagemUseHistory,stratagemUsedThisPhase,resetStratagemPhaseUses,stratagemUsedThisBattle,armyStratagemDetachment}=stratagemStateController;
 const {collectBSDataObjects,bsUnitFromEntry}=window.OnoForgeBSDataParser;
 window.addEventListener('error',function(ev){if(ev.target&&ev.target.tagName==='SCRIPT'&&ev.target.src===SUPABASE_SCRIPT_URL)return;var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var msg=String(ev.error?.message||ev.message||'Unknown error'),stack=String(ev.error?.stack||'');var detail=(stack&&stack!==msg?msg+'\\n\\n'+stack:msg).slice(0,6000);a.innerHTML='<span class="error-title">OnoForge error</span><pre class="error-detail" style="white-space:pre-wrap;max-height:45vh;overflow:auto;margin:6px 0 0;font:11px/1.35 monospace">'+detail.replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</pre><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});window.addEventListener('unhandledrejection',function(ev){var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var reason=ev.reason?.message||ev.reason||'Unhandled promise rejection';a.innerHTML='<span class="error-title">OnoForge error</span><div class="error-detail">'+String(reason).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</div><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});
 
@@ -2077,46 +2081,7 @@ const DETACHMENT_STRATAGEMS_11E={
 {name:'Overrun',cp:1,phase:'Fight',summary:'Allow an eligible Tyranids unit to make a post-fight move.'}
 ]};
 
-function ensureStratagemState(){
- if(!Array.isArray(state.stratagemPhaseUsesMy))state.stratagemPhaseUsesMy=[];
- if(!Array.isArray(state.stratagemPhaseUsesOpp))state.stratagemPhaseUsesOpp=[];
- if(!Array.isArray(state.stratagemsMy))state.stratagemsMy=[];
- if(!Array.isArray(state.stratagemsOpp))state.stratagemsOpp=[];
- if(!Array.isArray(state.stratagemUsesMy))state.stratagemUsesMy=[];
- if(!Array.isArray(state.stratagemUsesOpp))state.stratagemUsesOpp=[];
-}
-function stratagemUseHistory(side){
- return side==='opp'?state.stratagemUsesOpp:state.stratagemUsesMy;
-}
-function stratagemUsedThisPhase(side,name){
-  // Phase-use state is derived from the persistent stratagem history so a
-  // stratagem remains marked used if the player leaves and later returns to
-  // the same round/phase/army turn.
-  const history=stratagemUseHistory(side);
-  const round=Math.max(1,Number(state.round)||1);
-  const phase=String(state.phase||'Command');
-  const turn=side==='opp'?'opp':'my';
-  return Array.isArray(history)&&history.some(x=>
-    x&&String(x.name)===String(name)
-    &&Number(x.round)===round
-    &&String(x.phase)===phase
-    &&String(x.playerTurn)===turn
-  );
-}
-function resetStratagemPhaseUses(){
- state.stratagemPhaseUsesMy=[];
- state.stratagemPhaseUsesOpp=[];
-}
-function stratagemUsedThisBattle(side,name){
- return stratagemUseHistory(side).some(x=>x&&String(x.name)===String(name));
-}
-function armyStratagemDetachment(side){
- const faction=side==='my'?state.faction:state.oppFaction;
- const selections=side==='my'?state.detachmentSelections:state.oppDetachmentSelections;
- const fallback=side==='my'?state.detachment:state.oppDetachment;
- const det=(Array.isArray(selections)&&selections[0])||fallback||'';
- return faction&&det?`${faction} — ${det}`:'';
-}
+
 function loadStratagems(){
  ensureStratagemState();
  ['my','opp'].forEach(side=>{
