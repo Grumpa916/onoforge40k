@@ -1267,10 +1267,8 @@ const {startBattle}=battleStartStateController;
 const {createBattleDeploymentStartStateController}=window.OnoForgeBattleDeploymentStartState;
 const battleDeploymentStartStateController=createBattleDeploymentStartStateController({state,tournamentSetupValidation,snapshotForUndo,setTournamentLifecycle,ensureReserveState,ensureDeploymentPlans,initializeLiveDeploymentFromPlan,event,save,render,alert});
 const {beginDeployment}=battleDeploymentStartStateController;
-let gameTimerInterval=null;
-const gameTimerIntervalRef={get:()=>gameTimerInterval,set:v=>{gameTimerInterval=v;}};
 const {createBattleEndStateController}=window.OnoForgeBattleEndState;
-const battleEndStateController=createBattleEndStateController({state,snapshotForUndo,finalizeCurrentTurnTime,ensureGameTimer,gameTimerElapsed,gameTimerIntervalRef,setTournamentLifecycle,tournamentResultSnapshot,event,save,render,alert});
+const battleEndStateController=createBattleEndStateController({state,snapshotForUndo,finalizeCurrentTurnTime,ensureGameTimer,gameTimerElapsed,gameTimerIntervalRef,setTournamentLifecycle,tournamentResultSnapshot,event,save,render,alert,clearGameTimerInterval:()=>{if(gameTimerInterval){clearInterval(gameTimerInterval);gameTimerInterval=null;}}});
 const {endBattle}=battleEndStateController;
 
 const PRIMARY_SCORING={
