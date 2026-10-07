@@ -702,7 +702,7 @@ body{overflow-x:hidden}
 <script src="js/state/stratagem-state.js"></script>
 <script src="js/state/game-timer-state.js"></script>
 <script src="js/state/phase-cp-state.js"></script>
-<script src="js/state/objective-control-history-state.js"></script><script src="js/state/objective-control-sources-state.js"></script><script src="js/state/secondary-round-ledger-state.js"></script>
+<script src="js/state/objective-control-history-state.js"></script><script src="js/state/objective-control-sources-state.js"></script><script src="js/state/secondary-round-ledger-state.js"></script><script src="js/state/score-ledger-state.js"></script>
 <script src="js/data/bsdata-parser.js"></script><script>
 const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;
 const {createReserveStateController}=window.OnoForgeReserveState;
@@ -732,6 +732,9 @@ const {ensureObjectiveControlSources,objectiveControlSourceIds}=objectiveControl
 const {createSecondaryRoundLedgerStateController}=window.OnoForgeSecondaryRoundLedgerState;
 const secondaryRoundLedgerStateController=createSecondaryRoundLedgerStateController({getState:()=>state});
 const {ensureSecondaryRoundLedger}=secondaryRoundLedgerStateController;
+const {createScoreLedgerStateController}=window.OnoForgeScoreLedgerState;
+const scoreLedgerStateController=createScoreLedgerStateController({getState:()=>state});
+const {ensureScoreLedger}=scoreLedgerStateController;
 const phaseCPStateController=createPhaseCPStateController({getState:()=>state});
 const {ensurePhaseCPState,phaseCPKey,rememberPhaseCP,restorePhaseCP}=phaseCPStateController;
 const gameTimerStateController=createGameTimerStateController({getState:()=>state});
