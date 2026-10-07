@@ -426,7 +426,7 @@ if(opponentHome?.type!=='opponent-home'||opponentHome.count!==0||opponentHome.me
 const statusObjectives={homeOpp:'my',homeMine:'my'};
 const primaryObjectiveConditionStatusController=sandbox.window.OnoForgePrimaryObjectiveConditionStatusState.createPrimaryObjectiveConditionStatusStateController({
   getState:()=>({objectives:statusObjectives}),
-  primaryObjectiveConditionText:(row)=>row[0].toLowerCase(),
+  primaryObjectiveConditionText:(row)=>String(row?.[0]||'').toLowerCase(),
   objectiveCountsForSide:(side)=>side==='my'
     ? [{name:'central',type:'central'},{name:'expansion',type:'expansion'}]
     : [{name:'oppObj',type:'other'}],
