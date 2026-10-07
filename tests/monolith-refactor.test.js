@@ -143,6 +143,13 @@ for(const marker of required){
   if(!html.includes(marker))throw new Error('Missing refactor marker: '+marker);
 }
 
+for(const moduleScript of [
+  'js/state/battle-end-summary-state.js','js/state/primary-mission-rules-state.js','js/state/game-reference-editor-state.js','js/state/game-assistant-state.js','js/state/tactical-pre-roll-state.js','js/state/tactical-advisor-state.js','js/state/opponent-turn-tracking-state.js'
+]){
+  const tag='<script src="'+moduleScript+'></script>',count=html.split(tag).length-1,mainScript=html.indexOf('<script>\n');
+  if(count!==1||mainScript<0||html.indexOf(tag)>=mainScript)throw new Error('Extracted module script must load before main app script: '+moduleScript);
+}
+
 for(const name of [
   'collectBSDataObjects','bsProfile','bsCharacteristics','bsAbilities',
   'normalize11eWeaponAbilities','bsWeapons','bsWargearOptions','bsUnitFromEntry',
