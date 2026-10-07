@@ -12,6 +12,7 @@ const deploymentPlan=fs.readFileSync(path.join(root,'js/state/deployment-plan-st
 const deploymentPlanMapControls=fs.readFileSync(path.join(root,'js/state/deployment-plan-map-controls-state.js'),'utf8');
 const deploymentPlanPositionEditor=fs.readFileSync(path.join(root,'js/state/deployment-plan-position-editor-state.js'),'utf8');
 const deploymentTrackingEditor=fs.readFileSync(path.join(root,'js/state/deployment-tracking-editor-state.js'),'utf8');
+const deploymentTrackingControls=fs.readFileSync(path.join(root,'js/state/deployment-tracking-controls-state.js'),'utf8');
 const objectiveMap=fs.readFileSync(path.join(root,'js/state/objective-map-state.js'),'utf8');
 const objectiveMetadata=fs.readFileSync(path.join(root,'js/state/objective-metadata-state.js'),'utf8');
 const objectiveCanonicalLabel=fs.readFileSync(path.join(root,'js/state/objective-canonical-label-state.js'),'utf8');
@@ -57,6 +58,7 @@ const required=[
   '<script src="js/state/deployment-plan-map-controls-state.js"></script>',
   '<script src="js/state/deployment-plan-position-editor-state.js"></script>',
   '<script src="js/state/deployment-tracking-editor-state.js"></script>',
+  '<script src="js/state/deployment-tracking-controls-state.js"></script>',
   '<script src="js/state/objective-map-state.js"></script>',
   '<script src="js/state/army-no-mans-land-tags-state.js"></script>',
   '<script src="js/state/objective-map-placement-panel-state.js"></script>',
@@ -112,7 +114,7 @@ for(const name of [
   'ensureGameTimer','gameTimerElapsed','turnElapsedMs','finalizeCurrentTurnTime','switchTurnClock',
   'ensurePhaseCPState','phaseCPKey','rememberPhaseCP','restorePhaseCP',
   'ensureObjectiveControlHistory','objectivePreviousTurnKey','objectivePreviousTurnOwner',
-  'ensureObjectiveControlSources','objectiveControlSourceIds','ensureSecondaryRoundLedger','ensureScoreLedger','secondaryTotalScoredVP','scoreTotalForSide','armyNoMansLandTagsHtml','objectiveMapPlacementPanelHtml','reserveTrayHtml','deploymentPlanMapControlsHtml','transportDeclarationSectionHtml','deploymentPlanPositionEditorHtml','deploymentTrackingEditorHtml'
+  'ensureObjectiveControlSources','objectiveControlSourceIds','ensureSecondaryRoundLedger','ensureScoreLedger','secondaryTotalScoredVP','scoreTotalForSide','armyNoMansLandTagsHtml','objectiveMapPlacementPanelHtml','reserveTrayHtml','deploymentPlanMapControlsHtml','transportDeclarationSectionHtml','deploymentPlanPositionEditorHtml','deploymentTrackingEditorHtml','deploymentTrackingControlsHtml'
 ]){
   const count=(html.match(new RegExp('function\s+'+name+'\s*\\(','g'))||[]).length;
   if(count!==0)throw new Error('Extracted function still inline: '+name);
@@ -149,6 +151,7 @@ vm.runInNewContext(deploymentPlan,sandbox,{filename:'js/state/deployment-plan-st
 vm.runInNewContext(deploymentPlanMapControls,sandbox,{filename:'js/state/deployment-plan-map-controls-state.js'});
 vm.runInNewContext(deploymentPlanPositionEditor,sandbox,{filename:'js/state/deployment-plan-position-editor-state.js'});
 vm.runInNewContext(deploymentTrackingEditor,sandbox,{filename:'js/state/deployment-tracking-editor-state.js'});
+vm.runInNewContext(deploymentTrackingControls,sandbox,{filename:'js/state/deployment-tracking-controls-state.js'});
 vm.runInNewContext(objectiveMap,sandbox,{filename:'js/state/objective-map-state.js'});
 vm.runInNewContext(objectiveMetadata,sandbox,{filename:'js/state/objective-metadata-state.js'});
 vm.runInNewContext(objectiveCanonicalLabel,sandbox,{filename:'js/state/objective-canonical-label-state.js'});
@@ -214,6 +217,7 @@ if(typeof sandbox.window.OnoForgeDeploymentPlanState?.createDeploymentPlanStateC
 if(typeof sandbox.window.OnoForgeDeploymentPlanMapControlsState?.createDeploymentPlanMapControlsStateController!=='function')throw new Error('Deployment plan map controls module did not expose createDeploymentPlanMapControlsStateController');
 if(typeof sandbox.window.OnoForgeDeploymentPlanPositionEditorState?.createDeploymentPlanPositionEditorStateController!=='function')throw new Error('Deployment plan position editor module did not expose createDeploymentPlanPositionEditorStateController');
 if(typeof sandbox.window.OnoForgeDeploymentTrackingEditorState?.createDeploymentTrackingEditorStateController!=='function')throw new Error('Deployment tracking editor module did not expose createDeploymentTrackingEditorStateController');
+if(typeof sandbox.window.OnoForgeDeploymentTrackingControlsState?.createDeploymentTrackingControlsStateController!=='function')throw new Error('Deployment tracking controls module did not expose createDeploymentTrackingControlsStateController');
 if(typeof sandbox.window.OnoForgeDeploymentPlanState?.createDeploymentPlanStateController({getState:()=>({}),save:()=>{},render:()=>{},cloudUpsertArmyList:()=>Promise.resolve(),notify:()=>{},objectiveMissionKey:()=>''}).deploymentPlanKey!=='function')throw new Error('Deployment plan module did not expose deploymentPlanKey');
 if(typeof sandbox.window.OnoForgeObjectiveMapState?.createObjectiveMapStateController!=='function')throw new Error('Objective map module did not expose createObjectiveMapStateController');
 if(typeof sandbox.window.OnoForgeObjectiveMetadataState?.createObjectiveMetadataStateController!=='function')throw new Error('Objective metadata module did not expose createObjectiveMetadataStateController');
@@ -329,6 +333,13 @@ const deploymentTrackingEditorHtml=deploymentTrackingEditorController.deployment
 if(!deploymentTrackingEditorHtml.includes('Captain')||!deploymentTrackingEditorHtml.includes('Warrior'))throw new Error('Deployment tracking editor rows regression');
 if(!deploymentTrackingEditorHtml.includes('Actual deployment: 21.4″, 9.2″'))throw new Error('Deployment tracking editor position regression');
 if(!deploymentTrackingEditorHtml.includes('data-battlefield-clear="u2"'))throw new Error('Deployment tracking editor clear regression');
+const deploymentTrackingControlsController=sandbox.window.OnoForgeDeploymentTrackingControlsState.createDeploymentTrackingControlsStateController({
+  getState:()=>({deploymentTrackingSide:'opp'}),
+  ensureBattlefieldUnitPositions:()=>({a:{side:'opp'},b:{side:'opp'},c:{side:'my'}})
+});
+const deploymentTrackingControlsHtml=deploymentTrackingControlsController.deploymentTrackingControlsHtml({verified:true});
+if(!deploymentTrackingControlsHtml.includes('2 opponent units recorded'))throw new Error('Deployment tracking controls count regression');
+if(!deploymentTrackingControlsHtml.includes('value="opp" selected'))throw new Error('Deployment tracking controls side regression');
 const reserveTrayController=sandbox.window.OnoForgeReserveTrayState.createReserveTrayStateController({reserveUnitsForSide:side=>side==='my'?[{uid:'u1',name:'Captain'}]:[{uid:'u2',name:'Warrior'}],unitDisplayName:(side,entry)=>entry?.name,get:()=>null,esc:value=>String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')});
 const reserveTrayHtml=reserveTrayController.reserveTrayHtml();
 if(!reserveTrayHtml.includes('Captain')||!reserveTrayHtml.includes('Warrior'))throw new Error('Reserve tray rendering regression');
