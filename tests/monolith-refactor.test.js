@@ -7,6 +7,7 @@ const root=process.cwd();
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const parser=fs.readFileSync(path.join(root,'js/data/bsdata-parser.js'),'utf8');
 const reserve=fs.readFileSync(path.join(root,'js/state/reserve-state.js'),'utf8');
+const reserveDeclarationSection=fs.readFileSync(path.join(root,'js/state/reserve-declaration-section-state.js'),'utf8');
 const reserveTray=fs.readFileSync(path.join(root,'js/state/reserve-tray-state.js'),'utf8');
 const deploymentPlan=fs.readFileSync(path.join(root,'js/state/deployment-plan-state.js'),'utf8');
 const deploymentPlanMapControls=fs.readFileSync(path.join(root,'js/state/deployment-plan-map-controls-state.js'),'utf8');
@@ -55,6 +56,7 @@ const required=[
   '<script src="js/utils/pure-utils.js"></script>',
   '<script src="js/data/bsdata-parser.js"></script>',
   '<script src="js/state/reserve-state.js"></script>',
+  '<script src="js/state/reserve-declaration-section-state.js"></script>',
   '<script src="js/state/reserve-tray-state.js"></script>',
   '<script src="js/state/deployment-plan-state.js"></script>',
   '<script src="js/state/deployment-plan-map-controls-state.js"></script>',
@@ -97,6 +99,7 @@ const required=[
   'const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;',
   'const {collectBSDataObjects,bsUnitFromEntry}=window.OnoForgeBSDataParser;',
   'const {createReserveStateController}=window.OnoForgeReserveState;',
+  'const {createReserveDeclarationSectionStateController}=window.OnoForgeReserveDeclarationSectionState'
   'const {createReserveTrayStateController}=window.OnoForgeReserveTrayState',
   'const {createDeploymentPlanStateController}=window.OnoForgeDeploymentPlanState;',
   'const {createObjectiveLayoutStateController}=window.OnoForgeObjectiveLayoutState',
@@ -119,7 +122,7 @@ for(const name of [
   'ensureGameTimer','gameTimerElapsed','turnElapsedMs','finalizeCurrentTurnTime','switchTurnClock',
   'ensurePhaseCPState','phaseCPKey','rememberPhaseCP','restorePhaseCP',
   'ensureObjectiveControlHistory','objectivePreviousTurnKey','objectivePreviousTurnOwner',
-  'ensureObjectiveControlSources','objectiveControlSourceIds','ensureSecondaryRoundLedger','ensureScoreLedger','secondaryTotalScoredVP','scoreTotalForSide','armyNoMansLandTagsHtml','objectiveMapPlacementPanelHtml','objectiveMapRendererHtml','reserveTrayHtml','deploymentPlanMapControlsHtml','transportDeclarationSectionHtml','objectiveLayoutHtml','deploymentPlanPositionEditorHtml','deploymentTrackingEditorHtml','deploymentTrackingControlsHtml'
+  'ensureObjectiveControlSources','objectiveControlSourceIds','ensureSecondaryRoundLedger','ensureScoreLedger','secondaryTotalScoredVP','scoreTotalForSide','armyNoMansLandTagsHtml','objectiveMapPlacementPanelHtml','objectiveMapRendererHtml','reserveTrayHtml','deploymentPlanMapControlsHtml','transportDeclarationSectionHtml','objectiveLayoutHtml','reserveDeclarationSectionHtml','deploymentPlanPositionEditorHtml','deploymentTrackingEditorHtml','deploymentTrackingControlsHtml'
 ]){
   const count=(html.match(new RegExp('function\s+'+name+'\s*\\(','g'))||[]).length;
   if(count!==0)throw new Error('Extracted function still inline: '+name);
@@ -151,6 +154,7 @@ const sandbox={window:{},console};
 vm.runInNewContext(parser,sandbox,{filename:'js/data/bsdata-parser.js'});
 vm.runInNewContext(utils,sandbox,{filename:'js/utils/pure-utils.js'});
 vm.runInNewContext(reserve,sandbox,{filename:'js/state/reserve-state.js'});
+vm.runInNewContext(reserveDeclarationSection,sandbox,{filename:'js/state/reserve-declaration-section-state.js'});
 vm.runInNewContext(reserveTray,sandbox,{filename:'js/state/reserve-tray-state.js'});
 vm.runInNewContext(deploymentPlan,sandbox,{filename:'js/state/deployment-plan-state.js'});
 vm.runInNewContext(deploymentPlanMapControls,sandbox,{filename:'js/state/deployment-plan-map-controls-state.js'});
@@ -207,6 +211,7 @@ if(typeof sandbox.window.OnoForgeArmyNoMansLandTagsState?.createArmyNoMansLandTa
 if(typeof sandbox.window.OnoForgeObjectiveMapPlacementPanelState?.createObjectiveMapPlacementPanelStateController!=='function')throw new Error('Objective map placement panel module did not expose createObjectiveMapPlacementPanelStateController');
 if(typeof sandbox.window.OnoForgeObjectiveMapRendererState?.createObjectiveMapRendererStateController!=='function')throw new Error('Objective map renderer module did not expose createObjectiveMapRendererStateController');
 if(typeof sandbox.window.OnoForgeObjectiveLayoutState?.createObjectiveLayoutStateController!=='function')throw new Error('Objective layout module did not expose createObjectiveLayoutStateController');
+if(typeof sandbox.window.OnoForgeReserveDeclarationSectionState?.createReserveDeclarationSectionStateController!=='function')throw new Error('Reserve declaration section module did not expose createReserveDeclarationSectionStateController');
 if(typeof sandbox.window.OnoForgePrimaryObjectiveQualifyingListState?.createPrimaryObjectiveQualifyingListStateController!=='function')throw new Error('Primary objective qualifying list module did not expose createPrimaryObjectiveQualifyingListStateController');
 if(typeof sandbox.window.OnoForgePrimaryObjectiveConditionStatusState?.createPrimaryObjectiveConditionStatusStateController!=='function')throw new Error('Primary objective condition status module did not expose createPrimaryObjectiveConditionStatusStateController');
 if(typeof sandbox.window.OnoForgePrimaryObjectiveConditionStatusState?.createPrimaryObjectiveConditionStatusStateController!=='function')throw new Error('Primary objective condition status module did not expose createPrimaryObjectiveConditionStatusStateController');
@@ -373,6 +378,17 @@ const deploymentTrackingControlsController=sandbox.window.OnoForgeDeploymentTrac
 const deploymentTrackingControlsHtml=deploymentTrackingControlsController.deploymentTrackingControlsHtml({verified:true});
 if(!deploymentTrackingControlsHtml.includes('2 opponent units recorded'))throw new Error('Deployment tracking controls count regression');
 if(!deploymentTrackingControlsHtml.includes('value="opp" selected'))throw new Error('Deployment tracking controls side regression');
+const reserveDeclarationController=sandbox.window.OnoForgeReserveDeclarationSectionState.createReserveDeclarationSectionStateController({
+  getState:()=>({myName:'My Army',oppName:'Opponent Army',my:[{uid:'u1',name:'Captain'}],opp:[{uid:'u2',name:'Warrior'}]}),
+  reserveUnitsForSide:side=>side==='my'?[{uid:'u1'}]:[],
+  isUnitReserved:(side,uid)=>side==='my'&&uid==='u1',
+  unitDisplayName:(side,entry)=>entry?.name,
+  get:()=>null,
+  esc:value=>String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')
+});
+const reserveDeclarationHtml=reserveDeclarationController.reserveDeclarationSectionHtml('my');
+if(!reserveDeclarationHtml.includes('My Army')||!reserveDeclarationHtml.includes('Captain')||!reserveDeclarationHtml.includes('checked'))throw new Error('Reserve declaration rendering regression');
+
 const reserveTrayController=sandbox.window.OnoForgeReserveTrayState.createReserveTrayStateController({reserveUnitsForSide:side=>side==='my'?[{uid:'u1',name:'Captain'}]:[{uid:'u2',name:'Warrior'}],unitDisplayName:(side,entry)=>entry?.name,get:()=>null,esc:value=>String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')});
 const reserveTrayHtml=reserveTrayController.reserveTrayHtml();
 if(!reserveTrayHtml.includes('Captain')||!reserveTrayHtml.includes('Warrior'))throw new Error('Reserve tray rendering regression');
