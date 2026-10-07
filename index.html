@@ -771,6 +771,7 @@ const {
 <script src="js/state/battle-start-state.js"></script>
 <script src="js/state/battle-deployment-start-state.js"></script>
 <script src="js/state/battle-end-state.js"></script>
+<script src="js/state/undo-snapshot-state.js"></script>
 <script src="js/state/game-reference-editor-state.js"></script>
 <script src="js/state/game-assistant-state.js"></script>
 <script src="js/state/tactical-pre-roll-state.js"></script>
@@ -1270,6 +1271,9 @@ const {beginDeployment}=battleDeploymentStartStateController;
 const {createBattleEndStateController}=window.OnoForgeBattleEndState;
 const battleEndStateController=createBattleEndStateController({state,snapshotForUndo,finalizeCurrentTurnTime,ensureGameTimer,gameTimerElapsed,gameTimerIntervalRef,setTournamentLifecycle,tournamentResultSnapshot,event,save,render,alert,clearGameTimerInterval:()=>{if(gameTimerInterval){clearInterval(gameTimerInterval);gameTimerInterval=null;}}});
 const {endBattle}=battleEndStateController;
+const {createUndoSnapshotStateController}=window.OnoForgeUndoSnapshotState;
+const undoSnapshotStateController=createUndoSnapshotStateController({state,ensureGameTimer,gameTimerElapsed});
+const {snapshotForUndo}=undoSnapshotStateController;
 
 const PRIMARY_SCORING={
 "Battlefield Dominance":[["R1–2 • End of turn","2 VP","Control more objectives than your opponent"],["R2+ • Command phase / R5","3 VP","Per objective you control"],["R2+ • Command phase / R5","+2 VP","Per objective excluding home if you control your home objective"]],
@@ -4395,34 +4399,6 @@ function gameTimerHtml(){
 
 
 
-function snapshotForUndo(){
-  const x=JSON.parse(JSON.stringify(state));
-  delete x.events;
-  delete x._undoSnapshot;
-  // Materialize the live game/turn clocks into the snapshot so undo restores
-  // the logical time at which the action began rather than stale timer fields.
-  const t=ensureGameTimer();
-  if(t&&typeof t==='object'){
-    const elapsed=gameTimerElapsed();
-    const currentSide=state.currentTurn==='opp'?'opp':'my';
-    const turnKey=currentSide==='opp'?'turnOppMs':'turnMyMs';
-    const otherKey=currentSide==='opp'?'turnMyMs':'turnOppMs';
-    const savedTurn=Math.max(0,Number(t[turnKey])||0);
-    const turnStarted=Math.max(0,Number(t.turnStartedGameMs)||0);
-    const liveTurn=!t.turnPaused&&t.running&&!t.finishedAt
-      ?savedTurn+Math.max(0,elapsed-turnStarted)
-      :savedTurn;
-    x.gameTimer={...x.gameTimer,elapsedMs:elapsed};
-    x.gameTimer[turnKey]=liveTurn;
-    x.gameTimer[otherKey]=Math.max(0,Number(t[otherKey])||0);
-    if(t.running&&!t.finishedAt){
-      // Rebase the restored running timer to the moment the snapshot was taken.
-      x.gameTimer.startedAt=Date.now();
-      x.gameTimer.turnStartedGameMs=elapsed;
-    }
-  }
-  return x;
-}
 
 function actionText(e){return e?.payload?.action||((typeof actionLabel==='function')?actionLabel(e):(e?.kind||'Action'))}
 function actionResultText(e){
