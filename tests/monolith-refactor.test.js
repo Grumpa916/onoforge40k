@@ -28,7 +28,7 @@ const primaryScoringMax=fs.readFileSync(path.join(root,'js/state/primary-scoring
 const primaryObjectiveConditionText=fs.readFileSync(path.join(root,'js/state/primary-objective-condition-text-state.js'),'utf8');
 const primaryObjectiveQualifyingList=fs.readFileSync(path.join(root,'js/state/primary-objective-qualifying-list-state.js'),'utf8');
 const primaryObjectiveConditionStatus=fs.readFileSync(path.join(root,'js/state/primary-objective-condition-status-state.js'),'utf8');
-const primaryObjectiveConditionStatus=fs.readFileSync(path.join(root,'js/state/primary-objective-condition-status-state.js'),'utf8');
+
 const primaryScoringObjectiveCount=fs.readFileSync(path.join(root,'js/state/primary-scoring-objective-count-state.js'),'utf8');
 const primaryScoringObjectiveAmount=fs.readFileSync(path.join(root,'js/state/primary-scoring-objective-amount-state.js'),'utf8');
 const primaryScoringEffectiveMax=fs.readFileSync(path.join(root,'js/state/primary-scoring-effective-max-state.js'),'utf8');
