@@ -706,7 +706,7 @@ body{overflow-x:hidden}
 <script src="js/state/battlefield-map-unit-labels-state.js"></script>
 <script src="js/state/battlefield-map-unit-nodes-state.js"></script>
 <script src="js/state/battlefield-map-plan-ghost-nodes-state.js"></script>
-<script src="js/state/deployment-staging-nodes-state.js"></script><script src="js/state/terrain-reference-image-state.js"></script><script src="js/state/objective-geometry-identity-state.js"></script><script src="js/state/primary-scoring-preview-summary-state.js"></script><script src="js/state/primary-scoring-html-state.js"></script><script src="js/state/primary-scoring-catalogue-audit-state.js"></script><script src="js/state/event-companion-map-regression-audit-state.js"></script>
+<script src="js/state/deployment-staging-nodes-state.js"></script><script src="js/state/terrain-reference-image-state.js"></script><script src="js/state/objective-geometry-identity-state.js"></script><script src="js/state/objective-tracked-identity-state.js"></script><script src="js/state/primary-scoring-preview-summary-state.js"></script><script src="js/state/primary-scoring-html-state.js"></script><script src="js/state/primary-scoring-catalogue-audit-state.js"></script><script src="js/state/event-companion-map-regression-audit-state.js"></script>
 <script src="js/data/bsdata-parser.js"></script><script>
 const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;
 const {createReserveStateController}=window.OnoForgeReserveState;
@@ -873,6 +873,9 @@ const {terrainReferenceImageHtml}=terrainReferenceImageStateController;
 const {createObjectiveGeometryIdentityStateController}=window.OnoForgeObjectiveGeometryIdentityState;
 const objectiveGeometryIdentityStateController=createObjectiveGeometryIdentityStateController({getState:()=>state});
 const {objectiveGeometryIdentity}=objectiveGeometryIdentityStateController;
+const {createObjectiveTrackedIdentityStateController}=window.OnoForgeObjectiveTrackedIdentityState;
+const objectiveTrackedIdentityStateController=createObjectiveTrackedIdentityStateController({getState:()=>state,ensureObjectiveMeta,objectiveGeometryIdentity});
+const {objectiveTrackedIdentity}=objectiveTrackedIdentityStateController;
 const {createPrimaryScorePreviewSummaryStateController}=window.OnoForgePrimaryScorePreviewSummaryState;
 const primaryScoringPreviewSummaryStateController=createPrimaryScorePreviewSummaryStateController({getState:()=>state,primaryScoringRowsForRound,primaryRoundCapRemaining,primaryScoringEvidence});
 const {primaryScorePreviewSummary}=primaryScoringPreviewSummaryStateController;
@@ -1064,16 +1067,6 @@ function armyNoMansLandTagsHtml(model,pct){
 }
 
 
-function objectiveTrackedIdentity(name){
-  const key=String(name||'').trim();
-  const meta=ensureObjectiveMeta()[key]||{};
-  if(meta.type==='home'&&['my','opp'].includes(meta.homeSide))return {type:'home',side:meta.homeSide,ordinal:1};
-  if(meta.type==='central'||meta.type==='expansion'){
-    const m=key.match(/^(?:Central|Expansion)\s+(\d+)$/i);
-    return {type:meta.type,ordinal:m?Math.max(1,Number(m[1])||1):1};
-  }
-  return objectiveGeometryIdentity(key);
-}
 function objectiveCanonicalNumber(identity){
   if(!identity)return null;
   // Canonical Event Companion ordering:
