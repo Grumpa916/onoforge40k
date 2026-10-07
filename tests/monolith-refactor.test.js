@@ -185,7 +185,7 @@ if(stratagemController.stratagemUsedThisPhase('my','Fire Overwatch')!==true)thro
 if(!stratagemController.stratagemUsedThisBattle('my','Fire Overwatch'))throw new Error('Stratagem battle lookup regression');
 if(stratagemController.stratagemUsedThisBattle('my','Unknown'))throw new Error('Stratagem unknown lookup regression');
 if(stratagemController.armyStratagemDetachment('my')!=='Space Marines — Gladius Task Force')throw new Error('Stratagem detachment lookup regression');
-if(stratagemController.armyStratagemDetachment('opp')!=='')throw new Error('Opponent stratagem detachment fallback regression');
+if(stratagemController.armyStratagemDetachment('opp')!=='Tyranids — Opponent Fallback')throw new Error('Opponent stratagem detachment fallback regression');
 stratagemController.resetStratagemPhaseUses();
 if(stratagemState.stratagemPhaseUsesMy.length!==0||stratagemState.stratagemPhaseUsesOpp.length!==0)throw new Error('Stratagem phase reset regression');
 
