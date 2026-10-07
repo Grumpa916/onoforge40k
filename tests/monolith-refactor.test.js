@@ -5,7 +5,9 @@ const cp=require('child_process');
 
 const root=process.cwd();
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+if(!html.includes('js/state/action-log-filters-state.js'))throw new Error('Action log filters script marker missing');
 const parser=fs.readFileSync(path.join(root,'js/data/bsdata-parser.js'),'utf8');
+const actionLogFilters=fs.readFileSync(path.join(root,'js/state/action-log-filters-state.js'),'utf8');
 const reserve=fs.readFileSync(path.join(root,'js/state/reserve-state.js'),'utf8');
 const reserveDeclarationSection=fs.readFileSync(path.join(root,'js/state/reserve-declaration-section-state.js'),'utf8');
 const reserveTray=fs.readFileSync(path.join(root,'js/state/reserve-tray-state.js'),'utf8');
@@ -134,7 +136,7 @@ for(const name of [
   'ensureGameTimer','gameTimerElapsed','turnElapsedMs','finalizeCurrentTurnTime','switchTurnClock',
   'ensurePhaseCPState','phaseCPKey','rememberPhaseCP','restorePhaseCP',
   'ensureObjectiveControlHistory','objectivePreviousTurnKey','objectivePreviousTurnOwner',
-  'ensureObjectiveControlSources','objectiveControlSourceIds','ensureSecondaryRoundLedger','ensureScoreLedger','secondaryTotalScoredVP','scoreTotalForSide','armyNoMansLandTagsHtml','objectiveMapPlacementPanelHtml','objectiveMapRendererHtml','completeTerrainSetup','unitDatabase','canonicalUnitDatabase','bootstrapUnitDatabase','mergeSupplementalUnits','saveCurrentArmyList','loadSavedArmyList','deleteSavedArmyList','undoDeletedSavedArmyList','currentMyListSnapshot','reserveTrayHtml','deploymentPlanMapControlsHtml','transportDeclarationSectionHtml','objectiveLayoutHtml','reserveDeclarationSectionHtml','deploymentPlanPositionEditorHtml','deploymentTrackingEditorHtml','deploymentTrackingControlsHtml','deploymentStatusHtml','tournamentDeploymentValidation'
+  'ensureObjectiveControlSources','objectiveControlSourceIds','ensureSecondaryRoundLedger','ensureScoreLedger','secondaryTotalScoredVP','scoreTotalForSide','armyNoMansLandTagsHtml','objectiveMapPlacementPanelHtml','objectiveMapRendererHtml','completeTerrainSetup','unitDatabase','canonicalUnitDatabase','bootstrapUnitDatabase','mergeSupplementalUnits','saveCurrentArmyList','loadSavedArmyList','deleteSavedArmyList','undoDeletedSavedArmyList','currentMyListSnapshot','reserveTrayHtml','deploymentPlanMapControlsHtml','transportDeclarationSectionHtml','objectiveLayoutHtml','reserveDeclarationSectionHtml','deploymentPlanPositionEditorHtml','deploymentTrackingEditorHtml','deploymentTrackingControlsHtml','deploymentStatusHtml','tournamentDeploymentValidation','actionLogFiltersHtml'
 ]){
   const count=(html.match(new RegExp('function\s+'+name+'\s*\\(','g'))||[]).length;
   if(count!==0)throw new Error('Extracted function still inline: '+name);
@@ -156,7 +158,7 @@ inlineBlocks.forEach((src,i)=>{
   fs.writeFileSync(file,src);
   cp.execFileSync(process.execPath,['--check',file],{stdio:'inherit'});
 });
-for(const [name,src] of [['bsdata-parser.js',parser],['pure-utils.js',utils],['reserve-state.js',reserve],['deployment-plan-state.js',deploymentPlan],['objective-map-state.js',objectiveMap],['objective-metadata-state.js',objectiveMetadata],['transport-state.js',transport],['stratagem-state.js',stratagem],['game-timer-state.js',gameTimer],['phase-cp-state.js',phaseCP],['objective-control-history-state.js',objectiveControlHistory],['objective-control-sources-state.js',objectiveControlSources],['secondary-round-ledger-state.js',secondaryRoundLedger],['score-ledger-state.js',scoreLedger],['secondary-score-state.js',secondaryScore],['score-calculation-state.js',scoreCalculation],['primary-round-score-state.js',primaryRoundScore],['primary-round-score-cap-state.js',primaryRoundScoreCap],['primary-scoring-vp-state.js',primaryScoringVP],['primary-scoring-is-per-state.js',primaryScoringIsPer],['primary-scoring-max-state.js',primaryScoringMax],['primary-objective-condition-text-state.js',primaryObjectiveConditionText],['objective-counts-state.js',objectiveCounts],['primary-objective-qualifying-list-state.js',primaryObjectiveQualifyingList],['primary-objective-condition-status-state.js',primaryObjectiveConditionStatus],['primary-scoring-objective-count-state.js',primaryScoringObjectiveCount],['primary-scoring-objective-amount-state.js',primaryScoringObjectiveAmount],['primary-scoring-effective-max-state.js',primaryScoringEffectiveMax],['primary-scoring-exclusive-group-state.js',primaryScoringExclusiveGroup],['primary-scoring-original-index-state.js',primaryScoringOriginalIndex],['primary-objective-condition-short-label-state.js',primaryObjectiveConditionShortLabel],['primary-scoring-round-range-state.js',primaryScoringRoundRange]]){
+for(const [name,src] of [['bsdata-parser.js',parser],['action-log-filters-state.js',actionLogFilters],['pure-utils.js',utils],['reserve-state.js',reserve],['deployment-plan-state.js',deploymentPlan],['objective-map-state.js',objectiveMap],['objective-metadata-state.js',objectiveMetadata],['transport-state.js',transport],['stratagem-state.js',stratagem],['game-timer-state.js',gameTimer],['phase-cp-state.js',phaseCP],['objective-control-history-state.js',objectiveControlHistory],['objective-control-sources-state.js',objectiveControlSources],['secondary-round-ledger-state.js',secondaryRoundLedger],['score-ledger-state.js',scoreLedger],['secondary-score-state.js',secondaryScore],['score-calculation-state.js',scoreCalculation],['primary-round-score-state.js',primaryRoundScore],['primary-round-score-cap-state.js',primaryRoundScoreCap],['primary-scoring-vp-state.js',primaryScoringVP],['primary-scoring-is-per-state.js',primaryScoringIsPer],['primary-scoring-max-state.js',primaryScoringMax],['primary-objective-condition-text-state.js',primaryObjectiveConditionText],['objective-counts-state.js',objectiveCounts],['primary-objective-qualifying-list-state.js',primaryObjectiveQualifyingList],['primary-objective-condition-status-state.js',primaryObjectiveConditionStatus],['primary-scoring-objective-count-state.js',primaryScoringObjectiveCount],['primary-scoring-objective-amount-state.js',primaryScoringObjectiveAmount],['primary-scoring-effective-max-state.js',primaryScoringEffectiveMax],['primary-scoring-exclusive-group-state.js',primaryScoringExclusiveGroup],['primary-scoring-original-index-state.js',primaryScoringOriginalIndex],['primary-objective-condition-short-label-state.js',primaryObjectiveConditionShortLabel],['primary-scoring-round-range-state.js',primaryScoringRoundRange]]){
   const file=path.join('/tmp','onoforge-refactor-'+name);
   fs.writeFileSync(file,src);
   cp.execFileSync(process.execPath,['--check',file],{stdio:'inherit'});
@@ -164,6 +166,7 @@ for(const [name,src] of [['bsdata-parser.js',parser],['pure-utils.js',utils],['r
 
 const sandbox={window:{},console};
 vm.runInNewContext(parser,sandbox,{filename:'js/data/bsdata-parser.js'});
+vm.runInNewContext(actionLogFilters,sandbox,{filename:'js/state/action-log-filters-state.js'});
 vm.runInNewContext(utils,sandbox,{filename:'js/utils/pure-utils.js'});
 vm.runInNewContext(reserve,sandbox,{filename:'js/state/reserve-state.js'});
 vm.runInNewContext(reserveDeclarationSection,sandbox,{filename:'js/state/reserve-declaration-section-state.js'});
@@ -251,6 +254,7 @@ if(typeof sandbox.window.OnoForgePureUtils?.battlefieldDistanceBetween!=='functi
 if(typeof sandbox.window.OnoForgePureUtils?.formatSavedListDate!=='function')throw new Error('Utility module did not expose formatSavedListDate');
 if(typeof sandbox.window.OnoForgeReserveState?.createReserveStateController!=='function')throw new Error('Reserve module did not expose createReserveStateController');
 if(typeof sandbox.window.OnoForgeReserveTrayState?.createReserveTrayStateController!=='function')throw new Error('Reserve tray module did not expose createReserveTrayStateController');
+if(typeof sandbox.window.OnoForgeActionLogFiltersState?.createActionLogFiltersStateController!=='function')throw new Error('Action log filters module did not expose createActionLogFiltersStateController');
 if(typeof sandbox.window.OnoForgeDeploymentPlanState?.createDeploymentPlanStateController!=='function')throw new Error('Deployment plan module did not expose createDeploymentPlanStateController');
 if(typeof sandbox.window.OnoForgeDeploymentPlanMapControlsState?.createDeploymentPlanMapControlsStateController!=='function')throw new Error('Deployment plan map controls module did not expose createDeploymentPlanMapControlsStateController');
 if(typeof sandbox.window.OnoForgeDeploymentPlanPositionEditorState?.createDeploymentPlanPositionEditorStateController!=='function')throw new Error('Deployment plan position editor module did not expose createDeploymentPlanPositionEditorStateController');
@@ -401,6 +405,11 @@ const terrainController=sandbox.window.OnoForgeCompleteTerrainSetupState.createC
 });
 terrainController.completeTerrainSetup();
 if(!terrainState.terrainSetupComplete||terrainState.liveDeploymentPanelOpen||terrainEvents!==1||terrainSaves!==1||terrainRenders!==1||terrainScrolls!==1)throw new Error('Complete terrain setup state transition regression');
+
+const actionLogFiltersController=sandbox.window.OnoForgeActionLogFiltersState.createActionLogFiltersStateController({getState:()=>({events:[{round:2,phase:'Shooting'},{round:1,phase:'Command'},{round:2,phase:'Shooting'}],actionLogRoundFilter:2,actionLogPhaseFilter:'Shooting'})});
+const actionLogFiltersHtml=actionLogFiltersController.actionLogFiltersHtml();
+if(!actionLogFiltersHtml.includes('Round 1')||!actionLogFiltersHtml.includes('Round 2')||!actionLogFiltersHtml.includes('Shooting'))throw new Error('Action log filters option regression');
+if(!actionLogFiltersHtml.includes('value="2" selected')||!actionLogFiltersHtml.includes('value="Shooting" selected'))throw new Error('Action log filters selection regression');
 
 const reserveState={page:'setup',my:[{uid:'u1',name:'Unit One'}],opp:[{uid:'u2',name:'Unit Two'}],reserveDeclarations:{my:{},opp:{}},battlefieldUnitPositions:{}};
 const reserveController=sandbox.window.OnoForgeReserveState.createReserveStateController({getState:()=>reserveState,snapshotForUndo:()=>({}),event:()=>{},save:()=>{},render:()=>{}});
