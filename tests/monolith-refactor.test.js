@@ -418,11 +418,11 @@ const tournamentDeploymentValidationController=sandbox.window.OnoForgeTournament
   unitDisplayName:(side,entry)=>entry?.name,
   get:()=>null
 });
-const tournamentDeploymentValidation=tournamentDeploymentValidationController.tournamentDeploymentValidation();
-if(!tournamentDeploymentValidation.ready||tournamentDeploymentValidation.missing.length!==0)throw new Error('Tournament deployment validation ready-state regression');
+const validationResult=tournamentDeploymentValidationController.tournamentDeploymentValidation();
+if(!validationResult.ready||validationResult.missing.length!==0)throw new Error('Tournament deployment validation ready-state regression');
 tournamentDeploymentValidationState.deploymentSkippedUnits={};
-const tournamentDeploymentValidationMissing=tournamentDeploymentValidationController.tournamentDeploymentValidation();
-if(tournamentDeploymentValidationMissing.ready||tournamentDeploymentValidationMissing.missing.length!==1||!tournamentDeploymentValidationMissing.missing[0].includes('Warrior'))throw new Error('Tournament deployment validation missing-unit regression');
+const validationMissing=tournamentDeploymentValidationController.tournamentDeploymentValidation();
+if(validationMissing.ready||validationMissing.missing.length!==1||!validationMissing.missing[0].includes('Warrior'))throw new Error('Tournament deployment validation missing-unit regression');
 const deploymentPlanMapControlsController=sandbox.window.OnoForgeDeploymentPlanMapControlsState.createDeploymentPlanMapControlsStateController({
   getState:()=>({my:[{uid:'u1',name:'Captain'},{uid:'u2',name:'Warrior'}],deploymentMapPlacement:{uid:'u1'}}),
   deploymentPlanForCurrentMap:()=>({u2:{x:12,y:8}}),
