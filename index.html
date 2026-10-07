@@ -706,7 +706,7 @@ body{overflow-x:hidden}
 <script src="js/state/battlefield-map-unit-labels-state.js"></script>
 <script src="js/state/battlefield-map-unit-nodes-state.js"></script>
 <script src="js/state/battlefield-map-plan-ghost-nodes-state.js"></script>
-<script src="js/state/deployment-staging-nodes-state.js"></script><script src="js/state/primary-scoring-preview-summary-state.js"></script><script src="js/state/primary-scoring-html-state.js"></script><script src="js/state/primary-scoring-catalogue-audit-state.js"></script><script src="js/state/event-companion-map-regression-audit-state.js"></script>
+<script src="js/state/deployment-staging-nodes-state.js"></script><script src="js/state/terrain-reference-image-state.js"></script><script src="js/state/primary-scoring-preview-summary-state.js"></script><script src="js/state/primary-scoring-html-state.js"></script><script src="js/state/primary-scoring-catalogue-audit-state.js"></script><script src="js/state/event-companion-map-regression-audit-state.js"></script>
 <script src="js/data/bsdata-parser.js"></script><script>
 const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;
 const {createReserveStateController}=window.OnoForgeReserveState;
@@ -867,6 +867,12 @@ const {objectiveMapPlanGhostNodesHtml}=battlefieldMapPlanGhostNodesStateControll
 const {createDeploymentStagingNodesStateController}=window.OnoForgeDeploymentStagingNodesState;
 const deploymentStagingNodesStateController=createDeploymentStagingNodesStateController({getState:()=>state,isUnitReserved,battlefieldUnitPosition,unitDisplayName,esc,pct});
 const {deploymentStagingNodesHtml}=deploymentStagingNodesStateController;
+const {createArmyNoMansLandTagsStateController}=window.OnoForgeArmyNoMansLandTagsState;
+const armyNoMansLandTagsStateController=createArmyNoMansLandTagsStateController({getState:()=>state,isUnitReserved,battlefieldUnitPosition,unitDisplayName,get,esc});
+const {armyNoMansLandTagsHtml}=armyNoMansLandTagsStateController;
+const {createTerrainReferenceImageStateController}=window.OnoForgeTerrainReferenceImageState;
+const terrainReferenceImageStateController=createTerrainReferenceImageStateController({getState:()=>state,esc});
+const {terrainReferenceImageHtml}=terrainReferenceImageStateController;
 const {createPrimaryScorePreviewSummaryStateController}=window.OnoForgePrimaryScorePreviewSummaryState;
 const primaryScoringPreviewSummaryStateController=createPrimaryScorePreviewSummaryStateController({getState:()=>state,primaryScoringRowsForRound,primaryRoundCapRemaining,primaryScoringEvidence});
 const {primaryScorePreviewSummary}=primaryScoringPreviewSummaryStateController;
