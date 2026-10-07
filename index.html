@@ -768,6 +768,7 @@ const {
 <script src="js/state/current-my-list-snapshot-state.js"></script><script src="js/state/terrain-reference-image-state.js"></script><script src="js/state/objective-geometry-identity-state.js"></script><script src="js/state/objective-tracked-identity-state.js"></script><script src="js/state/objective-canonical-label-state.js"></script><script src="js/state/objective-map-entries-state.js"></script><script src="js/state/primary-scoring-preview-summary-state.js"></script><script src="js/state/primary-scoring-html-state.js"></script><script src="js/state/primary-scoring-catalogue-audit-state.js"></script><script src="js/state/event-companion-map-regression-audit-state.js"></script>
 <script src="js/data/bsdata-parser.js"></script><script src="js/state/data-sync-status-state.js"></script><script src="js/state/battle-notes-state.js"></script><script src="js/state/action-log-filters-state.js"></script><script src="js/state/battle-end-summary-state.js"></script>
 <script src="js/state/primary-mission-rules-state.js"></script><script src="js/state/force-disposition-state.js"></script><script src="js/state/tournament-lifecycle-state.js"></script>
+<script src="js/state/battle-start-state.js"></script>
 <script src="js/state/game-reference-editor-state.js"></script>
 <script src="js/state/game-assistant-state.js"></script>
 <script src="js/state/tactical-pre-roll-state.js"></script>
@@ -1258,6 +1259,9 @@ const tournamentLifecycleStateController=createTournamentLifecycleStateControlle
 const {tournamentResultSnapshot,ensureTournamentLifecycle,setTournamentLifecycle,battleMutationAllowed,tournamentResultIntegrityCheck,verifyTournamentResult,exportTournamentResult,tournamentSetupValidation,resetTournamentToSetup,initializeLiveDeploymentFromPlan,returnToTournamentSetup}=tournamentLifecycleStateController;
 
 const {forceDispositionNameForDetachment,availableForceDispositions,forceDisposition,primaryMission,setForceDisposition}=forceDispositionStateController;
+const {createBattleStartStateController}=window.OnoForgeBattleStartState;
+const battleStartStateController=createBattleStartStateController({state,tournamentSetupValidation,ensureReserveState,ensureDeploymentPlans,initializeLiveDeploymentFromPlan,tournamentDeploymentValidation,snapshotForUndo,ONOFORGE_RULES_DATA_PIN,startGameTimer,setTournamentLifecycle,resetStratagemPhaseUses,forceDisposition,availableForceDispositions,ensureBattlefieldUnitPositions,gameTimerElapsed,initTacticalDeck,drawTactical,get,ensureModelRoster,event,detachmentDP,primaryMission,save,render,alert});
+const {startBattle}=battleStartStateController;
 
 const PRIMARY_SCORING={
 "Battlefield Dominance":[["R1–2 • End of turn","2 VP","Control more objectives than your opponent"],["R2+ • Command phase / R5","3 VP","Per objective you control"],["R2+ • Command phase / R5","+2 VP","Per objective excluding home if you control your home objective"]],
@@ -4424,118 +4428,7 @@ function beginDeployment(){
   return true;
 }
 
-function startBattle(){
-  const setupCheck=tournamentSetupValidation();
-  if(!setupCheck.ready){alert('Tournament setup is incomplete:\n\n• '+setupCheck.missing.join('\n• '));return false;}
-  if(!['SETUP','DEPLOYMENT'].includes(state.tournamentLifecycle)){
-    alert('Start Battle is only available from tournament setup.');
-    return false;
-  }
-  ensureReserveState();ensureDeploymentPlans();initializeLiveDeploymentFromPlan();
-  const deploymentCheck=tournamentDeploymentValidation();
-  if(!deploymentCheck.ready){alert('Deployment is incomplete:\n\n• '+deploymentCheck.missing.join('\n• '));return false;}
-  const before=snapshotForUndo();
-  // Pin the rules-data revision for the lifetime of this tournament battle.
-  // Loading an existing battle preserves its prior pin rather than silently adopting a newer deployed dataset.
-  state.rulesDataPin=JSON.parse(JSON.stringify(ONOFORGE_RULES_DATA_PIN));
-  startGameTimer();
 
-  state.round=1;
-  state.battleRoundComplete=false;
-  state.battleEnded=false;
-  state.battleResultLocked=false;
-  state.battleResultVerified=false;
-  state.battleResultVerifiedAt=null;
-  state.battleResult=null;
-  if(!setTournamentLifecycle('LIVE')){alert('The tournament could not transition from Deployment to Live.');return false;}
-  state.phase='Command';
-  state.primaryScoringRound=1;
-  state.primaryMyScoredVP=0;
-  state.primaryOppScoredVP=0;
-  state.primaryScoringByRoundMy={1:[]};
-  state.primaryScoringByRoundOpp={1:[]};
-  state.primaryScoringAmountsByRoundMy={1:{}};
-  state.primaryScoringAmountsByRoundOpp={1:{}};
-  state.primaryScoringValuesByRoundMy={1:{}};
-  state.primaryScoringValuesByRoundOpp={1:{}};
-  state.primaryScoredItemsMy=[];
-  state.primaryScoredItemsOpp=[];
-  state.stratagemUsesMy=[];
-  state.stratagemUsesOpp=[];
-
-  state.secondaryMyVP=0;
-  state.secondaryOppVP=0;
-  state.secondaryScoredMyVP=0;
-  state.secondaryScoredOppVP=0;
-  state.secondaryMyScoredVPByRound={};
-  state.secondaryOppScoredVPByRound={};
-  state.secondaryMyScoredRound={};
-  state.secondaryOppScoredRound={};
-  state.secondaryMyScoredVP={};
-  state.secondaryOppScoredVP={};
-  state.secondaryNewOrdersUsedMy=false;
-  state.secondaryNewOrdersUsedOpp=false;
-
-  if(Array.isArray(state.secondaryMy)){
-    state.secondaryMy.forEach(m=>{
-      if(m && typeof m==='object'){
-        m.completed=false;
-        m.scored=false;
-        m.complete=false;
-        m.isCompleted=false;
-        delete m.completedRound;
-        delete m.scoredRound;
-        delete m.roundCompleted;
-      }
-    });
-  }
-
-  if(Array.isArray(state.secondaryMyScored)){
-    state.secondaryMyScored.forEach(m=>{
-      if(m && typeof m==='object'){
-        m.completed=false;
-        m.scored=false;
-        m.complete=false;
-        m.isCompleted=false;
-        delete m.completedRound;
-        delete m.scoredRound;
-        delete m.roundCompleted;
-      }
-    });
-  }
-
-  if(Array.isArray(state.secondaryOpp)){
-    state.secondaryOpp.forEach(m=>{
-      if(m && typeof m==='object'){
-        m.completed=false;
-        m.scored=false;
-        m.complete=false;
-        m.isCompleted=false;
-        delete m.completedRound;
-        delete m.scoredRound;
-        delete m.roundCompleted;
-      }
-    });
-  }
-
-  if(Array.isArray(state.secondaryOppScored)){
-    state.secondaryOppScored.forEach(m=>{
-      if(m && typeof m==='object'){
-        m.completed=false;
-        m.scored=false;
-        m.complete=false;
-        m.isCompleted=false;
-        delete m.completedRound;
-        delete m.scoredRound;
-        delete m.roundCompleted;
-      }
-    });
-  }
-
-state.myCP=1;state.oppCP=1;state.phaseCP={};state.battleFirstTurn=state.firstTurn==='opp'?'opp':'my';state.stratagemUsesMy=[];state.stratagemUsesOpp=[];resetStratagemPhaseUses();state.newOrdersCompletedMy=false;state.newOrdersCompletedOpp=false;state.tactical={version:TACTICAL_STATE_VERSION,pairs:{},unitUse:{},unitMovement:{},unitActions:{}};if(!forceDisposition('my')&&availableForceDispositions('my').length)state.myForceDisposition=availableForceDispositions('my')[0];if(!forceDisposition('opp')&&availableForceDispositions('opp').length)state.oppForceDisposition=availableForceDispositions('opp')[0];state.page='battle';setTournamentLifecycle('LIVE');state.phase='Command';state.currentTurn=state.firstTurn==='opp'?'opp':'my';ensureReserveState();ensureBattlefieldUnitPositions();Object.values(ensureBattlefieldUnitPositions()).forEach(p=>{if(p&&typeof p==='object')p.round=1;});delete state.battlefieldMapPlacement;delete state.deploymentMapPlacement;state.gameTimer.turnMyMs=0;state.gameTimer.turnOppMs=0;state.gameTimer.turnStartedGameMs=gameTimerElapsed();state.gameTimer.turnPaused=false;state.manualVPMy=0;state.manualVPOpp=0;state.myVP=state.battleReadyMy?10:0;state.oppVP=state.battleReadyOpp?10:0;state.events=[];state.objectives={};state.objectiveTurnStartOwners={};if(Array.isArray(state.stratagemsMy))state.stratagemsMy.forEach(s=>{if(s)s.used=false});
-if(Array.isArray(state.stratagemsOpp))state.stratagemsOpp.forEach(s=>{if(s)s.used=false});
-state.secondaryMyDiscard=[];state.secondaryOppDiscard=[];state.secondaryTacticalDrawKeys={};state.secondaryMyScored=[];state.secondaryOppScored=[];state.secondaryMyScoredVP={};state.secondaryOppScoredVP={};state.secondaryMyScoredVPByRound={};state.secondaryOppScoredVPByRound={};state.secondaryMyScoredRound={};state.secondaryOppScoredRound={};state.secondaryMyDeck=[];state.secondaryOppDeck=[];state.secondaryMyDeckInitialized=false;state.secondaryOppDeckInitialized=false;state.secondaryMyCards=[];state.secondaryOppCards=[];state.secondaryTacticalDrawKeys={};if(state.secondaryMy==='tactical'){initTacticalDeck('my');drawTactical('my',2,false)}if(state.secondaryOpp==='tactical'){initTacticalDeck('opp');drawTactical('opp',2,false)};state.my.forEach(e=>{const u=get(e.unitId),roster=ensureModelRoster(e,u);e.game={entryId:e.uid,models:e.models,wounds:e.models*get(e.unitId).wounds,status:'Alive',battleshocked:false,modelRoster:roster.map(m=>({...m,alive:true,woundsRemaining:Number(u.wounds)||1}))};});
-state.opp.forEach(e=>{const u=get(e.unitId),roster=ensureModelRoster(e,u);e.game={entryId:e.uid,models:e.models,wounds:e.models*get(e.unitId).wounds,status:'Alive',battleshocked:false,modelRoster:roster.map(m=>({...m,alive:true,woundsRemaining:Number(u.wounds)||1}))};});event('GAME_STARTED',{unit:'Game',action:'Start / Reset Battle',round:state.round,phase:state.phase,attacker:state.attackerSide,defender:state.attackerSide==='my'?'opp':'my',firstTurn:state.firstTurn,secondaryMy:state.secondaryMy,secondaryOpp:state.secondaryOpp,battleReadyMy:state.battleReadyMy,battleReadyOpp:state.battleReadyOpp,myStartingVP:state.myVP,oppStartingVP:state.oppVP,myDetachment:state.detachmentSelections,oppDetachment:state.oppDetachmentSelections,myDetachmentDP:detachmentDP('my'),oppDetachmentDP:detachmentDP('opp'),myForceDisposition:forceDisposition('my'),oppForceDisposition:forceDisposition('opp'),myPrimaryMission:primaryMission('my'),oppPrimaryMission:primaryMission('opp')},before);save();render()}
 function snapshotForUndo(){
   const x=JSON.parse(JSON.stringify(state));
   delete x.events;
