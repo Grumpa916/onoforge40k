@@ -713,7 +713,8 @@ body{overflow-x:hidden}
 <script src="js/state/battlefield-map-unit-nodes-state.js"></script>
 <script src="js/state/battlefield-map-plan-ghost-nodes-state.js"></script>
 <script src="js/state/deployment-staging-nodes-state.js"></script><script src="js/state/army-no-mans-land-tags-state.js"></script>
-<script src="js/state/reserve-tray-state.js"></script><script src="js/state/objective-map-placement-panel-state.js"></script><script src="js/state/terrain-reference-image-state.js"></script><script src="js/state/objective-geometry-identity-state.js"></script><script src="js/state/objective-tracked-identity-state.js"></script><script src="js/state/objective-canonical-label-state.js"></script><script src="js/state/objective-map-entries-state.js"></script><script src="js/state/primary-scoring-preview-summary-state.js"></script><script src="js/state/primary-scoring-html-state.js"></script><script src="js/state/primary-scoring-catalogue-audit-state.js"></script><script src="js/state/event-companion-map-regression-audit-state.js"></script>
+<script src="js/state/reserve-tray-state.js"></script><script src="js/state/objective-map-placement-panel-state.js"></script>
+<script src="js/state/objective-map-renderer-state.js"></script><script src="js/state/terrain-reference-image-state.js"></script><script src="js/state/objective-geometry-identity-state.js"></script><script src="js/state/objective-tracked-identity-state.js"></script><script src="js/state/objective-canonical-label-state.js"></script><script src="js/state/objective-map-entries-state.js"></script><script src="js/state/primary-scoring-preview-summary-state.js"></script><script src="js/state/primary-scoring-html-state.js"></script><script src="js/state/primary-scoring-catalogue-audit-state.js"></script><script src="js/state/event-companion-map-regression-audit-state.js"></script>
 <script src="js/data/bsdata-parser.js"></script><script>
 const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;
 const {createReserveStateController}=window.OnoForgeReserveState;
@@ -916,6 +917,9 @@ const {objectiveCanonicalNumber,objectiveCanonicalLabelForGeometryName,objective
 const {createObjectiveMapEntriesStateController}=window.OnoForgeObjectiveMapEntriesState;
 const objectiveMapEntriesStateController=createObjectiveMapEntriesStateController({getState:()=>state,objectiveBattlefieldGeometry,objectiveMapLabelForTrackedNameLegacy,objectiveRole,objectiveTerritory,objectiveDeploymentZone,objectiveTrackedNameForGeometryName,objectiveCanonicalLabelForGeometryName});
 const {objectiveMapEntries}=objectiveMapEntriesStateController;
+const {createObjectiveMapRendererStateController}=window.OnoForgeObjectiveMapRendererState;
+const objectiveMapRendererStateController=createObjectiveMapRendererStateController({objectiveMapModel,objectiveMapPlanGhostNodesHtml,objectiveMapUnitNodesHtml,objectiveMapEntries,objectivePositionFor,objectiveMapLabelForTrackedName,armyNoMansLandTagsHtml,deploymentPlanMapControlsHtml,deploymentTrackingControlsHtml,reserveTrayHtml,terrainReferenceImageHtml,getState:()=>state,esc});
+const {objectiveMapRendererHtml}=objectiveMapRendererStateController;
 const {createPrimaryScorePreviewSummaryStateController}=window.OnoForgePrimaryScorePreviewSummaryState;
 const primaryScoringPreviewSummaryStateController=createPrimaryScorePreviewSummaryStateController({getState:()=>state,primaryScoringRowsForRound,primaryRoundCapRemaining,primaryScoringEvidence});
 const {primaryScorePreviewSummary}=primaryScoringPreviewSummaryStateController;
@@ -1021,41 +1025,7 @@ function clearBattlefieldUnitPosition(uid){
   const tactical=ensureTacticalState();
   Object.entries(tactical.pairs||{}).forEach(([key,pair])=>{
     if(!pair||typeof pair!=='object')return;
-    if(String(pair.attackerUid)===id||String(pair.targetUid)===id){
-      const updated={...pair};
-      delete updated.distanceInches;
-      delete updated.distanceBand;
-      tactical.pairs[key]=updated;
-    }
-  });
-  const clearedMy=entry('my',id),clearedOpp=entry('opp',id),clearedEntry=clearedMy||clearedOpp,clearedSide=clearedMy?'my':'opp';event('UNIT_BATTLEFIELD_POSITION_CLEARED',{unit:id,unitName:clearedEntry?unitDisplayName(clearedSide,clearedEntry):id,entryId:id,action:'Battlefield position cleared',round:Math.max(1,Number(state.round)||1),phase:String(state.phase||'Command')},before);
-  save();render();
-}
-
-
-
-
-
-
-function objectiveMapRendererHtml(mode='battle'){const model=objectiveMapModel(mode),status=mode==='terrain'?'Official Event Companion reference':model.verified?'Verified geometry':'Geometry pending verification',pct=(n,max)=>Math.max(0,Math.min(100,(Number(n)/Number(max))*100)),point=p=>p&&Number.isFinite(Number(p.x))&&Number.isFinite(Number(p.y)),terrainSetup=mode==='terrain',setup=mode==='setup',deployment=mode==='deployment';const regionLabel=key=>{const k=String(key||'');if(k==='attackerDeployment')return (state.attackerSide==='opp'?state.oppName:state.myName)+' Deployment Zone';if(k==='defenderDeployment')return (state.attackerSide==='opp'?state.myName:state.oppName)+' Deployment Zone';if(k==='attackerTerritory')return (state.attackerSide==='opp'?state.oppName:state.myName)+' Territory';if(k==='defenderTerritory')return (state.attackerSide==='opp'?state.myName:state.oppName)+' Territory';return ({my:'My Deployment Zone',opp:'Opponent Deployment Zone',noMansLand:"No Man's Land",myTerritory:'My Territory',oppTerritory:'Opponent Territory'})[k]||k.replace(/([A-Z])/g,' $1').replace(/^./,s=>s.toUpperCase());};const regionClass=key=>{const k=String(key||'').toLowerCase();return k.includes('deployment')?'deployment':k.includes('territory')?'territory':'region';};const renderRegion=(key,r)=>{
-  if(!r||typeof r!=='object')return '';
-  const label=regionLabel(key);
-  if([r.x,r.y,r.width,r.height].every(v=>Number.isFinite(Number(v))))
-    return '<div class="objective-map-region '+regionClass(key)+'" style="left:'+pct(r.x,60)+'%;top:'+pct(44-(Number(r.y)+Number(r.height)),44)+'%;width:'+pct(r.width,60)+'%;height:'+pct(r.height,44)+'%" title="'+esc(label)+'"></div>';
-  if(Array.isArray(r.points)&&r.points.every(point)){
-    const pts=r.points.map(p=>pct(p.x,60)+','+pct(44-p.y,44)).join(' ');
-    return '<svg class="objective-map-region-polygon '+regionClass(key)+'" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="'+esc(label)+'"><polygon points="'+pts+'"/></svg>';
-  }
-  return '';
-};
-const renderTerrain=(key,r)=>{if(!r||typeof r!=='object')return '';const label='Terrain '+String(key||'');if([r.x,r.y,r.width,r.height].every(v=>Number.isFinite(Number(v))))return '<div class="objective-map-terrain" style="left:'+pct(r.x,60)+'%;top:'+pct(44-(Number(r.y)+Number(r.height)),44)+'%;width:'+pct(r.width,60)+'%;height:'+pct(r.height,44)+'%" title="'+esc(label)+'"></div>';if(Array.isArray(r.points)&&r.points.every(point)){const pts=r.points.map(p=>pct(p.x,60)+'% '+pct(44-Number(p.y),44)+'%').join(',');return '<div class="objective-map-terrain-polygon" style="clip-path:polygon('+pts+')" title="'+esc(label)+'"></div>';}return '';};const regions=(!terrainSetup&&model.verified)?Object.entries(model.deploymentZones||{}).map(([k,v])=>renderRegion(k,v)).join(''):'';const terrain=model.verified?Object.entries(model.terrainGeometry||{}).map(([k,v])=>renderTerrain(k,v)).join(''):'';const ghostNodes=mode==='setup'?objectiveMapPlanGhostNodesHtml(model,pct):mode==='deployment'?armyNoMansLandTagsHtml(model,pct):'',unitNodes=terrainSetup?'':objectiveMapUnitNodesHtml(model,pct,mode),measurementToggle=terrainSetup?'<span class="pill">Measurements shown</span>':'',objectiveNodes=terrainSetup?'':objectiveMapEntries().map(o=>{
-  const key=o.stateName||o.name;
-  const p=o.position||objectivePositionFor(key),x=point(p)?pct(p.x,60):null,y=point(p)?pct(44-p.y,44):null;
-  const ownerClass=o.owner==='my'?'my':o.owner==='opp'?'opp':o.owner==='contested'?'contested':'none';
-  const label=o.label||objectiveMapLabelForTrackedName(key);
-  return '<div class="objective-map-node '+ownerClass+'" data-map-objective="'+esc(key)+'" style="'+(x===null||y===null?'display:none;':'left:'+x+'%;top:'+y+'%;')+'" title="'+esc(key)+'"><span class="objective-map-label">'+esc(label)+'</span></div>';
-}).join(''),pending='<div class="status" style="margin-top:8px"><b>Map geometry pending verification.</b><div class="tiny" style="margin-top:4px">No deployment zone, territory, terrain, or objective position is inferred from the 60 × 44 table boundary. The Event Companion geometry must be verified first.</div></div>',title=terrainSetup?'Terrain Setup':setup?'Deployment Planning':deployment?'Deployment Tracking':'Battlefield Map',subtitle=terrainSetup?'Step 4 • Create the Battlefield • use the selected Event Companion layout as the terrain placement guide.':setup?'Step 8 preparation • plan opening positions separately from terrain setup.':deployment?'Record actual deployment positions • drag units after placement. Special deployment rules are recorded, not inferred.':'Live battlefield positions • drag units to record movement',controls=terrainSetup?'':setup?deploymentPlanMapControlsHtml(model):deployment?deploymentTrackingControlsHtml(model):'',reserveTray=(deployment||mode==='battle')?reserveTrayHtml():'',editor='';const battlefieldMarkup=terrainSetup?terrainReferenceImageHtml(model):'<div class="objective-map-canvas '+(setup?'terrain-measurement-map':(mode==='battle'&&state.attackerSide==='opp'?'perspective-rotated':''))+'" data-objective-map-canvas data-objective-map-mode="'+esc(mode)+'" role="application" aria-label="'+esc(title)+' 60 by 44 inch battlefield map">'+(model.verified?regions+terrain+objectiveNodes+ghostNodes+unitNodes:'<div class="objective-map-placeholder">Verified Event Companion geometry required</div>')+'</div>';
-const footer=terrainSetup?'<div class="terrain-reference-note"><strong>Official Event Companion reference.</strong> This page is the selected mission/layout diagram. Use it directly to place the terrain areas and terrain features on the physical 60 × 44 battlefield. The app does not reconstruct or infer the diagram measurements.</div>':'<div class="objective-map-legend"><span><i class="objective-map-legend-swatch terrain"></i>Terrain</span><span><i class="objective-map-legend-swatch deployment"></i>Deployment</span><span><i class="objective-map-legend-swatch territory"></i>Territory</span><span><i class="objective-map-legend-swatch objective"></i>Objective</span></div><div class="tiny" style="margin-top:6px">60 × 44 inches • bottom-left origin • geometry and terrain are rendered only from verified Event Companion data. Line of sight is never inferred.</div>';
+    if(String(pa rendered only from verified Event Companion data. Line of sight is never inferred.</div>';
 return '<div class="card objective-map-renderer '+(setup?'terrain-planning-card':'')+'"><div class="split"><div><h3 style="margin:0">'+title+'</h3><div class="muted">'+subtitle+' • '+esc(model.missionKey)+' • Layout '+esc(model.layout)+' • Event Companion p.'+esc(String(model.page||'—'))+'</div></div><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span class="pill">'+status+'</span></div></div>'+controls+battlefieldMarkup+reserveTray+footer+(!terrainSetup&&!model.verified?pending:'')+'</div>';}
 function completeTerrainSetup(){
  const before=snapshotForUndo();
