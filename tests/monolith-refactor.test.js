@@ -62,7 +62,6 @@ const required=[
   '<script src="js/state/primary-objective-condition-text-state.js"></script>',
   '<script src="js/state/primary-objective-qualifying-list-state.js"></script>',
   '<script src="js/state/primary-objective-condition-status-state.js"></script>',
-  '<script src="js/state/primary-objective-condition-status-state.js"></script>',
   '<script src="js/state/primary-scoring-objective-count-state.js"></script>',
   '<script src="js/state/primary-scoring-objective-amount-state.js"></script>',
   '<script src="js/state/primary-scoring-effective-max-state.js"></script>',
