@@ -423,7 +423,7 @@ const moreStatus=primaryObjectiveConditionStatusController.primaryObjectiveCondi
 if(moreStatus?.type!=='more-than-opponent'||moreStatus.count!==2||moreStatus.opponentCount!==1||!moreStatus.met)throw new Error('Primary objective condition status comparison regression');
 const homeStatus=primaryObjectiveConditionStatusController.primaryObjectiveConditionStatus('my',["Control your opponent's home objective"]);
 if(homeStatus?.type!=='opponent-home'||homeStatus.count!==1||homeStatus.objective!=='homeOpp'||!homeStatus.met)throw new Error('Primary objective condition status home regression');
-const thresholdStatus=primaryObjectiveConditionStatusController.primaryObjectiveConditionStatus('my',['Control 2 objectives']);
+const thresholdStatus=primaryObjectiveConditionStatusController.primaryObjectiveConditionStatus('my',['Control 2+ objectives']);
 if(thresholdStatus?.type!=='threshold'||thresholdStatus.count!==2||thresholdStatus.required!==2||!thresholdStatus.met)throw new Error('Primary objective condition status threshold regression');
 const transitionStatus=primaryObjectiveConditionStatusController.primaryObjectiveConditionStatus('my',['Control one or more objectives not controlled at the start of the turn']);
 if(transitionStatus?.type!=='one-or-more'||transitionStatus.transitionCount!==1||transitionStatus.transitionType!=='newly-controlled-this-turn'||!transitionStatus.requiresTurnChange)throw new Error('Primary objective condition status transition regression');
