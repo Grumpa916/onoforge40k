@@ -5922,14 +5922,6 @@ function changeUnit(side,id,dm,dw){
   const action=dm?('Models '+(dm>0?'+':'')+dm):('Wounds '+(dw>0?'+':'')+dw);
   event('UNIT_STATE_CHANGED',{side,unitId:e.unitId,entryId:id,unit:u.name,action,modelsBefore:oldModels,modelsAfter:e.game.models,woundsBefore:oldWounds,woundsAfter:e.game.wounds,statusBefore:before.status,statusAfter:e.game.status,before,after:e.game},fullBefore);save();render();
 }
-function scoreTotalForSide(side){
-  ensureScoreLedger();
-  const primary=Math.max(0,Math.min(45,Number(state[side==='my'?'primaryMyScoredVP':'primaryOppScoredVP'])||0));
-  const secondary=Math.max(0,Math.min(45,Number(secondaryTotalScoredVP(side))||0));
-  const ready=side==='my'?(state.battleReadyMy?10:0):(state.battleReadyOpp?10:0);
-  const manual=Math.max(0,Number(state[side==='my'?'manualVPMy':'manualVPOpp'])||0);
-  return Math.min(100,ready+primary+secondary+manual);
-}
 function scoreIntegrityAudit(){
   ensureScoreLedger();
   ensureSecondaryRoundLedger();
