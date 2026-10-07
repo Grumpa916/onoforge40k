@@ -25,6 +25,7 @@ const objectiveMapRenderer=fs.readFileSync(path.join(root,'js/state/objective-ma
 const completeTerrainSetup=fs.readFileSync(path.join(root,'js/state/complete-terrain-setup-state.js'),'utf8');
 const unitDatabase=fs.readFileSync(path.join(root,'js/state/unit-database-state.js'),'utf8');
 const savedArmyList=fs.readFileSync(path.join(root,'js/state/saved-army-list-state.js'),'utf8');
+const savedArmyListDeletion=fs.readFileSync(path.join(root,'js/state/saved-army-list-deletion-state.js'),'utf8');
 const transport=fs.readFileSync(path.join(root,'js/state/transport-state.js'),'utf8');
 const transportDeclarationSection=fs.readFileSync(path.join(root,'js/state/transport-declaration-section-state.js'),'utf8');
 const stratagem=fs.readFileSync(path.join(root,'js/state/stratagem-state.js'),'utf8');
@@ -74,6 +75,7 @@ const required=[
   '<script src="js/state/complete-terrain-setup-state.js"></script>',
   '<script src="js/state/unit-database-state.js"></script>',
   '<script src="js/state/saved-army-list-state.js"></script>',
+  '<script src="js/state/saved-army-list-deletion-state.js"></script>',
   '<script src="js/state/objective-metadata-state.js"></script>',
   '<script src="js/state/transport-state.js"></script>',
   '<script src="js/state/transport-declaration-section-state.js"></script>',
@@ -128,7 +130,7 @@ for(const name of [
   'ensureGameTimer','gameTimerElapsed','turnElapsedMs','finalizeCurrentTurnTime','switchTurnClock',
   'ensurePhaseCPState','phaseCPKey','rememberPhaseCP','restorePhaseCP',
   'ensureObjectiveControlHistory','objectivePreviousTurnKey','objectivePreviousTurnOwner',
-  'ensureObjectiveControlSources','objectiveControlSourceIds','ensureSecondaryRoundLedger','ensureScoreLedger','secondaryTotalScoredVP','scoreTotalForSide','armyNoMansLandTagsHtml','objectiveMapPlacementPanelHtml','objectiveMapRendererHtml','completeTerrainSetup','unitDatabase','canonicalUnitDatabase','bootstrapUnitDatabase','mergeSupplementalUnits','saveCurrentArmyList','loadSavedArmyList','reserveTrayHtml','deploymentPlanMapControlsHtml','transportDeclarationSectionHtml','objectiveLayoutHtml','reserveDeclarationSectionHtml','deploymentPlanPositionEditorHtml','deploymentTrackingEditorHtml','deploymentTrackingControlsHtml'
+  'ensureObjectiveControlSources','objectiveControlSourceIds','ensureSecondaryRoundLedger','ensureScoreLedger','secondaryTotalScoredVP','scoreTotalForSide','armyNoMansLandTagsHtml','objectiveMapPlacementPanelHtml','objectiveMapRendererHtml','completeTerrainSetup','unitDatabase','canonicalUnitDatabase','bootstrapUnitDatabase','mergeSupplementalUnits','saveCurrentArmyList','loadSavedArmyList','deleteSavedArmyList','undoDeletedSavedArmyList','reserveTrayHtml','deploymentPlanMapControlsHtml','transportDeclarationSectionHtml','objectiveLayoutHtml','reserveDeclarationSectionHtml','deploymentPlanPositionEditorHtml','deploymentTrackingEditorHtml','deploymentTrackingControlsHtml'
 ]){
   const count=(html.match(new RegExp('function\s+'+name+'\s*\\(','g'))||[]).length;
   if(count!==0)throw new Error('Extracted function still inline: '+name);
@@ -178,6 +180,7 @@ vm.runInNewContext(objectiveMapRenderer,sandbox,{filename:'js/state/objective-ma
 vm.runInNewContext(completeTerrainSetup,sandbox,{filename:'js/state/complete-terrain-setup-state.js'});
 vm.runInNewContext(unitDatabase,sandbox,{filename:'js/state/unit-database-state.js'});
 vm.runInNewContext(savedArmyList,sandbox,{filename:'js/state/saved-army-list-state.js'});
+vm.runInNewContext(savedArmyListDeletion,sandbox,{filename:'js/state/saved-army-list-deletion-state.js'});
 vm.runInNewContext(transport,sandbox,{filename:'js/state/transport-state.js'});
 vm.runInNewContext(transportDeclarationSection,sandbox,{filename:'js/state/transport-declaration-section-state.js'});
 vm.runInNewContext(stratagem,sandbox,{filename:'js/state/stratagem-state.js'});
@@ -222,6 +225,7 @@ if(typeof sandbox.window.OnoForgeObjectiveMapRendererState?.createObjectiveMapRe
 if(typeof sandbox.window.OnoForgeCompleteTerrainSetupState?.createCompleteTerrainSetupStateController!=='function')throw new Error('Complete terrain setup module did not expose createCompleteTerrainSetupStateController');
 if(typeof sandbox.window.OnoForgeUnitDatabaseState?.createUnitDatabaseStateController!=='function')throw new Error('Unit database module did not expose createUnitDatabaseStateController');
 if(typeof sandbox.window.OnoForgeSavedArmyListState?.createSavedArmyListStateController!=='function')throw new Error('Saved army list module did not expose createSavedArmyListStateController');
+if(typeof sandbox.window.OnoForgeSavedArmyListDeletionState?.createSavedArmyListDeletionStateController!=='function')throw new Error('Saved army list deletion module did not expose createSavedArmyListDeletionStateController');
 if(typeof sandbox.window.OnoForgeObjectiveLayoutState?.createObjectiveLayoutStateController!=='function')throw new Error('Objective layout module did not expose createObjectiveLayoutStateController');
 if(typeof sandbox.window.OnoForgeReserveDeclarationSectionState?.createReserveDeclarationSectionStateController!=='function')throw new Error('Reserve declaration section module did not expose createReserveDeclarationSectionStateController');
 if(typeof sandbox.window.OnoForgePrimaryObjectiveQualifyingListState?.createPrimaryObjectiveQualifyingListStateController!=='function')throw new Error('Primary objective qualifying list module did not expose createPrimaryObjectiveQualifyingListStateController');
@@ -361,6 +365,17 @@ if(armyListState.savedArmyLists.length!==1||armyListState.savedArmyLists[0].name
 if(armySaves!==1||armyRenders!==1||armyCloud!==1)throw new Error('Saved army list save regression');
 armyListState.my=[];armyListController.loadSavedArmyList('list1');
 if(armyListState.my[0]?.uid!=='u1'||armyListState.detachment!=='Gladius'||armyListState.activeRosterId!=='list1'||armyListState.savedMyListSnapshot?.snapshot!==true)throw new Error('Saved army list load regression');
+
+const deletionState={savedArmyLists:[{id:'list1',name:'List One'}],deletedSavedArmyLists:[]};
+let deletionSaves=0,deletionRenders=0,deletionCloudDeletes=0,deletionCloudUpserts=0;
+const deletionController=sandbox.window.OnoForgeSavedArmyListDeletionState.createSavedArmyListDeletionStateController({
+  getState:()=>deletionState,isPermanentSampleArmy:()=>false,save:()=>{deletionSaves++;},render:()=>{deletionRenders++;},
+  cloudDeleteArmyList:()=>{deletionCloudDeletes++;return Promise.resolve();},cloudUpsertArmyList:()=>{deletionCloudUpserts++;return Promise.resolve();}
+});
+deletionController.deleteSavedArmyList('list1');
+if(deletionState.savedArmyLists.length!==0||deletionState.deletedSavedArmyLists.length!==1||deletionCloudDeletes!==1)throw new Error('Saved army list deletion regression');
+deletionController.undoDeletedSavedArmyList();
+if(deletionState.savedArmyLists.length!==1||deletionState.savedArmyLists[0].id!=='list1'||deletionState.deletedSavedArmyLists.length!==0||deletionCloudUpserts!==1)throw new Error('Saved army list undo regression');
 
 const terrainState={terrainSetupComplete:false,liveDeploymentPanelOpen:true,round:0};
 let terrainEvents=0,terrainSaves=0,terrainRenders=0,terrainScrolls=0;
