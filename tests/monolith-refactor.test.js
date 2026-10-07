@@ -31,6 +31,7 @@ const tacticalPreRoll=fs.readFileSync(path.join(root,'js/state/tactical-pre-roll
 const tacticalAdvisor=fs.readFileSync(path.join(root,'js/state/tactical-advisor-state.js'),'utf8');
 const tacticalAdvisorContext=fs.readFileSync(path.join(root,'js/state/tactical-advisor-context-state.js'),'utf8');
 const mathCombatEngine=fs.readFileSync(path.join(root,'js/state/math-combat-engine-state.js'),'utf8');
+const tacticalCore=fs.readFileSync(path.join(root,'js/state/tactical-core-state.js'),'utf8');
 const tacticalContextHtmlBody=fs.readFileSync(path.join(root,'js/state/tactical-context-html-body-state.js'),'utf8');
 const tacticalPreRollResolutionModal=fs.readFileSync(path.join(root,'js/state/tactical-pre-roll-resolution-modal-state.js'),'utf8');
 const tacticalShootingResult=fs.readFileSync(path.join(root,'js/state/tactical-shooting-result-state.js'),'utf8');
@@ -98,6 +99,7 @@ const required=[
   '<script src="js/state/tactical-advisor-state.js"></script>',
   '<script src="js/state/tactical-advisor-context-state.js"></script>',
   '<script src="js/state/math-combat-engine-state.js"></script>',
+  '<script src="js/state/tactical-core-state.js"></script>',
   '<script src="js/state/tactical-context-html-body-state.js"></script>',
   '<script src="js/state/opponent-turn-tracking-state.js"></script>',
   '<script src="js/state/tactical-attack-interaction-state.js"></script>',
@@ -230,6 +232,7 @@ vm.runInNewContext(tacticalPreRoll,sandbox,{filename:'js/state/tactical-pre-roll
 vm.runInNewContext(tacticalAdvisor,sandbox,{filename:'js/state/tactical-advisor-state.js'});
 vm.runInNewContext(tacticalAdvisorContext,sandbox,{filename:'js/state/tactical-advisor-context-state.js'});
 vm.runInNewContext(mathCombatEngine,sandbox,{filename:'js/state/math-combat-engine-state.js'});
+vm.runInNewContext(tacticalCore,sandbox,{filename:'js/state/tactical-core-state.js'});
 vm.runInNewContext(tacticalContextHtmlBody,sandbox,{filename:'js/state/tactical-context-html-body-state.js'});
 vm.runInNewContext(tacticalPreRollResolutionModal,sandbox,{filename:'js/state/tactical-pre-roll-resolution-modal-state.js'});
 vm.runInNewContext(tacticalShootingResult,sandbox,{filename:'js/state/tactical-shooting-result-state.js'});
@@ -332,6 +335,8 @@ if(typeof sandbox.window.OnoForgeTacticalAdvisorState?.createTacticalAdvisorStat
 if(typeof sandbox.window.OnoForgeTacticalContextHtmlBodyState?.createTacticalContextHtmlBodyStateController!=='function')throw new Error('Tactical context renderer module did not expose createTacticalContextHtmlBodyStateController');
 if(typeof sandbox.window.OnoForgeTacticalAdvisorContextState?.createTacticalAdvisorContextStateController!=='function')throw new Error('Tactical advisor context module did not expose createTacticalAdvisorContextStateController');
 if(typeof sandbox.window.OnoForgeMathCombatEngineState?.createMathCombatEngineStateController!=='function')throw new Error('Math combat engine module did not expose createMathCombatEngineStateController');
+if(typeof sandbox.window.OnoForgeTacticalCoreState?.createTacticalCoreStateController!=='function')throw new Error('Tactical core module did not expose createTacticalCoreStateController');
+for(const name of ['ensureTacticalState','tacticalDistanceLabel','tacticalContextHtml','tacticalCombatFightWeapons','tacticalOpenFightResolution','tacticalAdvisorAttackerEntry','tacticalWeaponIsRanged','tacticalAdvisorWeaponGroups','weaponDataIntegrityScan','weaponDataIntegrityAuditHtml','tacticalAdvisorAttackerHasRangedWeapons','setTacticalAdvisorAttacker','tacticalAdvisorConfidenceLabel','tacticalPreRollPoolIdentity','tacticalPreRollNormalizePoolAllocations','tacticalPreRollPoolAvailableModelIds','tacticalPreRollPoolManifest','setTacticalPreRollPoolTarget','setTacticalPreRollPoolAllocation','tacticalPreRollWeaponState','setTacticalPreRollWeapon']){if(tacticalCore.includes('function '+name+'(')){}else throw new Error('Tactical core extraction missing '+name);}
 const tacticalContextController=sandbox.window.OnoForgeTacticalContextHtmlBodyState.createTacticalContextHtmlBodyStateController({getState:()=>({phase:'Command',my:[],opp:[]}),tacticalAdvisorAttackerEntry:()=>null,tacticalUnitState:()=>null,ensureTacticalState:()=>({selectedTargetUid:''}),entry:()=>null,getTacticalRenderBundle:()=>({context:{distanceBand:'unknown',los:'unknown',engagement:'unknown',distanceInches:null,objective:''},legality:{canTarget:false,reasons:[]}}),tacticalAdvisorActionState:()=>({}),tacticalUnitMovementType:()=>'',esc:v=>String(v),unitDisplayName:()=>'',tacticalLegalityForUnit:()=>({legal:true}),tacticalFightPhaseState:()=>({step:'unknown',nextSide:'my'}),tacticalFightResolvedForSide:()=>false,tacticalCombatFightWeapons:()=>[],tacticalFightUnitState:()=>({pileInDone:false,consolidationDone:false})});
 if(!tacticalContextController.tacticalContextHtmlBody().includes('Build both armies'))throw new Error('Tactical context renderer empty-state regression');
 if(typeof sandbox.window.OnoForgeTacticalPreRollResolutionModalState?.createTacticalPreRollResolutionModalStateController!=='function')throw new Error('Tactical pre-roll resolution modal module did not expose createTacticalPreRollResolutionModalStateController');
