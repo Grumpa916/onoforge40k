@@ -1059,7 +1059,7 @@ function clearBattlefieldUnitPosition(uid){
 
 
 
-function refreshCurrentUnitDatabase(showMessage=true){
+async function refreshCurrentUnitDatabase(showMessage=true){
   try{
     const all=[];
     for(const faction of Object.keys(CURRENT_11E_DATA_SOURCES)){
