@@ -26,6 +26,7 @@ const primaryScoringVP=fs.readFileSync(path.join(root,'js/state/primary-scoring-
 const primaryScoringIsPer=fs.readFileSync(path.join(root,'js/state/primary-scoring-is-per-state.js'),'utf8');
 const primaryScoringMax=fs.readFileSync(path.join(root,'js/state/primary-scoring-max-state.js'),'utf8');
 const primaryScoringEffectiveMax=fs.readFileSync(path.join(root,'js/state/primary-scoring-effective-max-state.js'),'utf8');
+const primaryScoringExclusiveGroup=fs.readFileSync(path.join(root,'js/state/primary-scoring-exclusive-group-state.js'),'utf8');
 const utils=fs.readFileSync(path.join(root,'js/utils/pure-utils.js'),'utf8');
 
 const required=[
@@ -51,6 +52,7 @@ const required=[
   '<script src="js/state/primary-scoring-is-per-state.js"></script>',
   '<script src="js/state/primary-scoring-max-state.js"></script>',
   '<script src="js/state/primary-scoring-effective-max-state.js"></script>',
+  '<script src="js/state/primary-scoring-exclusive-group-state.js"></script>',
   'const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;',
   'const {collectBSDataObjects,bsUnitFromEntry}=window.OnoForgeBSDataParser;',
   'const {createReserveStateController}=window.OnoForgeReserveState;',
@@ -95,7 +97,7 @@ inlineBlocks.forEach((src,i)=>{
   fs.writeFileSync(file,src);
   cp.execFileSync(process.execPath,['--check',file],{stdio:'inherit'});
 });
-for(const [name,src] of [['bsdata-parser.js',parser],['pure-utils.js',utils],['reserve-state.js',reserve],['deployment-plan-state.js',deploymentPlan],['objective-map-state.js',objectiveMap],['objective-metadata-state.js',objectiveMetadata],['transport-state.js',transport],['stratagem-state.js',stratagem],['game-timer-state.js',gameTimer],['phase-cp-state.js',phaseCP],['objective-control-history-state.js',objectiveControlHistory],['objective-control-sources-state.js',objectiveControlSources],['secondary-round-ledger-state.js',secondaryRoundLedger],['score-ledger-state.js',scoreLedger],['secondary-score-state.js',secondaryScore],['score-calculation-state.js',scoreCalculation],['primary-round-score-state.js',primaryRoundScore],['primary-round-score-cap-state.js',primaryRoundScoreCap],['primary-scoring-vp-state.js',primaryScoringVP],['primary-scoring-is-per-state.js',primaryScoringIsPer],['primary-scoring-max-state.js',primaryScoringMax],['primary-scoring-effective-max-state.js',primaryScoringEffectiveMax]]){
+for(const [name,src] of [['bsdata-parser.js',parser],['pure-utils.js',utils],['reserve-state.js',reserve],['deployment-plan-state.js',deploymentPlan],['objective-map-state.js',objectiveMap],['objective-metadata-state.js',objectiveMetadata],['transport-state.js',transport],['stratagem-state.js',stratagem],['game-timer-state.js',gameTimer],['phase-cp-state.js',phaseCP],['objective-control-history-state.js',objectiveControlHistory],['objective-control-sources-state.js',objectiveControlSources],['secondary-round-ledger-state.js',secondaryRoundLedger],['score-ledger-state.js',scoreLedger],['secondary-score-state.js',secondaryScore],['score-calculation-state.js',scoreCalculation],['primary-round-score-state.js',primaryRoundScore],['primary-round-score-cap-state.js',primaryRoundScoreCap],['primary-scoring-vp-state.js',primaryScoringVP],['primary-scoring-is-per-state.js',primaryScoringIsPer],['primary-scoring-max-state.js',primaryScoringMax],['primary-scoring-effective-max-state.js',primaryScoringEffectiveMax],['primary-scoring-exclusive-group-state.js',primaryScoringExclusiveGroup]]){
   const file=path.join('/tmp','onoforge-refactor-'+name);
   fs.writeFileSync(file,src);
   cp.execFileSync(process.execPath,['--check',file],{stdio:'inherit'});
@@ -124,6 +126,8 @@ vm.runInNewContext(primaryScoringVP,sandbox,{filename:'js/state/primary-scoring-
 vm.runInNewContext(primaryScoringIsPer,sandbox,{filename:'js/state/primary-scoring-is-per-state.js'});
 vm.runInNewContext(primaryScoringMax,sandbox,{filename:'js/state/primary-scoring-max-state.js'});
 vm.runInNewContext(primaryScoringEffectiveMax,sandbox,{filename:'js/state/primary-scoring-effective-max-state.js'});
+vm.runInNewContext(primaryScoringExclusiveGroup,sandbox,{filename:'js/state/primary-scoring-exclusive-group-state.js'});
+if(typeof sandbox.window.OnoForgePrimaryScoringExclusiveGroupState?.createPrimaryScoringExclusiveGroupStateController!=='function')throw new Error('Primary scoring exclusive group module did not expose createPrimaryScoringExclusiveGroupStateController');
 if(typeof sandbox.window.OnoForgePrimaryScoringEffectiveMaxState?.createPrimaryScoringEffectiveMaxStateController!=='function')throw new Error('Primary scoring effective max module did not expose createPrimaryScoringEffectiveMaxStateController');
 if(typeof sandbox.window.OnoForgePrimaryScoringMaxState?.createPrimaryScoringMaxStateController!=='function')throw new Error('Primary scoring max module did not expose createPrimaryScoringMaxStateController');
 if(typeof sandbox.window.OnoForgePrimaryScoringIsPerState?.createPrimaryScoringIsPerStateController!=='function')throw new Error('Primary scoring per module did not expose createPrimaryScoringIsPerStateController');
