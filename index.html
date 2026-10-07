@@ -695,6 +695,7 @@ body{overflow-x:hidden}
 </style>
 <style id="ono-battle-ux-requested">.battle-layout>.objective-map-renderer{grid-column:1!important;grid-row:2!important}.battle-layout>.battle-state-column{grid-column:2!important;grid-row:1 / span 2!important}.battle-layout>.battle-log{grid-column:1 / -1!important;grid-row:3!important}@media (min-width:900px) and (max-width:1300px) and (orientation:landscape){.battle-layout{display:grid!important;grid-template-columns:minmax(0,1fr) 500px!important;grid-template-rows:auto auto auto!important;gap:12px!important}.battle-layout>div:first-child{grid-column:1!important;grid-row:1!important}.battle-layout>.objective-map-renderer{grid-column:1!important;grid-row:2!important}.battle-layout>.battle-state-column{grid-column:2!important;grid-row:1 / span 2!important}.battle-layout>.battle-state-column .army-state-grid{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)!important;gap:10px!important}.battle-layout>.battle-log{grid-column:1 / -1!important;grid-row:3!important}}</style><style id="onoforge-live-state-reference-fix">.game-unit-full-reference{grid-column:1 / -1!important;margin-top:4px;border-top:1px solid #26303e;padding-top:4px}.game-unit-full-reference summary{cursor:pointer;color:#9ecbff;font-size:9px;font-weight:800}.game-unit-full-reference-body{padding:6px 0 2px}.game-unit-full-reference-body .add-unit-stats{grid-template-columns:repeat(6,minmax(42px,1fr));display:grid;gap:4px;margin-top:5px}.game-unit-full-reference-body .add-unit-stat{background:#101a25;border:1px solid #2d4054;border-radius:5px;padding:4px;text-align:center}.game-unit-full-reference-body .add-unit-stat b{display:block;font-size:11px}.game-unit-full-reference-body .add-unit-stat span{display:block;font-size:7px;color:#9ca8b8}.game-unit-full-reference-body table{width:100%;border-collapse:collapse;font-size:8px;margin-top:3px}.game-unit-full-reference-body th,.game-unit-full-reference-body td{border-bottom:1px solid #26303e;padding:3px 4px;text-align:left;white-space:nowrap}.model-roster-list{grid-column:1 / -1!important}.model-roster-list summary{cursor:pointer;color:#9ecbff;font-size:9px}@media(max-width:700px){.game-unit-full-reference-body .add-unit-stats{grid-template-columns:repeat(3,minmax(42px,1fr))}}</style><style id="onoforge-stat-data-gap">.stat-data-gap{margin-top:5px;color:#c5a36a}</style></head><body><div id="app"></div><script src="js/utils/pure-utils.js"></script>
 <script src="js/state/reserve-state.js"></script>
+<script src="js/state/reserve-declaration-section-state.js"></script>
 <script src="js/state/deployment-plan-state.js"></script>
 <script src="js/state/deployment-plan-map-controls-state.js"></script>
 <script src="js/state/deployment-plan-position-editor-state.js"></script>
@@ -720,6 +721,9 @@ const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListC
 const {createReserveStateController}=window.OnoForgeReserveState;
 const reserveStateController=createReserveStateController({getState:()=>state,snapshotForUndo,event,save,render});
 const {ensureReserveState,isUnitReserved,reserveUnitsForSide,clearReserveDeclarationsForSide,setReserveDeclaration}=reserveStateController;
+const {createReserveDeclarationSectionStateController}=window.OnoForgeReserveDeclarationSectionState;
+const reserveDeclarationSectionStateController=createReserveDeclarationSectionStateController({getState:()=>state,reserveUnitsForSide,isUnitReserved,unitDisplayName,get,esc});
+const {reserveDeclarationSectionHtml}=reserveDeclarationSectionStateController;
 const {createDeploymentPlanStateController}=window.OnoForgeDeploymentPlanState;
 const deploymentPlanStateController=createDeploymentPlanStateController({getState:()=>state,save,render,cloudUpsertArmyList,notify:message=>alert(message),objectiveMissionKey:()=>objectiveMissionKey()});
 const {deploymentPlanKey,ensureDeploymentPlans,deploymentPlanForCurrentMap,deploymentPlanPosition,setDeploymentPlanPosition,clearDeploymentPlanPosition,clearDeploymentPlanForCurrentMap,saveDeploymentPlan,loadDeploymentPlan}=deploymentPlanStateController;
@@ -984,13 +988,6 @@ const WARHAMMER_EVENT_COMPANION_PDF='https://assets.warhammer-community.com/eng_
 
 
 
-function reserveDeclarationSectionHtml(side){
-  const s=side==='opp'?'opp':'my',list=s==='opp'?state.opp:state.my;
-  const units=(Array.isArray(list)?list:[]).filter(e=>e&&!e.attachedTo);
-  if(!units.length)return '';
-  const declared=reserveUnitsForSide(s).length;
-  return '<div class="setup-section reserve-declaration"><div class="split"><div><h3 style="margin:0">'+esc(s==='my'?state.myName:state.oppName)+' Reserves</h3><div class="muted">Declare units being kept off the battlefield for later deployment.</div></div><span class="pill">'+declared+' declared</span></div><div class="reserve-declaration-grid">'+units.map(e=>{const checked=isUnitReserved(s,e.uid),name=unitDisplayName(s,e)||get(e.unitId)?.name||e.name||e.unitId||'Unit';return '<label class="reserve-declaration-item '+(checked?'selected':'')+'"><input type="checkbox" data-reserve-toggle="'+esc(s)+'" data-reserve-uid="'+esc(e.uid)+'" '+(checked?'checked':'')+'><span><b>'+esc(name)+'</b><small>'+(checked?'Reserve':'Deploy normally')+'</small></span></label>';}).join('')+'</div></div>';
-}
 
 function setBattlefieldUnitPosition(side,uid,x,y,source='manual'){
   if(state.page==='battle'&&!battleMutationAllowed('battlefield position changes'))return false;
