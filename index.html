@@ -702,7 +702,7 @@ body{overflow-x:hidden}
 <script src="js/state/stratagem-state.js"></script>
 <script src="js/state/game-timer-state.js"></script>
 <script src="js/state/phase-cp-state.js"></script>
-<script src="js/state/objective-control-history-state.js"></script><script src="js/state/objective-control-sources-state.js"></script><script src="js/state/secondary-round-ledger-state.js"></script><script src="js/state/score-ledger-state.js"></script><script src="js/state/secondary-score-state.js"></script><script src="js/state/score-calculation-state.js"></script><script src="js/state/primary-round-score-state.js"></script><script src="js/state/primary-round-score-cap-state.js"></script><script src="js/state/primary-scoring-vp-state.js"></script><script src="js/state/primary-scoring-is-per-state.js"></script><script src="js/state/primary-scoring-max-state.js"></script><script src="js/state/primary-objective-condition-text-state.js"></script><script src="js/state/primary-objective-qualifying-list-state.js"></script><script src="js/state/objective-counts-state.js"></script><script src="js/state/primary-objective-condition-status-state.js"></script><script src="js/state/primary-scoring-objective-count-state.js"></script><script src="js/state/primary-scoring-objective-amount-state.js"></script><script src="js/state/primary-scoring-effective-max-state.js"></script><script src="js/state/primary-scoring-exclusive-group-state.js"></script><script src="js/state/primary-scoring-original-index-state.js"></script><script src="js/state/primary-objective-condition-short-label-state.js"></script><script src="js/state/primary-scoring-round-range-state.js"></script><script src="js/state/primary-scoring-row-available-state.js"></script><script src="js/state/primary-scoring-rows-for-round-state.js"></script><script src="js/state/primary-scoring-checkpoint-rows-state.js"></script><script src="js/state/primary-scoring-objective-link-html-state.js"></script><script src="js/state/primary-scoring-evidence-state.js"></script><script src="js/state/primary-objective-scoring-candidates-state.js"></script><script src="js/state/primary-objective-scoring-candidate-summary-state.js"></script><script src="js/state/primary-objective-score-snapshot-state.js"></script><script src="js/state/primary-scoring-preview-summary-state.js"></script><script src="js/state/primary-scoring-html-state.js"></script><script src="js/state/primary-scoring-catalogue-audit-state.js"></script><script src="js/state/event-companion-map-regression-audit-state.js"></script>
+<script src="js/state/objective-control-history-state.js"></script><script src="js/state/objective-control-sources-state.js"></script><script src="js/state/secondary-round-ledger-state.js"></script><script src="js/state/score-ledger-state.js"></script><script src="js/state/secondary-score-state.js"></script><script src="js/state/score-calculation-state.js"></script><script src="js/state/primary-round-score-state.js"></script><script src="js/state/primary-round-score-cap-state.js"></script><script src="js/state/primary-scoring-vp-state.js"></script><script src="js/state/primary-scoring-is-per-state.js"></script><script src="js/state/primary-scoring-max-state.js"></script><script src="js/state/primary-objective-condition-text-state.js"></script><script src="js/state/primary-objective-qualifying-list-state.js"></script><script src="js/state/objective-counts-state.js"></script><script src="js/state/primary-objective-condition-status-state.js"></script><script src="js/state/primary-scoring-objective-count-state.js"></script><script src="js/state/primary-scoring-objective-amount-state.js"></script><script src="js/state/primary-scoring-effective-max-state.js"></script><script src="js/state/primary-scoring-exclusive-group-state.js"></script><script src="js/state/primary-scoring-original-index-state.js"></script><script src="js/state/primary-objective-condition-short-label-state.js"></script><script src="js/state/primary-scoring-round-range-state.js"></script><script src="js/state/primary-scoring-row-available-state.js"></script><script src="js/state/primary-scoring-rows-for-round-state.js"></script><script src="js/state/primary-scoring-checkpoint-rows-state.js"></script><script src="js/state/primary-scoring-objective-link-html-state.js"></script><script src="js/state/primary-scoring-evidence-state.js"></script><script src="js/state/primary-objective-scoring-candidates-state.js"></script><script src="js/state/primary-objective-scoring-candidate-summary-state.js"></script><script src="js/state/primary-objective-score-snapshot-state.js"></script><script src="js/state/battlefield-geometry-state.js"></script><script src="js/state/primary-scoring-preview-summary-state.js"></script><script src="js/state/primary-scoring-html-state.js"></script><script src="js/state/primary-scoring-catalogue-audit-state.js"></script><script src="js/state/event-companion-map-regression-audit-state.js"></script>
 <script src="js/data/bsdata-parser.js"></script><script>
 const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;
 const {createReserveStateController}=window.OnoForgeReserveState;
@@ -836,6 +836,9 @@ const {primaryObjectiveScoringCandidateSummary}=primaryObjectiveScoringCandidate
 const {createPrimaryObjectiveScoreSnapshotStateController}=window.OnoForgePrimaryObjectiveScoreSnapshotState;
 const primaryObjectiveScoreSnapshotStateController=createPrimaryObjectiveScoreSnapshotStateController({getState:()=>state,primaryMission,primaryScoringObjectiveCount,primaryObjectiveConditionStatus,primaryObjectiveQualifyingList});
 const {ensurePrimaryObjectiveScoreSnapshots,primaryObjectiveScoreSnapshotKey,capturePrimaryObjectiveScoreSnapshot,primaryObjectiveScoreSnapshot,clearPrimaryObjectiveScoreSnapshot}=primaryObjectiveScoreSnapshotStateController;
+const {createBattlefieldGeometryStateController}=window.OnoForgeBattlefieldGeometryState;
+const battlefieldGeometryStateController=createBattlefieldGeometryStateController({battlefieldUnitPosition,objectiveStateRecord,battlefieldDistanceBetween,objectiveBattlefieldGeometry});
+const {objectiveDistanceFromUnit,battlefieldTerrainGeometry,battlefieldTerrainAtPoint,battlefieldTerrainPathIntersections}=battlefieldGeometryStateController;
 const {createPrimaryScorePreviewSummaryStateController}=window.OnoForgePrimaryScorePreviewSummaryState;
 const primaryScoringPreviewSummaryStateController=createPrimaryScorePreviewSummaryStateController({getState:()=>state,primaryScoringRowsForRound,primaryRoundCapRemaining,primaryScoringEvidence});
 const {primaryScorePreviewSummary}=primaryScoringPreviewSummaryStateController;
@@ -987,49 +990,10 @@ function clearBattlefieldUnitPosition(uid){
   save();render();
 }
 
-function objectiveDistanceFromUnit(side,uid,objectiveName){
-  const unit=battlefieldUnitPosition(side,uid);
-  const objective=objectiveStateRecord(objectiveName);
-  return unit&&objective.battlefieldPosition?battlefieldDistanceBetween(unit,objective.battlefieldPosition):null;
-}
-function battlefieldTerrainGeometry(){
-  const geometry=objectiveBattlefieldGeometry();
-  if(!geometry.verified)return {verified:false,terrain:{}};
-  const raw=geometry.source.geometryEntry?.terrainGeometry;
-  return {verified:true,terrain:raw&&typeof raw==='object'?raw:{}};
-}
-function battlefieldTerrainAtPoint(x,y){
-  const geo=battlefieldTerrainGeometry();
-  if(!geo.verified)return [];
-  const p={x:Number(x),y:Number(y)};
-  if(!Number.isFinite(p.x)||!Number.isFinite(p.y))return [];
-  const pointInRegion=(r)=>{
-    if(!r||typeof r!=='object')return false;
-    if([r.x,r.y,r.width,r.height].every(v=>Number.isFinite(Number(v))))
-      return p.x>=Number(r.x)&&p.x<=Number(r.x)+Number(r.width)&&p.y>=Number(r.y)&&p.y<=Number(r.y)+Number(r.height);
-    if(Array.isArray(r.points)&&r.points.length>=3){
-      let inside=false;
-      for(let i=0,j=r.points.length-1;i<r.points.length;j=i++){
-        const a=r.points[i],b=r.points[j],hit=((Number(a.y)>p.y)!==(Number(b.y)>p.y))&&(p.x<(Number(b.x)-Number(a.x))*(p.y-Number(a.y))/(Number(b.y)-Number(a.y))+Number(a.x));
-        if(hit)inside=!inside;
-      }
-      return inside;
-    }
-    return false;
-  };
-  return Object.entries(geo.terrain).filter(([,r])=>pointInRegion(r)).map(([name])=>name);
-}
-function battlefieldTerrainPathIntersections(a,b){
-  const geo=battlefieldTerrainGeometry();
-  if(!geo.verified||!a||!b)return [];
-  const steps=Math.max(2,Math.ceil(battlefieldDistanceBetween(a,b)));
-  const hits=new Set();
-  for(let i=0;i<=steps;i++){
-    const t=i/steps;
-    battlefieldTerrainAtPoint(Number(a.x)+(Number(b.x)-Number(a.x))*t,Number(a.y)+(Number(b.y)-Number(a.y))*t).forEach(x=>hits.add(x));
-  }
-  return Array.from(hits);
-}
+
+
+
+
 function battlefieldPositionEditorHtml(){
   const units=[...(Array.isArray(state.my)?state.my:[]).filter(e=>e&&!e.attachedTo).map(e=>({side:'my',entry:e})),...(Array.isArray(state.opp)?state.opp:[]).filter(e=>e&&!e.attachedTo).map(e=>({side:'opp',entry:e}))];
   if(!units.length)return '';
