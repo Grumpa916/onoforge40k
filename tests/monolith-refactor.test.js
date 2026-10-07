@@ -7,6 +7,7 @@ const root=process.cwd();
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const parser=fs.readFileSync(path.join(root,'js/data/bsdata-parser.js'),'utf8');
 const reserve=fs.readFileSync(path.join(root,'js/state/reserve-state.js'),'utf8');
+const reserveTray=fs.readFileSync(path.join(root,'js/state/reserve-tray-state.js'),'utf8');
 const deploymentPlan=fs.readFileSync(path.join(root,'js/state/deployment-plan-state.js'),'utf8');
 const objectiveMap=fs.readFileSync(path.join(root,'js/state/objective-map-state.js'),'utf8');
 const objectiveMetadata=fs.readFileSync(path.join(root,'js/state/objective-metadata-state.js'),'utf8');
@@ -47,6 +48,7 @@ const required=[
   '<script src="js/utils/pure-utils.js"></script>',
   '<script src="js/data/bsdata-parser.js"></script>',
   '<script src="js/state/reserve-state.js"></script>',
+  '<script src="js/state/reserve-tray-state.js"></script>',
   '<script src="js/state/deployment-plan-state.js"></script>',
   '<script src="js/state/objective-map-state.js"></script>',
   '<script src="js/state/army-no-mans-land-tags-state.js"></script>',
@@ -81,6 +83,7 @@ const required=[
   'const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;',
   'const {collectBSDataObjects,bsUnitFromEntry}=window.OnoForgeBSDataParser;',
   'const {createReserveStateController}=window.OnoForgeReserveState;',
+  'const {createReserveTrayStateController}=window.OnoForgeReserveTrayState',
   'const {createDeploymentPlanStateController}=window.OnoForgeDeploymentPlanState;'
 ];
 for(const marker of required){
@@ -100,7 +103,7 @@ for(const name of [
   'ensureGameTimer','gameTimerElapsed','turnElapsedMs','finalizeCurrentTurnTime','switchTurnClock',
   'ensurePhaseCPState','phaseCPKey','rememberPhaseCP','restorePhaseCP',
   'ensureObjectiveControlHistory','objectivePreviousTurnKey','objectivePreviousTurnOwner',
-  'ensureObjectiveControlSources','objectiveControlSourceIds','ensureSecondaryRoundLedger','ensureScoreLedger','secondaryTotalScoredVP','scoreTotalForSide','armyNoMansLandTagsHtml','objectiveMapPlacementPanelHtml'
+  'ensureObjectiveControlSources','objectiveControlSourceIds','ensureSecondaryRoundLedger','ensureScoreLedger','secondaryTotalScoredVP','scoreTotalForSide','armyNoMansLandTagsHtml','objectiveMapPlacementPanelHtml','reserveTrayHtml'
 ]){
   const count=(html.match(new RegExp('function\s+'+name+'\s*\\(','g'))||[]).length;
   if(count!==0)throw new Error('Extracted function still inline: '+name);
@@ -132,6 +135,7 @@ const sandbox={window:{},console};
 vm.runInNewContext(parser,sandbox,{filename:'js/data/bsdata-parser.js'});
 vm.runInNewContext(utils,sandbox,{filename:'js/utils/pure-utils.js'});
 vm.runInNewContext(reserve,sandbox,{filename:'js/state/reserve-state.js'});
+vm.runInNewContext(reserveTray,sandbox,{filename:'js/state/reserve-tray-state.js'});
 vm.runInNewContext(deploymentPlan,sandbox,{filename:'js/state/deployment-plan-state.js'});
 vm.runInNewContext(objectiveMap,sandbox,{filename:'js/state/objective-map-state.js'});
 vm.runInNewContext(objectiveMetadata,sandbox,{filename:'js/state/objective-metadata-state.js'});
@@ -192,6 +196,7 @@ if(typeof sandbox.window.OnoForgeBSDataParser?.bsUnitFromEntry!=='function')thro
 if(typeof sandbox.window.OnoForgePureUtils?.battlefieldDistanceBetween!=='function')throw new Error('Utility module did not expose battlefieldDistanceBetween');
 if(typeof sandbox.window.OnoForgePureUtils?.formatSavedListDate!=='function')throw new Error('Utility module did not expose formatSavedListDate');
 if(typeof sandbox.window.OnoForgeReserveState?.createReserveStateController!=='function')throw new Error('Reserve module did not expose createReserveStateController');
+if(typeof sandbox.window.OnoForgeReserveTrayState?.createReserveTrayStateController!=='function')throw new Error('Reserve tray module did not expose createReserveTrayStateController');
 if(typeof sandbox.window.OnoForgeDeploymentPlanState?.createDeploymentPlanStateController!=='function')throw new Error('Deployment plan module did not expose createDeploymentPlanStateController');
 if(typeof sandbox.window.OnoForgeDeploymentPlanState?.createDeploymentPlanStateController({getState:()=>({}),save:()=>{},render:()=>{},cloudUpsertArmyList:()=>Promise.resolve(),notify:()=>{},objectiveMissionKey:()=>''}).deploymentPlanKey!=='function')throw new Error('Deployment plan module did not expose deploymentPlanKey');
 if(typeof sandbox.window.OnoForgeObjectiveMapState?.createObjectiveMapStateController!=='function')throw new Error('Objective map module did not expose createObjectiveMapStateController');
@@ -273,6 +278,10 @@ if(!reserveController.isUnitReserved('my','u1'))throw new Error('Reserve declara
 if(reserveController.reserveUnitsForSide('my').length!==1)throw new Error('Reserve unit filtering regression');
 reserveController.clearReserveDeclarationsForSide('my');
 if(reserveController.isUnitReserved('my','u1'))throw new Error('Reserve clear regression');
+const reserveTrayController=sandbox.window.OnoForgeReserveTrayState.createReserveTrayStateController({reserveUnitsForSide:side=>side==='my'?[{uid:'u1',name:'Captain'}]:[{uid:'u2',name:'Warrior'}],unitDisplayName:(side,entry)=>entry?.name,get:()=>null,esc:value=>String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')});
+const reserveTrayHtml=reserveTrayController.reserveTrayHtml();
+if(!reserveTrayHtml.includes('Captain')||!reserveTrayHtml.includes('Warrior'))throw new Error('Reserve tray rendering regression');
+if(!reserveTrayHtml.includes('data-reserve-unit="my|u1"'))throw new Error('Reserve tray metadata regression');
 
 const deploymentState={
   objectiveMapMissionKey:'test-mission',
