@@ -19,7 +19,7 @@
       tacticalObjectiveValueForTarget,tacticalPairKey,tacticalPairState,tacticalPreRollOpenResolutionForSides,
       tacticalPrimaryTargetImpact,tacticalTargetLegality,tacticalUnitActionState,tacticalUnitState,
       tacticalWeaponModelAvailable,tacticalWeaponModelModeConflict,tacticalWeaponPhaseEligible,
-      tacticalWeaponRange,targetNeed,unitDatabase,unitDisplayName
+      tacticalWeaponRange,unitDatabase,unitDisplayName
     }=deps;
     const alert=typeof global.alert==='function'?global.alert.bind(global):()=>{};
     const TACTICAL_STATE_VERSION='1.4';
