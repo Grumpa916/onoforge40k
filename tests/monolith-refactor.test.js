@@ -23,6 +23,7 @@ const armyNoMansLandTags=fs.readFileSync(path.join(root,'js/state/army-no-mans-l
 const objectiveMapPlacementPanel=fs.readFileSync(path.join(root,'js/state/objective-map-placement-panel-state.js'),'utf8');
 const objectiveMapRenderer=fs.readFileSync(path.join(root,'js/state/objective-map-renderer-state.js'),'utf8');
 const completeTerrainSetup=fs.readFileSync(path.join(root,'js/state/complete-terrain-setup-state.js'),'utf8');
+const unitDatabase=fs.readFileSync(path.join(root,'js/state/unit-database-state.js'),'utf8');
 const transport=fs.readFileSync(path.join(root,'js/state/transport-state.js'),'utf8');
 const transportDeclarationSection=fs.readFileSync(path.join(root,'js/state/transport-declaration-section-state.js'),'utf8');
 const stratagem=fs.readFileSync(path.join(root,'js/state/stratagem-state.js'),'utf8');
@@ -70,6 +71,7 @@ const required=[
   '<script src="js/state/objective-map-placement-panel-state.js"></script>',
   '<script src="js/state/objective-map-renderer-state.js"></script>',
   '<script src="js/state/complete-terrain-setup-state.js"></script>',
+  '<script src="js/state/unit-database-state.js"></script>',
   '<script src="js/state/objective-metadata-state.js"></script>',
   '<script src="js/state/transport-state.js"></script>',
   '<script src="js/state/transport-declaration-section-state.js"></script>',
@@ -124,7 +126,7 @@ for(const name of [
   'ensureGameTimer','gameTimerElapsed','turnElapsedMs','finalizeCurrentTurnTime','switchTurnClock',
   'ensurePhaseCPState','phaseCPKey','rememberPhaseCP','restorePhaseCP',
   'ensureObjectiveControlHistory','objectivePreviousTurnKey','objectivePreviousTurnOwner',
-  'ensureObjectiveControlSources','objectiveControlSourceIds','ensureSecondaryRoundLedger','ensureScoreLedger','secondaryTotalScoredVP','scoreTotalForSide','armyNoMansLandTagsHtml','objectiveMapPlacementPanelHtml','objectiveMapRendererHtml','completeTerrainSetup','reserveTrayHtml','deploymentPlanMapControlsHtml','transportDeclarationSectionHtml','objectiveLayoutHtml','reserveDeclarationSectionHtml','deploymentPlanPositionEditorHtml','deploymentTrackingEditorHtml','deploymentTrackingControlsHtml'
+  'ensureObjectiveControlSources','objectiveControlSourceIds','ensureSecondaryRoundLedger','ensureScoreLedger','secondaryTotalScoredVP','scoreTotalForSide','armyNoMansLandTagsHtml','objectiveMapPlacementPanelHtml','objectiveMapRendererHtml','completeTerrainSetup','unitDatabase','canonicalUnitDatabase','bootstrapUnitDatabase','mergeSupplementalUnits','reserveTrayHtml','deploymentPlanMapControlsHtml','transportDeclarationSectionHtml','objectiveLayoutHtml','reserveDeclarationSectionHtml','deploymentPlanPositionEditorHtml','deploymentTrackingEditorHtml','deploymentTrackingControlsHtml'
 ]){
   const count=(html.match(new RegExp('function\s+'+name+'\s*\\(','g'))||[]).length;
   if(count!==0)throw new Error('Extracted function still inline: '+name);
@@ -172,6 +174,7 @@ vm.runInNewContext(armyNoMansLandTags,sandbox,{filename:'js/state/army-no-mans-l
 vm.runInNewContext(objectiveMapPlacementPanel,sandbox,{filename:'js/state/objective-map-placement-panel-state.js'});
 vm.runInNewContext(objectiveMapRenderer,sandbox,{filename:'js/state/objective-map-renderer-state.js'});
 vm.runInNewContext(completeTerrainSetup,sandbox,{filename:'js/state/complete-terrain-setup-state.js'});
+vm.runInNewContext(unitDatabase,sandbox,{filename:'js/state/unit-database-state.js'});
 vm.runInNewContext(transport,sandbox,{filename:'js/state/transport-state.js'});
 vm.runInNewContext(transportDeclarationSection,sandbox,{filename:'js/state/transport-declaration-section-state.js'});
 vm.runInNewContext(stratagem,sandbox,{filename:'js/state/stratagem-state.js'});
@@ -214,6 +217,7 @@ if(typeof sandbox.window.OnoForgeArmyNoMansLandTagsState?.createArmyNoMansLandTa
 if(typeof sandbox.window.OnoForgeObjectiveMapPlacementPanelState?.createObjectiveMapPlacementPanelStateController!=='function')throw new Error('Objective map placement panel module did not expose createObjectiveMapPlacementPanelStateController');
 if(typeof sandbox.window.OnoForgeObjectiveMapRendererState?.createObjectiveMapRendererStateController!=='function')throw new Error('Objective map renderer module did not expose createObjectiveMapRendererStateController');
 if(typeof sandbox.window.OnoForgeCompleteTerrainSetupState?.createCompleteTerrainSetupStateController!=='function')throw new Error('Complete terrain setup module did not expose createCompleteTerrainSetupStateController');
+if(typeof sandbox.window.OnoForgeUnitDatabaseState?.createUnitDatabaseStateController!=='function')throw new Error('Unit database module did not expose createUnitDatabaseStateController');
 if(typeof sandbox.window.OnoForgeObjectiveLayoutState?.createObjectiveLayoutStateController!=='function')throw new Error('Objective layout module did not expose createObjectiveLayoutStateController');
 if(typeof sandbox.window.OnoForgeReserveDeclarationSectionState?.createReserveDeclarationSectionStateController!=='function')throw new Error('Reserve declaration section module did not expose createReserveDeclarationSectionStateController');
 if(typeof sandbox.window.OnoForgePrimaryObjectiveQualifyingListState?.createPrimaryObjectiveQualifyingListStateController!=='function')throw new Error('Primary objective qualifying list module did not expose createPrimaryObjectiveQualifyingListStateController');
@@ -333,6 +337,12 @@ const pendingRenderer=sandbox.window.OnoForgeObjectiveMapRendererState.createObj
   objectiveMapPlanGhostNodesHtml:()=>'',objectiveMapUnitNodesHtml:()=>'',objectiveMapEntries:()=>[],objectivePositionFor:()=>null,objectiveMapLabelForTrackedName:()=>'',armyNoMansLandTagsHtml:()=>'',deploymentPlanMapControlsHtml:()=>'',deploymentTrackingControlsHtml:()=>'',reserveTrayHtml:()=>'',terrainReferenceImageHtml:()=>'',getState:()=>({attackerSide:'my',myName:'My Army',oppName:'Opponent'}),esc:String
 });
 if(!pendingRenderer.objectiveMapRendererHtml('battle').includes('Verified Event Companion geometry required'))throw new Error('Objective map renderer pending gate regression');
+
+const canonicalUnits=[{faction:'Tyranids',name:'Gaunt',sourceRole:'bootstrap'},{faction:'Ultramarines',name:'Captain',sourceRole:'bootstrap'}];
+const unitDatabaseController=sandbox.window.OnoForgeUnitDatabaseState.createUnitDatabaseStateController({getWindow:()=>({CURRENT_UNIT_DATABASE:canonicalUnits}),getBootstrapCatalogue:()=>[{faction:'Bootstrap',name:'Unit'}],getDemo:()=>[{faction:'Demo',name:'Unit'}]});
+if(unitDatabaseController.unitDatabase()!==canonicalUnits||unitDatabaseController.canonicalUnitDatabase()!==canonicalUnits)throw new Error('Unit database canonical selection regression');
+const merged=unitDatabaseController.mergeSupplementalUnits(canonicalUnits,[{faction:'Tyranids',name:'Gaunt',sourceRole:'supplemental'},{faction:'Necrons',name:'Warrior'}]);
+if(merged.length!==3||merged.find(u=>u.name==='Gaunt')?.sourceRole!=='canonical'||merged.find(u=>u.name==='Warrior')?.sourceRole!=='canonical')throw new Error('Unit database supplemental merge regression');
 
 const terrainState={terrainSetupComplete:false,liveDeploymentPanelOpen:true,round:0};
 let terrainEvents=0,terrainSaves=0,terrainRenders=0,terrainScrolls=0;
