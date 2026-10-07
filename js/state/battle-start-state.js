@@ -1,6 +1,7 @@
 (function(global){
   function createBattleStartStateController(deps={}){
-    const {state,tournamentSetupValidation,ensureReserveState,ensureDeploymentPlans,initializeLiveDeploymentFromPlan,tournamentDeploymentValidation,snapshotForUndo,ONOFORGE_RULES_DATA_PIN,startGameTimer,setTournamentLifecycle,resetStratagemPhaseUses,forceDisposition,availableForceDispositions,ensureBattlefieldUnitPositions,gameTimerElapsed,initTacticalDeck,drawTactical,get,ensureModelRoster,event,detachmentDP,primaryMission,save,render,TACTICAL_STATE_VERSION,alert}=deps;
+    const TACTICAL_STATE_VERSION='1.4';
+    const {state,tournamentSetupValidation,ensureReserveState,ensureDeploymentPlans,initializeLiveDeploymentFromPlan,tournamentDeploymentValidation,snapshotForUndo,ONOFORGE_RULES_DATA_PIN,startGameTimer,setTournamentLifecycle,resetStratagemPhaseUses,forceDisposition,availableForceDispositions,ensureBattlefieldUnitPositions,gameTimerElapsed,initTacticalDeck,drawTactical,get,ensureModelRoster,event,detachmentDP,primaryMission,save,render,alert}=deps;
     function startBattle(){
 
   const setupCheck=tournamentSetupValidation();
