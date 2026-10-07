@@ -19,6 +19,7 @@ const objectiveMapEntries=fs.readFileSync(path.join(root,'js/state/objective-map
 const armyNoMansLandTags=fs.readFileSync(path.join(root,'js/state/army-no-mans-land-tags-state.js'),'utf8');
 const objectiveMapPlacementPanel=fs.readFileSync(path.join(root,'js/state/objective-map-placement-panel-state.js'),'utf8');
 const transport=fs.readFileSync(path.join(root,'js/state/transport-state.js'),'utf8');
+const transportDeclarationSection=fs.readFileSync(path.join(root,'js/state/transport-declaration-section-state.js'),'utf8');
 const stratagem=fs.readFileSync(path.join(root,'js/state/stratagem-state.js'),'utf8');
 const gameTimer=fs.readFileSync(path.join(root,'js/state/game-timer-state.js'),'utf8');
 const phaseCP=fs.readFileSync(path.join(root,'js/state/phase-cp-state.js'),'utf8');
@@ -61,6 +62,7 @@ const required=[
   '<script src="js/state/objective-map-placement-panel-state.js"></script>',
   '<script src="js/state/objective-metadata-state.js"></script>',
   '<script src="js/state/transport-state.js"></script>',
+  '<script src="js/state/transport-declaration-section-state.js"></script>',
   '<script src="js/state/stratagem-state.js"></script>',
   '<script src="js/state/game-timer-state.js"></script>',
   '<script src="js/state/phase-cp-state.js"></script>',
@@ -90,7 +92,8 @@ const required=[
   'const {collectBSDataObjects,bsUnitFromEntry}=window.OnoForgeBSDataParser;',
   'const {createReserveStateController}=window.OnoForgeReserveState;',
   'const {createReserveTrayStateController}=window.OnoForgeReserveTrayState',
-  'const {createDeploymentPlanStateController}=window.OnoForgeDeploymentPlanState;'
+  'const {createDeploymentPlanStateController}=window.OnoForgeDeploymentPlanState;',
+  'const {createTransportDeclarationSectionStateController}=window.OnoForgeTransportDeclarationSectionState'
 ];
 for(const marker of required){
   if(!html.includes(marker))throw new Error('Missing refactor marker: '+marker);
@@ -109,7 +112,7 @@ for(const name of [
   'ensureGameTimer','gameTimerElapsed','turnElapsedMs','finalizeCurrentTurnTime','switchTurnClock',
   'ensurePhaseCPState','phaseCPKey','rememberPhaseCP','restorePhaseCP',
   'ensureObjectiveControlHistory','objectivePreviousTurnKey','objectivePreviousTurnOwner',
-  'ensureObjectiveControlSources','objectiveControlSourceIds','ensureSecondaryRoundLedger','ensureScoreLedger','secondaryTotalScoredVP','scoreTotalForSide','armyNoMansLandTagsHtml','objectiveMapPlacementPanelHtml','reserveTrayHtml','deploymentPlanMapControlsHtml','deploymentPlanPositionEditorHtml','deploymentTrackingEditorHtml'
+  'ensureObjectiveControlSources','objectiveControlSourceIds','ensureSecondaryRoundLedger','ensureScoreLedger','secondaryTotalScoredVP','scoreTotalForSide','armyNoMansLandTagsHtml','objectiveMapPlacementPanelHtml','reserveTrayHtml','deploymentPlanMapControlsHtml','transportDeclarationSectionHtml','deploymentPlanPositionEditorHtml','deploymentTrackingEditorHtml'
 ]){
   const count=(html.match(new RegExp('function\s+'+name+'\s*\\(','g'))||[]).length;
   if(count!==0)throw new Error('Extracted function still inline: '+name);
@@ -153,6 +156,7 @@ vm.runInNewContext(objectiveMapEntries,sandbox,{filename:'js/state/objective-map
 vm.runInNewContext(armyNoMansLandTags,sandbox,{filename:'js/state/army-no-mans-land-tags-state.js'});
 vm.runInNewContext(objectiveMapPlacementPanel,sandbox,{filename:'js/state/objective-map-placement-panel-state.js'});
 vm.runInNewContext(transport,sandbox,{filename:'js/state/transport-state.js'});
+vm.runInNewContext(transportDeclarationSection,sandbox,{filename:'js/state/transport-declaration-section-state.js'});
 vm.runInNewContext(stratagem,sandbox,{filename:'js/state/stratagem-state.js'});
 vm.runInNewContext(gameTimer,sandbox,{filename:'js/state/game-timer-state.js'});
 vm.runInNewContext(phaseCP,sandbox,{filename:'js/state/phase-cp-state.js'});
@@ -223,6 +227,7 @@ if(typeof sandbox.window.OnoForgeSecondaryRoundLedgerState?.createSecondaryRound
 if(typeof sandbox.window.OnoForgeScoreLedgerState?.createScoreLedgerStateController!=='function')throw new Error('Score ledger module did not expose createScoreLedgerStateController');
 if(typeof sandbox.window.OnoForgeSecondaryScoreState?.createSecondaryScoreStateController!=='function')throw new Error('Secondary score module did not expose createSecondaryScoreStateController');
 if(typeof sandbox.window.OnoForgeScoreCalculationState?.createScoreCalculationStateController!=='function')throw new Error('Score calculation module did not expose createScoreCalculationStateController');
+if(typeof sandbox.window.OnoForgeTransportDeclarationSectionState?.createTransportDeclarationSectionStateController!=='function')throw new Error('Transport declaration section module did not expose createTransportDeclarationSectionStateController');
 
 const objectiveLabelState={objectives:{'My Home':'my','Expansion 1':'none','Central 1':'opp','Expansion 2':'none','Opponent Home':'none'}};
 const objectiveLabelController=sandbox.window.OnoForgeObjectiveCanonicalLabelState.createObjectiveCanonicalLabelStateController({
@@ -362,6 +367,19 @@ if(!deploymentController.deploymentPlanPosition('u2'))throw new Error('Deploymen
 deploymentController.clearDeploymentPlanForCurrentMap();
 if(deploymentController.deploymentPlanForCurrentMap().u2)throw new Error('Deployment plan map clear regression');
 if(deploymentSaves<4||deploymentRenders<3||notifications.length!==0)throw new Error('Deployment plan controller lifecycle regression');
+
+const transportDeclarationController=sandbox.window.OnoForgeTransportDeclarationSectionState.createTransportDeclarationSectionStateController({
+  getState:()=>({myName:'My Army',oppName:'Opponent Army',my:[{uid:'tr1',unitId:'transport-1',name:'Razorback'},{uid:'p1',unitId:'passenger-1',name:'Intercessors'}],opp:[]}),
+  transportEntry:(side,uid)=>uid==='tr1'?{uid:'tr1'}:null,
+  ensureTransportEmbarkations:()=>({my:{tr1:['p1']},opp:{}}),
+  transportPassengers:(side,uid)=>uid==='tr1'?['p1']:[],
+  unitDisplayName:(side,entry)=>entry?.name,
+  get:()=>null,
+  esc:value=>String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')
+});
+const transportDeclarationHtml=transportDeclarationController.transportDeclarationSectionHtml('my');
+if(!transportDeclarationHtml.includes('Razorback')||!transportDeclarationHtml.includes('Intercessors'))throw new Error('Transport declaration rendering regression');
+if(!transportDeclarationHtml.includes('data-transport-uid="tr1"'))throw new Error('Transport declaration metadata regression');
 
 const transportState={page:'setup',my:[
   {uid:'tr1',unitId:'transport-1',name:'Razorback'},
