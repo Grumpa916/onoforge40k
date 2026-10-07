@@ -2961,11 +2961,6 @@ function discardTacticalForCP(side,names){
   event('SECONDARY_DISCARDED',{side:player,unit:selected.join(', '),action:'Discard Tactical Secondary Missions for +1 CP',secondary:selected,cpGained:1},before);
   rememberPhaseCP();save();render();
 }
-function secondaryTotalScoredVP(side){
-  const key=side==='my'?'secondaryMyScoredVP':'secondaryOppScoredVP';
-  const bucket=state[key]&&typeof state[key]==='object'?state[key]:{};
-  return Math.min(45,Object.values(bucket).reduce((sum,v)=>sum+Math.max(0,Number(v)||0),0));
-}
 function secondaryRoundScoredVP(side,round=state.round){
   ensureSecondaryRoundLedger();
   const key=side==='my'?'secondaryMyScoredVPByRound':'secondaryOppScoredVPByRound';
