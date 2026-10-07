@@ -971,6 +971,11 @@ function reserveDeclarationSectionHtml(side){
   const declared=reserveUnitsForSide(s).length;
   return '<div class="setup-section reserve-declaration"><div class="split"><div><h3 style="margin:0">'+esc(s==='my'?state.myName:state.oppName)+' Reserves</h3><div class="muted">Declare units being kept off the battlefield for later deployment.</div></div><span class="pill">'+declared+' declared</span></div><div class="reserve-declaration-grid">'+units.map(e=>{const checked=isUnitReserved(s,e.uid),name=unitDisplayName(s,e)||get(e.unitId)?.name||e.name||e.unitId||'Unit';return '<label class="reserve-declaration-item '+(checked?'selected':'')+'"><input type="checkbox" data-reserve-toggle="'+esc(s)+'" data-reserve-uid="'+esc(e.uid)+'" '+(checked?'checked':'')+'><span><b>'+esc(name)+'</b><small>'+(checked?'Reserve':'Deploy normally')+'</small></span></label>';}).join('')+'</div></div>';
 }
+function reserveTrayHtml(){
+  const my=reserveUnitsForSide('my'),opp=reserveUnitsForSide('opp'),all=[...my.map(entry=>({side:'my',entry})),...opp.map(entry=>({side:'opp',entry}))];
+  if(!all.length)return '';
+  return '<div class="card reserve-tray"><div class="split"><div><h3 style="margin:0">Reserves</h3><div class="muted">Units currently in reserves. Deploy them onto the live map when they actually enter the battlefield.</div></div><span class="pill">'+all.length+' unit'+(all.length===1?'':'s')+'</span></div><div class="reserve-tray-grid">'+all.map(({side,entry})=>{const name=unitDisplayName(side,entry)||get(entry.unitId)?.name||entry.name||entry.unitId||'Unit';return '<div class="reserve-token '+side+'" data-reserve-unit="'+esc(side+'|'+entry.uid)+'" data-reserve-side="'+esc(side)+'" data-reserve-uid="'+esc(entry.uid)+'" role="button" tabindex="0" title="Drag onto the battlefield to deploy">'+esc((name||'Unit').slice(0,18))+'<small>'+esc(side==='my'?'My':'Opponent')+'</small><button type="button" class="btn reserve-token-select" data-reserve-select="'+esc(side+'|'+entry.uid)+'">Select</button></div>';}).join('')+'</div><div class="tiny" style="margin-top:7px">Select is the precision fallback; drag is the normal tournament interaction.</div></div>';
+}
 function deployReserveByMap(side,uid,x,y){
   if(!isUnitReserved(side,uid))return false;
   const id=String(uid),s=side==='opp'?'opp':'my';
