@@ -1847,6 +1847,10 @@ let state={
 const {createBattleEndSummaryStateController}=window.OnoForgeBattleEndSummaryState;
 const battleEndSummaryStateController=createBattleEndSummaryStateController({scoreTotalForSide,secondaryTotalScoredVP,esc,objectiveMissionKey,reserveUnitsForSide,getState:()=>state});
 const {battleEndSummaryHtml}=battleEndSummaryStateController;
+const {createTacticalPreRollStateController}=window.OnoForgeTacticalPreRollState;
+const tacticalPreRollStateController=createTacticalPreRollStateController({getState:()=>state,tacticalAdvisorAttackerEntry,entry,tacticalPreRollPoolManifest,tacticalUnitState,esc,unitDisplayName,setTacticalPreRollPoolTarget,tacticalPreRollWeaponState,setTacticalPreRollWeapon,tacticalPreRollCheck,combatSnapshot,setTacticalPreRollPoolAllocation,recordMyTacticalAttackInteractionFromUi,tacticalPreRollOpenResolution});
+const {tacticalPreRollHtml}=tacticalPreRollStateController;
+
 const {createPrimaryMissionRulesStateController}=window.OnoForgePrimaryMissionRulesState;
 const primaryMissionRulesStateController=createPrimaryMissionRulesStateController({getPrimaryScoring:()=>PRIMARY_SCORING,esc});
 const {primaryMissionRulesHtml}=primaryMissionRulesStateController;
@@ -8529,39 +8533,7 @@ else if(stage==='lethalChoice'){title='LETHAL HITS • CHOOSE';promptText='How m
   const back='<button type="button" class="btn pr-secondary-btn" onclick="tacticalPreRollResolutionBack()">Back</button>';
   return '<div class="modal pr-dice-modal"><div class="card pr-dice-card"><div class="split"><div><div class="tiny">PHYSICAL DICE ENTRY • '+esc(state.phase||'Phase')+'</div><h2 style="margin:4px 0">'+esc(title)+'</h2><div class="muted">'+esc(get(s.targetEntryUid?entry(s.targetSide==='my'?'my':'opp',s.targetEntryUid)?.unitId:'')?.name||'Target')+' • '+esc(s.weaponName)+'</div></div><button type="button" class="btn" onclick="tacticalPreRollCloseResolution()">Close</button></div><div class="pr-dice-target"><span>Target</span><strong>'+esc(s.result.type==='Charge'?'2D6':(stage==='hits'||stage==='hitSpecial'?String(plan.hitNeed)+'+':stage==='lethalChoice'?String(plan.hitCritThreshold)+'+':stage==='wounds'||stage==='woundSpecial'?String(plan.woundNeed)+'+':stage==='saves'?(plan.saveNeed===null?'No Save':String(plan.saveNeed)+'+'):stage==='mixedVariableSave'?(String(s.mixedVariableState?.currentSaveNeed||'?')+'+'):stage==='mixedDamage'?'Damage':'Damage'))+'</strong><span>'+esc(s.result.attacker)+' → '+esc(s.result.target)+'</span></div><div class="pr-dice-prompt">'+esc(promptText)+'</div>'+(stage==='review'?'<div class="grid3" style="margin-top:14px"><div class="status"><div class="tiny">Hits</div><b>'+counts.hits+(specials.criticalHits!=null?' • '+specials.criticalHits+' crit':'')+'</b></div><div class="status"><div class="tiny">Wounds</div><b>'+counts.wounds+(specials.criticalWounds!=null?' • '+specials.criticalWounds+' crit':'')+'</b></div><div class="status"><div class="tiny">Failed Saves</div><b>'+counts.failedSaves+'</b></div><div class="status"><div class="tiny">Damage</div><b>'+counts.damage+'</b></div></div>':'')+input+(note?'<div class="pr-dice-note">'+esc(note)+'</div>':'')+'<div class="pr-dice-actions">'+back+action+'</div><div class="tiny" style="margin-top:10px">If the battlefield state changes, this session is invalidated and the Pre-Roll Check must be re-run. Nothing here rolls dice for you.</div></div></div>';
 }
-function tacticalPreRollHtml(){
-  const ae=tacticalAdvisorAttackerEntry();
-  const teUid=state.tactical?.selectedTargetUid;
-  const te=teUid?entry('opp',teUid):null;
-  if(!ae)return '';
-  const phase=String(state.phase||'Command'),splitPools=tacticalPreRollPoolManifest(ae);
-  if(!te){
-    if(splitPools.length<=1)return '';
-    const targetOptions=(state.opp||[]).filter(e=>!e.attachedTo&&!tacticalUnitState('opp',e)?.destroyed).map(e=>'<option value="'+esc(e.uid)+'">'+esc(unitDisplayName('opp',e))+'</option>').join('');
-    const splitHtml=splitPools.map(p=>'<div class="status" style="margin:0"><div class="split"><div><b>'+esc(p.weapon.name)+'</b><div class="tiny">'+p.count+' model'+(p.count===1?'':'s')+'</div></div><select style="min-width:180px" onchange="setTacticalPreRollPoolTarget(\''+esc(p.key).replace(/'/g,"&#39;")+'\',this.value)"><option value="">Choose target…</option>'+targetOptions+'</select></div></div>').join('');
-    return '<div class="card tactical-preroll-card" style="border-color:#4f6f8f;margin-top:12px"><div class="split"><div><h3 style="margin:0">Pre-Roll Check</h3><div class="muted">Assign each weapon pool to a target before rolling.</div></div><span class="pill">TACTICAL INPUT</span></div><div class="status" style="margin-top:10px"><b>Split-fire / multiple weapon pools</b><div class="tiny" style="margin-top:4px">Each pool is resolved independently. Dice results never carry between pools.</div></div><div style="display:grid;gap:7px;margin-top:8px">'+splitHtml+'</div></div>';
-  }
-  const stored=tacticalPreRollWeaponState(ae.uid,te.uid);
-  // The split-pool manifest is the authoritative list for this Pre-Roll UI.
-  // Keep the selector and the pool-assignment controls on the same weapon set.
-  // Otherwise a monster can correctly show its ranged pools while the selector
-  // is still built from the older combat snapshot and ends up blank.
-  // Build the selector from the manifest's weapon names directly. The pool
-  // objects can carry different catalogue metadata after an attacker change,
-  // but the manifest name is the stable identity the selector needs.
-  const eligibleWeaponNames=Array.from(new Set(splitPools.map(p=>String(p?.weapon?.name||p?.weaponName||'').trim()).filter(Boolean)));
-  const weaponOptions=eligibleWeaponNames.map(name=>'<option value="'+esc(name)+'" '+(String(stored.weaponName||'')===name?'selected':'')+'>'+esc(name)+'</option>').join('');
-  const selector=(phase==='Shooting'||phase==='Fight')?'<div class="field" style="margin-top:10px"><label>Weapon profile</label><select onchange="setTacticalPreRollWeapon(this.value)"><option value="">Choose a weapon…</option>'+weaponOptions+'</select></div>':'';
-  const r=tacticalPreRollCheck(ae.uid,te.uid,stored.weaponName||null);
-  const cls=(r.status==='ready'||r.status==='ready-with-warnings')?'ok':'warn';
-  const warningHtml=(r.warnings||[]).map(x=>'<li>'+esc(x)+'</li>').join('');
-  const steps=(r.steps||[]).map(x=>'<div class="status" style="margin:0"><div class="muted small">'+esc(x.label)+'</div><div style="font-size:1.55em;font-weight:900">'+esc(x.value)+'</div><div class="tiny">'+esc(x.detail||'')+'</div></div>').join('');
-  const canEnter=!!stored.weaponName;
-  const precisionChars=(r.precision?((combatSnapshot('opp',te)?.characterModels||[]).filter(m=>m.alive!==false)):[]);
-  const precisionUi=r.precision&&precisionChars.length?'<div class="status" style="margin-top:10px"><b>Precision allocation group</b><div class="tiny" style="margin:5px 0 8px">Select the visible CHARACTER group to make current for Precision attacks. The group remains current until it is destroyed.</div><select onchange="state.mathRules={...(state.mathRules||{}),precisionTargetModelId:this.value};save();render()"><option value="">Choose CHARACTER…</option>'+precisionChars.map(m=>'<option value="'+esc(m.id)+'" '+(String((state.mathRules||{}).precisionTargetModelId||'')===String(m.id)?'selected':'')+'>'+esc(m.role||m.unitName||'Character')+' • '+esc(String(m.woundsRemaining))+'/'+esc(String(m.maxWounds))+'W</option>').join('')+'</select><label style="display:block;margin-top:8px;font-size:11px"><input type="checkbox" '+((state.mathRules||{}).precisionTargetVisible===true?'checked':'')+' onchange="state.mathRules={...(state.mathRules||{}),precisionTargetVisible:this.checked};save();render()"> Character is visible to at least one attacking model</label></div>':'';
-  const splitHtml=splitPools.length>1?'<div class="status" style="margin-top:10px"><b>Split-fire / multiple weapon pools</b><div class="tiny" style="margin-top:4px">Assign individual models from each identical weapon pool to targets. One model’s weapon cannot be split between targets.</div><div style="display:grid;gap:7px;margin-top:8px">'+splitPools.map(p=>{const opts=(state.opp||[]).filter(e=>!e.attachedTo&&!tacticalUnitState('opp',e)?.destroyed).map(e=>'<option value="'+esc(e.uid)+'">'+esc(unitDisplayName('opp',e))+'</option>').join('');const rows=(p.allocations.length? p.allocations:[{targetUid:'',count:p.count}]).slice(0,5);return '<div class="status" style="margin:0"><b>'+esc(p.weapon.name)+'</b><div class="tiny">'+p.count+' model'+(p.count===1?'':'s')+' available</div>'+rows.map((a,i)=>'<div class="split" style="margin-top:6px"><select style="min-width:180px" onchange="setTacticalPreRollPoolAllocation(\''+esc(p.key).replace(/'/g,"&#39;")+'\','+i+',\'targetUid\',this.value)"><option value="">Choose target…</option>'+opts.replace('value="'+esc(a.targetUid)+'"','value="'+esc(a.targetUid)+'" selected')+'</select><input type="number" min="0" max="'+p.count+'" value="'+a.count+'" style="width:80px" onchange="setTacticalPreRollPoolAllocation(\''+esc(p.key).replace(/'/g,"&#39;")+'\','+i+',\'count\',this.value)"><span class="tiny">models</span></div>').join('')+'</div>'}).join('')+'</div></div>':'';
-  return '<div class="card tactical-preroll-card" style="border-color:#4f6f8f;margin-top:12px"><div class="split"><div><h3 style="margin:0">Pre-Roll Check</h3><div class="muted">Review tactical eligibility and expected outcome.</div></div><span class="pill">PHYSICAL DICE</span></div>'+splitHtml+selector+precisionUi+'<div class="'+cls+'" style="margin-top:10px"><b>'+esc(r.status==='ready'||r.status==='ready-with-warnings'?'ROLL WHEN READY':'CHECK REQUIRED')+'</b>'+(r.weapon?' • '+esc(r.weapon):'')+'</div><div class="grid3" style="margin-top:10px">'+steps+'</div>'+(warningHtml?'<div class="warn" style="margin-top:10px"><b>Rules / context reminders</b><ul style="margin:5px 0 0 18px">'+warningHtml+'</ul></div>':'')+(canEnter?'<button type="button" class="btn primary" style="width:100%;margin-top:12px;font-size:16px;font-weight:800" onclick="recordMyTacticalAttackInteractionFromUi()">Record Actual Damage</button><button type="button" class="btn" style="width:100%;margin-top:7px" onclick="tacticalPreRollOpenResolution()">Optional: Detailed Dice Resolver</button>':'')+'<div class="tiny" style="margin-top:8px">Final values are calculated from the current battlefield state and the same combat engine used by Tactical Advisor. The app does not roll the physical dice.</div></div>';
-}
+
 
 function tacticalShootingResultHtml(){
   if(String(state.phase||'Command')!=='Shooting')return '';
@@ -11210,6 +11182,7 @@ setTimeout(()=>initCloudOnLoad(),0);
 <script src="js/state/game-reference-editor-state.js"></script>
 <script src="js/state/game-assistant-state.js"></script>
 
+<script src="js/state/tactical-pre-roll-state.js"></script>
 <script>
 (function(){
   state.deploymentSkippedUnits=state.deploymentSkippedUnits&&typeof state.deploymentSkippedUnits==='object'?state.deploymentSkippedUnits:{};
