@@ -699,10 +699,10 @@ body{overflow-x:hidden}
 <script src="js/state/deployment-plan-map-controls-state.js"></script>
 <script src="js/state/deployment-plan-position-editor-state.js"></script>
 <script src="js/state/deployment-tracking-editor-state.js"></script>
+<script src="js/state/deployment-tracking-controls-state.js"></script>
  <script src="js/state/objective-map-state.js"></script>
 <script src="js/state/objective-metadata-state.js"></script>
 <script src="js/state/transport-state.js"></script>
-<script src="js/state/transport-declaration-section-state.js"></script>
 <script src="js/state/stratagem-state.js"></script>
 <script src="js/state/game-timer-state.js"></script>
 <script src="js/state/phase-cp-state.js"></script>
@@ -729,6 +729,9 @@ const {deploymentPlanPositionEditorHtml}=deploymentPlanPositionEditorStateContro
 const {createDeploymentTrackingEditorStateController}=window.OnoForgeDeploymentTrackingEditorState;
 const deploymentTrackingEditorStateController=createDeploymentTrackingEditorStateController({getState:()=>state,battlefieldUnitPosition,unitDisplayName,get,esc});
 const {deploymentTrackingEditorHtml}=deploymentTrackingEditorStateController;
+const {createDeploymentTrackingControlsStateController}=window.OnoForgeDeploymentTrackingControlsState;
+const deploymentTrackingControlsStateController=createDeploymentTrackingControlsStateController({getState:()=>state,ensureBattlefieldUnitPositions});
+const {deploymentTrackingControlsHtml}=deploymentTrackingControlsStateController;
 const {createObjectiveMapStateController}=window.OnoForgeObjectiveMapState;
 const objectiveMapStateController=createObjectiveMapStateController({getState:()=>state,primaryMission,layoutIndex:OBJECTIVE_LAYOUT_INDEX,snapshotForUndo,autoSeedObjectiveStructure,event,save,render});
 const {objectiveMissionKey,objectiveLayoutInfo,ensureObjectiveLayoutForMission,setObjectiveMapLayout,objectiveLayoutPage}=objectiveMapStateController;
@@ -738,9 +741,6 @@ const {ensureObjectiveMeta,objectiveRole,objectiveType,objectiveHomeSide,objecti
 const {createTransportStateController}=window.OnoForgeTransportState;
 const transportStateController=createTransportStateController({getState:()=>state,entry,get,snapshotForUndo,event,save,render,unitDisplayName});
 const {ensureTransportEmbarkations,transportEntry,isUnitEmbarked,transportPassengers,clearTransportEmbarkation,setTransportEmbarkation}=transportStateController;
-const {createTransportDeclarationSectionStateController}=window.OnoForgeTransportDeclarationSectionState;
-const transportDeclarationSectionStateController=createTransportDeclarationSectionStateController({getState:()=>state,transportEntry,ensureTransportEmbarkations,transportPassengers,unitDisplayName,get,esc});
-const {transportDeclarationSectionHtml}=transportDeclarationSectionStateController;
 const {createStratagemStateController}=window.OnoForgeStratagemState;
 const {createGameTimerStateController}=window.OnoForgeGameTimerState;
 const {createPhaseCPStateController}=window.OnoForgePhaseCPState;
@@ -977,7 +977,31 @@ function reserveDeclarationSectionHtml(side){
   const units=(Array.isArray(list)?list:[]).filter(e=>e&&!e.attachedTo);
   if(!units.length)return '';
   const declared=reserveUnitsForSide(s).length;
-  return '<div class="setup-section reserve-declaration"><div class="split"><div><h3 style="margin:0">'+esc(s==='my'?state.myName:state.oppName)+' Reserves</h3><div class="muted">Declare units being kept off the battlefield for later deployment.</div></div><span class="pill">'+declared+' declared</span></div><div class="reserve-declaration-grid">'+units.map(e=>{const checked=isUnitReserved(s,e.uid),name=unitDisplayName(s,e)||get(e.unitId)?.name||e.name||e.unitId||'Unit';return '<label class="reserve-declaration-item '+(checked?'selected':'')+'"><input type="checkbox" data-reserve-toggle="'+esc(s)+'" data-reserve-uid="'+esc(e.uid)+'" '+(checked?'checked':'')+'><span><b>'+esc(name)+'</b><smaecked?'selected':'')+'"><input type="checkbox" data-transport-toggle="'+esc(s)+'" data-transport-uid="'+esc(t.uid)+'" data-passenger-uid="'+esc(p.uid)+'" '+(checked?'checked':'')+'><span><b>'+esc(unitDisplayName(s,p)||get(p.unitId)?.name||'Unit')+'</b><small>'+(checked?'Embarked':'On battlefield / reserve')+'</small></span></label>';}).join(''):'<div class="empty">No unattached non-transport units available.</div>')+'</div></div>';
+  return '<div class="setup-section reserve-declaration"><div class="split"><div><h3 style="margin:0">'+esc(s==='my'?state.myName:state.oppName)+' Reserves</h3><div class="muted">Declare units being kept off the battlefield for later deployment.</div></div><span class="pill">'+declared+' declared</span></div><div class="reserve-declaration-grid">'+units.map(e=>{const checked=isUnitReserved(s,e.uid),name=unitDisplayName(s,e)||get(e.unitId)?.name||e.name||e.unitId||'Unit';return '<label class="reserve-declaration-item '+(checked?'selected':'')+'"><input type="checkbox" data-reserve-toggle="'+esc(s)+'" data-reserve-uid="'+esc(e.uid)+'" '+(checked?'checked':'')+'><span><b>'+esc(name)+'</b><small>'+(checked?'Reserve':'Deploy normally')+'</small></span></label>';}).join('')+'</div></div>';
+}
+
+function deployReserveByMap(side,uid,x,y){
+  if(!isUnitReserved(side,uid))return false;
+  const id=String(uid),s=side==='opp'?'opp':'my';
+  if(!setBattlefieldUnitPosition(side,uid,x,y,'reserve'))return false;
+  delete ensureReserveState()[s][id];
+  const p=ensureBattlefieldUnitPositions()[id];
+  delete state.battlefieldMapPlacement;
+  save();render();return true;
+}
+
+
+function transportDeclarationSectionHtml(side){
+  const s=side==='opp'?'opp':'my',list=Array.isArray(state[s])?state[s]:[];
+  const transports=list.filter(e=>e&&!e.attachedTo&&transportEntry(s,e.uid));
+  if(!transports.length)return '';
+  const candidates=list.filter(e=>e&&!e.attachedTo&&!transportEntry(s,e.uid));
+  const maps=ensureTransportEmbarkations()[s]||{};
+  return '<div class="setup-section transport-declaration"><div class="split"><div><h3 style="margin:0">'+esc(s==='my'?state.myName:state.oppName)+' Transport Embarkations</h3><div class="muted">Declare which units start embarked in each transport. Transport capacity and faction-specific restrictions remain a rules-data validation layer.</div></div><span class="pill">'+transports.reduce((n,t)=>n+transportPassengers(s,t.uid).length,0)+' embarked</span></div>'+
+    '<div class="transport-declaration-grid">'+transports.map(t=>{
+      const passengers=transportPassengers(s,t.uid);
+      return '<div class="transport-declaration-card"><div class="split"><b>'+esc(unitDisplayName(s,t)||get(t.unitId)?.name||'Transport')+'</b><span class="pill">'+passengers.length+' unit'+(passengers.length===1?'':'s')+'</span></div>'+
+      '<div class="transport-passenger-list">'+(candidates.length?candidates.map(p=>{const checked=passengers.map(String).includes(String(p.uid));return '<label class="transport-passenger-item '+(checked?'selected':'')+'"><input type="checkbox" data-transport-toggle="'+esc(s)+'" data-transport-uid="'+esc(t.uid)+'" data-passenger-uid="'+esc(p.uid)+'" '+(checked?'checked':'')+'><span><b>'+esc(unitDisplayName(s,p)||get(p.unitId)?.name||'Unit')+'</b><small>'+(checked?'Embarked':'On battlefield / reserve')+'</small></span></label>';}).join(''):'<div class="empty">No unattached non-transport units available.</div>')+'</div></div>';
     }).join('')+'</div></div>';
 }
 
@@ -1030,11 +1054,6 @@ function clearBattlefieldUnitPosition(uid){
 
 
 
-function deploymentTrackingControlsHtml(model){
- if(!model.verified)return '';
- const side=state.deploymentTrackingSide==='opp'?'opp':'my',positions=ensureBattlefieldUnitPositions(),placedCount=Object.values(positions).filter(p=>p&&p.side===side).length;
- return '<div class="objective-map-controls"><div class="split"><div><strong>Live Deployment Tracking</strong><div class="tiny">Drag any staged unit directly to its actual tabletop position. No unit-selection step is required.</div></div><span class="pill">'+placedCount+' '+(side==='my'?'my':'opponent')+' units recorded</span></div><div class="objective-map-placement-row"><select class="objective-map-side-select" data-deployment-side aria-label="Deployment side"><option value="my" '+(side==='my'?'selected':'')+'>My army</option><option value="opp" '+(side==='opp'?'selected':'')+'>Opponent army</option></select></div><div class="tiny objective-map-placement-status">Staging slots are visual placeholders only. A unit counts as deployed when its marker is dragged to the physical tabletop position.</div></div>';
-}
 function objectiveMapRendererHtml(mode='battle'){const model=objectiveMapModel(mode),status=mode==='terrain'?'Official Event Companion reference':model.verified?'Verified geometry':'Geometry pending verification',pct=(n,max)=>Math.max(0,Math.min(100,(Number(n)/Number(max))*100)),point=p=>p&&Number.isFinite(Number(p.x))&&Number.isFinite(Number(p.y)),terrainSetup=mode==='terrain',setup=mode==='setup',deployment=mode==='deployment';const regionLabel=key=>{const k=String(key||'');if(k==='attackerDeployment')return (state.attackerSide==='opp'?state.oppName:state.myName)+' Deployment Zone';if(k==='defenderDeployment')return (state.attackerSide==='opp'?state.myName:state.oppName)+' Deployment Zone';if(k==='attackerTerritory')return (state.attackerSide==='opp'?state.oppName:state.myName)+' Territory';if(k==='defenderTerritory')return (state.attackerSide==='opp'?state.myName:state.oppName)+' Territory';return ({my:'My Deployment Zone',opp:'Opponent Deployment Zone',noMansLand:"No Man's Land",myTerritory:'My Territory',oppTerritory:'Opponent Territory'})[k]||k.replace(/([A-Z])/g,' $1').replace(/^./,s=>s.toUpperCase());};const regionClass=key=>{const k=String(key||'').toLowerCase();return k.includes('deployment')?'deployment':k.includes('territory')?'territory':'region';};const renderRegion=(key,r)=>{
   if(!r||typeof r!=='object')return '';
   const label=regionLabel(key);
