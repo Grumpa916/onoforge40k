@@ -13,6 +13,7 @@ const deploymentPlan=fs.readFileSync(path.join(root,'js/state/deployment-plan-st
 const deploymentPlanMapControls=fs.readFileSync(path.join(root,'js/state/deployment-plan-map-controls-state.js'),'utf8');
 const deploymentPlanPositionEditor=fs.readFileSync(path.join(root,'js/state/deployment-plan-position-editor-state.js'),'utf8');
 const deploymentTrackingEditor=fs.readFileSync(path.join(root,'js/state/deployment-tracking-editor-state.js'),'utf8');
+const deploymentStatus=fs.readFileSync(path.join(root,'js/state/deployment-status-state.js'),'utf8');
 const deploymentTrackingControls=fs.readFileSync(path.join(root,'js/state/deployment-tracking-controls-state.js'),'utf8');
 const objectiveMap=fs.readFileSync(path.join(root,'js/state/objective-map-state.js'),'utf8');
 const objectiveLayout=fs.readFileSync(path.join(root,'js/state/objective-layout-state.js'),'utf8');
@@ -132,7 +133,7 @@ for(const name of [
   'ensureGameTimer','gameTimerElapsed','turnElapsedMs','finalizeCurrentTurnTime','switchTurnClock',
   'ensurePhaseCPState','phaseCPKey','rememberPhaseCP','restorePhaseCP',
   'ensureObjectiveControlHistory','objectivePreviousTurnKey','objectivePreviousTurnOwner',
-  'ensureObjectiveControlSources','objectiveControlSourceIds','ensureSecondaryRoundLedger','ensureScoreLedger','secondaryTotalScoredVP','scoreTotalForSide','armyNoMansLandTagsHtml','objectiveMapPlacementPanelHtml','objectiveMapRendererHtml','completeTerrainSetup','unitDatabase','canonicalUnitDatabase','bootstrapUnitDatabase','mergeSupplementalUnits','saveCurrentArmyList','loadSavedArmyList','deleteSavedArmyList','undoDeletedSavedArmyList','currentMyListSnapshot','reserveTrayHtml','deploymentPlanMapControlsHtml','transportDeclarationSectionHtml','objectiveLayoutHtml','reserveDeclarationSectionHtml','deploymentPlanPositionEditorHtml','deploymentTrackingEditorHtml','deploymentTrackingControlsHtml'
+  'ensureObjectiveControlSources','objectiveControlSourceIds','ensureSecondaryRoundLedger','ensureScoreLedger','secondaryTotalScoredVP','scoreTotalForSide','armyNoMansLandTagsHtml','objectiveMapPlacementPanelHtml','objectiveMapRendererHtml','completeTerrainSetup','unitDatabase','canonicalUnitDatabase','bootstrapUnitDatabase','mergeSupplementalUnits','saveCurrentArmyList','loadSavedArmyList','deleteSavedArmyList','undoDeletedSavedArmyList','currentMyListSnapshot','reserveTrayHtml','deploymentPlanMapControlsHtml','transportDeclarationSectionHtml','objectiveLayoutHtml','reserveDeclarationSectionHtml','deploymentPlanPositionEditorHtml','deploymentTrackingEditorHtml','deploymentTrackingControlsHtml','deploymentStatusHtml'
 ]){
   const count=(html.match(new RegExp('function\s+'+name+'\s*\\(','g'))||[]).length;
   if(count!==0)throw new Error('Extracted function still inline: '+name);
@@ -170,6 +171,7 @@ vm.runInNewContext(deploymentPlan,sandbox,{filename:'js/state/deployment-plan-st
 vm.runInNewContext(deploymentPlanMapControls,sandbox,{filename:'js/state/deployment-plan-map-controls-state.js'});
 vm.runInNewContext(deploymentPlanPositionEditor,sandbox,{filename:'js/state/deployment-plan-position-editor-state.js'});
 vm.runInNewContext(deploymentTrackingEditor,sandbox,{filename:'js/state/deployment-tracking-editor-state.js'});
+vm.runInNewContext(deploymentStatus,sandbox,{filename:'js/state/deployment-status-state.js'});
 vm.runInNewContext(deploymentTrackingControls,sandbox,{filename:'js/state/deployment-tracking-controls-state.js'});
 vm.runInNewContext(objectiveMap,sandbox,{filename:'js/state/objective-map-state.js'});
 vm.runInNewContext(objectiveLayout,sandbox,{filename:'js/state/objective-layout-state.js'});
@@ -439,6 +441,23 @@ const deploymentTrackingEditorHtml=deploymentTrackingEditorController.deployment
 if(!deploymentTrackingEditorHtml.includes('Captain')||!deploymentTrackingEditorHtml.includes('Warrior'))throw new Error('Deployment tracking editor rows regression');
 if(!deploymentTrackingEditorHtml.includes('Actual deployment: 21.4″, 9.2″'))throw new Error('Deployment tracking editor position regression');
 if(!deploymentTrackingEditorHtml.includes('data-battlefield-clear="u2"'))throw new Error('Deployment tracking editor clear regression');
+const deploymentStatusState={deploymentTrackingSide:'my',my:[{uid:'u1',name:'Captain'},{uid:'u2',name:'Warrior'}],deploymentSkippedUnits:{}};
+const deploymentStatusController=sandbox.window.OnoForgeDeploymentStatusState.createDeploymentStatusStateController({
+  getState:()=>deploymentStatusState,
+  battlefieldUnitPosition:(side,uid)=>side==='my'&&uid==='u1'?{x:10,y:5}:null,
+  isUnitReserved:()=>false,
+  unitDisplayName:(side,entry)=>entry?.name,
+  get:()=>null,
+  esc:value=>String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')
+});
+const deploymentStatusHtml=deploymentStatusController.deploymentStatusHtml({});
+if(!deploymentStatusHtml.includes('Deployment incomplete'))throw new Error('Deployment status incomplete state regression');
+if(!deploymentStatusHtml.includes('Recorded 1 / 2'))throw new Error('Deployment status recorded count regression');
+if(!deploymentStatusHtml.includes('Warrior — position not recorded'))throw new Error('Deployment status missing-unit regression');
+if(!deploymentStatusHtml.includes('data-deployment-skip-uid="u2"'))throw new Error('Deployment status skip metadata regression');
+deploymentStatusState.deploymentSkippedUnits['my|u2']=true;
+const deploymentStatusSkippedHtml=deploymentStatusController.deploymentStatusHtml({});
+if(!deploymentStatusSkippedHtml.includes('Deployment complete')||!deploymentStatusSkippedHtml.includes('Skipped 1'))throw new Error('Deployment status skipped state regression');
 const deploymentTrackingControlsController=sandbox.window.OnoForgeDeploymentTrackingControlsState.createDeploymentTrackingControlsStateController({
   getState:()=>({deploymentTrackingSide:'opp'}),
   ensureBattlefieldUnitPositions:()=>({a:{side:'opp'},b:{side:'opp'},c:{side:'my'}})
