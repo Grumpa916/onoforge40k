@@ -6,7 +6,7 @@ function createSecondaryRoundLedgerStateController({getState}){
       const vpKey=side==='my'?'secondaryMyScoredVPByRound':'secondaryOppScoredVPByRound';
       const roundKey=side==='my'?'secondaryMyScoredRound':'secondaryOppScoredRound';
       if(!state[vpKey]||typeof state[vpKey]!=='object')state[vpKey]={};
-      if(!state[roundKey]||typeof state[roundKey]!=='object')state[roundKey]={};
+      if(!state[roundKey]||typeof state[roundKey]!=='object'||Array.isArray(state[roundKey]))state[roundKey]={};
       Object.keys(state[vpKey]).forEach(round=>{
         if(!state[vpKey][round]||typeof state[vpKey][round]!=='object')state[vpKey][round]={};
         Object.keys(state[vpKey][round]).forEach(name=>{
