@@ -23,6 +23,7 @@ const scoreCalculation=fs.readFileSync(path.join(root,'js/state/score-calculatio
 const primaryRoundScore=fs.readFileSync(path.join(root,'js/state/primary-round-score-state.js'),'utf8');
 const primaryRoundScoreCap=fs.readFileSync(path.join(root,'js/state/primary-round-score-cap-state.js'),'utf8');
 const primaryScoringVP=fs.readFileSync(path.join(root,'js/state/primary-scoring-vp-state.js'),'utf8');
+const primaryScoringIsPer=fs.readFileSync(path.join(root,'js/state/primary-scoring-is-per-state.js'),'utf8');
 const utils=fs.readFileSync(path.join(root,'js/utils/pure-utils.js'),'utf8');
 
 const required=[
@@ -45,6 +46,7 @@ const required=[
   '<script src="js/state/primary-round-score-state.js"></script>',
   '<script src="js/state/primary-round-score-cap-state.js"></script>',
   '<script src="js/state/primary-scoring-vp-state.js"></script>',
+  '<script src="js/state/primary-scoring-is-per-state.js"></script>',
   'const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;',
   'const {collectBSDataObjects,bsUnitFromEntry}=window.OnoForgeBSDataParser;',
   'const {createReserveStateController}=window.OnoForgeReserveState;',
@@ -89,7 +91,7 @@ inlineBlocks.forEach((src,i)=>{
   fs.writeFileSync(file,src);
   cp.execFileSync(process.execPath,['--check',file],{stdio:'inherit'});
 });
-for(const [name,src] of [['bsdata-parser.js',parser],['pure-utils.js',utils],['reserve-state.js',reserve],['deployment-plan-state.js',deploymentPlan],['objective-map-state.js',objectiveMap],['objective-metadata-state.js',objectiveMetadata],['transport-state.js',transport],['stratagem-state.js',stratagem],['game-timer-state.js',gameTimer],['phase-cp-state.js',phaseCP],['objective-control-history-state.js',objectiveControlHistory],['objective-control-sources-state.js',objectiveControlSources],['secondary-round-ledger-state.js',secondaryRoundLedger],['score-ledger-state.js',scoreLedger],['secondary-score-state.js',secondaryScore],['score-calculation-state.js',scoreCalculation],['primary-round-score-state.js',primaryRoundScore],['primary-round-score-cap-state.js',primaryRoundScoreCap],['primary-scoring-vp-state.js',primaryScoringVP]]){
+for(const [name,src] of [['bsdata-parser.js',parser],['pure-utils.js',utils],['reserve-state.js',reserve],['deployment-plan-state.js',deploymentPlan],['objective-map-state.js',objectiveMap],['objective-metadata-state.js',objectiveMetadata],['transport-state.js',transport],['stratagem-state.js',stratagem],['game-timer-state.js',gameTimer],['phase-cp-state.js',phaseCP],['objective-control-history-state.js',objectiveControlHistory],['objective-control-sources-state.js',objectiveControlSources],['secondary-round-ledger-state.js',secondaryRoundLedger],['score-ledger-state.js',scoreLedger],['secondary-score-state.js',secondaryScore],['score-calculation-state.js',scoreCalculation],['primary-round-score-state.js',primaryRoundScore],['primary-round-score-cap-state.js',primaryRoundScoreCap],['primary-scoring-vp-state.js',primaryScoringVP],['primary-scoring-is-per-state.js',primaryScoringIsPer]]){
   const file=path.join('/tmp','onoforge-refactor-'+name);
   fs.writeFileSync(file,src);
   cp.execFileSync(process.execPath,['--check',file],{stdio:'inherit'});
@@ -115,6 +117,8 @@ vm.runInNewContext(scoreCalculation,sandbox,{filename:'js/state/score-calculatio
 vm.runInNewContext(primaryRoundScore,sandbox,{filename:'js/state/primary-round-score-state.js'});
 vm.runInNewContext(primaryRoundScoreCap,sandbox,{filename:'js/state/primary-round-score-cap-state.js'});
 vm.runInNewContext(primaryScoringVP,sandbox,{filename:'js/state/primary-scoring-vp-state.js'});
+vm.runInNewContext(primaryScoringIsPer,sandbox,{filename:'js/state/primary-scoring-is-per-state.js'});
+if(typeof sandbox.window.OnoForgePrimaryScoringIsPerState?.createPrimaryScoringIsPerStateController!=='function')throw new Error('Primary scoring per module did not expose createPrimaryScoringIsPerStateController');
 if(typeof sandbox.window.OnoForgePrimaryScoringVPState?.createPrimaryScoringVPStateController!=='function')throw new Error('Primary scoring VP module did not expose createPrimaryScoringVPStateController');
 if(typeof sandbox.window.OnoForgePrimaryRoundScoreCapState?.createPrimaryRoundScoreCapStateController!=='function')throw new Error('Primary round score cap module did not expose createPrimaryRoundScoreCapStateController');
 if(typeof sandbox.window.OnoForgePrimaryRoundScoreState?.createPrimaryRoundScoreStateController!=='function')throw new Error('Primary round score module did not expose createPrimaryRoundScoreStateController');
@@ -315,6 +319,8 @@ const primaryRoundScoreCapController=sandbox.window.OnoForgePrimaryRoundScoreCap
 if(primaryRoundScoreCapController.primaryRoundCapRemaining('my')!==5||primaryRoundScoreCapController.primaryRoundCapRemaining('opp')!==0)throw new Error('Primary round score cap regression');
 const primaryScoringVPController=sandbox.window.OnoForgePrimaryScoringVPState.createPrimaryScoringVPStateController();
 if(primaryScoringVPController.primaryScoringVP('Score up to 15 VP')!==15||primaryScoringVPController.primaryScoringVP('for each objective, 2 points')!==2||primaryScoringVPController.primaryScoringVP('No scoring')!==0)throw new Error('Primary scoring VP parsing regression');
+const primaryScoringIsPerController=sandbox.window.OnoForgePrimaryScoringIsPerState.createPrimaryScoringIsPerStateController();
+if(!primaryScoringIsPerController.primaryScoringIsPer([null,null,'Score 2 VP for each objective'])||!primaryScoringIsPerController.primaryScoringIsPer([null,null,'Score 2 VP per objective'])||primaryScoringIsPerController.primaryScoringIsPer([null,null,'Score 5 VP']))throw new Error('Primary scoring per detection regression');
 
 const objectiveMetadataState={objectiveMeta:{home:{type:'home',homeSide:'my'},central:{type:'central',territory:'nml'},expansion:{role:'expansion'}}};
 const objectiveMetadataController=sandbox.window.OnoForgeObjectiveMetadataState.createObjectiveMetadataStateController({getState:()=>objectiveMetadataState});
