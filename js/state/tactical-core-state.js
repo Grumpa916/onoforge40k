@@ -1,37 +1,31 @@
 (function(global){
   function createTacticalCoreStateController(deps={}){
     const {
-      state,entry,get,save,render,event,snapshotForUndo,esc,alert:alertFn,
-      TACTICAL_RENDER_CACHE,
-      ONOFORGE_SOURCE_POLICY_11E,
+      state,entry,get,esc,event,
+      TACTICAL_RENDER_CACHE,ONOFORGE_SOURCE_POLICY_11E,
       activeWeaponNames,attachedCombatEntries,attachedCombatWeaponGroups,
       bodyguardLeaders,bodyguardSupports,buildModelRoster,
       calculateMath,calculateMathMixed,combatComponentRole,combatModelSnapshot,combatRootEntry,
       combatSnapshot,combatTargetEntry,combatTargetUnit,combatUnit,
       engineApplicableWeaponAbilities,engineContext,engineHalfRangeActive,engineMonteCarloMixed,
       engineOneAttack,engineSaveDistribution,engineWeaponPoolKey,engineWeaponVariantKey,
-      ensureObjectiveLayoutForMission,esc:escapeHtml,event:eventFn,getTacticalAdvisorResult,
-      getTacticalAdvisorV2Result,getTacticalRenderBundle,getTacticalTargetLegalityCached,
-      isLeaderUnit,isSupportUnit,mathRosterEntry,mathUnit,mathWeaponAlloc,modelRosterRule,
-      modelRosterWeaponCounts,normalizeMathWeaponForUnit,objectiveBattlefieldGeometry,
-      objectiveControlSourceIds,objectiveHomeSide,objectiveLayoutPage,objectiveMapModel,
-      objectiveMissionKey,objectivePrimaryScoringImpact,objectiveStateRecord,objectiveTacticalSummary,
-      objectiveTurnStartOwner,parseNum,primaryMission,primaryScoringRowsForRound,render:renderFn,
-      reserveUnitsForSide,roll,ruleContext,save:saveFn,snapshotForUndo:snapshotUndo,
-      survivingModelRoster,survivingModels,tacticalAdvisorBattleStateContext,
-      tacticalAdvisorStateSignature,tacticalAdvisorStateSnapshot,tacticalAdvisorStratagemPressure,
-      tacticalAdvisorV1,tacticalAdvisorV2,tacticalContextHtmlBody,tacticalLegalityForUnit,
-      tacticalObjectiveAdvisor,tacticalObjectiveAdvisorHtml,tacticalObjectiveValueForTarget,
-      tacticalPairKey,tacticalPairState,tacticalPreRollOpenResolutionForSides,
+      ensureObjectiveLayoutForMission,getTacticalAdvisorResult,getTacticalAdvisorV2Result,
+      getTacticalRenderBundle,getTacticalTargetLegalityCached,isLeaderUnit,isSupportUnit,
+      mathRosterEntry,mathUnit,mathWeaponAlloc,modelRosterRule,modelRosterWeaponCounts,
+      normalizeMathWeaponForUnit,objectiveBattlefieldGeometry,objectiveControlSourceIds,
+      objectiveHomeSide,objectiveLayoutPage,objectiveMapModel,objectiveMissionKey,
+      objectivePrimaryScoringImpact,objectiveStateRecord,objectiveTacticalSummary,
+      objectiveTurnStartOwner,parseNum,primaryMission,primaryScoringRowsForRound,
+      reserveUnitsForSide,roll,ruleContext,survivingModelRoster,survivingModels,
+      tacticalAdvisorBattleStateContext,tacticalAdvisorStateSignature,tacticalAdvisorStateSnapshot,
+      tacticalAdvisorStratagemPressure,tacticalAdvisorV1,tacticalAdvisorV2,tacticalContextHtmlBody,
+      tacticalLegalityForUnit,tacticalObjectiveAdvisor,tacticalObjectiveAdvisorHtml,
+      tacticalObjectiveValueForTarget,tacticalPairKey,tacticalPairState,tacticalPreRollOpenResolutionForSides,
       tacticalPrimaryTargetImpact,tacticalTargetLegality,tacticalUnitActionState,tacticalUnitState,
       tacticalWeaponModelAvailable,tacticalWeaponModelModeConflict,tacticalWeaponPhaseEligible,
       tacticalWeaponRange,targetNeed,unitDatabase,unitDisplayName
     }=deps;
-    const alert=typeof alertFn==='function'?alertFn:(typeof global.alert==='function'?global.alert.bind(global):()=>{});
-    const render=typeof renderFn==='function'?renderFn:()=>{};
-    const save=typeof saveFn==='function'?saveFn:()=>{};
-    const snapshotForUndo=typeof snapshotUndo==='function'?snapshotUndo:()=>null;
-    const escFn=typeof escapeHtml==='function'?escapeHtml:(typeof esc==='function'?esc:(v)=>String(v??''));
+    const alert=typeof global.alert==='function'?global.alert.bind(global):()=>{};
     const TACTICAL_STATE_VERSION='1.4';
 function ensureTacticalState(){
   if(!state.tactical||typeof state.tactical!=='object')state.tactical={version:TACTICAL_STATE_VERSION,pairs:{},unitUse:{},unitMovement:{},unitActions:{},fightPhase:{}};
@@ -481,15 +475,7 @@ const TACTICAL_RENDER_CACHE={
 
 
 
-    return Object.freeze({
-      ensureTacticalState,tacticalDistanceLabel,tacticalContextHtml,tacticalCombatFightWeapons,
-      tacticalOpenFightResolution,tacticalAdvisorAttackerEntry,tacticalWeaponIsRanged,
-      tacticalAdvisorWeaponGroups,weaponDataIntegrityScan,weaponDataIntegrityAuditHtml,
-      tacticalAdvisorAttackerHasRangedWeapons,setTacticalAdvisorAttacker,tacticalAdvisorConfidenceLabel,
-      tacticalPreRollPoolIdentity,tacticalPreRollNormalizePoolAllocations,tacticalPreRollPoolAvailableModelIds,
-      tacticalPreRollPoolManifest,setTacticalPreRollPoolTarget,setTacticalPreRollPoolAllocation,
-      tacticalPreRollWeaponState,setTacticalPreRollWeapon
-    });
+    return Object.freeze({ensureTacticalState,tacticalDistanceLabel,tacticalContextHtml,tacticalCombatFightWeapons,tacticalOpenFightResolution,tacticalAdvisorAttackerEntry,tacticalWeaponIsRanged,tacticalAdvisorWeaponGroups,weaponDataIntegrityScan,weaponDataIntegrityAuditHtml,tacticalAdvisorAttackerHasRangedWeapons,setTacticalAdvisorAttacker,tacticalAdvisorConfidenceLabel,tacticalPreRollPoolIdentity,tacticalPreRollNormalizePoolAllocations,tacticalPreRollPoolAvailableModelIds,tacticalPreRollPoolManifest,setTacticalPreRollPoolTarget,setTacticalPreRollPoolAllocation,tacticalPreRollWeaponState,setTacticalPreRollWeapon});
   }
   global.OnoForgeTacticalCoreState=Object.freeze({createTacticalCoreStateController});
 })(window);
