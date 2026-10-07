@@ -39,7 +39,7 @@ function createStratagemStateController({getState}){
     const selections=side==='my'?state.detachmentSelections:state.oppDetachmentSelections;
     const fallback=side==='my'?state.detachment:state.oppDetachment;
     const det=(Array.isArray(selections)&&selections[0])||fallback||'';
-    return faction&&det?\`${faction} — ${det}\`:'';
+    return faction&&det?faction+' — '+det:'';
   }
   return Object.freeze({ensureStratagemState,stratagemUseHistory,stratagemUsedThisPhase,resetStratagemPhaseUses,stratagemUsedThisBattle,armyStratagemDetachment});
 }
