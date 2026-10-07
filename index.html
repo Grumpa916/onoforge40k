@@ -743,7 +743,7 @@ const {
 <script src="js/state/objective-metadata-state.js"></script>
 <script src="js/state/transport-state.js"></script>
 <script src="js/state/transport-declaration-section-state.js"></script>
-<script src="js/state/stratagem-state.js"></script>
+<script src="js/state/stratagem-state.js"></script><script src="js/state/stratagem-ui-state.js"></script>
 <script src="js/state/game-timer-state.js"></script>
 <script src="js/state/phase-cp-state.js"></script>
 <script src="js/state/objective-control-history-state.js"></script><script src="js/state/objective-control-sources-state.js"></script><script src="js/state/secondary-round-ledger-state.js"></script><script src="js/state/score-ledger-state.js"></script><script src="js/state/secondary-score-state.js"></script><script src="js/state/score-calculation-state.js"></script><script src="js/state/primary-round-score-state.js"></script><script src="js/state/primary-round-score-cap-state.js"></script><script src="js/state/primary-scoring-vp-state.js"></script><script src="js/state/primary-scoring-is-per-state.js"></script><script src="js/state/primary-scoring-max-state.js"></script><script src="js/state/primary-objective-condition-text-state.js"></script><script src="js/state/primary-objective-qualifying-list-state.js"></script><script src="js/state/objective-counts-state.js"></script><script src="js/state/primary-objective-condition-status-state.js"></script><script src="js/state/primary-scoring-objective-count-state.js"></script><script src="js/state/primary-scoring-objective-amount-state.js"></script><script src="js/state/primary-scoring-effective-max-state.js"></script><script src="js/state/primary-scoring-exclusive-group-state.js"></script><script src="js/state/primary-scoring-original-index-state.js"></script><script src="js/state/primary-objective-condition-short-label-state.js"></script><script src="js/state/primary-scoring-round-range-state.js"></script><script src="js/state/primary-scoring-row-available-state.js"></script><script src="js/state/primary-scoring-rows-for-round-state.js"></script><script src="js/state/primary-scoring-checkpoint-rows-state.js"></script><script src="js/state/primary-scoring-objective-link-html-state.js"></script><script src="js/state/primary-scoring-evidence-state.js"></script><script src="js/state/primary-objective-scoring-candidates-state.js"></script><script src="js/state/primary-objective-scoring-candidate-summary-state.js"></script><script src="js/state/primary-objective-score-snapshot-state.js"></script><script src="js/state/battlefield-geometry-state.js"></script><script src="js/state/battlefield-unit-position-state.js"></script><script src="js/state/objective-map-model-state.js"></script><script src="js/state/battlefield-position-editor-state.js"></script><script src="js/state/deployment-staging-point-state.js"></script>
@@ -1023,6 +1023,9 @@ const gameTimerStateController=createGameTimerStateController({getState:()=>stat
 const {ensureGameTimer,gameTimerElapsed,turnElapsedMs,finalizeCurrentTurnTime,switchTurnClock}=gameTimerStateController;
 const stratagemStateController=createStratagemStateController({getState:()=>state});
 const {ensureStratagemState,stratagemUseHistory,stratagemUsedThisPhase,resetStratagemPhaseUses,stratagemUsedThisBattle,armyStratagemDetachment}=stratagemStateController;
+const {createStratagemUIStateController}=window.OnoForgeStratagemUIState;
+const stratagemUIStateController=createStratagemUIStateController({getState:()=>state,ensureStratagemState,armyStratagemDetachment,stratagemUsedThisPhase,stratagemCP,esc,uid});
+const {stratagemPhaseRank,stratagemPhaseGroups,stratagemsUI}=stratagemUIStateController;
 const {collectBSDataObjects,bsUnitFromEntry}=window.OnoForgeBSDataParser;
 window.addEventListener('error',function(ev){if(ev.target&&ev.target.tagName==='SCRIPT'&&ev.target.src===SUPABASE_SCRIPT_URL)return;var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var msg=String(ev.error?.message||ev.message||'Unknown error'),stack=String(ev.error?.stack||'');var detail=(stack&&stack!==msg?msg+'\\n\\n'+stack:msg).slice(0,6000);a.innerHTML='<span class="error-title">OnoForge error</span><pre class="error-detail" style="white-space:pre-wrap;max-height:45vh;overflow:auto;margin:6px 0 0;font:11px/1.35 monospace">'+detail.replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</pre><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});window.addEventListener('unhandledrejection',function(ev){var a=document.getElementById('battleforge-error');if(!a){a=document.createElement('div');a.id='battleforge-error';document.body.appendChild(a)}var reason=ev.reason?.message||ev.reason||'Unhandled promise rejection';a.innerHTML='<span class="error-title">OnoForge error</span><div class="error-detail">'+String(reason).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})+'</div><button type="button" aria-label="Dismiss error" onclick="this.parentElement.remove()">×</button>';});
 
@@ -1810,87 +1813,6 @@ function useStratagem(side,index){
  event('STRATAGEM_USED',{name:s.name,side,cp:cpCost,phase,round,playerTurn:turn,source:s.source,detachment:s.detachment||'',action:s.name},before);
  state.stratagemsOpen=true;
  save();render();
-}
-const STRATAGEM_PHASE_ORDER_11E=['Command','Movement','Shooting','Charge','Fight','Any Phase'];
-function stratagemPhaseRank(phase){
- const p=String(phase||'Any Phase').trim();
- const i=STRATAGEM_PHASE_ORDER_11E.indexOf(p);
- return i<0?STRATAGEM_PHASE_ORDER_11E.length:i;
-}
-function stratagemPhaseGroups(arr,side){
- const current=String(state.phase||'Command').trim();
- const isAvailable=s=>{
-  const phase=String(s?.phase||'Any Phase').trim();
-  return (phase===current||phase==='Any Phase')&&!stratagemUsedThisPhase(side,s?.name);
- };
- const availabilityRank=s=>{
-  if(isAvailable(s))return 0;
-  if(String(s?.phase||'Any Phase').trim()===current||String(s?.phase||'Any Phase').trim()==='Any Phase')return 1;
-  return 2;
- };
- const sorted=(Array.isArray(arr)?arr:[]).map((s,i)=>({s,i}))
-   .sort((a,b)=>
-     availabilityRank(a.s)-availabilityRank(b.s)||
-     stratagemPhaseRank(a.s.phase)-stratagemPhaseRank(b.s.phase)||
-     String(a.s.name||'').localeCompare(String(b.s.name||''))
-   );
- const groups=[];
- sorted.forEach(item=>{
-  const phase=String(item.s.phase||'Any Phase');
-  let group=groups.find(g=>g.phase===phase);
-  if(!group){group={phase,items:[]};groups.push(group)}
-  group.items.push(item);
- });
- return groups;
-}
-function stratagemsUI(){
- ensureStratagemState();
- const CORE=[
-  {name:'Command Re-roll',cp:1,phase:'Any Phase',summary:'Re-roll one eligible roll.'},
-  {name:'Epic Challenge',cp:1,phase:'Fight',summary:'A CHARACTER gains Precision for the phase.'},
-  {name:'Insane Bravery',cp:1,phase:'Command',summary:'Automatically pass a Battle-shock test. Once per battle.'},
-  {name:'Explosives',cp:1,phase:'Shooting',summary:'An eligible unit can use explosives against a nearby enemy.'},
-  {name:'Crushing Impact',cp:1,phase:'Charge',summary:'A MONSTER/VEHICLE can inflict mortal wounds after charging.'},
-  {name:'Rapid Ingress',cp:1,phase:'Movement',summary:'Bring a Strategic Reserves unit onto the battlefield at the end of the opponent’s Movement phase.'},
-  {name:'Fire Overwatch',cp:1,phase:'Movement',summary:'An eligible unit can shoot using Snap Shooting.'},
-  {name:'Smokescreen',cp:1,phase:'Shooting',summary:'A SMOKE unit gains Benefit of Cover for the phase.'},
-  {name:'Heroic Intervention',cp:1,phase:'Charge',summary:'An eligible nearby unit can resolve a charge.'},
-  {name:'Counteroffensive',cp:2,phase:'Fight',summary:'An eligible friendly unit fights next after an enemy unit fights.'}
- ];
- const INVASION=[
-  {name:'Predatory Imperative',cp:1,phase:'Any Phase',summary:'Use an Invasion Fleet adaptive rule.'},
-  {name:'Endless Swarm',cp:1,phase:'Any Phase',summary:'Return models to an eligible Tyranids unit.'},
-  {name:'Adrenal Surge',cp:2,phase:'Fight',summary:'Improve the combat output of an eligible Tyranids unit.'},
-  {name:'Rapid Regeneration',cp:1,phase:'Any Phase',summary:'Restore wounds to an eligible Tyranids unit.'},
-  {name:'Death Frenzy',cp:1,phase:'Fight',summary:'Allow a destroyed Tyranids unit to fight back.'},
-  {name:'Overrun',cp:1,phase:'Fight',summary:'Allow an eligible Tyranids unit to make a post-fight move.'}
- ];
- const catalogFor=(side)=>{
-  const det=armyStratagemDetachment(side);
-  const army=(side==='my' && det==='Tyranids — Invasion Fleet')?INVASION:[];
-  return {
-   det,
-   army:army.map(s=>({...s,source:'Detachment',detachment:det})),
-   core:CORE.map(s=>({...s,source:'Core'}))
-  };
- };
- const army=(side,title)=>{
-  const key=side==='my'?'stratagemsMy':'stratagemsOpp';
-  const cat=catalogFor(side);
-  const all=[...cat.army,...cat.core].map((s,i)=>({
-   ...s,
-   id:state[key]?.[i]?.id||uid(),
-   used:!!state[key]?.[i]?.used
-  }));
-  state[key]=all;
-  const renderType=(items,label,kind)=>{
-   const groups=stratagemPhaseGroups(items,side);
-   if(!items.length) return '<div class="stratagem-type-section"><div class="stratagem-type-heading '+kind+'">'+esc(label)+'</div><div class="muted small" style="padding:8px">No army-specific stratagems loaded for this detachment.</div></div>';
-   return '<div class="stratagem-type-section"><div style="margin-top:5px">'+groups.map(g=>'<div class="stratagem-phase-group"><div class="stratagem-phase-heading">'+esc(g.phase==='Any Phase'?'Any Phase':g.phase+' Phase')+'</div>'+g.items.map(({s,i})=>'<details class="card stratagem-item" style="padding:0;margin-top:2px"><summary style="list-style:none;cursor:pointer;padding:3px 8px;user-select:none;margin:0"><div class="row" style="justify-content:space-between;align-items:center"><b>'+esc(s.name)+'</b><button class="pill stratagem-cp-btn '+(stratagemUsedThisPhase(side,s.name)?'stratagem-cp-used':'')+'" type="button" aria-pressed="'+(stratagemUsedThisPhase(side,s.name)?'true':'false')+'" data-stratagem-use="1" data-stratagem-side="'+side+'" data-stratagem-name="'+esc(s.name)+'" title="'+(stratagemUsedThisPhase(side,s.name)?'Stratagem already used this phase':'Use stratagem — '+stratagemCP(s)+' CP')+'">'+(stratagemUsedThisPhase(side,s.name)?'✓ ':'')+stratagemCP(s)+' CP</button></div></summary><div style="padding:0 8px 8px"><div class="muted small">'+esc(s.source)+(s.detachment?' · '+esc(s.detachment):'')+' · '+esc(s.phase)+'</div><div class="small" style="margin-top:4px">'+esc(s.summary||'')+'</div></div></details>').join('')+'</div>').join('')+'</div></div>';
-  };
-  return '<div class="card" style="padding:12px"><div class="muted small">'+esc(title)+'</div><div style="margin-top:4px"><b>Detachment: '+esc(cat.det||'None selected')+'</b></div>'+renderType(cat.army,'Army Stratagems','army')+renderType(cat.core,'Core Stratagems','core')+'</div>';
- };
- return '<details class="card" '+(state.stratagemsOpen===true?'open':'')+' ontoggle="state.stratagemsOpen=this.open;save()"><summary class="sectionTitle">Stratagems <span class="pill">11th Edition</span></summary><div class="muted small" style="margin-top:8px">Army and Core stratagems, grouped by phase.</div><div class="grid two" style="margin-top:10px">'+army('my','My Army')+army('opp','Opponent Army')+'</div></details>';
 }
 const ONOFORGE_RULES_DATA_PIN={schema:'onoforge.rules-data-pin.v1',unitSource:'BSData 11e',unitRevision:'current',unitRevisionDate:'',eventCompanion:'Warhammer Event Companion',eventCompanionVersion:'1.2',eventCompanionRevision:'1.2'};
 let state={
