@@ -702,6 +702,7 @@ body{overflow-x:hidden}
 <script src="js/state/stratagem-state.js"></script>
 <script src="js/state/game-timer-state.js"></script>
 <script src="js/state/phase-cp-state.js"></script>
+<script src="js/state/objective-control-history-state.js"></script>
 <script src="js/data/bsdata-parser.js"></script><script>
 const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;
 const {createReserveStateController}=window.OnoForgeReserveState;
@@ -722,6 +723,9 @@ const {ensureTransportEmbarkations,transportEntry,isUnitEmbarked,transportPassen
 const {createStratagemStateController}=window.OnoForgeStratagemState;
 const {createGameTimerStateController}=window.OnoForgeGameTimerState;
 const {createPhaseCPStateController}=window.OnoForgePhaseCPState;
+const {createObjectiveControlHistoryStateController}=window.OnoForgeObjectiveControlHistoryState;
+const objectiveControlHistoryStateController=createObjectiveControlHistoryStateController({getState:()=>state});
+const {ensureObjectiveControlHistory,objectivePreviousTurnKey,objectivePreviousTurnOwner}=objectiveControlHistoryStateController;
 const phaseCPStateController=createPhaseCPStateController({getState:()=>state});
 const {ensurePhaseCPState,phaseCPKey,rememberPhaseCP,restorePhaseCP}=phaseCPStateController;
 const gameTimerStateController=createGameTimerStateController({getState:()=>state});
@@ -6014,22 +6018,6 @@ function ensureObjectiveTurnSnapshot(){
   ensureObjectiveControlHistory();
   if(!state.objectiveControlHistory[key])state.objectiveControlHistory[key]={};
   return state.objectiveTurnStartOwners[key];
-}
-function ensureObjectiveControlHistory(){
-  if(!state.objectiveControlHistory||typeof state.objectiveControlHistory!=='object')state.objectiveControlHistory={};
-  return state.objectiveControlHistory;
-}
-function objectivePreviousTurnKey(){
-  const round=Math.max(1,Number(state.round)||1),turn=state.currentTurn==='opp'?'opp':'my',first=state.battleFirstTurn==='opp'?'opp':'my';
-  if(turn!==first)return round+'|'+first;
-  if(round<=1)return '';
-  return (round-1)+'|'+(first==='my'?'opp':'my');
-}
-function objectivePreviousTurnOwner(name){
-  const key=objectivePreviousTurnKey();
-  const record=key?ensureObjectiveControlHistory()[key]:null;
-  const item=record?.objectives?.[String(name||'')];
-  return item&&['my','opp','contested','none'].includes(item.owner)?item.owner:null;
 }
 function objectiveControlChangeType(name){
   const current=['my','opp','contested','none'].includes(state.objectives?.[name])?state.objectives[name]:'none';
