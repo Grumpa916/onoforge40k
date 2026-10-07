@@ -773,6 +773,7 @@ const {
 <script src="js/state/battle-end-state.js"></script>
 <script src="js/state/undo-snapshot-state.js"></script>
 <script src="js/state/game-timer-runtime-state.js"></script>
+<script src="js/state/undo-action-state.js"></script>
 <script src="js/state/game-reference-editor-state.js"></script>
 <script src="js/state/game-assistant-state.js"></script>
 <script src="js/state/tactical-pre-roll-state.js"></script>
@@ -1282,6 +1283,11 @@ const gameTimerRuntimeStateController=createGameTimerRuntimeStateController({
   setGameTimerInterval:value=>{gameTimerInterval=value}
 });
 const {syncGameTimerRuntime}=gameTimerRuntimeStateController;
+const {createUndoActionStateController}=window.OnoForgeUndoActionState;
+const undoActionStateController=createUndoActionStateController({
+  state,syncGameTimerRuntime,save,render,alert:window.alert
+});
+const {undoLastAction}=undoActionStateController;
 
 const PRIMARY_SCORING={
 "Battlefield Dominance":[["R1–2 • End of turn","2 VP","Control more objectives than your opponent"],["R2+ • Command phase / R5","3 VP","Per objective you control"],["R2+ • Command phase / R5","+2 VP","Per objective excluding home if you control your home objective"]],
@@ -4487,36 +4493,6 @@ function actionLabel(e){
 }
 function event(kind,payload,before){const p={...(payload||{})};if(!p.phase)p.phase=state.phase;if(!p.unit)p.unit=kind==='PHASE_CHANGED'?'Game':kind==='ROUND_CHANGED'?'Game':'Game';if(!p.action)p.action=actionLabel({kind,payload:p});const playerTurn=state.currentTurn==='opp'?'opp':'my';state.events.unshift({id:uid(),at:new Date().toISOString(),round:state.round,phase:state.phase,playerTurn,kind,payload:p,before:before||state._undoSnapshot||null});state.events=state.events.slice(0,100);state._undoSnapshot=null}
 
-function undoLastAction(){
-  const e=state.events[0];
-  if(!e){alert('No action to undo.');return}
-  if(!e.before){alert('This action has no reversible snapshot.');return}
-
-  // Stratagem use is a compound action: CP_CHANGED + STRATAGEM_USED share
-  // the same pre-action snapshot. Undo both together so the log and state
-  // return to exactly the point before the stratagem was clicked.
-  let removeCount=1;
-  if(e.kind==='STRATAGEM_USED'){
-    const p=e.payload||{};
-    const next=state.events[1];
-    const np=next?.payload||{};
-    const pairedCP=next?.kind==='CP_CHANGED'
-      && String(np.side||'')===String(p.side||'')
-      && Number(np.delta||0)===-Math.max(0,Number(p.cp)||0)
-      && next?.before;
-    if(pairedCP) removeCount=2;
-  }
-
-  const keepEvents=state.events.slice(removeCount);
-  const restored=JSON.parse(JSON.stringify(e.before));
-  restored.events=keepEvents;
-  restored._undoSnapshot=null;
-  Object.keys(state).forEach(k=>delete state[k]);
-  Object.assign(state,restored);
-  syncGameTimerRuntime();
-  save();
-  render();
-}
 
 function combatHistoryEvents(){
   return (state.events||[]).filter(e=>e&&(
