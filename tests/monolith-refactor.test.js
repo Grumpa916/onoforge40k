@@ -19,6 +19,7 @@ const objectiveControlSources=fs.readFileSync(path.join(root,'js/state/objective
 const secondaryRoundLedger=fs.readFileSync(path.join(root,'js/state/secondary-round-ledger-state.js'),'utf8');
 const scoreLedger=fs.readFileSync(path.join(root,'js/state/score-ledger-state.js'),'utf8');
 const secondaryScore=fs.readFileSync(path.join(root,'js/state/secondary-score-state.js'),'utf8');
+const scoreCalculation=fs.readFileSync(path.join(root,'js/state/score-calculation-state.js'),'utf8');
 const utils=fs.readFileSync(path.join(root,'js/utils/pure-utils.js'),'utf8');
 
 const required=[
@@ -37,6 +38,7 @@ const required=[
   '<script src="js/state/secondary-round-ledger-state.js"></script>',
   '<script src="js/state/score-ledger-state.js"></script>',
   '<script src="js/state/secondary-score-state.js"></script>',
+  '<script src="js/state/score-calculation-state.js"></script>',
   'const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;',
   'const {collectBSDataObjects,bsUnitFromEntry}=window.OnoForgeBSDataParser;',
   'const {createReserveStateController}=window.OnoForgeReserveState;',
@@ -59,7 +61,7 @@ for(const name of [
   'ensureGameTimer','gameTimerElapsed','turnElapsedMs','finalizeCurrentTurnTime','switchTurnClock',
   'ensurePhaseCPState','phaseCPKey','rememberPhaseCP','restorePhaseCP',
   'ensureObjectiveControlHistory','objectivePreviousTurnKey','objectivePreviousTurnOwner',
-  'ensureObjectiveControlSources','objectiveControlSourceIds','ensureSecondaryRoundLedger','ensureScoreLedger','secondaryTotalScoredVP'
+  'ensureObjectiveControlSources','objectiveControlSourceIds','ensureSecondaryRoundLedger','ensureScoreLedger','secondaryTotalScoredVP','scoreTotalForSide'
 ]){
   const count=(html.match(new RegExp('function\\s+'+name+'\\s*\\(','g'))||[]).length;
   if(count!==0)throw new Error('Extracted function still inline: '+name);
@@ -81,7 +83,7 @@ inlineBlocks.forEach((src,i)=>{
   fs.writeFileSync(file,src);
   cp.execFileSync(process.execPath,['--check',file],{stdio:'inherit'});
 });
-for(const [name,src] of [['bsdata-parser.js',parser],['pure-utils.js',utils],['reserve-state.js',reserve],['deployment-plan-state.js',deploymentPlan],['objective-map-state.js',objectiveMap],['objective-metadata-state.js',objectiveMetadata],['transport-state.js',transport],['stratagem-state.js',stratagem],['game-timer-state.js',gameTimer],['phase-cp-state.js',phaseCP],['objective-control-history-state.js',objectiveControlHistory],['objective-control-sources-state.js',objectiveControlSources],['secondary-round-ledger-state.js',secondaryRoundLedger],['score-ledger-state.js',scoreLedger],['secondary-score-state.js',secondaryScore]]){
+for(const [name,src] of [['bsdata-parser.js',parser],['pure-utils.js',utils],['reserve-state.js',reserve],['deployment-plan-state.js',deploymentPlan],['objective-map-state.js',objectiveMap],['objective-metadata-state.js',objectiveMetadata],['transport-state.js',transport],['stratagem-state.js',stratagem],['game-timer-state.js',gameTimer],['phase-cp-state.js',phaseCP],['objective-control-history-state.js',objectiveControlHistory],['objective-control-sources-state.js',objectiveControlSources],['secondary-round-ledger-state.js',secondaryRoundLedger],['score-ledger-state.js',scoreLedger],['secondary-score-state.js',secondaryScore],['score-calculation-state.js',scoreCalculation]]){
   const file=path.join('/tmp','onoforge-refactor-'+name);
   fs.writeFileSync(file,src);
   cp.execFileSync(process.execPath,['--check',file],{stdio:'inherit'});
@@ -103,6 +105,7 @@ vm.runInNewContext(objectiveControlSources,sandbox,{filename:'js/state/objective
 vm.runInNewContext(secondaryRoundLedger,sandbox,{filename:'js/state/secondary-round-ledger-state.js'});
 vm.runInNewContext(scoreLedger,sandbox,{filename:'js/state/score-ledger-state.js'});
 vm.runInNewContext(secondaryScore,sandbox,{filename:'js/state/secondary-score-state.js'});
+vm.runInNewContext(scoreCalculation,sandbox,{filename:'js/state/score-calculation-state.js'});
 if(typeof sandbox.window.OnoForgeBSDataParser?.collectBSDataObjects!=='function')throw new Error('Parser module did not expose collectBSDataObjects');
 if(typeof sandbox.window.OnoForgeBSDataParser?.bsUnitFromEntry!=='function')throw new Error('Parser module did not expose bsUnitFromEntry');
 if(typeof sandbox.window.OnoForgePureUtils?.battlefieldDistanceBetween!=='function')throw new Error('Utility module did not expose battlefieldDistanceBetween');
@@ -121,6 +124,7 @@ if(typeof sandbox.window.OnoForgeObjectiveControlSourcesState?.createObjectiveCo
 if(typeof sandbox.window.OnoForgeSecondaryRoundLedgerState?.createSecondaryRoundLedgerStateController!=='function')throw new Error('Secondary round ledger module did not expose createSecondaryRoundLedgerStateController');
 if(typeof sandbox.window.OnoForgeScoreLedgerState?.createScoreLedgerStateController!=='function')throw new Error('Score ledger module did not expose createScoreLedgerStateController');
 if(typeof sandbox.window.OnoForgeSecondaryScoreState?.createSecondaryScoreStateController!=='function')throw new Error('Secondary score module did not expose createSecondaryScoreStateController');
+if(typeof sandbox.window.OnoForgeScoreCalculationState?.createScoreCalculationStateController!=='function')throw new Error('Score calculation module did not expose createScoreCalculationStateController');
 
 const reserveState={page:'setup',my:[{uid:'u1',name:'Unit One'}],opp:[{uid:'u2',name:'Unit Two'}],reserveDeclarations:{my:{},opp:{}},battlefieldUnitPositions:{}};
 const reserveController=sandbox.window.OnoForgeReserveState.createReserveStateController({getState:()=>reserveState,snapshotForUndo:()=>({}),event:()=>{},save:()=>{},render:()=>{}});
@@ -288,6 +292,10 @@ if(scoreLedgerState.secondaryMyScoredVP.A!==10||scoreLedgerState.secondaryMyScor
 if(!scoreLedgerState.secondaryOppScoredVP||typeof scoreLedgerState.secondaryOppScoredVP!=='object'||Array.isArray(scoreLedgerState.secondaryOppScoredVP))throw new Error('Score ledger secondary initialization regression');
 if(scoreLedgerState.manualVPMy!==34||scoreLedgerState.manualVPOpp!==7)throw new Error('Score ledger manual VP derivation regression');
 if(scoreLedgerState.myVP!==99||scoreLedgerState.oppVP!==7)throw new Error('Score ledger total normalization regression');
+
+const scoreCalculationState={battleReadyMy:true,battleReadyOpp:false,primaryMyScoredVP:45,primaryOppScoredVP:10,secondaryMyScoredVP:{A:40},secondaryOppScoredVP:{A:5},manualVPMy:20,manualVPOpp:2};
+const scoreCalculationController=sandbox.window.OnoForgeScoreCalculationState.createScoreCalculationStateController({getState:()=>scoreCalculationState,ensureScoreLedger:()=>{},secondaryTotalScoredVP:(side)=>side==='my'?45:5});
+if(scoreCalculationController.scoreTotalForSide('my')!==100||scoreCalculationController.scoreTotalForSide('opp')!==17)throw new Error('Score total calculation regression');
 
 const objectiveMetadataState={objectiveMeta:{home:{type:'home',homeSide:'my'},central:{type:'central',territory:'nml'},expansion:{role:'expansion'}}};
 const objectiveMetadataController=sandbox.window.OnoForgeObjectiveMetadataState.createObjectiveMetadataStateController({getState:()=>objectiveMetadataState});
