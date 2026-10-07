@@ -26,6 +26,7 @@ const completeTerrainSetup=fs.readFileSync(path.join(root,'js/state/complete-ter
 const unitDatabase=fs.readFileSync(path.join(root,'js/state/unit-database-state.js'),'utf8');
 const savedArmyList=fs.readFileSync(path.join(root,'js/state/saved-army-list-state.js'),'utf8');
 const savedArmyListDeletion=fs.readFileSync(path.join(root,'js/state/saved-army-list-deletion-state.js'),'utf8');
+const currentMyListSnapshot=fs.readFileSync(path.join(root,'js/state/current-my-list-snapshot-state.js'),'utf8');
 const transport=fs.readFileSync(path.join(root,'js/state/transport-state.js'),'utf8');
 const transportDeclarationSection=fs.readFileSync(path.join(root,'js/state/transport-declaration-section-state.js'),'utf8');
 const stratagem=fs.readFileSync(path.join(root,'js/state/stratagem-state.js'),'utf8');
@@ -76,6 +77,7 @@ const required=[
   '<script src="js/state/unit-database-state.js"></script>',
   '<script src="js/state/saved-army-list-state.js"></script>',
   '<script src="js/state/saved-army-list-deletion-state.js"></script>',
+  '<script src="js/state/current-my-list-snapshot-state.js"></script>',
   '<script src="js/state/objective-metadata-state.js"></script>',
   '<script src="js/state/transport-state.js"></script>',
   '<script src="js/state/transport-declaration-section-state.js"></script>',
@@ -130,7 +132,7 @@ for(const name of [
   'ensureGameTimer','gameTimerElapsed','turnElapsedMs','finalizeCurrentTurnTime','switchTurnClock',
   'ensurePhaseCPState','phaseCPKey','rememberPhaseCP','restorePhaseCP',
   'ensureObjectiveControlHistory','objectivePreviousTurnKey','objectivePreviousTurnOwner',
-  'ensureObjectiveControlSources','objectiveControlSourceIds','ensureSecondaryRoundLedger','ensureScoreLedger','secondaryTotalScoredVP','scoreTotalForSide','armyNoMansLandTagsHtml','objectiveMapPlacementPanelHtml','objectiveMapRendererHtml','completeTerrainSetup','unitDatabase','canonicalUnitDatabase','bootstrapUnitDatabase','mergeSupplementalUnits','saveCurrentArmyList','loadSavedArmyList','deleteSavedArmyList','undoDeletedSavedArmyList','reserveTrayHtml','deploymentPlanMapControlsHtml','transportDeclarationSectionHtml','objectiveLayoutHtml','reserveDeclarationSectionHtml','deploymentPlanPositionEditorHtml','deploymentTrackingEditorHtml','deploymentTrackingControlsHtml'
+  'ensureObjectiveControlSources','objectiveControlSourceIds','ensureSecondaryRoundLedger','ensureScoreLedger','secondaryTotalScoredVP','scoreTotalForSide','armyNoMansLandTagsHtml','objectiveMapPlacementPanelHtml','objectiveMapRendererHtml','completeTerrainSetup','unitDatabase','canonicalUnitDatabase','bootstrapUnitDatabase','mergeSupplementalUnits','saveCurrentArmyList','loadSavedArmyList','deleteSavedArmyList','undoDeletedSavedArmyList','currentMyListSnapshot','reserveTrayHtml','deploymentPlanMapControlsHtml','transportDeclarationSectionHtml','objectiveLayoutHtml','reserveDeclarationSectionHtml','deploymentPlanPositionEditorHtml','deploymentTrackingEditorHtml','deploymentTrackingControlsHtml'
 ]){
   const count=(html.match(new RegExp('function\s+'+name+'\s*\\(','g'))||[]).length;
   if(count!==0)throw new Error('Extracted function still inline: '+name);
@@ -181,6 +183,7 @@ vm.runInNewContext(completeTerrainSetup,sandbox,{filename:'js/state/complete-ter
 vm.runInNewContext(unitDatabase,sandbox,{filename:'js/state/unit-database-state.js'});
 vm.runInNewContext(savedArmyList,sandbox,{filename:'js/state/saved-army-list-state.js'});
 vm.runInNewContext(savedArmyListDeletion,sandbox,{filename:'js/state/saved-army-list-deletion-state.js'});
+vm.runInNewContext(currentMyListSnapshot,sandbox,{filename:'js/state/current-my-list-snapshot-state.js'});
 vm.runInNewContext(transport,sandbox,{filename:'js/state/transport-state.js'});
 vm.runInNewContext(transportDeclarationSection,sandbox,{filename:'js/state/transport-declaration-section-state.js'});
 vm.runInNewContext(stratagem,sandbox,{filename:'js/state/stratagem-state.js'});
@@ -226,6 +229,7 @@ if(typeof sandbox.window.OnoForgeCompleteTerrainSetupState?.createCompleteTerrai
 if(typeof sandbox.window.OnoForgeUnitDatabaseState?.createUnitDatabaseStateController!=='function')throw new Error('Unit database module did not expose createUnitDatabaseStateController');
 if(typeof sandbox.window.OnoForgeSavedArmyListState?.createSavedArmyListStateController!=='function')throw new Error('Saved army list module did not expose createSavedArmyListStateController');
 if(typeof sandbox.window.OnoForgeSavedArmyListDeletionState?.createSavedArmyListDeletionStateController!=='function')throw new Error('Saved army list deletion module did not expose createSavedArmyListDeletionStateController');
+if(typeof sandbox.window.OnoForgeCurrentMyListSnapshotState?.createCurrentMyListSnapshotStateController!=='function')throw new Error('Current my list snapshot module did not expose createCurrentMyListSnapshotStateController');
 if(typeof sandbox.window.OnoForgeObjectiveLayoutState?.createObjectiveLayoutStateController!=='function')throw new Error('Objective layout module did not expose createObjectiveLayoutStateController');
 if(typeof sandbox.window.OnoForgeReserveDeclarationSectionState?.createReserveDeclarationSectionStateController!=='function')throw new Error('Reserve declaration section module did not expose createReserveDeclarationSectionStateController');
 if(typeof sandbox.window.OnoForgePrimaryObjectiveQualifyingListState?.createPrimaryObjectiveQualifyingListStateController!=='function')throw new Error('Primary objective qualifying list module did not expose createPrimaryObjectiveQualifyingListStateController');
@@ -365,6 +369,11 @@ if(armyListState.savedArmyLists.length!==1||armyListState.savedArmyLists[0].name
 if(armySaves!==1||armyRenders!==1||armyCloud!==1)throw new Error('Saved army list save regression');
 armyListState.my=[];armyListController.loadSavedArmyList('list1');
 if(armyListState.my[0]?.uid!=='u1'||armyListState.detachment!=='Gladius'||armyListState.activeRosterId!=='list1'||armyListState.savedMyListSnapshot?.snapshot!==true)throw new Error('Saved army list load regression');
+
+const snapshotState={myName:'  My Army  ',faction:'Ultramarines',detachment:'Gladius',detachmentSelections:['Gladius'],limit:0,my:[{uid:'u1'}]};
+const snapshotController=sandbox.window.OnoForgeCurrentMyListSnapshotState.createCurrentMyListSnapshotStateController({getState:()=>snapshotState});
+const snapshot=JSON.parse(snapshotController.currentMyListSnapshot());
+if(snapshot.name!=='My Army'||snapshot.faction!=='Ultramarines'||snapshot.limit!==2000||snapshot.detachmentSelections[0]!=='Gladius'||snapshot.units[0].uid!=='u1')throw new Error('Current army list snapshot regression');
 
 const deletionState={savedArmyLists:[{id:'list1',name:'List One'}],deletedSavedArmyLists:[]};
 let deletionSaves=0,deletionRenders=0,deletionCloudDeletes=0,deletionCloudUpserts=0;
