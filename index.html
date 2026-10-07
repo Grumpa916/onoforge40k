@@ -719,7 +719,8 @@ body{overflow-x:hidden}
 <script src="js/state/complete-terrain-setup-state.js"></script>
 <script src="js/state/unit-database-state.js"></script>
 <script src="js/state/saved-army-list-state.js"></script>
-<script src="js/state/saved-army-list-deletion-state.js"></script><script src="js/state/terrain-reference-image-state.js"></script><script src="js/state/objective-geometry-identity-state.js"></script><script src="js/state/objective-tracked-identity-state.js"></script><script src="js/state/objective-canonical-label-state.js"></script><script src="js/state/objective-map-entries-state.js"></script><script src="js/state/primary-scoring-preview-summary-state.js"></script><script src="js/state/primary-scoring-html-state.js"></script><script src="js/state/primary-scoring-catalogue-audit-state.js"></script><script src="js/state/event-companion-map-regression-audit-state.js"></script>
+<script src="js/state/saved-army-list-deletion-state.js"></script>
+<script src="js/state/current-my-list-snapshot-state.js"></script><script src="js/state/terrain-reference-image-state.js"></script><script src="js/state/objective-geometry-identity-state.js"></script><script src="js/state/objective-tracked-identity-state.js"></script><script src="js/state/objective-canonical-label-state.js"></script><script src="js/state/objective-map-entries-state.js"></script><script src="js/state/primary-scoring-preview-summary-state.js"></script><script src="js/state/primary-scoring-html-state.js"></script><script src="js/state/primary-scoring-catalogue-audit-state.js"></script><script src="js/state/event-companion-map-regression-audit-state.js"></script>
 <script src="js/data/bsdata-parser.js"></script><script>
 const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;
 const {createReserveStateController}=window.OnoForgeReserveState;
@@ -940,6 +941,9 @@ const {saveCurrentArmyList,loadSavedArmyList}=savedArmyListStateController;
 const {createSavedArmyListDeletionStateController}=window.OnoForgeSavedArmyListDeletionState;
 const savedArmyListDeletionStateController=createSavedArmyListDeletionStateController({getState:()=>state,isPermanentSampleArmy,save,render,cloudDeleteArmyList,cloudUpsertArmyList});
 const {deleteSavedArmyList,undoDeletedSavedArmyList}=savedArmyListDeletionStateController;
+const {createCurrentMyListSnapshotStateController}=window.OnoForgeCurrentMyListSnapshotState;
+const currentMyListSnapshotStateController=createCurrentMyListSnapshotStateController({getState:()=>state});
+const {currentMyListSnapshot}=currentMyListSnapshotStateController;
 const {createPrimaryScorePreviewSummaryStateController}=window.OnoForgePrimaryScorePreviewSummaryState;
 const primaryScoringPreviewSummaryStateController=createPrimaryScorePreviewSummaryStateController({getState:()=>state,primaryScoringRowsForRound,primaryRoundCapRemaining,primaryScoringEvidence});
 const {primaryScorePreviewSummary}=primaryScoringPreviewSummaryStateController;
@@ -4123,10 +4127,7 @@ function builder(){
    <div class="row" style="margin-top:10px"><div class="field"><label>Points Limit</label><input type="number" value="${state.limit}" onchange="state.limit=+this.value||2000;save();render()"></div><div class="field"><label>My Points</label><div class="metric">${total('my')} / ${state.limit}</div></div></div>
  </div>
  <div class="card"><h2>My List <span class="big">${total('my')} pts</span></h2>${state.my.length?armyListDisplayEntries('my').map(e=>unitRow('my',e,true)).join(''):'<div class="empty">No units added.</div>'}</div>
- <div class="card"><div class="split"><h3 style="margin:0">Add My Units</h3><button class="btn" type="button" onclick="refreshCurrentUnitDatabase(true)">Refresh BSData Cross-Check</button></div><div id="my-unit-results">${renderUnitSections(myCat,'my')}</div></div>${configureModal()}${leaderAttachmentModal()}${bodyguardAttachmentModal()}${supportAttachmentModal()}${supportBodyguardAttachmentModal()}`
-}
-function currentMyListSnapshot(){
-  return JSON.stringify({
+ <div class="card"><div class="split"><h3 style="margin:0">Add My Unn JSON.stringify({
     name:String(state.myName||'').trim(),
     faction:String(state.faction||''),
     detachment:String(state.detachment||''),
