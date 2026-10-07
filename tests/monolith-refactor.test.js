@@ -12,6 +12,7 @@ const objectiveMap=fs.readFileSync(path.join(root,'js/state/objective-map-state.
 const objectiveMetadata=fs.readFileSync(path.join(root,'js/state/objective-metadata-state.js'),'utf8');
 const transport=fs.readFileSync(path.join(root,'js/state/transport-state.js'),'utf8');
 const stratagem=fs.readFileSync(path.join(root,'js/state/stratagem-state.js'),'utf8');
+const gameTimer=fs.readFileSync(path.join(root,'js/state/game-timer-state.js'),'utf8');
 const utils=fs.readFileSync(path.join(root,'js/utils/pure-utils.js'),'utf8');
 
 const required=[
@@ -23,6 +24,7 @@ const required=[
   '<script src="js/state/objective-metadata-state.js"></script>',
   '<script src="js/state/transport-state.js"></script>',
   '<script src="js/state/stratagem-state.js"></script>',
+  '<script src="js/state/game-timer-state.js"></script>',
   'const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;',
   'const {collectBSDataObjects,bsUnitFromEntry}=window.OnoForgeBSDataParser;',
   'const {createReserveStateController}=window.OnoForgeReserveState;',
@@ -41,7 +43,8 @@ for(const name of [
   'objectiveMissionKey','objectiveLayoutInfo','ensureObjectiveLayoutForMission','setObjectiveMapLayout','objectiveLayoutPage',
   'ensureObjectiveMeta','objectiveRole','objectiveType','objectiveHomeSide','objectiveMetadataTerritory','objectiveMetadataDeploymentZone',
   'ensureTransportEmbarkations','transportEntry','isUnitEmbarked','transportPassengers','clearTransportEmbarkation','setTransportEmbarkation',
-  'ensureStratagemState','stratagemUseHistory','stratagemUsedThisPhase','resetStratagemPhaseUses','stratagemUsedThisBattle','armyStratagemDetachment'
+  'ensureStratagemState','stratagemUseHistory','stratagemUsedThisPhase','resetStratagemPhaseUses','stratagemUsedThisBattle','armyStratagemDetachment',
+  'ensureGameTimer','gameTimerElapsed','turnElapsedMs','finalizeCurrentTurnTime','switchTurnClock'
 ]){
   const count=(html.match(new RegExp('function\\s+'+name+'\\s*\\(','g'))||[]).length;
   if(count!==0)throw new Error('Extracted function still inline: '+name);
@@ -63,7 +66,7 @@ inlineBlocks.forEach((src,i)=>{
   fs.writeFileSync(file,src);
   cp.execFileSync(process.execPath,['--check',file],{stdio:'inherit'});
 });
-for(const [name,src] of [['bsdata-parser.js',parser],['pure-utils.js',utils],['reserve-state.js',reserve],['deployment-plan-state.js',deploymentPlan],['objective-map-state.js',objectiveMap],['objective-metadata-state.js',objectiveMetadata],['transport-state.js',transport],['stratagem-state.js',stratagem]]){
+for(const [name,src] of [['bsdata-parser.js',parser],['pure-utils.js',utils],['reserve-state.js',reserve],['deployment-plan-state.js',deploymentPlan],['objective-map-state.js',objectiveMap],['objective-metadata-state.js',objectiveMetadata],['transport-state.js',transport],['stratagem-state.js',stratagem],['game-timer-state.js',gameTimer]]){
   const file=path.join('/tmp','onoforge-refactor-'+name);
   fs.writeFileSync(file,src);
   cp.execFileSync(process.execPath,['--check',file],{stdio:'inherit'});
@@ -78,6 +81,7 @@ vm.runInNewContext(objectiveMap,sandbox,{filename:'js/state/objective-map-state.
 vm.runInNewContext(objectiveMetadata,sandbox,{filename:'js/state/objective-metadata-state.js'});
 vm.runInNewContext(transport,sandbox,{filename:'js/state/transport-state.js'});
 vm.runInNewContext(stratagem,sandbox,{filename:'js/state/stratagem-state.js'});
+vm.runInNewContext(gameTimer,sandbox,{filename:'js/state/game-timer-state.js'});
 if(typeof sandbox.window.OnoForgeBSDataParser?.collectBSDataObjects!=='function')throw new Error('Parser module did not expose collectBSDataObjects');
 if(typeof sandbox.window.OnoForgeBSDataParser?.bsUnitFromEntry!=='function')throw new Error('Parser module did not expose bsUnitFromEntry');
 if(typeof sandbox.window.OnoForgePureUtils?.battlefieldDistanceBetween!=='function')throw new Error('Utility module did not expose battlefieldDistanceBetween');
@@ -89,6 +93,7 @@ if(typeof sandbox.window.OnoForgeObjectiveMapState?.createObjectiveMapStateContr
 if(typeof sandbox.window.OnoForgeObjectiveMetadataState?.createObjectiveMetadataStateController!=='function')throw new Error('Objective metadata module did not expose createObjectiveMetadataStateController');
 if(typeof sandbox.window.OnoForgeTransportState?.createTransportStateController!=='function')throw new Error('Transport module did not expose createTransportStateController');
 if(typeof sandbox.window.OnoForgeStratagemState?.createStratagemStateController!=='function')throw new Error('Stratagem module did not expose createStratagemStateController');
+if(typeof sandbox.window.OnoForgeGameTimerState?.createGameTimerStateController!=='function')throw new Error('Game timer module did not expose createGameTimerStateController');
 
 const reserveState={page:'setup',my:[{uid:'u1',name:'Unit One'}],opp:[{uid:'u2',name:'Unit Two'}],reserveDeclarations:{my:{},opp:{}},battlefieldUnitPositions:{}};
 const reserveController=sandbox.window.OnoForgeReserveState.createReserveStateController({getState:()=>reserveState,snapshotForUndo:()=>({}),event:()=>{},save:()=>{},render:()=>{}});
@@ -188,6 +193,19 @@ if(stratagemController.armyStratagemDetachment('my')!=='Space Marines — Gladiu
 if(stratagemController.armyStratagemDetachment('opp')!=='Tyranids — Opponent Fallback')throw new Error('Opponent stratagem detachment fallback regression');
 stratagemController.resetStratagemPhaseUses();
 if(stratagemState.stratagemPhaseUsesMy.length!==0||stratagemState.stratagemPhaseUsesOpp.length!==0)throw new Error('Stratagem phase reset regression');
+
+const gameTimerState={currentTurn:'my',gameTimer:{elapsedMs:12000,running:false,paused:false,startedAt:0,pausedAt:0,finishedAt:0,turnMyMs:3000,turnOppMs:5000,turnStartedGameMs:9000,turnPaused:false}};
+const gameTimerController=sandbox.window.OnoForgeGameTimerState.createGameTimerStateController({getState:()=>gameTimerState});
+if(gameTimerController.gameTimerElapsed()!==12000)throw new Error('Game timer elapsed regression');
+if(gameTimerController.turnElapsedMs('opp')!==5000)throw new Error('Inactive turn timer regression');
+if(gameTimerController.turnElapsedMs('my')!==6000)throw new Error('Saved active turn timer regression');
+gameTimerController.finalizeCurrentTurnTime();
+if(gameTimerState.gameTimer.turnMyMs!==6000||gameTimerState.gameTimer.turnStartedGameMs!==12000)throw new Error('Turn timer finalization regression');
+gameTimerController.switchTurnClock('opp');
+if(gameTimerState.currentTurn!=='opp'||gameTimerState.gameTimer.turnStartedGameMs!==12000)throw new Error('Turn clock switch regression');
+const initializedTimer={};
+const initializedTimerController=sandbox.window.OnoForgeGameTimerState.createGameTimerStateController({getState:()=>initializedTimer});
+if(initializedTimerController.ensureGameTimer().turnMyMs!==0||initializedTimerController.ensureGameTimer().turnOppMs!==0)throw new Error('Game timer initialization regression');
 
 const objectiveMetadataState={objectiveMeta:{home:{type:'home',homeSide:'my'},central:{type:'central',territory:'nml'},expansion:{role:'expansion'}}};
 const objectiveMetadataController=sandbox.window.OnoForgeObjectiveMetadataState.createObjectiveMetadataStateController({getState:()=>objectiveMetadataState});
