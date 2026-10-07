@@ -13,6 +13,7 @@ const objectiveMetadata=fs.readFileSync(path.join(root,'js/state/objective-metad
 const transport=fs.readFileSync(path.join(root,'js/state/transport-state.js'),'utf8');
 const stratagem=fs.readFileSync(path.join(root,'js/state/stratagem-state.js'),'utf8');
 const gameTimer=fs.readFileSync(path.join(root,'js/state/game-timer-state.js'),'utf8');
+const phaseCP=fs.readFileSync(path.join(root,'js/state/phase-cp-state.js'),'utf8');
 const utils=fs.readFileSync(path.join(root,'js/utils/pure-utils.js'),'utf8');
 
 const required=[
@@ -25,6 +26,7 @@ const required=[
   '<script src="js/state/transport-state.js"></script>',
   '<script src="js/state/stratagem-state.js"></script>',
   '<script src="js/state/game-timer-state.js"></script>',
+  '<script src="js/state/phase-cp-state.js"></script>',
   'const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;',
   'const {collectBSDataObjects,bsUnitFromEntry}=window.OnoForgeBSDataParser;',
   'const {createReserveStateController}=window.OnoForgeReserveState;',
@@ -44,7 +46,8 @@ for(const name of [
   'ensureObjectiveMeta','objectiveRole','objectiveType','objectiveHomeSide','objectiveMetadataTerritory','objectiveMetadataDeploymentZone',
   'ensureTransportEmbarkations','transportEntry','isUnitEmbarked','transportPassengers','clearTransportEmbarkation','setTransportEmbarkation',
   'ensureStratagemState','stratagemUseHistory','stratagemUsedThisPhase','resetStratagemPhaseUses','stratagemUsedThisBattle','armyStratagemDetachment',
-  'ensureGameTimer','gameTimerElapsed','turnElapsedMs','finalizeCurrentTurnTime','switchTurnClock'
+  'ensureGameTimer','gameTimerElapsed','turnElapsedMs','finalizeCurrentTurnTime','switchTurnClock',
+  'ensurePhaseCPState','phaseCPKey','rememberPhaseCP','restorePhaseCP'
 ]){
   const count=(html.match(new RegExp('function\\s+'+name+'\\s*\\(','g'))||[]).length;
   if(count!==0)throw new Error('Extracted function still inline: '+name);
@@ -66,7 +69,7 @@ inlineBlocks.forEach((src,i)=>{
   fs.writeFileSync(file,src);
   cp.execFileSync(process.execPath,['--check',file],{stdio:'inherit'});
 });
-for(const [name,src] of [['bsdata-parser.js',parser],['pure-utils.js',utils],['reserve-state.js',reserve],['deployment-plan-state.js',deploymentPlan],['objective-map-state.js',objectiveMap],['objective-metadata-state.js',objectiveMetadata],['transport-state.js',transport],['stratagem-state.js',stratagem],['game-timer-state.js',gameTimer]]){
+for(const [name,src] of [['bsdata-parser.js',parser],['pure-utils.js',utils],['reserve-state.js',reserve],['deployment-plan-state.js',deploymentPlan],['objective-map-state.js',objectiveMap],['objective-metadata-state.js',objectiveMetadata],['transport-state.js',transport],['stratagem-state.js',stratagem],['game-timer-state.js',gameTimer],['phase-cp-state.js',phaseCP]]){
   const file=path.join('/tmp','onoforge-refactor-'+name);
   fs.writeFileSync(file,src);
   cp.execFileSync(process.execPath,['--check',file],{stdio:'inherit'});
@@ -82,6 +85,7 @@ vm.runInNewContext(objectiveMetadata,sandbox,{filename:'js/state/objective-metad
 vm.runInNewContext(transport,sandbox,{filename:'js/state/transport-state.js'});
 vm.runInNewContext(stratagem,sandbox,{filename:'js/state/stratagem-state.js'});
 vm.runInNewContext(gameTimer,sandbox,{filename:'js/state/game-timer-state.js'});
+vm.runInNewContext(phaseCP,sandbox,{filename:'js/state/phase-cp-state.js'});
 if(typeof sandbox.window.OnoForgeBSDataParser?.collectBSDataObjects!=='function')throw new Error('Parser module did not expose collectBSDataObjects');
 if(typeof sandbox.window.OnoForgeBSDataParser?.bsUnitFromEntry!=='function')throw new Error('Parser module did not expose bsUnitFromEntry');
 if(typeof sandbox.window.OnoForgePureUtils?.battlefieldDistanceBetween!=='function')throw new Error('Utility module did not expose battlefieldDistanceBetween');
@@ -94,6 +98,7 @@ if(typeof sandbox.window.OnoForgeObjectiveMetadataState?.createObjectiveMetadata
 if(typeof sandbox.window.OnoForgeTransportState?.createTransportStateController!=='function')throw new Error('Transport module did not expose createTransportStateController');
 if(typeof sandbox.window.OnoForgeStratagemState?.createStratagemStateController!=='function')throw new Error('Stratagem module did not expose createStratagemStateController');
 if(typeof sandbox.window.OnoForgeGameTimerState?.createGameTimerStateController!=='function')throw new Error('Game timer module did not expose createGameTimerStateController');
+if(typeof sandbox.window.OnoForgePhaseCPState?.createPhaseCPStateController!=='function')throw new Error('Phase CP module did not expose createPhaseCPStateController');
 
 const reserveState={page:'setup',my:[{uid:'u1',name:'Unit One'}],opp:[{uid:'u2',name:'Unit Two'}],reserveDeclarations:{my:{},opp:{}},battlefieldUnitPositions:{}};
 const reserveController=sandbox.window.OnoForgeReserveState.createReserveStateController({getState:()=>reserveState,snapshotForUndo:()=>({}),event:()=>{},save:()=>{},render:()=>{}});
@@ -206,6 +211,19 @@ if(gameTimerState.currentTurn!=='opp'||gameTimerState.gameTimer.turnStartedGameM
 const initializedTimer={};
 const initializedTimerController=sandbox.window.OnoForgeGameTimerState.createGameTimerStateController({getState:()=>initializedTimer});
 if(initializedTimerController.ensureGameTimer().turnMyMs!==0||initializedTimerController.ensureGameTimer().turnOppMs!==0)throw new Error('Game timer initialization regression');
+
+const phaseCPState={round:2,currentTurn:'my',phase:'Shooting',myCP:5,oppCP:3};
+const phaseCPController=sandbox.window.OnoForgePhaseCPState.createPhaseCPStateController({getState:()=>phaseCPState});
+phaseCPController.ensurePhaseCPState();
+if(phaseCPController.phaseCPKey(2,'my','Shooting')!=='2|my|Shooting')throw new Error('Phase CP key regression');
+phaseCPController.rememberPhaseCP();
+if(phaseCPState.phaseCP['2|my|Shooting']?.my!==5||phaseCPState.phaseCP['2|my|Shooting']?.opp!==3)throw new Error('Phase CP remember regression');
+phaseCPState.myCP=0;phaseCPState.oppCP=0;
+phaseCPController.restorePhaseCP(2,'my','Shooting');
+if(phaseCPState.myCP!==5||phaseCPState.oppCP!==3)throw new Error('Phase CP restore regression');
+phaseCPState.myCP=7;phaseCPState.oppCP=4;
+phaseCPController.restorePhaseCP(3,'opp','Command');
+if(phaseCPState.myCP!==7||phaseCPState.oppCP!==4||!phaseCPState.phaseCP['3|opp|Command'])throw new Error('Phase CP missing-key initialization regression');
 
 const objectiveMetadataState={objectiveMeta:{home:{type:'home',homeSide:'my'},central:{type:'central',territory:'nml'},expansion:{role:'expansion'}}};
 const objectiveMetadataController=sandbox.window.OnoForgeObjectiveMetadataState.createObjectiveMetadataStateController({getState:()=>objectiveMetadataState});
