@@ -1474,14 +1474,7 @@ function primaryScoreAdjust(side,index,mission,direction){
     scorePrimaryItem(side,index,mission);
   }
 }
-function primaryMissionRulesHtml(mission,side){
-  const rows=PRIMARY_SCORING[mission]||[];
-  if(!rows.length)return '<div class="muted small">Full mission rules are not loaded.</div>';
-  return '<details class="primary-full-rules"><summary><span>▣</span><strong>Full Mission Rules</strong><span class="primary-rules-toggle">Show</span></summary>'+
-    '<div class="primary-full-rules-body"><div class="primary-rules-title">'+esc(mission)+'</div>'+
-    '<div class="muted small">All scoring conditions for this Primary Mission.</div>'+
-    '<div class="primary-rules-list">'+rows.map(r=>'<div class="primary-rule-line"><span class="primary-rule-timing">'+esc(r[0])+'</span><strong>'+esc(r[1])+'</strong><span>'+esc(r[2])+'</span></div>').join('')+'</div></div></details>';
-}
+
 function primaryMissionDetailsHtml(mission,side){
   syncPrimaryScoringRound();
   const rows=primaryScoringRowsForRound(mission);
@@ -1851,6 +1844,19 @@ const ONOFORGE_RULES_DATA_PIN={schema:'onoforge.rules-data-pin.v1',unitSource:'B
 let state={
   savedArmyLists:[],tournamentLifecycle:'SETUP',battleResultLocked:false,battleResultVerified:false,battleResultVerifiedAt:null,
   stratagemsMy:[], stratagemsOpp:[], stratagemsOpen:false,primaryMissionsOpen:false,secondaryMissionsOpen:false,page:'builder',myName:'My Army',oppName:'Opponent Army',faction:'Tyranids',detachment:'Invasion Fleet',detachmentSelections:['Invasion Fleet'],oppFaction:'Ultramarines',oppDetachment:'Gladius Task Force',oppDetachmentSelections:['Gladius Task Force'],limit:2000,my:[],opp:[],searchMy:'',searchOpp:'',configure:null,attacker:'norn',weapon:'Rupture Cannon',target:'marine',round:1,phase:'Command',myVP:0,oppVP:0,myCP:0,oppCP:0,phaseCP:{},battleReadyMy:false,battleReadyOpp:false,secondaryMy:'tactical',secondaryOpp:'tactical',secondaryMyCards:[],secondaryOppCards:[],secondaryMyDeck:[],secondaryOppDeck:[],secondaryMyDeckInitialized:false,secondaryOppDeckInitialized:false,secondaryMyDiscard:[],secondaryOppDiscard:[],newOrdersCompletedMy:false,newOrdersCompletedOpp:false,secondaryMyScored:[],secondaryOppScored:[],secondaryMyScoredVP:{},secondaryOppScoredVP:{},secondaryMyScoredVPByRound:{},secondaryOppScoredVPByRound:{},secondaryMyScoredRound:{},secondaryOppScoredRound:{},secondaryNewOrdersUsedMy:false,secondaryNewOrdersUsedOpp:false,secondaryPersonalPlans:{},secondaryPlanEdit:'',secondaryDetailSide:'',secondaryDetailName:'',gameReferencePersonal:{},rulesDataPin:null,myForceDisposition:'',oppForceDisposition:'',attackerSide:'my',firstTurn:'my',currentTurn:'my',objectives:{},objectiveMapLayout:'A',objectiveMapMissionKey:'',terrainSetupComplete:false,deletedSavedArmyLists:[],objectiveControlHistory:{},objectiveControlSources:{},objectiveMeta:{},deploymentTrackingSide:'my',deploymentSkippedUnits:{},battlefieldUnitPositions:{},deploymentMapPlacement:null,battlefieldMapPlacement:null,reserveDeclarations:{my:{},opp:{}},events:[],gameAssistantChecks:{},gameAssistantNotes:'',personalArmyNotes:'',lists:[],activeRosterId:'',activeOpponentRosterId:'',dataStatus:'BSData 11e structured source • embedded catalogue bootstrap fallback',source:'BSData 11e',revision:'current',cloud:{email:'',userId:'',status:'Not connected',lastSync:'',error:''},cloudBattles:[],rulesLog:[],mathRules:{},gameTimer:{elapsedMs:0,running:false,paused:false,startedAt:0,pausedAt:0,finishedAt:0,turnMyMs:0,turnOppMs:0,turnStartedGameMs:0,turnPaused:false},cloudPasswordRecovery:false,localSavedAt:''};
+const {createBattleEndSummaryStateController}=window.OnoForgeBattleEndSummaryState;
+const battleEndSummaryStateController=createBattleEndSummaryStateController({scoreTotalForSide,secondaryTotalScoredVP,esc,objectiveMissionKey,reserveUnitsForSide,getState:()=>state});
+const {battleEndSummaryHtml}=battleEndSummaryStateController;
+const {createPrimaryMissionRulesStateController}=window.OnoForgePrimaryMissionRulesState;
+const primaryMissionRulesStateController=createPrimaryMissionRulesStateController({getPrimaryScoring:()=>PRIMARY_SCORING,esc});
+const {primaryMissionRulesHtml}=primaryMissionRulesStateController;
+const {createGameReferenceEditorStateController}=window.OnoForgeGameReferenceEditorState;
+const gameReferenceEditorStateController=createGameReferenceEditorStateController({ensurePersonalArmyNotes,esc});
+const {gameReferenceEditorHtml}=gameReferenceEditorStateController;
+const {createGameAssistantStateController}=window.OnoForgeGameAssistantState;
+const gameAssistantStateController=createGameAssistantStateController({getState:()=>state,primaryMission,esc});
+const {gameAssistantHtml}=gameAssistantStateController;
+
 Object.defineProperty(window,'ONOFORGE_APP_STATE',{configurable:true,get:function(){return state;}});
 
 const GAME_REFERENCE_PHASES={Command:[],Movement:[],Shooting:[],Charge:[],Fight:[],End:[]};
@@ -1900,10 +1906,7 @@ function ensureGameReferencePersonal(){
   return state.gameReferencePersonal;
 }
 function gameReferencePersonalForBattle(){return {phases:{Command:[],Movement:[],Shooting:[],Charge:[],Fight:[],End:[]},quick:[],primary:[],custom:''};}
-function gameReferenceEditorHtml(){
-  const notes=ensurePersonalArmyNotes();
-  return '<div class="card game-reference-editor"><div class="split"><div><h3 style="margin:0">Personal Army Notes</h3><div class="muted" style="margin-top:4px">Private notes associated with the currently selected army list. Rules and tactical recommendations are generated by the Tactical Advisor instead.</div></div></div><div class="field" style="margin-top:12px"><textarea rows="7" placeholder="Add your own reminders, matchup observations, deployment ideas, or game notes..." onchange="updatePersonalArmyNotes(this.value)">'+esc(notes)+'</textarea></div></div>';
-}
+
 const SECONDARY_CARDS=[
  {name:'A Grievous Blow',fixed:true,type:'Destroy enemy units with Starting Strength 13+',cardNumber:1},
  {name:'A Tempting Target',fixed:false,type:'Control the opponent-selected No Man’s Land objective',cardNumber:2},
@@ -2003,17 +2006,7 @@ const SECONDARY_RULE_META={
 };
 const SECONDARY_RULES_SOURCE={edition:'11th',missionDeck:'Chapter Approved 2026-27',eventCompanion:'Warhammer Event Companion v1.0',verified:'2026-09-25',sourceUrl:'https://assets.warhammer-community.com/eng_12-06_warhammer40000_event_companion-s3bfb5f9s1-ivswuij3fo.pdf'};
 
-function gameAssistantHtml(){
- const phase=state.phase||'Command';
- const player=state.currentTurn==='opp'?state.oppName:state.myName;
- const primary=primaryMission('my')||'Not selected';
- return '<details class="card game-assistant-card game-assistant-minimal" '+(state.gameAssistantOpen!==false?'open':'')+' ontoggle="state.gameAssistantOpen=this.open;save()">'+
-  '<summary><div class="split"><div><h3>Game Assistant</h3></div><div class="pill">R'+esc(state.round||1)+' • '+esc(phase)+' • '+esc(player)+'</div></div></summary>'+
-  '<div class="game-assistant-minimal-body">'+
-   '<div class="game-assistant-status-line"><span><b>Primary:</b> '+esc(primary)+'</span><span><b>Turn:</b> '+esc(player)+'</span></div>'+
-   '<details class="game-assistant-notes"><summary>Live Notes</summary><textarea rows="2" placeholder="Temporary game note..." onchange="state.gameAssistantNotes=this.value;save()">'+esc(state.gameAssistantNotes||'')+'</textarea></details>'+
-  '</div></details>';
-}
+
 const {createBattleNotesStateController}=window.OnoForgeBattleNotesState;
 const battleNotesStateController=createBattleNotesStateController({getState:()=>state,esc});
 const {battleNotesHtml}=battleNotesStateController;
@@ -4379,16 +4372,7 @@ function gameTimerHtml(){
   </div>`;
 }
 
-function battleEndSummaryHtml(){
- const my=scoreTotalForSide('my'),opp=scoreTotalForSide('opp');
- const pmy=Number(state.primaryMyScoredVP)||0,popp=Number(state.primaryOppScoredVP)||0;
- const smy=secondaryTotalScoredVP('my'),sopp=secondaryTotalScoredVP('opp');
- const winner=my===opp?'Draw':(my>opp?state.myName:state.oppName);
- const verified=!!state.battleResultVerified;
- const verification=verified?'<div class="status ok" style="margin-top:10px"><b>Result Verified</b><div class="tiny">Locked result matches authoritative battle state.</div></div>':'<div class="status warn" style="margin-top:10px"><b>Result Awaiting Verification</b><div class="tiny">Review the final score and verify it before exporting the tournament result.</div></div>';
- const verifyButton=verified?'':'<button type="button" class="btn primary" onclick="verifyTournamentResult();return false;">Verify &amp; Lock Result</button>';
- return '<div class="card battle-end-summary"><div class="split"><div><h3 style="margin:0">Battle Report</h3><div class="muted">Final scoring breakdown</div></div><span class="pill">'+esc(winner)+'</span></div><div class="grid3" style="margin-top:10px"><div class="status"><b>'+esc(state.myName)+'</b><div class="big">'+my+' VP</div><div class="tiny">Primary '+pmy+' • Secondary '+smy+' • Battle Ready '+(state.battleReadyMy?10:0)+'</div></div><div class="status"><b>'+esc(state.oppName)+'</b><div class="big">'+opp+' VP</div><div class="tiny">Primary '+popp+' • Secondary '+sopp+' • Battle Ready '+(state.battleReadyOpp?10:0)+'</div></div><div class="status"><b>Battle State</b><div class="big">Round '+Math.max(1,Number(state.round)||1)+'</div><div class="tiny">'+(state.round>=5?'Five-round battle completed':'Battle ended early')+' • '+(Array.isArray(state.events)?state.events.length:0)+' logged events • Result locked</div><div class="tiny" style="margin-top:4px">Mission '+esc(state.objectiveMapMissionKey||objectiveMissionKey()||'—')+' • Layout '+esc(state.objectiveMapLayout||'—')+' • Reserves remaining: '+(reserveUnitsForSide('my').length+reserveUnitsForSide('opp').length)+'</div></div></div><div class="tiny" style="margin-top:9px">Primary maximum 45 VP; Secondary maximum 45 VP with up to 15 VP per battle round. Fixed Secondary Missions are additionally capped at 20 VP per card.</div><div style="margin-top:10px">'+verification+'<div style="margin-top:10px">'+verifyButton+' <button type="button" class="btn" onclick="exportTournamentResult();return false;" '+(verified?'':'disabled')+'>Export Tournament Result</button></div></div></div>';
-}
+
 function tournamentResultSnapshot(){
  const my=scoreTotalForSide('my'),opp=scoreTotalForSide('opp');
  const t=ensureGameTimer();
@@ -11220,6 +11204,11 @@ loadEventCompanionData();
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./service-worker.js?v=361',{updateViaCache:'none'}).catch(()=>{});});}
 setTimeout(()=>initCloudOnLoad(),0);
 </script>
+
+<script src="js/state/battle-end-summary-state.js"></script>
+<script src="js/state/primary-mission-rules-state.js"></script>
+<script src="js/state/game-reference-editor-state.js"></script>
+<script src="js/state/game-assistant-state.js"></script>
 
 <script>
 (function(){
