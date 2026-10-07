@@ -980,31 +980,6 @@ function reserveDeclarationSectionHtml(side){
   return '<div class="setup-section reserve-declaration"><div class="split"><div><h3 style="margin:0">'+esc(s==='my'?state.myName:state.oppName)+' Reserves</h3><div class="muted">Declare units being kept off the battlefield for later deployment.</div></div><span class="pill">'+declared+' declared</span></div><div class="reserve-declaration-grid">'+units.map(e=>{const checked=isUnitReserved(s,e.uid),name=unitDisplayName(s,e)||get(e.unitId)?.name||e.name||e.unitId||'Unit';return '<label class="reserve-declaration-item '+(checked?'selected':'')+'"><input type="checkbox" data-reserve-toggle="'+esc(s)+'" data-reserve-uid="'+esc(e.uid)+'" '+(checked?'checked':'')+'><span><b>'+esc(name)+'</b><small>'+(checked?'Reserve':'Deploy normally')+'</small></span></label>';}).join('')+'</div></div>';
 }
 
-function deployReserveByMap(side,uid,x,y){
-  if(!isUnitReserved(side,uid))return false;
-  const id=String(uid),s=side==='opp'?'opp':'my';
-  if(!setBattlefieldUnitPosition(side,uid,x,y,'reserve'))return false;
-  delete ensureReserveState()[s][id];
-  const p=ensureBattlefieldUnitPositions()[id];
-  delete state.battlefieldMapPlacement;
-  save();render();return true;
-}
-
-
-function transportDeclarationSectionHtml(side){
-  const s=side==='opp'?'opp':'my',list=Array.isArray(state[s])?state[s]:[];
-  const transports=list.filter(e=>e&&!e.attachedTo&&transportEntry(s,e.uid));
-  if(!transports.length)return '';
-  const candidates=list.filter(e=>e&&!e.attachedTo&&!transportEntry(s,e.uid));
-  const maps=ensureTransportEmbarkations()[s]||{};
-  return '<div class="setup-section transport-declaration"><div class="split"><div><h3 style="margin:0">'+esc(s==='my'?state.myName:state.oppName)+' Transport Embarkations</h3><div class="muted">Declare which units start embarked in each transport. Transport capacity and faction-specific restrictions remain a rules-data validation layer.</div></div><span class="pill">'+transports.reduce((n,t)=>n+transportPassengers(s,t.uid).length,0)+' embarked</span></div>'+
-    '<div class="transport-declaration-grid">'+transports.map(t=>{
-      const passengers=transportPassengers(s,t.uid);
-      return '<div class="transport-declaration-card"><div class="split"><b>'+esc(unitDisplayName(s,t)||get(t.unitId)?.name||'Transport')+'</b><span class="pill">'+passengers.length+' unit'+(passengers.length===1?'':'s')+'</span></div>'+
-      '<div class="transport-passenger-list">'+(candidates.length?candidates.map(p=>{const checked=passengers.map(String).includes(String(p.uid));return '<label class="transport-passenger-item '+(checked?'selected':'')+'"><input type="checkbox" data-transport-toggle="'+esc(s)+'" data-transport-uid="'+esc(t.uid)+'" data-passenger-uid="'+esc(p.uid)+'" '+(checked?'checked':'')+'><span><b>'+esc(unitDisplayName(s,p)||get(p.unitId)?.name||'Unit')+'</b><small>'+(checked?'Embarked':'On battlefield / reserve')+'</small></span></label>';}).join(''):'<div class="empty">No unattached non-transport units available.</div>')+'</div></div>';
-    }).join('')+'</div></div>';
-}
-
 function setBattlefieldUnitPosition(side,uid,x,y,source='manual'){
   if(state.page==='battle'&&!battleMutationAllowed('battlefield position changes'))return false;
   const nextSide=side==='opp'?'opp':'my',id=String(uid||'');
