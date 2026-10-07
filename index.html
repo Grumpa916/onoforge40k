@@ -700,6 +700,7 @@ body{overflow-x:hidden}
 <script src="js/state/deployment-plan-map-controls-state.js"></script>
 <script src="js/state/deployment-plan-position-editor-state.js"></script>
 <script src="js/state/deployment-tracking-editor-state.js"></script>
+<script src="js/state/deployment-status-state.js"></script>
 <script src="js/state/deployment-tracking-controls-state.js"></script>
  <script src="js/state/objective-map-state.js"></script>
 <script src="js/state/objective-layout-state.js"></script>
@@ -741,6 +742,9 @@ const {deploymentPlanPositionEditorHtml}=deploymentPlanPositionEditorStateContro
 const {createDeploymentTrackingEditorStateController}=window.OnoForgeDeploymentTrackingEditorState;
 const deploymentTrackingEditorStateController=createDeploymentTrackingEditorStateController({getState:()=>state,battlefieldUnitPosition,unitDisplayName,get,esc});
 const {deploymentTrackingEditorHtml}=deploymentTrackingEditorStateController;
+const {createDeploymentStatusStateController}=window.OnoForgeDeploymentStatusState;
+const deploymentStatusStateController=createDeploymentStatusStateController({getState:()=>state,battlefieldUnitPosition,isUnitReserved,unitDisplayName,get,esc});
+const {deploymentStatusHtml}=deploymentStatusStateController;
 const {createDeploymentTrackingControlsStateController}=window.OnoForgeDeploymentTrackingControlsState;
 const deploymentTrackingControlsStateController=createDeploymentTrackingControlsStateController({getState:()=>state,ensureBattlefieldUnitPositions});
 const {deploymentTrackingControlsHtml}=deploymentTrackingControlsStateController;
@@ -4579,25 +4583,6 @@ function tournamentDeploymentValidation(){
   return {ready:missing.length===0,missing};
 }
 
-
-function deploymentStatusHtml(model){
-  const side=state.deploymentTrackingSide==='opp'?'opp':'my';
-  const entries=(Array.isArray(state?.[side])?state[side]:[]).filter(e=>e&&!e.attachedTo&&!isUnitReserved(side,e.uid));
-  const skipped=state.deploymentSkippedUnits&&typeof state.deploymentSkippedUnits==='object'?state.deploymentSkippedUnits:{};
-  const recorded=entries.filter(e=>!!battlefieldUnitPosition(side,e.uid,'deployment')).length;
-  const skippedEntries=entries.filter(e=>!!skipped[side+'|'+e.uid]&&!battlefieldUnitPosition(side,e.uid,'deployment'));
-  const missing=entries.filter(e=>!battlefieldUnitPosition(side,e.uid,'deployment')&&!skipped[side+'|'+e.uid]);
-  const complete=missing.length===0;
-  const missingText=missing.map(e=>{
-    const name=unitDisplayName(side,e)||get(e.unitId)?.name||e.name||e.unitId||'Unit';
-    return '<span>'+esc(name)+' — position not recorded</span><button type="button" class="btn" data-deployment-skip="1" data-deployment-skip-side="'+side+'" data-deployment-skip-uid="'+esc(e.uid)+'">Skip</button>';
-  }).join('');
-  const skippedText=skippedEntries.map(e=>{
-    const name=unitDisplayName(side,e)||get(e.unitId)?.name||e.name||e.unitId||'Unit';
-    return '<span>'+esc(name)+' — skipped / not deployed</span><button type="button" class="btn" data-deployment-unskip="1" data-deployment-skip-side="'+side+'" data-deployment-skip-uid="'+esc(e.uid)+'">Undo Skip</button>';
-  }).join('');
-  return '<div class="card deployment-status-card"><div class="split"><div><h3 style="margin:0">Deployment Status</h3><div class="tiny">Track actual placement for '+esc(side==='my'?(state.myName||'My Army'):(state.oppName||'Opponent Army'))+'. Reserved and embarked units are excluded.</div></div><span class="pill '+(complete?'ok':'warn')+'">'+(complete?'Deployment complete':'Deployment incomplete')+'</span></div><div class="tiny" style="margin-top:7px">Recorded '+recorded+' / '+entries.length+' • Skipped '+skippedEntries.length+(missing.length?' • Still to place '+missing.length:'')+'</div>'+(missingText?'<div class="deployment-missing-list" style="margin-top:7px">'+missingText+'</div>':'')+(skippedText?'<div class="deployment-skipped-list" style="margin-top:7px">'+skippedText+'</div>':'')+(complete&&!skippedEntries.length?'<div class="ok" style="margin-top:7px">All eligible units are recorded on the deployment map.</div>':'')+'</div>';
-}
 
 function initializeLiveDeploymentFromPlan(){
   const live=ensureBattlefieldUnitPositions(),plan=deploymentPlanForCurrentMap();
