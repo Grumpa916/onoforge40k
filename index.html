@@ -4539,11 +4539,6 @@ function tournamentSetupValidation(){
  if(state.secondaryOpp==='fixed'&&secState('opp').length!==2)missing.push('Opponent Fixed secondary selections (2)');
  return {ready:missing.length===0,missing};
 }
-function tournamentSetupChecklistHtml(){
- const v=tournamentSetupValidation();
- return '<div class="setup-section"><h3>Tournament Setup Check</h3><div class="'+(v.ready?'ok':'warn')+'"><b>'+(v.ready?'Ready to start the tournament battle':'Setup incomplete')+'</b>'+(v.ready?'<div class="tiny" style="margin-top:4px">Roster, mission, battlefield, first turn, and required Fixed secondary selections are present.</div>':'<div class="tiny" style="margin-top:4px">Complete: '+v.missing.map(esc).join(' • ')+'</div>')+'</div></div>';
-}
-
 function resetTournamentToSetup(){
   const before=snapshotForUndo();
   if(!setTournamentLifecycle('SETUP')){alert('The tournament cannot be reset from the current lifecycle state.');return false;}
