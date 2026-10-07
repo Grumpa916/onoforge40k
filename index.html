@@ -770,6 +770,7 @@ const {
 <script src="js/state/primary-mission-rules-state.js"></script><script src="js/state/force-disposition-state.js"></script><script src="js/state/tournament-lifecycle-state.js"></script>
 <script src="js/state/battle-start-state.js"></script>
 <script src="js/state/battle-deployment-start-state.js"></script>
+<script src="js/state/battle-end-state.js"></script>
 <script src="js/state/game-reference-editor-state.js"></script>
 <script src="js/state/game-assistant-state.js"></script>
 <script src="js/state/tactical-pre-roll-state.js"></script>
@@ -1266,6 +1267,11 @@ const {startBattle}=battleStartStateController;
 const {createBattleDeploymentStartStateController}=window.OnoForgeBattleDeploymentStartState;
 const battleDeploymentStartStateController=createBattleDeploymentStartStateController({state,tournamentSetupValidation,snapshotForUndo,setTournamentLifecycle,ensureReserveState,ensureDeploymentPlans,initializeLiveDeploymentFromPlan,event,save,render,alert});
 const {beginDeployment}=battleDeploymentStartStateController;
+let gameTimerInterval=null;
+const gameTimerIntervalRef={get:()=>gameTimerInterval,set:v=>{gameTimerInterval=v;}};
+const {createBattleEndStateController}=window.OnoForgeBattleEndState;
+const battleEndStateController=createBattleEndStateController({state,snapshotForUndo,finalizeCurrentTurnTime,ensureGameTimer,gameTimerElapsed,gameTimerIntervalRef,setTournamentLifecycle,tournamentResultSnapshot,event,save,render,alert});
+const {endBattle}=battleEndStateController;
 
 const PRIMARY_SCORING={
 "Battlefield Dominance":[["R1–2 • End of turn","2 VP","Control more objectives than your opponent"],["R2+ • Command phase / R5","3 VP","Per objective you control"],["R2+ • Command phase / R5","+2 VP","Per objective excluding home if you control your home objective"]],
@@ -4387,28 +4393,6 @@ function gameTimerHtml(){
 
 
 
-
-
-
-function endBattle(){
- const before=snapshotForUndo();
- if(state.battleEnded)return;
- finalizeCurrentTurnTime();
- const t=ensureGameTimer();
- if(t.running){t.elapsedMs=gameTimerElapsed();t.running=false;t.paused=false;t.finishedAt=Date.now();}
- if(gameTimerInterval){clearInterval(gameTimerInterval);gameTimerInterval=null;}
- if(!setTournamentLifecycle('COMPLETED')){
-  alert('The tournament could not transition to Completed.');
-  return false;
- }
- state.battleResult=tournamentResultSnapshot();
- state.battleResultLocked=true;
- state.battleResultVerified=false;
- state.battleResultVerifiedAt=null;
- state.battleEnded=true;
- event('BATTLE_ENDED',{side:'my',unit:'Battle',action:'Battle marked complete',round:Math.max(1,Number(state.round)||1)},before);
- save();render();
-}
 
 
 
