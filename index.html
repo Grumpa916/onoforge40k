@@ -867,9 +867,6 @@ const {objectiveMapPlanGhostNodesHtml}=battlefieldMapPlanGhostNodesStateControll
 const {createDeploymentStagingNodesStateController}=window.OnoForgeDeploymentStagingNodesState;
 const deploymentStagingNodesStateController=createDeploymentStagingNodesStateController({getState:()=>state,isUnitReserved,battlefieldUnitPosition,unitDisplayName,esc,pct});
 const {deploymentStagingNodesHtml}=deploymentStagingNodesStateController;
-const {createArmyNoMansLandTagsStateController}=window.OnoForgeArmyNoMansLandTagsState;
-const armyNoMansLandTagsStateController=createArmyNoMansLandTagsStateController({getState:()=>state,isUnitReserved,battlefieldUnitPosition,unitDisplayName,get,esc});
-const {armyNoMansLandTagsHtml}=armyNoMansLandTagsStateController;
 const {createTerrainReferenceImageStateController}=window.OnoForgeTerrainReferenceImageState;
 const terrainReferenceImageStateController=createTerrainReferenceImageStateController({getState:()=>state,esc});
 const {terrainReferenceImageHtml}=terrainReferenceImageStateController;
