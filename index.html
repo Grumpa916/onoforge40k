@@ -769,6 +769,7 @@ const {
 <script src="js/data/bsdata-parser.js"></script><script src="js/state/data-sync-status-state.js"></script><script src="js/state/battle-notes-state.js"></script><script src="js/state/action-log-filters-state.js"></script><script src="js/state/battle-end-summary-state.js"></script>
 <script src="js/state/primary-mission-rules-state.js"></script><script src="js/state/force-disposition-state.js"></script><script src="js/state/tournament-lifecycle-state.js"></script>
 <script src="js/state/battle-start-state.js"></script>
+<script src="js/state/battle-deployment-start-state.js"></script>
 <script src="js/state/game-reference-editor-state.js"></script>
 <script src="js/state/game-assistant-state.js"></script>
 <script src="js/state/tactical-pre-roll-state.js"></script>
@@ -1262,6 +1263,9 @@ const {forceDispositionNameForDetachment,availableForceDispositions,forceDisposi
 const {createBattleStartStateController}=window.OnoForgeBattleStartState;
 const battleStartStateController=createBattleStartStateController({state,tournamentSetupValidation,ensureReserveState,ensureDeploymentPlans,initializeLiveDeploymentFromPlan,tournamentDeploymentValidation,snapshotForUndo,ONOFORGE_RULES_DATA_PIN,startGameTimer,setTournamentLifecycle,resetStratagemPhaseUses,forceDisposition,availableForceDispositions,ensureBattlefieldUnitPositions,gameTimerElapsed,initTacticalDeck,drawTactical,get,ensureModelRoster,event,detachmentDP,primaryMission,save,render,alert});
 const {startBattle}=battleStartStateController;
+const {createBattleDeploymentStartStateController}=window.OnoForgeBattleDeploymentStartState;
+const battleDeploymentStartStateController=createBattleDeploymentStartStateController({state,tournamentSetupValidation,snapshotForUndo,setTournamentLifecycle,ensureReserveState,ensureDeploymentPlans,initializeLiveDeploymentFromPlan,event,save,render,alert});
+const {beginDeployment}=battleDeploymentStartStateController;
 
 const PRIMARY_SCORING={
 "Battlefield Dominance":[["R1–2 • End of turn","2 VP","Control more objectives than your opponent"],["R2+ • Command phase / R5","3 VP","Per objective you control"],["R2+ • Command phase / R5","+2 VP","Per objective excluding home if you control your home objective"]],
@@ -4407,26 +4411,6 @@ function endBattle(){
 }
 
 
-
-function beginDeployment(){
-  const setupCheck=tournamentSetupValidation();
-  if(!setupCheck.ready){alert('Tournament setup is incomplete:\n\n• '+setupCheck.missing.join('\n• '));return false;}
-  const before=snapshotForUndo();
-  if(!setTournamentLifecycle('DEPLOYMENT')){alert('The tournament cannot enter Deployment from the current lifecycle state.');return false;}
-  ensureReserveState();
-  ensureDeploymentPlans();
-  initializeLiveDeploymentFromPlan();
-  delete state.battlefieldMapPlacement;
-  delete state.deploymentMapPlacement;
-  event('TOURNAMENT_DEPLOYMENT_STARTED',{
-    side:'my',
-    unit:'Battle',
-    action:'Tournament deployment phase started',
-    round:Math.max(1,Number(state.round)||1)
-  },before);
-  save();render();
-  return true;
-}
 
 
 function snapshotForUndo(){
