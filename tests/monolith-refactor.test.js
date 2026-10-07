@@ -34,6 +34,7 @@ const mathCombatEngine=fs.readFileSync(path.join(root,'js/state/math-combat-engi
 const mathCombatExecution=fs.readFileSync(path.join(root,'js/state/math-combat-execution-state.js'),'utf8');
 const forceDisposition=fs.readFileSync(path.join(root,'js/state/force-disposition-state.js'),'utf8');
 const tournamentLifecycle=fs.readFileSync(path.join(root,'js/state/tournament-lifecycle-state.js'),'utf8');
+const battleStart=fs.readFileSync(path.join(root,'js/state/battle-start-state.js'),'utf8');
 const tacticalCore=fs.readFileSync(path.join(root,'js/state/tactical-core-state.js'),'utf8');
 const stratagemUI=fs.readFileSync(path.join(root,'js/state/stratagem-ui-state.js'),'utf8');
 const tacticalContextHtmlBody=fs.readFileSync(path.join(root,'js/state/tactical-context-html-body-state.js'),'utf8');
@@ -243,6 +244,7 @@ vm.runInNewContext(mathCombatEngine,sandbox,{filename:'js/state/math-combat-engi
 vm.runInNewContext(mathCombatExecution,sandbox,{filename:'js/state/math-combat-execution-state.js'});
 vm.runInNewContext(forceDisposition,sandbox,{filename:'js/state/force-disposition-state.js'});
 vm.runInNewContext(tournamentLifecycle,sandbox,{filename:'js/state/tournament-lifecycle-state.js'});
+vm.runInNewContext(battleStart,sandbox,{filename:'js/state/battle-start-state.js'});
 vm.runInNewContext(tacticalCore,sandbox,{filename:'js/state/tactical-core-state.js'});
 vm.runInNewContext(stratagemUI,sandbox,{filename:'js/state/stratagem-ui-state.js'});
 vm.runInNewContext(tacticalContextHtmlBody,sandbox,{filename:'js/state/tactical-context-html-body-state.js'});
