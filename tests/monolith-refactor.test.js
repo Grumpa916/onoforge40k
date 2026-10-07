@@ -10,6 +10,7 @@ const reserve=fs.readFileSync(path.join(root,'js/state/reserve-state.js'),'utf8'
 const deploymentPlan=fs.readFileSync(path.join(root,'js/state/deployment-plan-state.js'),'utf8');
 const objectiveMap=fs.readFileSync(path.join(root,'js/state/objective-map-state.js'),'utf8');
 const objectiveMetadata=fs.readFileSync(path.join(root,'js/state/objective-metadata-state.js'),'utf8');
+const objectiveCanonicalLabel=fs.readFileSync(path.join(root,'js/state/objective-canonical-label-state.js'),'utf8');
 const transport=fs.readFileSync(path.join(root,'js/state/transport-state.js'),'utf8');
 const stratagem=fs.readFileSync(path.join(root,'js/state/stratagem-state.js'),'utf8');
 const gameTimer=fs.readFileSync(path.join(root,'js/state/game-timer-state.js'),'utf8');
@@ -129,6 +130,7 @@ vm.runInNewContext(reserve,sandbox,{filename:'js/state/reserve-state.js'});
 vm.runInNewContext(deploymentPlan,sandbox,{filename:'js/state/deployment-plan-state.js'});
 vm.runInNewContext(objectiveMap,sandbox,{filename:'js/state/objective-map-state.js'});
 vm.runInNewContext(objectiveMetadata,sandbox,{filename:'js/state/objective-metadata-state.js'});
+vm.runInNewContext(objectiveCanonicalLabel,sandbox,{filename:'js/state/objective-canonical-label-state.js'});
 vm.runInNewContext(transport,sandbox,{filename:'js/state/transport-state.js'});
 vm.runInNewContext(stratagem,sandbox,{filename:'js/state/stratagem-state.js'});
 vm.runInNewContext(gameTimer,sandbox,{filename:'js/state/game-timer-state.js'});
@@ -164,6 +166,7 @@ if(typeof sandbox.window.OnoForgePrimaryScoringEffectiveMaxState?.createPrimaryS
 if(typeof sandbox.window.OnoForgePrimaryScoringMaxState?.createPrimaryScoringMaxStateController!=='function')throw new Error('Primary scoring max module did not expose createPrimaryScoringMaxStateController');
 if(typeof sandbox.window.OnoForgePrimaryObjectiveConditionTextState?.createPrimaryObjectiveConditionTextStateController!=='function')throw new Error('Primary objective condition text module did not expose createPrimaryObjectiveConditionTextStateController');
 if(typeof sandbox.window.OnoForgeObjectiveCountsState?.createObjectiveCountsStateController!=='function')throw new Error('Objective counts module did not expose createObjectiveCountsStateController');
+if(typeof sandbox.window.OnoForgeObjectiveCanonicalLabelState?.createObjectiveCanonicalLabelStateController!=='function')throw new Error('Objective canonical label module did not expose createObjectiveCanonicalLabelStateController');
 if(typeof sandbox.window.OnoForgePrimaryObjectiveQualifyingListState?.createPrimaryObjectiveQualifyingListStateController!=='function')throw new Error('Primary objective qualifying list module did not expose createPrimaryObjectiveQualifyingListStateController');
 if(typeof sandbox.window.OnoForgePrimaryObjectiveConditionStatusState?.createPrimaryObjectiveConditionStatusStateController!=='function')throw new Error('Primary objective condition status module did not expose createPrimaryObjectiveConditionStatusStateController');
 if(typeof sandbox.window.OnoForgePrimaryObjectiveConditionStatusState?.createPrimaryObjectiveConditionStatusStateController!=='function')throw new Error('Primary objective condition status module did not expose createPrimaryObjectiveConditionStatusStateController');
@@ -192,6 +195,22 @@ if(typeof sandbox.window.OnoForgeSecondaryRoundLedgerState?.createSecondaryRound
 if(typeof sandbox.window.OnoForgeScoreLedgerState?.createScoreLedgerStateController!=='function')throw new Error('Score ledger module did not expose createScoreLedgerStateController');
 if(typeof sandbox.window.OnoForgeSecondaryScoreState?.createSecondaryScoreStateController!=='function')throw new Error('Secondary score module did not expose createSecondaryScoreStateController');
 if(typeof sandbox.window.OnoForgeScoreCalculationState?.createScoreCalculationStateController!=='function')throw new Error('Score calculation module did not expose createScoreCalculationStateController');
+
+const objectiveLabelState={objectives:{'My Home':'my','Expansion 1':'none','Central 1':'opp','Expansion 2':'none','Opponent Home':'none'}};
+const objectiveLabelController=sandbox.window.OnoForgeObjectiveCanonicalLabelState.createObjectiveCanonicalLabelStateController({
+  getState:()=>objectiveLabelState,
+  objectiveGeometryIdentity:(name)=>{const k=String(name||'');if(/^My Home$/i.test(k))return {type:'home',side:'my',ordinal:1};if(/^Opponent Home$/i.test(k))return {type:'home',side:'opp',ordinal:1};const m=k.match(/^(Central|Expansion)\\s+(\\d+)$/i);return m?{type:m[1].toLowerCase(),ordinal:Number(m[2])}:null;},
+  objectiveTrackedIdentity:(name)=>{const k=String(name||'');if(/^My Home$/i.test(k))return {type:'home',side:'my',ordinal:1};if(/^Opponent Home$/i.test(k))return {type:'home',side:'opp',ordinal:1};const m=k.match(/^(Central|Expansion)\\s+(\\d+)$/i);return m?{type:m[1].toLowerCase(),ordinal:Number(m[2])}:null;},
+  objectiveBattlefieldGeometry:()=>({verified:false,objectives:[]})
+});
+if(objectiveLabelController.objectiveCanonicalNumber({type:'home',side:'my',ordinal:1})!==1)throw new Error('Objective canonical number regression');
+if(objectiveLabelController.objectiveCanonicalNumber({type:'home',side:'opp',ordinal:1})!==5)throw new Error('Objective five-layout home number regression');
+if(objectiveLabelController.objectiveCanonicalLabelForGeometryName('Central 1')!=='O3 • Central')throw new Error('Objective canonical label regression');
+if(objectiveLabelController.objectiveTrackedNameForGeometryName('Central 1')!=='Central 1')throw new Error('Objective tracked-name regression');
+if(objectiveLabelController.objectiveMapLabelForTrackedNameLegacy('Opponent Home')!=='O5 • Opponent Home')throw new Error('Objective legacy label regression');
+const sixState={objectives:{'My Home':'my','Expansion 1':'none','Central 1':'none','Central 2':'none','Expansion 2':'none','Opponent Home':'opp'}};
+const sixController=sandbox.window.OnoForgeObjectiveCanonicalLabelState.createObjectiveCanonicalLabelStateController({getState:()=>sixState,objectiveGeometryIdentity:objectiveLabelController.objectiveTrackedNameForGeometryName?((name)=>{const k=String(name||'');if(/^My Home$/i.test(k))return {type:'home',side:'my',ordinal:1};if(/^Opponent Home$/i.test(k))return {type:'home',side:'opp',ordinal:1};const m=k.match(/^(Central|Expansion)\\s+(\\d+)$/i);return m?{type:m[1].toLowerCase(),ordinal:Number(m[2])}:null;}):()=>null,objectiveTrackedIdentity:(name)=>{const k=String(name||'');if(/^My Home$/i.test(k))return {type:'home',side:'my',ordinal:1};if(/^Opponent Home$/i.test(k))return {type:'home',side:'opp',ordinal:1};const m=k.match(/^(Central|Expansion)\\s+(\\d+)$/i);return m?{type:m[1].toLowerCase(),ordinal:Number(m[2])}:null;},objectiveBattlefieldGeometry:()=>({verified:false,objectives:[]})});
+if(sixController.objectiveCanonicalNumber({type:'home',side:'opp',ordinal:1})!==6)throw new Error('Objective six-layout home number regression');
 
 const reserveState={page:'setup',my:[{uid:'u1',name:'Unit One'}],opp:[{uid:'u2',name:'Unit Two'}],reserveDeclarations:{my:{},opp:{}},battlefieldUnitPositions:{}};
 const reserveController=sandbox.window.OnoForgeReserveState.createReserveStateController({getState:()=>reserveState,snapshotForUndo:()=>({}),event:()=>{},save:()=>{},render:()=>{}});
