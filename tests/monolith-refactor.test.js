@@ -12,6 +12,7 @@ const objectiveMap=fs.readFileSync(path.join(root,'js/state/objective-map-state.
 const objectiveMetadata=fs.readFileSync(path.join(root,'js/state/objective-metadata-state.js'),'utf8');
 const objectiveCanonicalLabel=fs.readFileSync(path.join(root,'js/state/objective-canonical-label-state.js'),'utf8');
 const objectiveMapEntries=fs.readFileSync(path.join(root,'js/state/objective-map-entries-state.js'),'utf8');
+const armyNoMansLandTags=fs.readFileSync(path.join(root,'js/state/army-no-mans-land-tags-state.js'),'utf8');
 const transport=fs.readFileSync(path.join(root,'js/state/transport-state.js'),'utf8');
 const stratagem=fs.readFileSync(path.join(root,'js/state/stratagem-state.js'),'utf8');
 const gameTimer=fs.readFileSync(path.join(root,'js/state/game-timer-state.js'),'utf8');
@@ -47,6 +48,7 @@ const required=[
   '<script src="js/state/reserve-state.js"></script>',
   '<script src="js/state/deployment-plan-state.js"></script>',
   '<script src="js/state/objective-map-state.js"></script>',
+  '<script src="js/state/army-no-mans-land-tags-state.js"></script>',
   '<script src="js/state/objective-metadata-state.js"></script>',
   '<script src="js/state/transport-state.js"></script>',
   '<script src="js/state/stratagem-state.js"></script>',
@@ -96,7 +98,7 @@ for(const name of [
   'ensureGameTimer','gameTimerElapsed','turnElapsedMs','finalizeCurrentTurnTime','switchTurnClock',
   'ensurePhaseCPState','phaseCPKey','rememberPhaseCP','restorePhaseCP',
   'ensureObjectiveControlHistory','objectivePreviousTurnKey','objectivePreviousTurnOwner',
-  'ensureObjectiveControlSources','objectiveControlSourceIds','ensureSecondaryRoundLedger','ensureScoreLedger','secondaryTotalScoredVP','scoreTotalForSide'
+  'ensureObjectiveControlSources','objectiveControlSourceIds','ensureSecondaryRoundLedger','ensureScoreLedger','secondaryTotalScoredVP','scoreTotalForSide','armyNoMansLandTagsHtml'
 ]){
   const count=(html.match(new RegExp('function\s+'+name+'\s*\\(','g'))||[]).length;
   if(count!==0)throw new Error('Extracted function still inline: '+name);
@@ -133,6 +135,7 @@ vm.runInNewContext(objectiveMap,sandbox,{filename:'js/state/objective-map-state.
 vm.runInNewContext(objectiveMetadata,sandbox,{filename:'js/state/objective-metadata-state.js'});
 vm.runInNewContext(objectiveCanonicalLabel,sandbox,{filename:'js/state/objective-canonical-label-state.js'});
 vm.runInNewContext(objectiveMapEntries,sandbox,{filename:'js/state/objective-map-entries-state.js'});
+vm.runInNewContext(armyNoMansLandTags,sandbox,{filename:'js/state/army-no-mans-land-tags-state.js'});
 vm.runInNewContext(transport,sandbox,{filename:'js/state/transport-state.js'});
 vm.runInNewContext(stratagem,sandbox,{filename:'js/state/stratagem-state.js'});
 vm.runInNewContext(gameTimer,sandbox,{filename:'js/state/game-timer-state.js'});
@@ -170,6 +173,7 @@ if(typeof sandbox.window.OnoForgePrimaryObjectiveConditionTextState?.createPrima
 if(typeof sandbox.window.OnoForgeObjectiveCountsState?.createObjectiveCountsStateController!=='function')throw new Error('Objective counts module did not expose createObjectiveCountsStateController');
 if(typeof sandbox.window.OnoForgeObjectiveCanonicalLabelState?.createObjectiveCanonicalLabelStateController!=='function')throw new Error('Objective canonical label module did not expose createObjectiveCanonicalLabelStateController');
 if(typeof sandbox.window.OnoForgeObjectiveMapEntriesState?.createObjectiveMapEntriesStateController!=='function')throw new Error('Objective map entries module did not expose createObjectiveMapEntriesStateController');
+if(typeof sandbox.window.OnoForgeArmyNoMansLandTagsState?.createArmyNoMansLandTagsStateController!=='function')throw new Error('Army no-mans-land tags module did not expose createArmyNoMansLandTagsStateController');
 if(typeof sandbox.window.OnoForgePrimaryObjectiveQualifyingListState?.createPrimaryObjectiveQualifyingListStateController!=='function')throw new Error('Primary objective qualifying list module did not expose createPrimaryObjectiveQualifyingListStateController');
 if(typeof sandbox.window.OnoForgePrimaryObjectiveConditionStatusState?.createPrimaryObjectiveConditionStatusStateController!=='function')throw new Error('Primary objective condition status module did not expose createPrimaryObjectiveConditionStatusStateController');
 if(typeof sandbox.window.OnoForgePrimaryObjectiveConditionStatusState?.createPrimaryObjectiveConditionStatusStateController!=='function')throw new Error('Primary objective condition status module did not expose createPrimaryObjectiveConditionStatusStateController');
@@ -227,6 +231,24 @@ const objectiveMapEntriesController=sandbox.window.OnoForgeObjectiveMapEntriesSt
 const fallbackEntries=objectiveMapEntriesController.objectiveMapEntries();
 if(fallbackEntries.length!==5||fallbackEntries[0].stateName!=='My Home'||fallbackEntries[0].owner!=='my')throw new Error('Objective map entries fallback regression');
 if(fallbackEntries.some(e=>!e.label||e.position!==null))throw new Error('Objective map entries fallback shape regression');
+const armyTagsState={myName:'My Army',oppName:'Opponent Army',my:[
+  {uid:'live',name:'Live Unit'},
+  {uid:'waiting',name:'Waiting Unit'},
+  {uid:'skipped',name:'Skipped Unit',attachedTo:null}
+],opp:[{uid:'opp1',name:'Opponent Unit'}],deploymentSkippedUnits:{'my|skipped':true}};
+const armyTagsController=sandbox.window.OnoForgeArmyNoMansLandTagsState.createArmyNoMansLandTagsStateController({
+  getState:()=>armyTagsState,
+  isUnitReserved:()=>false,
+  battlefieldUnitPosition:(side,uid)=>side==='my'&&uid==='live'?{x:10,y:10}:null,
+  unitDisplayName:(side,entry)=>entry?.name,
+  get:()=>null,
+  esc:(value)=>String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')
+});
+const armyTagsHtml=armyTagsController.armyNoMansLandTagsHtml({verified:true},()=>{});
+if(armyTagsHtml.includes('Live Unit'))throw new Error('Army no-mans-land live-unit filtering regression');
+if(!armyTagsHtml.includes('Waiting Unit')||!armyTagsHtml.includes('Skipped Unit')||!armyTagsHtml.includes('Opponent Unit'))throw new Error('Army no-mans-land tag rendering regression');
+if(!armyTagsHtml.includes('class="objective-map-army-tag skipped"'))throw new Error('Army no-mans-land skipped tag regression');
+if(!armyTagsHtml.includes('data-map-unit="my|waiting"'))throw new Error('Army no-mans-land drag metadata regression');
 
 const reserveState={page:'setup',my:[{uid:'u1',name:'Unit One'}],opp:[{uid:'u2',name:'Unit Two'}],reserveDeclarations:{my:{},opp:{}},battlefieldUnitPositions:{}};
 const reserveController=sandbox.window.OnoForgeReserveState.createReserveStateController({getState:()=>reserveState,snapshotForUndo:()=>({}),event:()=>{},save:()=>{},render:()=>{}});
