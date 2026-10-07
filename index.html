@@ -706,7 +706,7 @@ body{overflow-x:hidden}
 <script src="js/state/battlefield-map-unit-labels-state.js"></script>
 <script src="js/state/battlefield-map-unit-nodes-state.js"></script>
 <script src="js/state/battlefield-map-plan-ghost-nodes-state.js"></script>
-<script src="js/state/deployment-staging-nodes-state.js"></script><script src="js/state/primary-scoring-preview-summary-state.js"></script><script src="js/state/primary-scoring-html-state.js"></script><script src="js/state/primary-scoring-catalogue-audit-state.js"></script><script src="js/state/event-companion-map-regression-audit-state.js"></script>
+<script src="js/state/deployment-staging-nodes-state.js"></script><script src="js/state/army-no-mans-land-tags-state.js"></script><script src="js/state/primary-scoring-preview-summary-state.js"></script><script src="js/state/primary-scoring-html-state.js"></script><script src="js/state/primary-scoring-catalogue-audit-state.js"></script><script src="js/state/event-companion-map-regression-audit-state.js"></script>
 <script src="js/data/bsdata-parser.js"></script><script>
 const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;
 const {createReserveStateController}=window.OnoForgeReserveState;
@@ -867,6 +867,9 @@ const {objectiveMapPlanGhostNodesHtml}=battlefieldMapPlanGhostNodesStateControll
 const {createDeploymentStagingNodesStateController}=window.OnoForgeDeploymentStagingNodesState;
 const deploymentStagingNodesStateController=createDeploymentStagingNodesStateController({getState:()=>state,isUnitReserved,battlefieldUnitPosition,unitDisplayName,esc,pct});
 const {deploymentStagingNodesHtml}=deploymentStagingNodesStateController;
+const {createArmyNoMansLandTagsStateController}=window.OnoForgeArmyNoMansLandTagsState;
+const armyNoMansLandTagsStateController=createArmyNoMansLandTagsStateController({getState:()=>state,isUnitReserved,battlefieldUnitPosition,unitDisplayName,get,esc});
+const {armyNoMansLandTagsHtml}=armyNoMansLandTagsStateController;
 const {createPrimaryScorePreviewSummaryStateController}=window.OnoForgePrimaryScorePreviewSummaryState;
 const primaryScoringPreviewSummaryStateController=createPrimaryScorePreviewSummaryStateController({getState:()=>state,primaryScoringRowsForRound,primaryRoundCapRemaining,primaryScoringEvidence});
 const {primaryScorePreviewSummary}=primaryScoringPreviewSummaryStateController;
@@ -1037,25 +1040,6 @@ function objectiveMapPlacementPanelHtml(model){
   return '<div class="objective-map-controls"><div class="split"><div><strong>Map Placement</strong><div class="tiny">Select a unit, then tap/click its new tabletop position on the map.</div></div><span class="pill">0.1″ coordinates</span></div><div class="objective-map-placement-row"><select class="objective-map-unit-select" aria-label="Unit to place on battlefield map"><option value="">Select unit…</option>'+options+'</select><button type="button" class="btn primary" data-map-placement-cancel '+(selected.uid?'':'disabled')+'>Cancel</button></div><div class="tiny objective-map-placement-status">'+(selected.uid?'Placement active — tap the map to set '+esc(selectedName)+' position.':'Placement inactive — no unit is selected.')+'</div></div>';
 }
 
-function armyNoMansLandTagsHtml(model,pct){
-  if(!model.verified)return '';
-  const rail=(side)=>{
-    const entries=(Array.isArray(state?.[side])?state[side]:[]).filter(e=>e&&!e.attachedTo&&!isUnitReserved(side,e.uid));
-    if(!entries.length)return '';
-    const skipped=state.deploymentSkippedUnits&&typeof state.deploymentSkippedUnits==='object'?state.deploymentSkippedUnits:{};
-    const title=side==='my'?(state.myName||'My Army'):(state.oppName||'Opponent Army');
-    const tags=entries.map(entry=>{
-      const key=side+'|'+entry.uid, isSkipped=!!skipped[key], live=!!battlefieldUnitPosition(side,entry.uid,'deployment');
-      if(live)return '';
-      const name=unitDisplayName(side,entry)||get(entry.unitId)?.name||entry.name||entry.unitId||'Unit';
-      const attrs=isSkipped?' class="objective-map-army-tag skipped" title="Skipped — not deployed"':' class="objective-map-army-tag" data-map-unit="'+esc(side+'|'+entry.uid)+'" data-map-side="'+esc(side)+'" data-map-uid="'+esc(entry.uid)+'" title="Not yet deployed • drag to actual tabletop position"';
-      return '<div'+attrs+'>'+esc(name)+'</div>';
-    }).join('');
-    if(!tags)return '';
-    return '<div class="objective-map-army-rail '+side+'" aria-label="'+esc(title)+' unplaced units"><div class="objective-map-army-rail-title">'+esc(title)+'</div>'+tags+'</div>';
-  };
-  return rail('my')+rail('opp');
-}
 
 function terrainReferenceImageHtml(model){
   const page=Number(model?.page);
