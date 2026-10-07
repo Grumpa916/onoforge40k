@@ -701,6 +701,7 @@ body{overflow-x:hidden}
 <script src="js/state/deployment-plan-position-editor-state.js"></script>
 <script src="js/state/deployment-tracking-editor-state.js"></script>
 <script src="js/state/deployment-status-state.js"></script>
+<script src="js/state/tournament-deployment-validation-state.js"></script>
 <script src="js/state/deployment-tracking-controls-state.js"></script>
  <script src="js/state/objective-map-state.js"></script>
 <script src="js/state/objective-layout-state.js"></script>
@@ -745,6 +746,9 @@ const {deploymentTrackingEditorHtml}=deploymentTrackingEditorStateController;
 const {createDeploymentStatusStateController}=window.OnoForgeDeploymentStatusState;
 const deploymentStatusStateController=createDeploymentStatusStateController({getState:()=>state,battlefieldUnitPosition,isUnitReserved,unitDisplayName,get,esc});
 const {deploymentStatusHtml}=deploymentStatusStateController;
+const {createTournamentDeploymentValidationStateController}=window.OnoForgeTournamentDeploymentValidationState;
+const tournamentDeploymentValidationStateController=createTournamentDeploymentValidationStateController({getState:()=>state,ensureBattlefieldUnitPositions,isUnitReserved,isUnitEmbarked,unitDisplayName,get});
+const {tournamentDeploymentValidation}=tournamentDeploymentValidationStateController;
 const {createDeploymentTrackingControlsStateController}=window.OnoForgeDeploymentTrackingControlsState;
 const deploymentTrackingControlsStateController=createDeploymentTrackingControlsStateController({getState:()=>state,ensureBattlefieldUnitPositions});
 const {deploymentTrackingControlsHtml}=deploymentTrackingControlsStateController;
@@ -4564,26 +4568,6 @@ function resetTournamentToSetup(){
   save();render();
   return true;
 }
-function tournamentDeploymentValidation(){
-  const missing=[],positions=ensureBattlefieldUnitPositions(),skipped=state.deploymentSkippedUnits&&typeof state.deploymentSkippedUnits==='object'?state.deploymentSkippedUnits:{};
-  const reserves=state.reserves&&typeof state.reserves==='object'?state.reserves:{};
-  for(const side of ['my','opp']){
-    const list=Array.isArray(side==='my'?state.my:state.opp)?(side==='my'?state.my:state.opp):[];
-    for(const entry of list.filter(e=>e&&!e.attachedTo)){
-      const id=String(entry.uid);
-      if(isUnitReserved(side,id))continue;
-      if(skipped[side+'|'+id]===true)continue;
-      if(isUnitEmbarked(side,id))continue;
-      const p=positions[id];
-      if(!p||p.side!==side||!Number.isFinite(Number(p.x))||!Number.isFinite(Number(p.y))){
-        missing.push((side==='my'?state.myName:state.oppName)+': '+(unitDisplayName(side,entry)||get(entry.unitId)?.name||entry.name||entry.unitId||'Unit')+' — position not recorded');
-      }
-    }
-  }
-  return {ready:missing.length===0,missing};
-}
-
-
 function initializeLiveDeploymentFromPlan(){
   const live=ensureBattlefieldUnitPositions(),plan=deploymentPlanForCurrentMap();
   Object.entries(plan).forEach(([uid,p])=>{
