@@ -96,6 +96,7 @@ const required=[
   '<script src="js/state/tactical-advisor-state.js"></script>',
   '<script src="js/state/tactical-context-html-body-state.js"></script>',
   '<script src="js/state/opponent-turn-tracking-state.js"></script>',
+  '<script src="js/state/tactical-attack-interaction-state.js"></script>',
   '<script src="js/state/objective-map-state.js"></script>',
   '<script src="js/state/objective-layout-state.js"></script>',
   '<script src="js/state/army-no-mans-land-tags-state.js"></script>',
@@ -148,7 +149,7 @@ for(const marker of required){
 }
 
 for(const moduleScript of [
-  'js/state/battle-end-summary-state.js','js/state/primary-mission-rules-state.js','js/state/game-reference-editor-state.js','js/state/game-assistant-state.js','js/state/tactical-pre-roll-state.js','js/state/tactical-advisor-state.js','js/state/tactical-context-html-body-state.js','js/state/tactical-pre-roll-resolution-modal-state.js','js/state/tactical-shooting-result-state.js','js/state/opponent-turn-tracking-state.js'
+  'js/state/battle-end-summary-state.js','js/state/primary-mission-rules-state.js','js/state/game-reference-editor-state.js','js/state/game-assistant-state.js','js/state/tactical-pre-roll-state.js','js/state/tactical-advisor-state.js','js/state/tactical-context-html-body-state.js','js/state/tactical-pre-roll-resolution-modal-state.js','js/state/tactical-shooting-result-state.js','js/state/opponent-turn-tracking-state.js','js/state/tactical-attack-interaction-state.js'
 ]){
   const tag='<script src="'+moduleScript+'"></script>',count=html.split(tag).length-1,mainScript=html.indexOf('<script>\n');
   if(count!==1||mainScript<0||html.indexOf(tag)>=mainScript)throw new Error('Extracted module script must load before main app script: '+moduleScript);
@@ -167,7 +168,7 @@ for(const name of [
   'ensureGameTimer','gameTimerElapsed','turnElapsedMs','finalizeCurrentTurnTime','switchTurnClock',
   'ensurePhaseCPState','phaseCPKey','rememberPhaseCP','restorePhaseCP',
   'ensureObjectiveControlHistory','objectivePreviousTurnKey','objectivePreviousTurnOwner',
-  'ensureObjectiveControlSources','objectiveControlSourceIds','ensureSecondaryRoundLedger','ensureScoreLedger','secondaryTotalScoredVP','scoreTotalForSide','armyNoMansLandTagsHtml','objectiveMapPlacementPanelHtml','objectiveMapRendererHtml','completeTerrainSetup','unitDatabase','canonicalUnitDatabase','bootstrapUnitDatabase','mergeSupplementalUnits','saveCurrentArmyList','loadSavedArmyList','deleteSavedArmyList','undoDeletedSavedArmyList','currentMyListSnapshot','reserveTrayHtml','deploymentPlanMapControlsHtml','transportDeclarationSectionHtml','objectiveLayoutHtml','reserveDeclarationSectionHtml','deploymentPlanPositionEditorHtml','deploymentTrackingEditorHtml','deploymentTrackingControlsHtml','deploymentStatusHtml','tournamentDeploymentValidation','tournamentSetupChecklistHtml','battleEndSummaryHtml','primaryMissionRulesHtml','gameReferenceEditorHtml','gameAssistantHtml','tacticalPreRollHtml','tacticalAdvisorHtml','tacticalContextHtmlBody','tacticalPreRollResolutionModal','tacticalShootingResultHtml','opponentTurnTrackingHtml','actionLogFiltersHtml','battleNotesHtml','dataSyncStatusHtml'
+  'ensureObjectiveControlSources','objectiveControlSourceIds','ensureSecondaryRoundLedger','ensureScoreLedger','secondaryTotalScoredVP','scoreTotalForSide','armyNoMansLandTagsHtml','objectiveMapPlacementPanelHtml','objectiveMapRendererHtml','completeTerrainSetup','unitDatabase','canonicalUnitDatabase','bootstrapUnitDatabase','mergeSupplementalUnits','saveCurrentArmyList','loadSavedArmyList','deleteSavedArmyList','undoDeletedSavedArmyList','currentMyListSnapshot','reserveTrayHtml','deploymentPlanMapControlsHtml','transportDeclarationSectionHtml','objectiveLayoutHtml','reserveDeclarationSectionHtml','deploymentPlanPositionEditorHtml','deploymentTrackingEditorHtml','deploymentTrackingControlsHtml','deploymentStatusHtml','tournamentDeploymentValidation','tournamentSetupChecklistHtml','battleEndSummaryHtml','primaryMissionRulesHtml','gameReferenceEditorHtml','gameAssistantHtml','tacticalPreRollHtml','tacticalAdvisorHtml','tacticalContextHtmlBody','tacticalPreRollResolutionModal','tacticalShootingResultHtml','opponentTurnTrackingHtml','recordTacticalAttackInteraction','recordMyTacticalAttackInteractionFromUi','recordOpponentTacticalAttackInteractionFromUi','actionLogFiltersHtml','battleNotesHtml','dataSyncStatusHtml'
 ]){
   const count=(html.match(new RegExp('function\s+'+name+'\s*\\(','g'))||[]).length;
   if(count!==0)throw new Error('Extracted function still inline: '+name);
