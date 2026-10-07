@@ -715,7 +715,8 @@ body{overflow-x:hidden}
 <script src="js/state/battlefield-map-plan-ghost-nodes-state.js"></script>
 <script src="js/state/deployment-staging-nodes-state.js"></script><script src="js/state/army-no-mans-land-tags-state.js"></script>
 <script src="js/state/reserve-tray-state.js"></script><script src="js/state/objective-map-placement-panel-state.js"></script>
-<script src="js/state/objective-map-renderer-state.js"></script><script src="js/state/terrain-reference-image-state.js"></script><script src="js/state/objective-geometry-identity-state.js"></script><script src="js/state/objective-tracked-identity-state.js"></script><script src="js/state/objective-canonical-label-state.js"></script><script src="js/state/objective-map-entries-state.js"></script><script src="js/state/primary-scoring-preview-summary-state.js"></script><script src="js/state/primary-scoring-html-state.js"></script><script src="js/state/primary-scoring-catalogue-audit-state.js"></script><script src="js/state/event-companion-map-regression-audit-state.js"></script>
+<script src="js/state/objective-map-renderer-state.js"></script>
+<script src="js/state/complete-terrain-setup-state.js"></script><script src="js/state/terrain-reference-image-state.js"></script><script src="js/state/objective-geometry-identity-state.js"></script><script src="js/state/objective-tracked-identity-state.js"></script><script src="js/state/objective-canonical-label-state.js"></script><script src="js/state/objective-map-entries-state.js"></script><script src="js/state/primary-scoring-preview-summary-state.js"></script><script src="js/state/primary-scoring-html-state.js"></script><script src="js/state/primary-scoring-catalogue-audit-state.js"></script><script src="js/state/event-companion-map-regression-audit-state.js"></script>
 <script src="js/data/bsdata-parser.js"></script><script>
 const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;
 const {createReserveStateController}=window.OnoForgeReserveState;
@@ -924,6 +925,9 @@ const {objectiveMapEntries}=objectiveMapEntriesStateController;
 const {createObjectiveMapRendererStateController}=window.OnoForgeObjectiveMapRendererState;
 const objectiveMapRendererStateController=createObjectiveMapRendererStateController({objectiveMapModel,objectiveMapPlanGhostNodesHtml,objectiveMapUnitNodesHtml,objectiveMapEntries,objectivePositionFor,objectiveMapLabelForTrackedName,armyNoMansLandTagsHtml,deploymentPlanMapControlsHtml,deploymentTrackingControlsHtml,reserveTrayHtml,terrainReferenceImageHtml,getState:()=>state,esc});
 const {objectiveMapRendererHtml}=objectiveMapRendererStateController;
+const {createCompleteTerrainSetupStateController}=window.OnoForgeCompleteTerrainSetupState;
+const completeTerrainSetupStateController=createCompleteTerrainSetupStateController({getState:()=>state,snapshotForUndo,event,save,render,scrollToDeploymentPlanning:()=>setTimeout(()=>document.getElementById('deployment-planning-section')?.scrollIntoView({behavior:'smooth',block:'start'}),0)});
+const {completeTerrainSetup}=completeTerrainSetupStateController;
 const {createPrimaryScorePreviewSummaryStateController}=window.OnoForgePrimaryScorePreviewSummaryState;
 const primaryScoringPreviewSummaryStateController=createPrimaryScorePreviewSummaryStateController({getState:()=>state,primaryScoringRowsForRound,primaryRoundCapRemaining,primaryScoringEvidence});
 const {primaryScorePreviewSummary}=primaryScoringPreviewSummaryStateController;
@@ -1023,7 +1027,7 @@ function clearBattlefieldUnitPosition(uid){
   Object.entries(tactical.pairs||{}).forEach(([key,pair])=>{
     if(!pair||typeof pair!=='object')return;
     if(String(pa rendered only from verified Event Companion data. Line of sight is never inferred.</div>';
-return '<div class="card objective-map-renderer '+(setup?'terrain-planning-card':'')+'"><div class="split"><div><h3 style="margin:0">'+title+'</h3><div class="muted">'+subtitle+' • '+esc(model.missionKey)+' • Layout '+esc(model.layout)+' • Event Companion p.'+esc(String(model.page||'—'))+'</div></div><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span class="pill">'+status+'</span></div></div>'+controls+battlefieldMarkup+reserveTray+footer+(!terrainSetup&&!model.verified?pending:'')+'</div>';}
+reter+(!terrainSetup&&!model.verified?pending:'')+'</div>';}
 function completeTerrainSetup(){
  const before=snapshotForUndo();
  state.terrainSetupComplete=true;
