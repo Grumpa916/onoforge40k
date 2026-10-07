@@ -1765,7 +1765,6 @@ function primaryScoringOriginalIndex(mission,visibleIndex){
   const row=visible[visibleIndex];
   return row?rows.indexOf(row):-1;
 }
-function primaryRoundCapRemaining(side){return Math.max(0,15-primaryRoundScoredVP(side));}
 function missionDecisionContext(){
   ensureScoreLedger();
   const my=scoreTotalForSide('my'),opp=scoreTotalForSide('opp');
