@@ -28,6 +28,7 @@ const primaryScoringMax=fs.readFileSync(path.join(root,'js/state/primary-scoring
 const primaryObjectiveConditionText=fs.readFileSync(path.join(root,'js/state/primary-objective-condition-text-state.js'),'utf8');
 const primaryObjectiveQualifyingList=fs.readFileSync(path.join(root,'js/state/primary-objective-qualifying-list-state.js'),'utf8');
 const primaryObjectiveConditionStatus=fs.readFileSync(path.join(root,'js/state/primary-objective-condition-status-state.js'),'utf8');
+const primaryObjectiveConditionStatus=fs.readFileSync(path.join(root,'js/state/primary-objective-condition-status-state.js'),'utf8');
 const primaryScoringObjectiveCount=fs.readFileSync(path.join(root,'js/state/primary-scoring-objective-count-state.js'),'utf8');
 const primaryScoringObjectiveAmount=fs.readFileSync(path.join(root,'js/state/primary-scoring-objective-amount-state.js'),'utf8');
 const primaryScoringEffectiveMax=fs.readFileSync(path.join(root,'js/state/primary-scoring-effective-max-state.js'),'utf8');
@@ -60,6 +61,7 @@ const required=[
   '<script src="js/state/primary-scoring-max-state.js"></script>',
   '<script src="js/state/primary-objective-condition-text-state.js"></script>',
   '<script src="js/state/primary-objective-qualifying-list-state.js"></script>',
+  '<script src="js/state/primary-objective-condition-status-state.js"></script>',
   '<script src="js/state/primary-objective-condition-status-state.js"></script>',
   '<script src="js/state/primary-scoring-objective-count-state.js"></script>',
   '<script src="js/state/primary-scoring-objective-amount-state.js"></script>',
@@ -142,6 +144,7 @@ vm.runInNewContext(primaryScoringMax,sandbox,{filename:'js/state/primary-scoring
 vm.runInNewContext(primaryObjectiveConditionText,sandbox,{filename:'js/state/primary-objective-condition-text-state.js'});
 vm.runInNewContext(primaryObjectiveQualifyingList,sandbox,{filename:'js/state/primary-objective-qualifying-list-state.js'});
 vm.runInNewContext(primaryObjectiveConditionStatus,sandbox,{filename:'js/state/primary-objective-condition-status-state.js'});
+vm.runInNewContext(primaryObjectiveConditionStatus,sandbox,{filename:'js/state/primary-objective-condition-status-state.js'});
 vm.runInNewContext(primaryScoringObjectiveCount,sandbox,{filename:'js/state/primary-scoring-objective-count-state.js'});
 vm.runInNewContext(primaryScoringObjectiveAmount,sandbox,{filename:'js/state/primary-scoring-objective-amount-state.js'});
 vm.runInNewContext(primaryScoringEffectiveMax,sandbox,{filename:'js/state/primary-scoring-effective-max-state.js'});
@@ -155,6 +158,7 @@ if(typeof sandbox.window.OnoForgePrimaryScoringEffectiveMaxState?.createPrimaryS
 if(typeof sandbox.window.OnoForgePrimaryScoringMaxState?.createPrimaryScoringMaxStateController!=='function')throw new Error('Primary scoring max module did not expose createPrimaryScoringMaxStateController');
 if(typeof sandbox.window.OnoForgePrimaryObjectiveConditionTextState?.createPrimaryObjectiveConditionTextStateController!=='function')throw new Error('Primary objective condition text module did not expose createPrimaryObjectiveConditionTextStateController');
 if(typeof sandbox.window.OnoForgePrimaryObjectiveQualifyingListState?.createPrimaryObjectiveQualifyingListStateController!=='function')throw new Error('Primary objective qualifying list module did not expose createPrimaryObjectiveQualifyingListStateController');
+if(typeof sandbox.window.OnoForgePrimaryObjectiveConditionStatusState?.createPrimaryObjectiveConditionStatusStateController!=='function')throw new Error('Primary objective condition status module did not expose createPrimaryObjectiveConditionStatusStateController');
 if(typeof sandbox.window.OnoForgePrimaryObjectiveConditionStatusState?.createPrimaryObjectiveConditionStatusStateController!=='function')throw new Error('Primary objective condition status module did not expose createPrimaryObjectiveConditionStatusStateController');
 if(typeof sandbox.window.OnoForgePrimaryScoringObjectiveCountState?.createPrimaryScoringObjectiveCountStateController!=='function')throw new Error('Primary scoring objective count module did not expose createPrimaryScoringObjectiveCountStateController');
 if(typeof sandbox.window.OnoForgePrimaryScoringObjectiveAmountState?.createPrimaryScoringObjectiveAmountStateController!=='function')throw new Error('Primary scoring objective amount module did not expose createPrimaryScoringObjectiveAmountStateController');
@@ -401,6 +405,24 @@ if(primaryObjectiveQualifyingListController.primaryObjectiveQualifyingList('my',
 if(primaryObjectiveQualifyingListController.primaryObjectiveQualifyingList('my',['enemy territory']).length!==1||primaryObjectiveQualifyingListController.primaryObjectiveQualifyingList('my',['enemy territory'])[0].name!=='expansion')throw new Error('Primary objective qualifying list territory regression');
 if(primaryObjectiveQualifyingListController.primaryObjectiveQualifyingList('my',['deployment zone']).length!==1||primaryObjectiveQualifyingListController.primaryObjectiveQualifyingList('my',['deployment zone'])[0].name!=='central')throw new Error('Primary objective qualifying list deployment regression');
 if(primaryObjectiveQualifyingListController.primaryObjectiveQualifyingList('my',['did not control at the start of the turn']).length!==1||primaryObjectiveQualifyingListController.primaryObjectiveQualifyingList('my',['did not control at the start of the turn'])[0].name!=='central')throw new Error('Primary objective qualifying list transition regression');
+const conditionState={
+  objectives:{home:'my','opp-home':'opp',central:'my',expansion:'my'}
+};
+const primaryObjectiveConditionStatusController=sandbox.window.OnoForgePrimaryObjectiveConditionStatusState.createPrimaryObjectiveConditionStatusStateController({
+  getState:()=>conditionState,
+  objectiveCountsForSide:(side)=>side==='my'?[{name:'central',type:'central'},{name:'expansion',type:'expansion'}]:[{name:'opp-home',type:'home'}],
+  primaryObjectiveQualifyingList:(side,row)=>side==='my'?[{name:'central',type:'central'},{name:'expansion',type:'expansion'}]:[],
+  objectiveHomeSide:(name)=>name==='opp-home'?'opp':'my',
+  objectiveStateRecord:(name)=>({name,type:name==='opp-home'?'home':'central'}),
+  objectiveTurnStartOwner:(name)=>name==='central'?'opp':'my',
+  primaryObjectiveConditionText:(row)=>row[0]
+});
+const centralExpansion=primaryObjectiveConditionStatusController.primaryObjectiveConditionStatus('my',['Control central and expansion objectives']);
+if(centralExpansion?.type!=='central-and-expansion'||centralExpansion.count!==2||!centralExpansion.met)throw new Error('Primary objective condition status central-expansion regression');
+const moreThanOpponent=primaryObjectiveConditionStatusController.primaryObjectiveConditionStatus('my',['Control more objectives than your opponent']);
+if(moreThanOpponent?.type!=='more-than-opponent'||moreThanOpponent.opponentCount!==1||!moreThanOpponent.met)throw new Error('Primary objective condition status opponent-count regression');
+const opponentHome=primaryObjectiveConditionStatusController.primaryObjectiveConditionStatus('my',["Control your opponent's home objective"]);
+if(opponentHome?.type!=='opponent-home'||opponentHome.count!==0||opponentHome.met)throw new Error('Primary objective condition status home regression');
 const statusObjectives={homeOpp:'my',homeMine:'my'};
 const primaryObjectiveConditionStatusController=sandbox.window.OnoForgePrimaryObjectiveConditionStatusState.createPrimaryObjectiveConditionStatusStateController({
   getState:()=>({objectives:statusObjectives}),
