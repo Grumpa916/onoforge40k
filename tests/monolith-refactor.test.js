@@ -37,6 +37,7 @@ const tournamentLifecycle=fs.readFileSync(path.join(root,'js/state/tournament-li
 const battleStart=fs.readFileSync(path.join(root,'js/state/battle-start-state.js'),'utf8');
 const battleDeploymentStart=fs.readFileSync(path.join(root,'js/state/battle-deployment-start-state.js'),'utf8');
 const battleEnd=fs.readFileSync(path.join(root,'js/state/battle-end-state.js'),'utf8');
+const undoSnapshot=fs.readFileSync(path.join(root,'js/state/undo-snapshot-state.js'),'utf8');
 const tacticalCore=fs.readFileSync(path.join(root,'js/state/tactical-core-state.js'),'utf8');
 const stratagemUI=fs.readFileSync(path.join(root,'js/state/stratagem-ui-state.js'),'utf8');
 const tacticalContextHtmlBody=fs.readFileSync(path.join(root,'js/state/tactical-context-html-body-state.js'),'utf8');
@@ -249,6 +250,7 @@ vm.runInNewContext(tournamentLifecycle,sandbox,{filename:'js/state/tournament-li
 vm.runInNewContext(battleStart,sandbox,{filename:'js/state/battle-start-state.js'});
 vm.runInNewContext(battleDeploymentStart,sandbox,{filename:'js/state/battle-deployment-start-state.js'});
 vm.runInNewContext(battleEnd,sandbox,{filename:'js/state/battle-end-state.js'});
+vm.runInNewContext(undoSnapshot,sandbox,{filename:'js/state/undo-snapshot-state.js'});
 vm.runInNewContext(tacticalCore,sandbox,{filename:'js/state/tactical-core-state.js'});
 vm.runInNewContext(stratagemUI,sandbox,{filename:'js/state/stratagem-ui-state.js'});
 vm.runInNewContext(tacticalContextHtmlBody,sandbox,{filename:'js/state/tactical-context-html-body-state.js'});
@@ -359,6 +361,8 @@ if(typeof sandbox.window.OnoForgeTournamentLifecycleState?.createTournamentLifec
 if(typeof sandbox.window.OnoForgeBattleStartState?.createBattleStartStateController!=='function')throw new Error('Battle start module did not expose createBattleStartStateController');
 if(typeof sandbox.window.OnoForgeBattleDeploymentStartState?.createBattleDeploymentStartStateController!=='function')throw new Error('Deployment start module did not expose createBattleDeploymentStartStateController');
 if(typeof sandbox.window.OnoForgeBattleEndState?.createBattleEndStateController!=='function')throw new Error('Battle end module did not expose createBattleEndStateController');
+if(typeof sandbox.window.OnoForgeUndoSnapshotState?.createUndoSnapshotStateController!=='function')throw new Error('Undo snapshot module did not expose createUndoSnapshotStateController');
+if((html.match(/function\s+snapshotForUndo\s*\(/g)||[]).length!==0)throw new Error('Undo snapshot function still inline');
 if((html.match(/function\s+endBattle\s*\(/g)||[]).length!==0)throw new Error('Battle end function still inline');
 if((html.match(/function\s+beginDeployment\s*\(/g)||[]).length!==0)throw new Error('Deployment start function still inline');
 if((html.match(/function\s+startBattle\s*\(/g)||[]).length!==0)throw new Error('Battle start function still inline');
