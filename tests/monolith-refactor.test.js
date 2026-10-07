@@ -14,6 +14,7 @@ const deploymentPlanMapControls=fs.readFileSync(path.join(root,'js/state/deploym
 const deploymentPlanPositionEditor=fs.readFileSync(path.join(root,'js/state/deployment-plan-position-editor-state.js'),'utf8');
 const deploymentTrackingEditor=fs.readFileSync(path.join(root,'js/state/deployment-tracking-editor-state.js'),'utf8');
 const deploymentStatus=fs.readFileSync(path.join(root,'js/state/deployment-status-state.js'),'utf8');
+const tournamentDeploymentValidation=fs.readFileSync(path.join(root,'js/state/tournament-deployment-validation-state.js'),'utf8');
 const deploymentTrackingControls=fs.readFileSync(path.join(root,'js/state/deployment-tracking-controls-state.js'),'utf8');
 const objectiveMap=fs.readFileSync(path.join(root,'js/state/objective-map-state.js'),'utf8');
 const objectiveLayout=fs.readFileSync(path.join(root,'js/state/objective-layout-state.js'),'utf8');
@@ -133,7 +134,7 @@ for(const name of [
   'ensureGameTimer','gameTimerElapsed','turnElapsedMs','finalizeCurrentTurnTime','switchTurnClock',
   'ensurePhaseCPState','phaseCPKey','rememberPhaseCP','restorePhaseCP',
   'ensureObjectiveControlHistory','objectivePreviousTurnKey','objectivePreviousTurnOwner',
-  'ensureObjectiveControlSources','objectiveControlSourceIds','ensureSecondaryRoundLedger','ensureScoreLedger','secondaryTotalScoredVP','scoreTotalForSide','armyNoMansLandTagsHtml','objectiveMapPlacementPanelHtml','objectiveMapRendererHtml','completeTerrainSetup','unitDatabase','canonicalUnitDatabase','bootstrapUnitDatabase','mergeSupplementalUnits','saveCurrentArmyList','loadSavedArmyList','deleteSavedArmyList','undoDeletedSavedArmyList','currentMyListSnapshot','reserveTrayHtml','deploymentPlanMapControlsHtml','transportDeclarationSectionHtml','objectiveLayoutHtml','reserveDeclarationSectionHtml','deploymentPlanPositionEditorHtml','deploymentTrackingEditorHtml','deploymentTrackingControlsHtml','deploymentStatusHtml'
+  'ensureObjectiveControlSources','objectiveControlSourceIds','ensureSecondaryRoundLedger','ensureScoreLedger','secondaryTotalScoredVP','scoreTotalForSide','armyNoMansLandTagsHtml','objectiveMapPlacementPanelHtml','objectiveMapRendererHtml','completeTerrainSetup','unitDatabase','canonicalUnitDatabase','bootstrapUnitDatabase','mergeSupplementalUnits','saveCurrentArmyList','loadSavedArmyList','deleteSavedArmyList','undoDeletedSavedArmyList','currentMyListSnapshot','reserveTrayHtml','deploymentPlanMapControlsHtml','transportDeclarationSectionHtml','objectiveLayoutHtml','reserveDeclarationSectionHtml','deploymentPlanPositionEditorHtml','deploymentTrackingEditorHtml','deploymentTrackingControlsHtml','deploymentStatusHtml','tournamentDeploymentValidation'
 ]){
   const count=(html.match(new RegExp('function\s+'+name+'\s*\\(','g'))||[]).length;
   if(count!==0)throw new Error('Extracted function still inline: '+name);
@@ -172,6 +173,7 @@ vm.runInNewContext(deploymentPlanMapControls,sandbox,{filename:'js/state/deploym
 vm.runInNewContext(deploymentPlanPositionEditor,sandbox,{filename:'js/state/deployment-plan-position-editor-state.js'});
 vm.runInNewContext(deploymentTrackingEditor,sandbox,{filename:'js/state/deployment-tracking-editor-state.js'});
 vm.runInNewContext(deploymentStatus,sandbox,{filename:'js/state/deployment-status-state.js'});
+vm.runInNewContext(tournamentDeploymentValidation,sandbox,{filename:'js/state/tournament-deployment-validation-state.js'});
 vm.runInNewContext(deploymentTrackingControls,sandbox,{filename:'js/state/deployment-tracking-controls-state.js'});
 vm.runInNewContext(objectiveMap,sandbox,{filename:'js/state/objective-map-state.js'});
 vm.runInNewContext(objectiveLayout,sandbox,{filename:'js/state/objective-layout-state.js'});
@@ -407,6 +409,20 @@ if(!reserveController.isUnitReserved('my','u1'))throw new Error('Reserve declara
 if(reserveController.reserveUnitsForSide('my').length!==1)throw new Error('Reserve unit filtering regression');
 reserveController.clearReserveDeclarationsForSide('my');
 if(reserveController.isUnitReserved('my','u1'))throw new Error('Reserve clear regression');
+const tournamentDeploymentValidationState={myName:'My Army',oppName:'Opponent Army',my:[{uid:'u1',name:'Captain'},{uid:'u2',name:'Warrior'}],opp:[{uid:'o1',name:'Enemy'}],deploymentSkippedUnits:{'my|u2':true}};
+const tournamentDeploymentValidationController=sandbox.window.OnoForgeTournamentDeploymentValidationState.createTournamentDeploymentValidationStateController({
+  getState:()=>tournamentDeploymentValidationState,
+  ensureBattlefieldUnitPositions:()=>({u1:{side:'my',x:10,y:5},o1:{side:'opp',x:40,y:20}}),
+  isUnitReserved:(side,uid)=>side==='my'&&uid==='u2',
+  isUnitEmbarked:(side,uid)=>false,
+  unitDisplayName:(side,entry)=>entry?.name,
+  get:()=>null
+});
+const tournamentDeploymentValidation=tournamentDeploymentValidationController.tournamentDeploymentValidation();
+if(!tournamentDeploymentValidation.ready||tournamentDeploymentValidation.missing.length!==0)throw new Error('Tournament deployment validation ready-state regression');
+tournamentDeploymentValidationState.deploymentSkippedUnits={};
+const tournamentDeploymentValidationMissing=tournamentDeploymentValidationController.tournamentDeploymentValidation();
+if(tournamentDeploymentValidationMissing.ready||tournamentDeploymentValidationMissing.missing.length!==1||!tournamentDeploymentValidationMissing.missing[0].includes('Warrior'))throw new Error('Tournament deployment validation missing-unit regression');
 const deploymentPlanMapControlsController=sandbox.window.OnoForgeDeploymentPlanMapControlsState.createDeploymentPlanMapControlsStateController({
   getState:()=>({my:[{uid:'u1',name:'Captain'},{uid:'u2',name:'Warrior'}],deploymentMapPlacement:{uid:'u1'}}),
   deploymentPlanForCurrentMap:()=>({u2:{x:12,y:8}}),
