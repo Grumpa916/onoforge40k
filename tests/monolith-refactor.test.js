@@ -20,6 +20,7 @@ const objectiveCanonicalLabel=fs.readFileSync(path.join(root,'js/state/objective
 const objectiveMapEntries=fs.readFileSync(path.join(root,'js/state/objective-map-entries-state.js'),'utf8');
 const armyNoMansLandTags=fs.readFileSync(path.join(root,'js/state/army-no-mans-land-tags-state.js'),'utf8');
 const objectiveMapPlacementPanel=fs.readFileSync(path.join(root,'js/state/objective-map-placement-panel-state.js'),'utf8');
+const objectiveMapRenderer=fs.readFileSync(path.join(root,'js/state/objective-map-renderer-state.js'),'utf8');
 const transport=fs.readFileSync(path.join(root,'js/state/transport-state.js'),'utf8');
 const transportDeclarationSection=fs.readFileSync(path.join(root,'js/state/transport-declaration-section-state.js'),'utf8');
 const stratagem=fs.readFileSync(path.join(root,'js/state/stratagem-state.js'),'utf8');
@@ -64,6 +65,7 @@ const required=[
   '<script src="js/state/objective-layout-state.js"></script>',
   '<script src="js/state/army-no-mans-land-tags-state.js"></script>',
   '<script src="js/state/objective-map-placement-panel-state.js"></script>',
+  '<script src="js/state/objective-map-renderer-state.js"></script>',
   '<script src="js/state/objective-metadata-state.js"></script>',
   '<script src="js/state/transport-state.js"></script>',
   '<script src="js/state/transport-declaration-section-state.js"></script>',
@@ -117,7 +119,7 @@ for(const name of [
   'ensureGameTimer','gameTimerElapsed','turnElapsedMs','finalizeCurrentTurnTime','switchTurnClock',
   'ensurePhaseCPState','phaseCPKey','rememberPhaseCP','restorePhaseCP',
   'ensureObjectiveControlHistory','objectivePreviousTurnKey','objectivePreviousTurnOwner',
-  'ensureObjectiveControlSources','objectiveControlSourceIds','ensureSecondaryRoundLedger','ensureScoreLedger','secondaryTotalScoredVP','scoreTotalForSide','armyNoMansLandTagsHtml','objectiveMapPlacementPanelHtml','reserveTrayHtml','deploymentPlanMapControlsHtml','transportDeclarationSectionHtml','objectiveLayoutHtml','deploymentPlanPositionEditorHtml','deploymentTrackingEditorHtml','deploymentTrackingControlsHtml'
+  'ensureObjectiveControlSources','objectiveControlSourceIds','ensureSecondaryRoundLedger','ensureScoreLedger','secondaryTotalScoredVP','scoreTotalForSide','armyNoMansLandTagsHtml','objectiveMapPlacementPanelHtml','objectiveMapRendererHtml','reserveTrayHtml','deploymentPlanMapControlsHtml','transportDeclarationSectionHtml','objectiveLayoutHtml','deploymentPlanPositionEditorHtml','deploymentTrackingEditorHtml','deploymentTrackingControlsHtml'
 ]){
   const count=(html.match(new RegExp('function\s+'+name+'\s*\\(','g'))||[]).length;
   if(count!==0)throw new Error('Extracted function still inline: '+name);
@@ -162,6 +164,7 @@ vm.runInNewContext(objectiveCanonicalLabel,sandbox,{filename:'js/state/objective
 vm.runInNewContext(objectiveMapEntries,sandbox,{filename:'js/state/objective-map-entries-state.js'});
 vm.runInNewContext(armyNoMansLandTags,sandbox,{filename:'js/state/army-no-mans-land-tags-state.js'});
 vm.runInNewContext(objectiveMapPlacementPanel,sandbox,{filename:'js/state/objective-map-placement-panel-state.js'});
+vm.runInNewContext(objectiveMapRenderer,sandbox,{filename:'js/state/objective-map-renderer-state.js'});
 vm.runInNewContext(transport,sandbox,{filename:'js/state/transport-state.js'});
 vm.runInNewContext(transportDeclarationSection,sandbox,{filename:'js/state/transport-declaration-section-state.js'});
 vm.runInNewContext(stratagem,sandbox,{filename:'js/state/stratagem-state.js'});
@@ -202,6 +205,7 @@ if(typeof sandbox.window.OnoForgeObjectiveCanonicalLabelState?.createObjectiveCa
 if(typeof sandbox.window.OnoForgeObjectiveMapEntriesState?.createObjectiveMapEntriesStateController!=='function')throw new Error('Objective map entries module did not expose createObjectiveMapEntriesStateController');
 if(typeof sandbox.window.OnoForgeArmyNoMansLandTagsState?.createArmyNoMansLandTagsStateController!=='function')throw new Error('Army no-mans-land tags module did not expose createArmyNoMansLandTagsStateController');
 if(typeof sandbox.window.OnoForgeObjectiveMapPlacementPanelState?.createObjectiveMapPlacementPanelStateController!=='function')throw new Error('Objective map placement panel module did not expose createObjectiveMapPlacementPanelStateController');
+if(typeof sandbox.window.OnoForgeObjectiveMapRendererState?.createObjectiveMapRendererStateController!=='function')throw new Error('Objective map renderer module did not expose createObjectiveMapRendererStateController');
 if(typeof sandbox.window.OnoForgeObjectiveLayoutState?.createObjectiveLayoutStateController!=='function')throw new Error('Objective layout module did not expose createObjectiveLayoutStateController');
 if(typeof sandbox.window.OnoForgePrimaryObjectiveQualifyingListState?.createPrimaryObjectiveQualifyingListStateController!=='function')throw new Error('Primary objective qualifying list module did not expose createPrimaryObjectiveQualifyingListStateController');
 if(typeof sandbox.window.OnoForgePrimaryObjectiveConditionStatusState?.createPrimaryObjectiveConditionStatusStateController!=='function')throw new Error('Primary objective condition status module did not expose createPrimaryObjectiveConditionStatusStateController');
@@ -296,6 +300,30 @@ if(!placementHtml.includes('My: Captain')||!placementHtml.includes('Opponent: Wa
 if(!placementHtml.includes('value="opp|u2" selected'))throw new Error('Objective map placement selection regression');
 if(!placementHtml.includes('Placement active'))throw new Error('Objective map placement status regression');
 if(!placementController.objectiveMapPlacementPanelHtml({verified:false})){}else throw new Error('Objective map placement verification gate regression');
+
+const rendererController=sandbox.window.OnoForgeObjectiveMapRendererState.createObjectiveMapRendererStateController({
+  objectiveMapModel:()=>({verified:true,missionKey:'test-mission',layout:'B',page:12,deploymentZones:{my:{x:0,y:0,width:12,height:6}},terrainGeometry:{},}),
+  objectiveMapPlanGhostNodesHtml:()=>'<ghosts/>',
+  objectiveMapUnitNodesHtml:()=>'<units/>',
+  objectiveMapEntries:()=>[],
+  objectivePositionFor:()=>null,
+  objectiveMapLabelForTrackedName:()=> 'Objective',
+  armyNoMansLandTagsHtml:()=>'<army-tags/>',
+  deploymentPlanMapControlsHtml:()=>'<plan-controls/>',
+  deploymentTrackingControlsHtml:()=>'<tracking-controls/>',
+  reserveTrayHtml:()=>'<reserve-tray/>',
+  terrainReferenceImageHtml:()=>'<terrain-reference/>',
+  getState:()=>({attackerSide:'my',myName:'My Army',oppName:'Opponent'}),
+  esc:value=>String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')
+});
+const rendererHtml=rendererController.objectiveMapRendererHtml('battle');
+if(!rendererHtml.includes('Battlefield Map')||!rendererHtml.includes('test-mission')||!rendererHtml.includes('objective-map-canvas'))throw new Error('Objective map renderer shell regression');
+if(!rendererHtml.includes('My Deployment Zone')||!rendererHtml.includes('plan-controls')===false){} 
+const pendingRenderer=sandbox.window.OnoForgeObjectiveMapRendererState.createObjectiveMapRendererStateController({
+  objectiveMapModel:()=>({verified:false,missionKey:'pending',layout:'A',page:1}),
+  objectiveMapPlanGhostNodesHtml:()=>'',objectiveMapUnitNodesHtml:()=>'',objectiveMapEntries:()=>[],objectivePositionFor:()=>null,objectiveMapLabelForTrackedName:()=>'',armyNoMansLandTagsHtml:()=>'',deploymentPlanMapControlsHtml:()=>'',deploymentTrackingControlsHtml:()=>'',reserveTrayHtml:()=>'',terrainReferenceImageHtml:()=>'',getState:()=>({attackerSide:'my',myName:'My Army',oppName:'Opponent'}),esc:String
+});
+if(!pendingRenderer.objectiveMapRendererHtml('battle').includes('Verified Event Companion geometry required'))throw new Error('Objective map renderer pending gate regression');
 
 const reserveState={page:'setup',my:[{uid:'u1',name:'Unit One'}],opp:[{uid:'u2',name:'Unit Two'}],reserveDeclarations:{my:{},opp:{}},battlefieldUnitPositions:{}};
 const reserveController=sandbox.window.OnoForgeReserveState.createReserveStateController({getState:()=>reserveState,snapshotForUndo:()=>({}),event:()=>{},save:()=>{},render:()=>{}});
