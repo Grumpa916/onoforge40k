@@ -717,7 +717,8 @@ body{overflow-x:hidden}
 <script src="js/state/reserve-tray-state.js"></script><script src="js/state/objective-map-placement-panel-state.js"></script>
 <script src="js/state/objective-map-renderer-state.js"></script>
 <script src="js/state/complete-terrain-setup-state.js"></script>
-<script src="js/state/unit-database-state.js"></script><script src="js/state/terrain-reference-image-state.js"></script><script src="js/state/objective-geometry-identity-state.js"></script><script src="js/state/objective-tracked-identity-state.js"></script><script src="js/state/objective-canonical-label-state.js"></script><script src="js/state/objective-map-entries-state.js"></script><script src="js/state/primary-scoring-preview-summary-state.js"></script><script src="js/state/primary-scoring-html-state.js"></script><script src="js/state/primary-scoring-catalogue-audit-state.js"></script><script src="js/state/event-companion-map-regression-audit-state.js"></script>
+<script src="js/state/unit-database-state.js"></script>
+<script src="js/state/saved-army-list-state.js"></script><script src="js/state/terrain-reference-image-state.js"></script><script src="js/state/objective-geometry-identity-state.js"></script><script src="js/state/objective-tracked-identity-state.js"></script><script src="js/state/objective-canonical-label-state.js"></script><script src="js/state/objective-map-entries-state.js"></script><script src="js/state/primary-scoring-preview-summary-state.js"></script><script src="js/state/primary-scoring-html-state.js"></script><script src="js/state/primary-scoring-catalogue-audit-state.js"></script><script src="js/state/event-companion-map-regression-audit-state.js"></script>
 <script src="js/data/bsdata-parser.js"></script><script>
 const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;
 const {createReserveStateController}=window.OnoForgeReserveState;
@@ -932,6 +933,9 @@ const {completeTerrainSetup}=completeTerrainSetupStateController;
 const {createUnitDatabaseStateController}=window.OnoForgeUnitDatabaseState;
 const unitDatabaseStateController=createUnitDatabaseStateController({getWindow:()=>window,getBootstrapCatalogue:()=>typeof EXPANDED_CATALOGUE!=='undefined'?EXPANDED_CATALOGUE:null,getDemo:()=>typeof DEMO!=='undefined'?DEMO:[]});
 const {unitDatabase,canonicalUnitDatabase,bootstrapUnitDatabase,mergeSupplementalUnits}=unitDatabaseStateController;
+const {createSavedArmyListStateController}=window.OnoForgeSavedArmyListState;
+const savedArmyListStateController=createSavedArmyListStateController({getState:()=>state,uid,prompt,ensureSecondaryPersonalPlans,ensureDeploymentPlans,defaultSecondaryPersonalPlans,currentMyListSnapshot,save,render,cloudUpsertArmyList,ensurePermanentSampleArmies});
+const {saveCurrentArmyList,loadSavedArmyList}=savedArmyListStateController;
 const {createPrimaryScorePreviewSummaryStateController}=window.OnoForgePrimaryScorePreviewSummaryState;
 const primaryScoringPreviewSummaryStateController=createPrimaryScorePreviewSummaryStateController({getState:()=>state,primaryScoringRowsForRound,primaryRoundCapRemaining,primaryScoringEvidence});
 const {primaryScorePreviewSummary}=primaryScoringPreviewSummaryStateController;
@@ -1063,49 +1067,7 @@ async function refreshCurrentUnitDatabase(showMessage=true){
       // Direct model entries include weapon/model variants and must not become units.
     }
 
-    if(!all.length)throw new Error('No unit data was found.');
-    const supplemental=all.map(u=>({...u,sourceRole:'supplemental'}));
-    window.SUPPLEMENTAL_UNIT_DATABASE=supplemental;
-    state.bsDataCrossCheckUpdatedAt=new Date().toISOString();
-    save();
-    render();
-    if(showMessage)alert(`Refreshed ${all.length} BSData 11e units for cross-checking. Verified runtime data was not overwritten.`);
-  }catch(err){
-    console.error(err);
-    if(showMessage)alert('Unit database update failed: '+(err.message||err));
-  }
-}
-function saveCurrentArmyList(){
-  if(!Array.isArray(state.savedArmyLists))state.savedArmyLists=[];
-  const name=prompt('Name this army list:', `${state.faction||'Army'} List`);
-  if(!name)return;
-  const list={
-    id:uid(),
-    name,
-    faction:state.faction||'',
-    detachment:state.detachment||state.detachmentSelections?.[0]||'',
-    units:JSON.parse(JSON.stringify(state.my||[])),
-    secondaryPlans:JSON.parse(JSON.stringify(ensureSecondaryPersonalPlans())),
-    personalNotes:String(state.personalArmyNotes||''),
-    deploymentPlans:JSON.parse(JSON.stringify(ensureDeploymentPlans())),
-    created:new Date().toISOString(),
-    updated:new Date().toISOString()
-  };
-  state.savedArmyLists.push(list);
-  save();
-  render();
-  cloudUpsertArmyList(list).catch(()=>{});
-}
-
-function loadSavedArmyList(id){
-  ensurePermanentSampleArmies();
-  const list=(state.savedArmyLists||[]).find(x=>x.id===id);
-  if(!list)return;
-  state.myName=list.name||'My Army';
-  state.faction=list.faction||'';
-  state.limit=Number(list.limit)||2000;
-  state.my=JSON.parse(JSON.stringify(list.units||[]));state.deploymentPlans=JSON.parse(JSON.stringify(list.deploymentPlans||{}));
-  state.secondaryPersonalPlans=JSON.parse(JSON.stringify(list.secondaryPlans||defaultSecondaryPersonalPlans()));ensureSecondaryPersonalPlans();state.personalArmyNotes=String(list.personalNotes||'');state.gameReferencePersonal={phases:{Command:[],Movement:[],Shooting:[],Charge:[],Fight:[],End:[]},quick:[],primary:[],custom:''};
+    if(!all.length)throw new Error('No unit data wandaryPlans||defaultSecondaryPersonalPlans()));ensureSecondaryPersonalPlans();state.personalArmyNotes=String(list.personalNotes||'');state.gameReferencePersonal={phases:{Command:[],Movement:[],Shooting:[],Charge:[],Fight:[],End:[]},quick:[],primary:[],custom:''};
   state.detachmentSelections=list.detachment?[list.detachment]:[];
   state.detachment=list.detachment||'';
   state.activeRosterId=list.id;
