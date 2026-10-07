@@ -1,4 +1,4 @@
-function createPrimaryScoringPreviewSummaryStateController({getState,primaryScoringRowsForRound,primaryRoundCapRemaining,primaryScoringEvidence}){
+function createPrimaryScorePreviewSummaryStateController({getState,primaryScoringRowsForRound,primaryRoundCapRemaining,primaryScoringEvidence}){
   function primaryScorePreviewSummary(side,mission){
     const state=getState();
     const player=side==='opp'?'opp':'my';
@@ -20,4 +20,4 @@ function createPrimaryScoringPreviewSummaryStateController({getState,primaryScor
   }
   return Object.freeze({primaryScorePreviewSummary});
 }
-window.OnoForgePrimaryScoringPreviewSummaryState=Object.freeze({createPrimaryScoringPreviewSummaryStateController});
+window.OnoForgePrimaryScorePreviewSummaryState=Object.freeze({createPrimaryScorePreviewSummaryStateController});
