@@ -716,7 +716,8 @@ body{overflow-x:hidden}
 <script src="js/state/deployment-staging-nodes-state.js"></script><script src="js/state/army-no-mans-land-tags-state.js"></script>
 <script src="js/state/reserve-tray-state.js"></script><script src="js/state/objective-map-placement-panel-state.js"></script>
 <script src="js/state/objective-map-renderer-state.js"></script>
-<script src="js/state/complete-terrain-setup-state.js"></script><script src="js/state/terrain-reference-image-state.js"></script><script src="js/state/objective-geometry-identity-state.js"></script><script src="js/state/objective-tracked-identity-state.js"></script><script src="js/state/objective-canonical-label-state.js"></script><script src="js/state/objective-map-entries-state.js"></script><script src="js/state/primary-scoring-preview-summary-state.js"></script><script src="js/state/primary-scoring-html-state.js"></script><script src="js/state/primary-scoring-catalogue-audit-state.js"></script><script src="js/state/event-companion-map-regression-audit-state.js"></script>
+<script src="js/state/complete-terrain-setup-state.js"></script>
+<script src="js/state/unit-database-state.js"></script><script src="js/state/terrain-reference-image-state.js"></script><script src="js/state/objective-geometry-identity-state.js"></script><script src="js/state/objective-tracked-identity-state.js"></script><script src="js/state/objective-canonical-label-state.js"></script><script src="js/state/objective-map-entries-state.js"></script><script src="js/state/primary-scoring-preview-summary-state.js"></script><script src="js/state/primary-scoring-html-state.js"></script><script src="js/state/primary-scoring-catalogue-audit-state.js"></script><script src="js/state/event-companion-map-regression-audit-state.js"></script>
 <script src="js/data/bsdata-parser.js"></script><script>
 const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;
 const {createReserveStateController}=window.OnoForgeReserveState;
@@ -928,6 +929,9 @@ const {objectiveMapRendererHtml}=objectiveMapRendererStateController;
 const {createCompleteTerrainSetupStateController}=window.OnoForgeCompleteTerrainSetupState;
 const completeTerrainSetupStateController=createCompleteTerrainSetupStateController({getState:()=>state,snapshotForUndo,event,save,render,scrollToDeploymentPlanning:()=>setTimeout(()=>document.getElementById('deployment-planning-section')?.scrollIntoView({behavior:'smooth',block:'start'}),0)});
 const {completeTerrainSetup}=completeTerrainSetupStateController;
+const {createUnitDatabaseStateController}=window.OnoForgeUnitDatabaseState;
+const unitDatabaseStateController=createUnitDatabaseStateController({getWindow:()=>window,getBootstrapCatalogue:()=>typeof EXPANDED_CATALOGUE!=='undefined'?EXPANDED_CATALOGUE:null,getDemo:()=>typeof DEMO!=='undefined'?DEMO:[]});
+const {unitDatabase,canonicalUnitDatabase,bootstrapUnitDatabase,mergeSupplementalUnits}=unitDatabaseStateController;
 const {createPrimaryScorePreviewSummaryStateController}=window.OnoForgePrimaryScorePreviewSummaryState;
 const primaryScoringPreviewSummaryStateController=createPrimaryScorePreviewSummaryStateController({getState:()=>state,primaryScoringRowsForRound,primaryRoundCapRemaining,primaryScoringEvidence});
 const {primaryScorePreviewSummary}=primaryScoringPreviewSummaryStateController;
@@ -1029,34 +1033,7 @@ function clearBattlefieldUnitPosition(uid){
     if(String(pair.attackerUid)===id||String(pair.targetUid)===id){
       const updated={...pair};
       delete updated.distanceInches;
-      delete updated.distanceBand;
-      tactical.pairs[key]=updated;
-    }
-  });
-  const clearedMy=entry('my',id),clearedOpp=entry('opp',id),clearedEntry=clearedMy||clearedOpp,clearedSide=clearedMy?'my':'opp';event('UNIT_BATTLEFIELD_POSITION_CLEARED',{unit:id,unitName:clearedEntry?unitDisplayName(clearedSide,clearedEntry):id,entryId:id,action:'Battlefield position cleared',round:Math.max(1,Number(state.round)||1),phase:String(state.phase||'Command')},before);
-  save();render();
-}
-
-
-
-
-
-
-
-function unitDatabase(){
-  // Runtime canonical data wins. The embedded expanded catalogue is bootstrap-only
-  // and must never be promoted to canonical status by a supplemental refresh.
-  return window.CURRENT_UNIT_DATABASE ||
-    ((typeof EXPANDED_CATALOGUE!=='undefined')?EXPANDED_CATALOGUE:DEMO);
-}
-function canonicalUnitDatabase(){
-  return Array.isArray(window.CURRENT_UNIT_DATABASE)?window.CURRENT_UNIT_DATABASE:null;
-}
-function bootstrapUnitDatabase(){
-  return typeof EXPANDED_CATALOGUE!=='undefined'?EXPANDED_CATALOGUE:(Array.isArray(DEMO)?DEMO:[]);
-}
-function mergeSupplementalUnits(canonical,supplemental){
-  const out=Array.isArray(canonical)?canonical.map(u=>({...u,sourceRole:u?.sourceRole||'bootstrap'})):[];
+      delete uput=Array.isArray(canonical)?canonical.map(u=>({...u,sourceRole:u?.sourceRole||'bootstrap'})):[];
   const byKey=new Map(out.map((u,i)=>[String(u?.faction||'')+'|'+String(u?.name||''),i]));
   for(const u of (Array.isArray(supplemental)?supplemental:[])){
     const copy={...u,sourceRole:'canonical'};
