@@ -702,7 +702,7 @@ body{overflow-x:hidden}
 <script src="js/state/stratagem-state.js"></script>
 <script src="js/state/game-timer-state.js"></script>
 <script src="js/state/phase-cp-state.js"></script>
-<script src="js/state/objective-control-history-state.js"></script><script src="js/state/objective-control-sources-state.js"></script><script src="js/state/secondary-round-ledger-state.js"></script><script src="js/state/score-ledger-state.js"></script><script src="js/state/secondary-score-state.js"></script><script src="js/state/score-calculation-state.js"></script><script src="js/state/primary-round-score-state.js"></script><script src="js/state/primary-round-score-cap-state.js"></script><script src="js/state/primary-scoring-vp-state.js"></script><script src="js/state/primary-scoring-is-per-state.js"></script><script src="js/state/primary-scoring-max-state.js"></script><script src="js/state/primary-scoring-effective-max-state.js"></script><script src="js/state/primary-scoring-exclusive-group-state.js"></script>
+<script src="js/state/objective-control-history-state.js"></script><script src="js/state/objective-control-sources-state.js"></script><script src="js/state/secondary-round-ledger-state.js"></script><script src="js/state/score-ledger-state.js"></script><script src="js/state/secondary-score-state.js"></script><script src="js/state/score-calculation-state.js"></script><script src="js/state/primary-round-score-state.js"></script><script src="js/state/primary-round-score-cap-state.js"></script><script src="js/state/primary-scoring-vp-state.js"></script><script src="js/state/primary-scoring-is-per-state.js"></script><script src="js/state/primary-scoring-max-state.js"></script><script src="js/state/primary-scoring-effective-max-state.js"></script><script src="js/state/primary-scoring-exclusive-group-state.js"></script><script src="js/state/primary-scoring-original-index-state.js"></script>
 <script src="js/data/bsdata-parser.js"></script><script>
 const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;
 const {createReserveStateController}=window.OnoForgeReserveState;
@@ -762,6 +762,12 @@ const {primaryScoringEffectiveMax}=primaryScoringEffectiveMaxStateController;
 const {createPrimaryScoringExclusiveGroupStateController}=window.OnoForgePrimaryScoringExclusiveGroupState;
 const primaryScoringExclusiveGroupStateController=createPrimaryScoringExclusiveGroupStateController();
 const {primaryScoringExclusiveGroup}=primaryScoringExclusiveGroupStateController;
+const {createPrimaryScoringOriginalIndexStateController}=window.OnoForgePrimaryScoringOriginalIndexState;
+const primaryScoringOriginalIndexStateController=createPrimaryScoringOriginalIndexStateController({
+  getPrimaryScoringRows:(mission)=>PRIMARY_SCORING[mission]||[],
+  getVisiblePrimaryScoringRows:(mission)=>primaryScoringRowsForRound(mission)
+});
+const {primaryScoringOriginalIndex}=primaryScoringOriginalIndexStateController;
 const phaseCPStateController=createPhaseCPStateController({getState:()=>state});
 const {ensurePhaseCPState,phaseCPKey,rememberPhaseCP,restorePhaseCP}=phaseCPStateController;
 const gameTimerStateController=createGameTimerStateController({getState:()=>state});
@@ -1747,12 +1753,6 @@ function primaryObjectiveConditionShortLabel(condition){
   if(condition.type==='one-or-more')return condition.requiresTurnChange?(condition.met?'✓ '+condition.transitionCount+' objective'+(condition.transitionCount===1?'':'s')+' newly controlled this turn':'No newly controlled qualifying objective'):condition.met?'✓ At least one qualifying objective controlled':'No qualifying objective currently controlled';
   if(condition.type==='central-and-expansion')return condition.met?'✓ Central + expansion objective controlled':'Need at least 1 central and 1 expansion objective';
   return '';
-}
-function primaryScoringOriginalIndex(mission,visibleIndex){
-  const rows=PRIMARY_SCORING[mission]||[];
-  const visible=primaryScoringRowsForRound(mission);
-  const row=visible[visibleIndex];
-  return row?rows.indexOf(row):-1;
 }
 function missionDecisionContext(){
   ensureScoreLedger();
