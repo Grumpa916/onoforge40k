@@ -1,4 +1,4 @@
-function createTacticalAdvisorRenderStateController({state,tacticalAdvisorStateSignature,tacticalTargetLegality,tacticalAdvisorWeaponGroups,tacticalPairState,missionDecisionContext,reserveUnitsForSide,get,TACTICAL_RENDER_CACHE,tacticalAdvisorV1,tacticalAdvisorV2,advisorStratagemPressure,advisorPreserveCP}){
+function createTacticalAdvisorRenderStateController({state,tacticalAdvisorStateSignature,TACTICAL_RENDER_CACHE,tacticalAdvisorV1,tacticalAdvisorV2,tacticalTargetLegality,tacticalAdvisorWeaponGroups,tacticalPairState,missionDecisionContext,reserveUnitsForSide,get,advisorStratagemPressure}){
 function prepareTacticalRenderCache(){
   const signature=tacticalAdvisorStateSignature();
   if(signature!==TACTICAL_RENDER_CACHE.signature){
