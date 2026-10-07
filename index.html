@@ -702,7 +702,7 @@ body{overflow-x:hidden}
 <script src="js/state/stratagem-state.js"></script>
 <script src="js/state/game-timer-state.js"></script>
 <script src="js/state/phase-cp-state.js"></script>
-<script src="js/state/objective-control-history-state.js"></script><script src="js/state/objective-control-sources-state.js"></script><script src="js/state/secondary-round-ledger-state.js"></script><script src="js/state/score-ledger-state.js"></script><script src="js/state/secondary-score-state.js"></script><script src="js/state/score-calculation-state.js"></script><script src="js/state/primary-round-score-state.js"></script>
+<script src="js/state/objective-control-history-state.js"></script><script src="js/state/objective-control-sources-state.js"></script><script src="js/state/secondary-round-ledger-state.js"></script><script src="js/state/score-ledger-state.js"></script><script src="js/state/secondary-score-state.js"></script><script src="js/state/score-calculation-state.js"></script><script src="js/state/primary-round-score-state.js"></script><script src="js/state/primary-round-score-cap-state.js"></script>
 <script src="js/data/bsdata-parser.js"></script><script>
 const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;
 const {createReserveStateController}=window.OnoForgeReserveState;
@@ -744,6 +744,9 @@ const {scoreTotalForSide}=scoreCalculationStateController;
 const {createPrimaryRoundScoreStateController}=window.OnoForgePrimaryRoundScoreState;
 const primaryRoundScoreStateController=createPrimaryRoundScoreStateController({getState:()=>state});
 const {primaryRoundScoredVP}=primaryRoundScoreStateController;
+const {createPrimaryRoundScoreCapStateController}=window.OnoForgePrimaryRoundScoreCapState;
+const primaryRoundScoreCapStateController=createPrimaryRoundScoreCapStateController({primaryRoundScoredVP});
+const {primaryRoundCapRemaining}=primaryRoundScoreCapStateController;
 const phaseCPStateController=createPhaseCPStateController({getState:()=>state});
 const {ensurePhaseCPState,phaseCPKey,rememberPhaseCP,restorePhaseCP}=phaseCPStateController;
 const gameTimerStateController=createGameTimerStateController({getState:()=>state});
