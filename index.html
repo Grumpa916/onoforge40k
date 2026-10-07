@@ -702,7 +702,7 @@ body{overflow-x:hidden}
 <script src="js/state/stratagem-state.js"></script>
 <script src="js/state/game-timer-state.js"></script>
 <script src="js/state/phase-cp-state.js"></script>
-<script src="js/state/objective-control-history-state.js"></script><script src="js/state/objective-control-sources-state.js"></script><script src="js/state/secondary-round-ledger-state.js"></script><script src="js/state/score-ledger-state.js"></script><script src="js/state/secondary-score-state.js"></script><script src="js/state/score-calculation-state.js"></script><script src="js/state/primary-round-score-state.js"></script><script src="js/state/primary-round-score-cap-state.js"></script><script src="js/state/primary-scoring-vp-state.js"></script><script src="js/state/primary-scoring-is-per-state.js"></script><script src="js/state/primary-scoring-max-state.js"></script><script src="js/state/primary-scoring-objective-count-state.js"></script><script src="js/state/primary-scoring-effective-max-state.js"></script><script src="js/state/primary-scoring-exclusive-group-state.js"></script><script src="js/state/primary-scoring-original-index-state.js"></script><script src="js/state/primary-objective-condition-short-label-state.js"></script>
+<script src="js/state/objective-control-history-state.js"></script><script src="js/state/objective-control-sources-state.js"></script><script src="js/state/secondary-round-ledger-state.js"></script><script src="js/state/score-ledger-state.js"></script><script src="js/state/secondary-score-state.js"></script><script src="js/state/score-calculation-state.js"></script><script src="js/state/primary-round-score-state.js"></script><script src="js/state/primary-round-score-cap-state.js"></script><script src="js/state/primary-scoring-vp-state.js"></script><script src="js/state/primary-scoring-is-per-state.js"></script><script src="js/state/primary-scoring-max-state.js"></script><script src="js/state/primary-scoring-objective-count-state.js"></script><script src="js/state/primary-scoring-objective-amount-state.js"></script><script src="js/state/primary-scoring-effective-max-state.js"></script><script src="js/state/primary-scoring-exclusive-group-state.js"></script><script src="js/state/primary-scoring-original-index-state.js"></script><script src="js/state/primary-objective-condition-short-label-state.js"></script>
 <script src="js/data/bsdata-parser.js"></script><script>
 const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;
 const {createReserveStateController}=window.OnoForgeReserveState;
@@ -762,6 +762,9 @@ const primaryScoringObjectiveCountStateController=createPrimaryScoringObjectiveC
   getPrimaryObjectiveQualifyingList:(side,row)=>primaryObjectiveQualifyingList(side,row)
 });
 const {primaryScoringObjectiveCount}=primaryScoringObjectiveCountStateController;
+const {createPrimaryScoringObjectiveAmountStateController}=window.OnoForgePrimaryScoringObjectiveAmountState;
+const primaryScoringObjectiveAmountStateController=createPrimaryScoringObjectiveAmountStateController({primaryScoringObjectiveCount});
+const {primaryScoringObjectiveAmount}=primaryScoringObjectiveAmountStateController;
 const {createPrimaryScoringEffectiveMaxStateController}=window.OnoForgePrimaryScoringEffectiveMaxState;
 const primaryScoringEffectiveMaxStateController=createPrimaryScoringEffectiveMaxStateController({primaryScoringMax,primaryScoringObjectiveCount});
 const {primaryScoringEffectiveMax}=primaryScoringEffectiveMaxStateController;
@@ -1592,10 +1595,6 @@ function primaryObjectiveConditionStatus(side,row){
     return {type:'one-or-more',count,required:1,met:count>=1,qualifying,...transitionFields};
   }
   return null;
-}
-function primaryScoringObjectiveAmount(side,row){
-  const count=primaryScoringObjectiveCount(side,row);
-  return count===null?1:count;
 }
 function primaryScoringEvidence(side,index,mission,amountOverride){
   const player=side==='opp'?'opp':'my';
