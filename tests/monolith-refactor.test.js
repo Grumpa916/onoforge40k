@@ -31,6 +31,7 @@ const tacticalPreRoll=fs.readFileSync(path.join(root,'js/state/tactical-pre-roll
 const tacticalAdvisor=fs.readFileSync(path.join(root,'js/state/tactical-advisor-state.js'),'utf8');
 const tacticalContextHtmlBody=fs.readFileSync(path.join(root,'js/state/tactical-context-html-body-state.js'),'utf8');
 const tacticalPreRollResolutionModal=fs.readFileSync(path.join(root,'js/state/tactical-pre-roll-resolution-modal-state.js'),'utf8');
+const tacticalShootingResult=fs.readFileSync(path.join(root,'js/state/tactical-shooting-result-state.js'),'utf8');
 const opponentTurnTracking=fs.readFileSync(path.join(root,'js/state/opponent-turn-tracking-state.js'),'utf8');
 const objectiveMap=fs.readFileSync(path.join(root,'js/state/objective-map-state.js'),'utf8');
 const objectiveLayout=fs.readFileSync(path.join(root,'js/state/objective-layout-state.js'),'utf8');
@@ -147,7 +148,7 @@ for(const marker of required){
 }
 
 for(const moduleScript of [
-  'js/state/battle-end-summary-state.js','js/state/primary-mission-rules-state.js','js/state/game-reference-editor-state.js','js/state/game-assistant-state.js','js/state/tactical-pre-roll-state.js','js/state/tactical-advisor-state.js','js/state/tactical-context-html-body-state.js','js/state/tactical-pre-roll-resolution-modal-state.js','js/state/opponent-turn-tracking-state.js'
+  'js/state/battle-end-summary-state.js','js/state/primary-mission-rules-state.js','js/state/game-reference-editor-state.js','js/state/game-assistant-state.js','js/state/tactical-pre-roll-state.js','js/state/tactical-advisor-state.js','js/state/tactical-context-html-body-state.js','js/state/tactical-pre-roll-resolution-modal-state.js','js/state/tactical-shooting-result-state.js','js/state/opponent-turn-tracking-state.js'
 ]){
   const tag='<script src="'+moduleScript+'></script>',count=html.split(tag).length-1,mainScript=html.indexOf('<script>\n');
   if(count!==1||mainScript<0||html.indexOf(tag)>=mainScript)throw new Error('Extracted module script must load before main app script: '+moduleScript);
@@ -166,7 +167,7 @@ for(const name of [
   'ensureGameTimer','gameTimerElapsed','turnElapsedMs','finalizeCurrentTurnTime','switchTurnClock',
   'ensurePhaseCPState','phaseCPKey','rememberPhaseCP','restorePhaseCP',
   'ensureObjectiveControlHistory','objectivePreviousTurnKey','objectivePreviousTurnOwner',
-  'ensureObjectiveControlSources','objectiveControlSourceIds','ensureSecondaryRoundLedger','ensureScoreLedger','secondaryTotalScoredVP','scoreTotalForSide','armyNoMansLandTagsHtml','objectiveMapPlacementPanelHtml','objectiveMapRendererHtml','completeTerrainSetup','unitDatabase','canonicalUnitDatabase','bootstrapUnitDatabase','mergeSupplementalUnits','saveCurrentArmyList','loadSavedArmyList','deleteSavedArmyList','undoDeletedSavedArmyList','currentMyListSnapshot','reserveTrayHtml','deploymentPlanMapControlsHtml','transportDeclarationSectionHtml','objectiveLayoutHtml','reserveDeclarationSectionHtml','deploymentPlanPositionEditorHtml','deploymentTrackingEditorHtml','deploymentTrackingControlsHtml','deploymentStatusHtml','tournamentDeploymentValidation','tournamentSetupChecklistHtml','battleEndSummaryHtml','primaryMissionRulesHtml','gameReferenceEditorHtml','gameAssistantHtml','tacticalPreRollHtml','tacticalAdvisorHtml','tacticalContextHtmlBody','tacticalPreRollResolutionModal','opponentTurnTrackingHtml','actionLogFiltersHtml','battleNotesHtml','dataSyncStatusHtml'
+  'ensureObjectiveControlSources','objectiveControlSourceIds','ensureSecondaryRoundLedger','ensureScoreLedger','secondaryTotalScoredVP','scoreTotalForSide','armyNoMansLandTagsHtml','objectiveMapPlacementPanelHtml','objectiveMapRendererHtml','completeTerrainSetup','unitDatabase','canonicalUnitDatabase','bootstrapUnitDatabase','mergeSupplementalUnits','saveCurrentArmyList','loadSavedArmyList','deleteSavedArmyList','undoDeletedSavedArmyList','currentMyListSnapshot','reserveTrayHtml','deploymentPlanMapControlsHtml','transportDeclarationSectionHtml','objectiveLayoutHtml','reserveDeclarationSectionHtml','deploymentPlanPositionEditorHtml','deploymentTrackingEditorHtml','deploymentTrackingControlsHtml','deploymentStatusHtml','tournamentDeploymentValidation','tournamentSetupChecklistHtml','battleEndSummaryHtml','primaryMissionRulesHtml','gameReferenceEditorHtml','gameAssistantHtml','tacticalPreRollHtml','tacticalAdvisorHtml','tacticalContextHtmlBody','tacticalPreRollResolutionModal','tacticalShootingResultHtml','opponentTurnTrackingHtml','actionLogFiltersHtml','battleNotesHtml','dataSyncStatusHtml'
 ]){
   const count=(html.match(new RegExp('function\s+'+name+'\s*\\(','g'))||[]).length;
   if(count!==0)throw new Error('Extracted function still inline: '+name);
@@ -219,6 +220,7 @@ vm.runInNewContext(tacticalPreRoll,sandbox,{filename:'js/state/tactical-pre-roll
 vm.runInNewContext(tacticalAdvisor,sandbox,{filename:'js/state/tactical-advisor-state.js'});
 vm.runInNewContext(tacticalContextHtmlBody,sandbox,{filename:'js/state/tactical-context-html-body-state.js'});
 vm.runInNewContext(tacticalPreRollResolutionModal,sandbox,{filename:'js/state/tactical-pre-roll-resolution-modal-state.js'});
+vm.runInNewContext(tacticalShootingResult,sandbox,{filename:'js/state/tactical-shooting-result-state.js'});
 vm.runInNewContext(opponentTurnTracking,sandbox,{filename:'js/state/opponent-turn-tracking-state.js'});
 vm.runInNewContext(objectiveMap,sandbox,{filename:'js/state/objective-map-state.js'});
 vm.runInNewContext(objectiveLayout,sandbox,{filename:'js/state/objective-layout-state.js'});
@@ -321,6 +323,9 @@ if(!tacticalContextController.tacticalContextHtmlBody().includes('Build both arm
 if(typeof sandbox.window.OnoForgeTacticalPreRollResolutionModalState?.createTacticalPreRollResolutionModalStateController!=='function')throw new Error('Tactical pre-roll resolution modal module did not expose createTacticalPreRollResolutionModalStateController');
 const tacticalPreRollResolutionModalController=sandbox.window.OnoForgeTacticalPreRollResolutionModalState.createTacticalPreRollResolutionModalStateController({getState:()=>({phase:'Command',tactical:{preRollResolutionOpen:''}}),ensureTacticalState:()=>({preRollResolutionOpen:''}),tacticalPreRollResolutionCurrent:()=>null,tacticalPreRollSaveableWounds:()=>0,tacticalPreRollDamageMax:()=>6,tacticalPreRollSaveGroups:()=>[],entry:()=>null,esc:v=>String(v),get:()=>null});
 if(tacticalPreRollResolutionModalController.tacticalPreRollResolutionModal()!=='')throw new Error('Tactical pre-roll resolution modal empty-state regression');
+if(typeof sandbox.window.OnoForgeTacticalShootingResultState?.createTacticalShootingResultStateController!=='function')throw new Error('Tactical shooting result module did not expose createTacticalShootingResultStateController');
+const tacticalShootingResultController=sandbox.window.OnoForgeTacticalShootingResultState.createTacticalShootingResultStateController({getState:()=>({phase:'Command',tactical:{selectedTargetUid:''}}),tacticalAdvisorAttackerEntry:()=>null,entry:()=>null,getTacticalRenderBundle:()=>({context:{},legality:{},result:{}}),tacticalLegalityForUnit:()=>({reason:''}),tacticalWeaponIsRanged:()=>false,tacticalWeaponRange:()=>null,tacticalWeaponPhaseEligible:()=>false,tacticalUnitMovementType:()=>'',tacticalWeaponIsAssault:()=>false,tacticalUnitIsEngagedAny:()=>false,tacticalUnitIsMonsterVehicle:()=>false,tacticalWeaponIsCloseQuarters:()=>false,tacticalWeaponIsBlast:()=>false,tacticalWeaponIsIndirect:()=>false,tacticalPreRollHtml:()=>'',esc:v=>String(v),unitDisplayName:()=>''});
+if(tacticalShootingResultController.tacticalShootingResultHtml()!=='')throw new Error('Tactical shooting result empty-state regression');
 if(typeof sandbox.window.OnoForgeOpponentTurnTrackingState?.createOpponentTurnTrackingStateController!=='function')throw new Error('Opponent turn tracking module did not expose createOpponentTurnTrackingStateController');
 const opponentTurnTrackingController=sandbox.window.OnoForgeOpponentTurnTrackingState.createOpponentTurnTrackingStateController({getState:()=>({phase:'Command',opponent:[]}),tacticalUnitState:()=>null,ensureOpponentTurnCaptureState:()=>({}),tacticalUnitMovementType:()=>'',unitDisplayName:()=>'',setTacticalUnitAction:()=>{},esc:v=>String(v),btn:()=>'',tacticalOpponentWeaponChoices:()=>[],setOpponentTurnCapture:()=>{},recordOpponentTacticalAttackInteractionFromUi:()=>{},setOpponentChargeTarget:()=>{},roll:()=>0,recordOpponentChargeResult:()=>{},getElementById:()=>null,tacticalFightResolvedForSide:()=>false,tacticalFightUnitState:()=>({}),setTacticalFightUnitState:()=>{}});
 if(!opponentTurnTrackingController.opponentTurnTrackingHtml().includes('Opponent Turn Tracking'))throw new Error('Opponent turn tracking command-phase regression');
