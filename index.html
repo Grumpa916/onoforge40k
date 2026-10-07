@@ -767,7 +767,7 @@ const {
 <script src="js/state/saved-army-list-deletion-state.js"></script>
 <script src="js/state/current-my-list-snapshot-state.js"></script><script src="js/state/terrain-reference-image-state.js"></script><script src="js/state/objective-geometry-identity-state.js"></script><script src="js/state/objective-tracked-identity-state.js"></script><script src="js/state/objective-canonical-label-state.js"></script><script src="js/state/objective-map-entries-state.js"></script><script src="js/state/primary-scoring-preview-summary-state.js"></script><script src="js/state/primary-scoring-html-state.js"></script><script src="js/state/primary-scoring-catalogue-audit-state.js"></script><script src="js/state/event-companion-map-regression-audit-state.js"></script>
 <script src="js/data/bsdata-parser.js"></script><script src="js/state/data-sync-status-state.js"></script><script src="js/state/battle-notes-state.js"></script><script src="js/state/action-log-filters-state.js"></script><script src="js/state/battle-end-summary-state.js"></script>
-<script src="js/state/primary-mission-rules-state.js"></script>
+<script src="js/state/primary-mission-rules-state.js"></script><script src="js/state/force-disposition-state.js"></script>
 <script src="js/state/game-reference-editor-state.js"></script>
 <script src="js/state/game-assistant-state.js"></script>
 <script src="js/state/tactical-pre-roll-state.js"></script>
@@ -1250,32 +1250,11 @@ function savedListsPage(){
   </div>`;
 }
 
-function forceDispositionNameForDetachment(side){
-  const names=detachmentSelections(side);
-  const faction=side==='my'?state.faction:state.oppFaction;
-  return names.map(n=>detachmentInfo(faction,n)?.[2]).filter(Boolean);
-}
-function availableForceDispositions(side){return [...new Set(forceDispositionNameForDetachment(side))];}
-function forceDisposition(side){
-  const key=side==='my'?'myForceDisposition':'oppForceDisposition';
-  const avail=availableForceDispositions(side);
-  const current=state[key];
-  if(current && avail.includes(current)) return current;
-  return avail[0]||'';
-}
-function primaryMission(side){
-  const own=forceDisposition(side);
-  const opp=forceDisposition(side==='my'?'opp':'my');
-  return own&&opp ? (PRIMARY_MISSIONS[own]?.[opp]||'') : '';
-}
-function setForceDisposition(side,value){
-  const key=side==='my'?'myForceDisposition':'oppForceDisposition';
-  const before=snapshotForUndo();
-  state[key]=value;
-  ensureObjectiveLayoutForMission();
-  event('FORCE_DISPOSITION_CHANGED',{side,action:'Set Force Disposition',forceDisposition:value,primaryMission:primaryMission(side)},before);
-  save();render();
-}
+const forceDispositionStateController=window.OnoForgeForceDispositionState.createForceDispositionStateController({
+  state,detachmentSelections,detachmentInfo,PRIMARY_MISSIONS,snapshotForUndo,ensureObjectiveLayoutForMission,event,save,render
+});
+const {forceDispositionNameForDetachment,availableForceDispositions,forceDisposition,primaryMission,setForceDisposition}=forceDispositionStateController;
+
 const PRIMARY_SCORING={
 "Battlefield Dominance":[["R1–2 • End of turn","2 VP","Control more objectives than your opponent"],["R2+ • Command phase / R5","3 VP","Per objective you control"],["R2+ • Command phase / R5","+2 VP","Per objective excluding home if you control your home objective"]],
 "Immovable Object":[["R1–5 • End of turn","3 VP","Control one or more central objectives"],["R2–4 • Command phase","5 VP","Per objective you control, excluding home"],["R5 • End of turn","5 VP","Per objective you control, excluding home"]],"Determined Acquisition":[["End of turn","2 VP","Per objective you control that you did not control at the start of the turn, excluding home"],["R2+ • Command phase / R5","3 VP","Per objective you control"],["R2+ • Command phase / R5","+3 VP","For each controlled objective within enemy territory"]],
