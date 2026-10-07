@@ -702,7 +702,7 @@ body{overflow-x:hidden}
 <script src="js/state/stratagem-state.js"></script>
 <script src="js/state/game-timer-state.js"></script>
 <script src="js/state/phase-cp-state.js"></script>
-<script src="js/state/objective-control-history-state.js"></script>
+<script src="js/state/objective-control-history-state.js"></script><script src="js/state/objective-control-sources-state.js"></script>
 <script src="js/data/bsdata-parser.js"></script><script>
 const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;
 const {createReserveStateController}=window.OnoForgeReserveState;
@@ -726,6 +726,9 @@ const {createPhaseCPStateController}=window.OnoForgePhaseCPState;
 const {createObjectiveControlHistoryStateController}=window.OnoForgeObjectiveControlHistoryState;
 const objectiveControlHistoryStateController=createObjectiveControlHistoryStateController({getState:()=>state});
 const {ensureObjectiveControlHistory,objectivePreviousTurnKey,objectivePreviousTurnOwner}=objectiveControlHistoryStateController;
+const {createObjectiveControlSourcesStateController}=window.OnoForgeObjectiveControlSourcesState;
+const objectiveControlSourcesStateController=createObjectiveControlSourcesStateController({getState:()=>state});
+const {ensureObjectiveControlSources,objectiveControlSourceIds}=objectiveControlSourcesStateController;
 const phaseCPStateController=createPhaseCPStateController({getState:()=>state});
 const {ensurePhaseCPState,phaseCPKey,rememberPhaseCP,restorePhaseCP}=phaseCPStateController;
 const gameTimerStateController=createGameTimerStateController({getState:()=>state});
@@ -6100,15 +6103,6 @@ function objectiveDeploymentZone(name){
   return objectiveMetadataDeploymentZone(name);
 }
 function objectiveDeploymentZoneLabel(zone){return ({my:'My Deployment Zone',opp:'Opponent Deployment Zone',none:'No Deployment Zone'})[zone]||'No Deployment Zone';}
-function ensureObjectiveControlSources(){
-  if(!state.objectiveControlSources||typeof state.objectiveControlSources!=='object'||Array.isArray(state.objectiveControlSources))state.objectiveControlSources={};
-  return state.objectiveControlSources;
-}
-function objectiveControlSourceIds(name){
-  const key=String(name||'').trim();
-  const sources=ensureObjectiveControlSources()[key];
-  return Array.isArray(sources)?sources.map(String):[];
-}
 function objectiveControlSourceEntries(name,side){
   const ids=new Set(objectiveControlSourceIds(name));
   const roster=Array.isArray(state[side])?state[side]:[];
