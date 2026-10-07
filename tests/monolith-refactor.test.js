@@ -413,7 +413,7 @@ const tournamentDeploymentValidationState={myName:'My Army',oppName:'Opponent Ar
 const tournamentDeploymentValidationController=sandbox.window.OnoForgeTournamentDeploymentValidationState.createTournamentDeploymentValidationStateController({
   getState:()=>tournamentDeploymentValidationState,
   ensureBattlefieldUnitPositions:()=>({u1:{side:'my',x:10,y:5},o1:{side:'opp',x:40,y:20}}),
-  isUnitReserved:(side,uid)=>side==='my'&&uid==='u2',
+  isUnitReserved:()=>false,
   isUnitEmbarked:(side,uid)=>false,
   unitDisplayName:(side,entry)=>entry?.name,
   get:()=>null
