@@ -10,6 +10,7 @@ const reserve=fs.readFileSync(path.join(root,'js/state/reserve-state.js'),'utf8'
 const deploymentPlan=fs.readFileSync(path.join(root,'js/state/deployment-plan-state.js'),'utf8');
 const objectiveMap=fs.readFileSync(path.join(root,'js/state/objective-map-state.js'),'utf8');
 const objectiveMetadata=fs.readFileSync(path.join(root,'js/state/objective-metadata-state.js'),'utf8');
+const transport=fs.readFileSync(path.join(root,'js/state/transport-state.js'),'utf8');
 const utils=fs.readFileSync(path.join(root,'js/utils/pure-utils.js'),'utf8');
 
 const required=[
@@ -19,6 +20,7 @@ const required=[
   '<script src="js/state/deployment-plan-state.js"></script>',
   '<script src="js/state/objective-map-state.js"></script>',
   '<script src="js/state/objective-metadata-state.js"></script>',
+  '<script src="js/state/transport-state.js"></script>',
   'const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;',
   'const {collectBSDataObjects,bsUnitFromEntry}=window.OnoForgeBSDataParser;',
   'const {createReserveStateController}=window.OnoForgeReserveState;',
@@ -35,7 +37,8 @@ for(const name of [
   'ensureReserveState','isUnitReserved','reserveUnitsForSide','clearReserveDeclarationsForSide','setReserveDeclaration',
   'ensureDeploymentPlans','deploymentPlanForCurrentMap','deploymentPlanPosition','setDeploymentPlanPosition','clearDeploymentPlanPosition','clearDeploymentPlanForCurrentMap','saveDeploymentPlan','loadDeploymentPlan',
   'objectiveMissionKey','objectiveLayoutInfo','ensureObjectiveLayoutForMission','setObjectiveMapLayout','objectiveLayoutPage',
-  'ensureObjectiveMeta','objectiveRole','objectiveType','objectiveHomeSide','objectiveMetadataTerritory','objectiveMetadataDeploymentZone'
+  'ensureObjectiveMeta','objectiveRole','objectiveType','objectiveHomeSide','objectiveMetadataTerritory','objectiveMetadataDeploymentZone',
+  'ensureTransportEmbarkations','transportEntry','isUnitEmbarked','transportPassengers','clearTransportEmbarkation','setTransportEmbarkation'
 ]){
   const count=(html.match(new RegExp('function\\s+'+name+'\\s*\\(','g'))||[]).length;
   if(count!==0)throw new Error('Extracted function still inline: '+name);
@@ -57,7 +60,7 @@ inlineBlocks.forEach((src,i)=>{
   fs.writeFileSync(file,src);
   cp.execFileSync(process.execPath,['--check',file],{stdio:'inherit'});
 });
-for(const [name,src] of [['bsdata-parser.js',parser],['pure-utils.js',utils],['reserve-state.js',reserve],['deployment-plan-state.js',deploymentPlan],['objective-map-state.js',objectiveMap]]){
+for(const [name,src] of [['bsdata-parser.js',parser],['pure-utils.js',utils],['reserve-state.js',reserve],['deployment-plan-state.js',deploymentPlan],['objective-map-state.js',objectiveMap],['objective-metadata-state.js',objectiveMetadata],['transport-state.js',transport]]){
   const file=path.join('/tmp','onoforge-refactor-'+name);
   fs.writeFileSync(file,src);
   cp.execFileSync(process.execPath,['--check',file],{stdio:'inherit'});
@@ -70,6 +73,7 @@ vm.runInNewContext(reserve,sandbox,{filename:'js/state/reserve-state.js'});
 vm.runInNewContext(deploymentPlan,sandbox,{filename:'js/state/deployment-plan-state.js'});
 vm.runInNewContext(objectiveMap,sandbox,{filename:'js/state/objective-map-state.js'});
 vm.runInNewContext(objectiveMetadata,sandbox,{filename:'js/state/objective-metadata-state.js'});
+vm.runInNewContext(transport,sandbox,{filename:'js/state/transport-state.js'});
 if(typeof sandbox.window.OnoForgeBSDataParser?.collectBSDataObjects!=='function')throw new Error('Parser module did not expose collectBSDataObjects');
 if(typeof sandbox.window.OnoForgeBSDataParser?.bsUnitFromEntry!=='function')throw new Error('Parser module did not expose bsUnitFromEntry');
 if(typeof sandbox.window.OnoForgePureUtils?.battlefieldDistanceBetween!=='function')throw new Error('Utility module did not expose battlefieldDistanceBetween');
@@ -79,6 +83,7 @@ if(typeof sandbox.window.OnoForgeDeploymentPlanState?.createDeploymentPlanStateC
 if(typeof sandbox.window.OnoForgeDeploymentPlanState?.createDeploymentPlanStateController({getState:()=>({}),save:()=>{},render:()=>{},cloudUpsertArmyList:()=>Promise.resolve(),notify:()=>{},objectiveMissionKey:()=>''}).deploymentPlanKey!=='function')throw new Error('Deployment plan module did not expose deploymentPlanKey');
 if(typeof sandbox.window.OnoForgeObjectiveMapState?.createObjectiveMapStateController!=='function')throw new Error('Objective map module did not expose createObjectiveMapStateController');
 if(typeof sandbox.window.OnoForgeObjectiveMetadataState?.createObjectiveMetadataStateController!=='function')throw new Error('Objective metadata module did not expose createObjectiveMetadataStateController');
+if(typeof sandbox.window.OnoForgeTransportState?.createTransportStateController!=='function')throw new Error('Transport module did not expose createTransportStateController');
 
 const reserveState={page:'setup',my:[{uid:'u1',name:'Unit One'}],opp:[{uid:'u2',name:'Unit Two'}],reserveDeclarations:{my:{},opp:{}},battlefieldUnitPositions:{}};
 const reserveController=sandbox.window.OnoForgeReserveState.createReserveStateController({getState:()=>reserveState,snapshotForUndo:()=>({}),event:()=>{},save:()=>{},render:()=>{}});
@@ -121,6 +126,49 @@ if(!deploymentController.deploymentPlanPosition('u2'))throw new Error('Deploymen
 deploymentController.clearDeploymentPlanForCurrentMap();
 if(deploymentController.deploymentPlanForCurrentMap().u2)throw new Error('Deployment plan map clear regression');
 if(deploymentSaves<4||deploymentRenders<3||notifications.length!==0)throw new Error('Deployment plan controller lifecycle regression');
+
+const transportState={page:'setup',my:[
+  {uid:'tr1',unitId:'transport-1',name:'Razorback'},
+  {uid:'p1',unitId:'passenger-1',name:'Intercessors'},
+  {uid:'p2',unitId:'passenger-2',name:'Tactical Squad'},
+  {uid:'tr2',unitId:'transport-2',name:'Rhino'}
+],opp:[],transportEmbarkations:{my:{},opp:{}},battlefieldUnitPositions:{p1:{x:10,y:10}}};
+const transportUnits={
+  'transport-1':{keywords:[' transport '],name:'Razorback'},
+  'transport-2':{keywords:['TRANSPORT'],name:'Rhino'},
+  'passenger-1':{keywords:['INFANTRY'],name:'Intercessors'},
+  'passenger-2':{keywords:['INFANTRY'],name:'Tactical Squad'}
+};
+let transportSaves=0,transportRenders=0,transportEvents=[];
+const transportEntryLookup=(side,uid)=>transportState[side].find(e=>String(e.uid)===String(uid))||null;
+const transportGet=(unitId)=>transportUnits[unitId]||null;
+const transportController=sandbox.window.OnoForgeTransportState.createTransportStateController({
+  getState:()=>transportState,
+  entry:transportEntryLookup,
+  get:transportGet,
+  snapshotForUndo:()=>({}),
+  event:(...args)=>transportEvents.push(args),
+  save:()=>{transportSaves++},
+  render:()=>{transportRenders++},
+  unitDisplayName:(side,e)=>e?.name||'Unit'
+});
+if(transportController.transportEntry('my','tr1')?.uid!=='tr1')throw new Error('Transport entry detection regression');
+if(transportController.transportEntry('my','p1')!==null)throw new Error('Non-transport entry detection regression');
+if(transportController.ensureTransportEmbarkations().my===undefined||transportController.ensureTransportEmbarkations().opp===undefined)throw new Error('Transport state initialization regression');
+if(!transportController.setTransportEmbarkation('my','tr1','p1',true))throw new Error('Transport embarkation failed');
+if(transportController.transportPassengers('my','tr1')[0]!=='p1')throw new Error('Transport passenger retention regression');
+if(!transportController.isUnitEmbarked('my','p1'))throw new Error('Transport embarked-state lookup regression');
+if(transportState.battlefieldUnitPositions.p1!==undefined)throw new Error('Embarking did not clear battlefield position');
+if(transportEvents[0]?.[0]!=='TRANSPORT_EMBARKED')throw new Error('Transport embark event regression');
+if(!transportController.setTransportEmbarkation('my','tr2','p1',true))throw new Error('Transport reassignment failed');
+if(transportController.transportPassengers('my','tr1').length!==0||transportController.transportPassengers('my','tr2')[0]!=='p1')throw new Error('Transport reassignment clearing regression');
+transportController.clearTransportEmbarkation('my','p1');
+if(transportController.isUnitEmbarked('my','p1'))throw new Error('Transport clear regression');
+if(!transportController.setTransportEmbarkation('my','tr1','p2',true))throw new Error('Second passenger embarkation failed');
+if(transportController.setTransportEmbarkation('my','tr1','tr2',true))throw new Error('Transport-as-passenger validation regression');
+if(!transportController.setTransportEmbarkation('my','tr1','p2',false))throw new Error('Transport disembarkation failed');
+if(transportController.transportPassengers('my','tr1').length!==0)throw new Error('Transport disembarkation state regression');
+if(transportSaves<3||transportRenders<3)throw new Error('Transport controller lifecycle regression');
 
 const objectiveMetadataState={objectiveMeta:{home:{type:'home',homeSide:'my'},central:{type:'central',territory:'nml'},expansion:{role:'expansion'}}};
 const objectiveMetadataController=sandbox.window.OnoForgeObjectiveMetadataState.createObjectiveMetadataStateController({getState:()=>objectiveMetadataState});
