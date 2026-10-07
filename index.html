@@ -1762,12 +1762,6 @@ function primaryScoringOriginalIndex(mission,visibleIndex){
   const row=visible[visibleIndex];
   return row?rows.indexOf(row):-1;
 }
-function primaryRoundScoredVP(side){
-  const roundKey=String(Math.max(1,Number(state.round)||1));
-  const valueKey=side==='my'?'primaryScoringValuesByRoundMy':'primaryScoringValuesByRoundOpp';
-  const values=state[valueKey]?.[roundKey]||{};
-  return Object.values(values).reduce((sum,v)=>sum+Math.max(0,Number(v)||0),0);
-}
 function primaryRoundCapRemaining(side){return Math.max(0,15-primaryRoundScoredVP(side));}
 function missionDecisionContext(){
   ensureScoreLedger();
