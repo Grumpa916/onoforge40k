@@ -706,7 +706,7 @@ body{overflow-x:hidden}
 <script src="js/state/battlefield-map-unit-labels-state.js"></script>
 <script src="js/state/battlefield-map-unit-nodes-state.js"></script>
 <script src="js/state/battlefield-map-plan-ghost-nodes-state.js"></script>
-<script src="js/state/deployment-staging-nodes-state.js"></script><script src="js/state/terrain-reference-image-state.js"></script><script src="js/state/objective-geometry-identity-state.js"></script><script src="js/state/objective-tracked-identity-state.js"></script><script src="js/state/primary-scoring-preview-summary-state.js"></script><script src="js/state/primary-scoring-html-state.js"></script><script src="js/state/primary-scoring-catalogue-audit-state.js"></script><script src="js/state/event-companion-map-regression-audit-state.js"></script>
+<script src="js/state/deployment-staging-nodes-state.js"></script><script src="js/state/terrain-reference-image-state.js"></script><script src="js/state/objective-geometry-identity-state.js"></script><script src="js/state/objective-tracked-identity-state.js"></script><script src="js/state/objective-canonical-label-state.js"></script><script src="js/state/primary-scoring-preview-summary-state.js"></script><script src="js/state/primary-scoring-html-state.js"></script><script src="js/state/primary-scoring-catalogue-audit-state.js"></script><script src="js/state/event-companion-map-regression-audit-state.js"></script>
 <script src="js/data/bsdata-parser.js"></script><script>
 const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;
 const {createReserveStateController}=window.OnoForgeReserveState;
@@ -876,6 +876,9 @@ const {objectiveGeometryIdentity}=objectiveGeometryIdentityStateController;
 const {createObjectiveTrackedIdentityStateController}=window.OnoForgeObjectiveTrackedIdentityState;
 const objectiveTrackedIdentityStateController=createObjectiveTrackedIdentityStateController({getState:()=>state,ensureObjectiveMeta,objectiveGeometryIdentity});
 const {objectiveTrackedIdentity}=objectiveTrackedIdentityStateController;
+const {createObjectiveCanonicalLabelStateController}=window.OnoForgeObjectiveCanonicalLabelState;
+const objectiveCanonicalLabelStateController=createObjectiveCanonicalLabelStateController({getState:()=>state,objectiveGeometryIdentity,objectiveTrackedIdentity,objectiveBattlefieldGeometry});
+const {objectiveCanonicalNumber,objectiveCanonicalLabelForGeometryName,objectiveTrackedNameForGeometryName,objectiveMapLabelForTrackedNameLegacy,objectiveMapLabelForTrackedName}=objectiveCanonicalLabelStateController;
 const {createPrimaryScorePreviewSummaryStateController}=window.OnoForgePrimaryScorePreviewSummaryState;
 const primaryScoringPreviewSummaryStateController=createPrimaryScorePreviewSummaryStateController({getState:()=>state,primaryScoringRowsForRound,primaryRoundCapRemaining,primaryScoringEvidence});
 const {primaryScorePreviewSummary}=primaryScoringPreviewSummaryStateController;
@@ -1067,56 +1070,6 @@ function armyNoMansLandTagsHtml(model,pct){
 }
 
 
-function objectiveCanonicalNumber(identity){
-  if(!identity)return null;
-  // Canonical Event Companion ordering:
-  // 5-objective layouts: O1 home, O2 expansion, O3 central, O4 expansion, O5 home.
-  // 6-objective layouts: O1 home, O2 expansion, O3/O4 central, O5 expansion, O6 home.
-  // Do not resolve the mission/layout here: this function is called while geometry is rendering.
-  const entries=Object.keys(state.objectives||{});
-  const six=entries.some(n=>/^Central 2$/i.test(String(n)))||entries.length>=6;
-  if(identity.type==='home')return identity.side==='opp'?(six?6:5):1;
-  if(identity.type==='expansion')return (Number(identity.ordinal)||1)===1?2:(six?5:4);
-  if(identity.type==='central')return (Number(identity.ordinal)||1)===1?3:4;
-  return null;
-}
-function objectiveCanonicalLabelForGeometryName(name){
-  const identity=objectiveGeometryIdentity(name);
-  const number=objectiveCanonicalNumber(identity);
-  if(!number)return String(name||'');
-  const role=identity.type==='home'?(identity.side==='opp'?'Opponent Home':'My Home'):identity.type==='central'?'Central':'Expansion';
-  return 'O'+number+' • '+role;
-}
-function objectiveTrackedNameForGeometryName(name){
-  const identity=objectiveGeometryIdentity(name);
-  if(!identity)return String(name||'');
-  for(const tracked of Object.keys(state.objectives||{})){
-    const trackedIdentity=objectiveTrackedIdentity(tracked);
-    if(!trackedIdentity||trackedIdentity.type!==identity.type)continue;
-    if(identity.type==='home'&&trackedIdentity.side===identity.side)return tracked;
-    if(identity.type!=='home'&&trackedIdentity.ordinal===identity.ordinal)return tracked;
-  }
-  return String(name||'');
-}
-function objectiveMapLabelForTrackedNameLegacy(name){
-  const key=String(name||'').trim();
-  const identity=objectiveTrackedIdentity(key);
-  const number=objectiveCanonicalNumber(identity);
-  if(number)return 'O'+number+' • '+(identity.type==='home'?(identity.side==='opp'?'Opponent Home':'My Home'):identity.type==='central'?'Central':'Expansion');
-  return key;
-}
-function objectiveMapLabelForTrackedName(name){
-  const geometry=objectiveBattlefieldGeometry();
-  if(geometry.verified){
-    const identity=objectiveTrackedIdentity(name);
-    const match=geometry.objectives.find(o=>{
-      const oi=objectiveGeometryIdentity(o.name);
-      return oi&&identity&&oi.type===identity.type&&(oi.type==='home'?oi.side===identity.side:oi.ordinal===identity.ordinal);
-    });
-    return match?objectiveCanonicalLabelForGeometryName(match.name):objectiveMapLabelForTrackedNameLegacy(name);
-  }
-  return objectiveMapLabelForTrackedNameLegacy(name);
-}
 function objectiveMapEntries(){
   const geometry=objectiveBattlefieldGeometry();
   if(!geometry.verified)return Object.entries(state.objectives||{}).map(([name,owner])=>({name,stateName:name,owner:['my','opp','contested','none'].includes(owner)?owner:'none',position:null,label:objectiveMapLabelForTrackedNameLegacy(name),type:objectiveRole(name),territory:objectiveTerritory(name),deploymentZone:objectiveDeploymentZone(name)}));
