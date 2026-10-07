@@ -1078,7 +1078,18 @@ async function refreshCurrentUnitDatabase(showMessage=true){
       // Direct model entries include weapon/model variants and must not become units.
     }
 
-    if(!all.length)throw new Error('No unit data wandaryPlans||defaultSecondaryPersonalPlans())))=>{});}
+    if(!all.length)throw new Error('No unit data was found.');
+    const supplemental=all.map(u=>({...u,sourceRole:'supplemental'}));
+    window.SUPPLEMENTAL_UNIT_DATABASE=supplemental;
+    state.bsDataCrossCheckUpdatedAt=new Date().toISOString();
+    save();
+    render();
+    if(showMessage)alert(`Refreshed ${all.length} BSData 11e units for cross-checking. Verified runtime data was not overwritten.`);
+  }catch(err){
+    console.error(err);
+    if(showMessage)alert('Unit database update failed: '+(err.message||err));
+  }
+}
 function undoDeletedSavedArmyList(){const deleted=Array.isArray(state.deletedSavedArmyLists)?state.deletedSavedArmyLists:[];const list=deleted.pop();if(!list)return;delete list.deletedAt;if(!Array.isArray(state.savedArmyLists))state.savedArmyLists=[];if(!state.savedArmyLists.some(x=>x.id===list.id))state.savedArmyLists.push(list);state.deletedSavedArmyLists=deleted;save();render();cloudUpsertArmyList(list).catch(()=>{});}
 
 function ensurePermanentSampleArmies(){
