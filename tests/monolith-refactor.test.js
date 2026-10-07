@@ -365,7 +365,6 @@ const armyListController=sandbox.window.OnoForgeSavedArmyListState.createSavedAr
   cloudUpsertArmyList:()=>{armyCloud++;return Promise.resolve();},ensurePermanentSampleArmies:()=>{}
 });
 armyListController.saveCurrentArmyList();
-if(armyListState.savedArmyLists.length!==1||armyListState.savedArmyLists[0].name!=='Tournament List'||armyListSaves!==0){} 
 if(armySaves!==1||armyRenders!==1||armyCloud!==1)throw new Error('Saved army list save regression');
 armyListState.my=[];armyListController.loadSavedArmyList('list1');
 if(armyListState.my[0]?.uid!=='u1'||armyListState.detachment!=='Gladius'||armyListState.activeRosterId!=='list1'||armyListState.savedMyListSnapshot?.snapshot!==true)throw new Error('Saved army list load regression');
