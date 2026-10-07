@@ -703,6 +703,7 @@ body{overflow-x:hidden}
  <script src="js/state/objective-map-state.js"></script>
 <script src="js/state/objective-metadata-state.js"></script>
 <script src="js/state/transport-state.js"></script>
+<script src="js/state/transport-declaration-section-state.js"></script>
 <script src="js/state/stratagem-state.js"></script>
 <script src="js/state/game-timer-state.js"></script>
 <script src="js/state/phase-cp-state.js"></script>
@@ -741,6 +742,9 @@ const {ensureObjectiveMeta,objectiveRole,objectiveType,objectiveHomeSide,objecti
 const {createTransportStateController}=window.OnoForgeTransportState;
 const transportStateController=createTransportStateController({getState:()=>state,entry,get,snapshotForUndo,event,save,render,unitDisplayName});
 const {ensureTransportEmbarkations,transportEntry,isUnitEmbarked,transportPassengers,clearTransportEmbarkation,setTransportEmbarkation}=transportStateController;
+const {createTransportDeclarationSectionStateController}=window.OnoForgeTransportDeclarationSectionState;
+const transportDeclarationSectionStateController=createTransportDeclarationSectionStateController({getState:()=>state,transportEntry,ensureTransportEmbarkations,transportPassengers,unitDisplayName,get,esc});
+const {transportDeclarationSectionHtml}=transportDeclarationSectionStateController;
 const {createStratagemStateController}=window.OnoForgeStratagemState;
 const {createGameTimerStateController}=window.OnoForgeGameTimerState;
 const {createPhaseCPStateController}=window.OnoForgePhaseCPState;
