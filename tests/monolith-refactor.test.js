@@ -384,8 +384,9 @@ deploymentController.clearDeploymentPlanForCurrentMap();
 if(deploymentController.deploymentPlanForCurrentMap().u2)throw new Error('Deployment plan map clear regression');
 if(deploymentSaves<4||deploymentRenders<3||notifications.length!==0)throw new Error('Deployment plan controller lifecycle regression');
 
+const objectiveLayoutTestState={objectiveMapLayout:'B',terrainSetupComplete:false};
 const objectiveLayoutController=sandbox.window.OnoForgeObjectiveLayoutState.createObjectiveLayoutStateController({
-  getState:()=>({objectiveMapLayout:'B',terrainSetupComplete:false}),
+  getState:()=>objectiveLayoutTestState,
   ensureObjectiveLayoutForMission:()=>({missions:['Mission A','Mission B']}),
   objectiveLayoutPage:()=>42,
   setObjectiveMapLayout:()=>true,
@@ -394,7 +395,10 @@ const objectiveLayoutController=sandbox.window.OnoForgeObjectiveLayoutState.crea
   warhammerEventCompanionPdf:'https://example.test/companion.pdf'
 });
 const objectiveLayoutRendered=objectiveLayoutController.objectiveLayoutHtml();
-if(!objectiveLayoutRendered.includes('Layout B')||!objectiveLayoutRendered.includes('data-test-map="terrain"')||!objectiveLayoutRendered.includes('data-test-map="setup"'))throw new Error('Objective layout rendering regression');
+if(!objectiveLayoutRendered.includes('Layout B')||!objectiveLayoutRendered.includes('data-test-map="terrain"')||objectiveLayoutRendered.includes('data-test-map="setup"'))throw new Error('Objective layout terrain-state regression');
+objectiveLayoutTestState.terrainSetupComplete=true;
+const objectiveLayoutDeploymentRendered=objectiveLayoutController.objectiveLayoutHtml();
+if(!objectiveLayoutDeploymentRendered.includes('data-test-map="setup"')||!objectiveLayoutDeploymentRendered.includes('data-test-map="deployment"'))throw new Error('Objective layout deployment-state regression');
 
 const transportDeclarationController=sandbox.window.OnoForgeTransportDeclarationSectionState.createTransportDeclarationSectionStateController({
   getState:()=>({myName:'My Army',oppName:'Opponent Army',my:[{uid:'tr1',unitId:'transport-1',name:'Razorback'},{uid:'p1',unitId:'passenger-1',name:'Intercessors'}],opp:[]}),
