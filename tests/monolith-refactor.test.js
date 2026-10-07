@@ -35,6 +35,7 @@ const mathCombatExecution=fs.readFileSync(path.join(root,'js/state/math-combat-e
 const forceDisposition=fs.readFileSync(path.join(root,'js/state/force-disposition-state.js'),'utf8');
 const tournamentLifecycle=fs.readFileSync(path.join(root,'js/state/tournament-lifecycle-state.js'),'utf8');
 const battleStart=fs.readFileSync(path.join(root,'js/state/battle-start-state.js'),'utf8');
+const battleDeploymentStart=fs.readFileSync(path.join(root,'js/state/battle-deployment-start-state.js'),'utf8');
 const tacticalCore=fs.readFileSync(path.join(root,'js/state/tactical-core-state.js'),'utf8');
 const stratagemUI=fs.readFileSync(path.join(root,'js/state/stratagem-ui-state.js'),'utf8');
 const tacticalContextHtmlBody=fs.readFileSync(path.join(root,'js/state/tactical-context-html-body-state.js'),'utf8');
@@ -245,6 +246,7 @@ vm.runInNewContext(mathCombatExecution,sandbox,{filename:'js/state/math-combat-e
 vm.runInNewContext(forceDisposition,sandbox,{filename:'js/state/force-disposition-state.js'});
 vm.runInNewContext(tournamentLifecycle,sandbox,{filename:'js/state/tournament-lifecycle-state.js'});
 vm.runInNewContext(battleStart,sandbox,{filename:'js/state/battle-start-state.js'});
+vm.runInNewContext(battleDeploymentStart,sandbox,{filename:'js/state/battle-deployment-start-state.js'});
 vm.runInNewContext(tacticalCore,sandbox,{filename:'js/state/tactical-core-state.js'});
 vm.runInNewContext(stratagemUI,sandbox,{filename:'js/state/stratagem-ui-state.js'});
 vm.runInNewContext(tacticalContextHtmlBody,sandbox,{filename:'js/state/tactical-context-html-body-state.js'});
@@ -353,6 +355,8 @@ if(typeof sandbox.window.OnoForgeMathCombatExecutionState?.createMathCombatExecu
 if(typeof sandbox.window.OnoForgeForceDispositionState?.createForceDispositionStateController!=='function')throw new Error('Force disposition module did not expose createForceDispositionStateController');
 if(typeof sandbox.window.OnoForgeTournamentLifecycleState?.createTournamentLifecycleStateController!=='function')throw new Error('Tournament lifecycle module did not expose createTournamentLifecycleStateController');
 if(typeof sandbox.window.OnoForgeBattleStartState?.createBattleStartStateController!=='function')throw new Error('Battle start module did not expose createBattleStartStateController');
+if(typeof sandbox.window.OnoForgeBattleDeploymentStartState?.createBattleDeploymentStartStateController!=='function')throw new Error('Deployment start module did not expose createBattleDeploymentStartStateController');
+if((html.match(/function\s+beginDeployment\s*\(/g)||[]).length!==0)throw new Error('Deployment start function still inline');
 if((html.match(/function\s+startBattle\s*\(/g)||[]).length!==0)throw new Error('Battle start function still inline');
 for(const name of ['tournamentResultSnapshot','ensureTournamentLifecycle','setTournamentLifecycle','battleMutationAllowed','tournamentResultIntegrityCheck','verifyTournamentResult','exportTournamentResult','tournamentSetupValidation','resetTournamentToSetup','initializeLiveDeploymentFromPlan','returnToTournamentSetup']){if((html.match(new RegExp('function\\s+'+name+'\\s*\\(','g'))||[]).length!==0)throw new Error('Tournament lifecycle function still inline: '+name);}
 for(const name of ['forceDispositionNameForDetachment','availableForceDispositions','forceDisposition','primaryMission','setForceDisposition']){if((html.match(new RegExp('function\\s+'+name+'\\s*\\(','g'))||[]).length!==0)throw new Error('Force disposition function still inline: '+name);}
