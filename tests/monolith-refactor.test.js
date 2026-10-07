@@ -39,6 +39,7 @@ const battleDeploymentStart=fs.readFileSync(path.join(root,'js/state/battle-depl
 const battleEnd=fs.readFileSync(path.join(root,'js/state/battle-end-state.js'),'utf8');
 const undoSnapshot=fs.readFileSync(path.join(root,'js/state/undo-snapshot-state.js'),'utf8');
 const gameTimerRuntime=fs.readFileSync(path.join(root,'js/state/game-timer-runtime-state.js'),'utf8');
+const undoAction=fs.readFileSync(path.join(root,'js/state/undo-action-state.js'),'utf8');
 const tacticalCore=fs.readFileSync(path.join(root,'js/state/tactical-core-state.js'),'utf8');
 const stratagemUI=fs.readFileSync(path.join(root,'js/state/stratagem-ui-state.js'),'utf8');
 const tacticalContextHtmlBody=fs.readFileSync(path.join(root,'js/state/tactical-context-html-body-state.js'),'utf8');
@@ -253,6 +254,7 @@ vm.runInNewContext(battleDeploymentStart,sandbox,{filename:'js/state/battle-depl
 vm.runInNewContext(battleEnd,sandbox,{filename:'js/state/battle-end-state.js'});
 vm.runInNewContext(undoSnapshot,sandbox,{filename:'js/state/undo-snapshot-state.js'});
 vm.runInNewContext(gameTimerRuntime,sandbox,{filename:'js/state/game-timer-runtime-state.js'});
+vm.runInNewContext(undoAction,sandbox,{filename:'js/state/undo-action-state.js'});
 vm.runInNewContext(tacticalCore,sandbox,{filename:'js/state/tactical-core-state.js'});
 vm.runInNewContext(stratagemUI,sandbox,{filename:'js/state/stratagem-ui-state.js'});
 vm.runInNewContext(tacticalContextHtmlBody,sandbox,{filename:'js/state/tactical-context-html-body-state.js'});
@@ -365,6 +367,8 @@ if(typeof sandbox.window.OnoForgeBattleDeploymentStartState?.createBattleDeploym
 if(typeof sandbox.window.OnoForgeBattleEndState?.createBattleEndStateController!=='function')throw new Error('Battle end module did not expose createBattleEndStateController');
 if(typeof sandbox.window.OnoForgeUndoSnapshotState?.createUndoSnapshotStateController!=='function')throw new Error('Undo snapshot module did not expose createUndoSnapshotStateController');
 if(typeof sandbox.window.OnoForgeGameTimerRuntimeState?.createGameTimerRuntimeStateController!=='function')throw new Error('Game timer runtime module did not expose createGameTimerRuntimeStateController');
+if(typeof sandbox.window.OnoForgeUndoActionState?.createUndoActionStateController!=='function')throw new Error('Undo action module did not expose createUndoActionStateController');
+if((html.match(/function\s+undoLastAction\s*\(/g)||[]).length!==0)throw new Error('Undo action function still inline');
 if((html.match(/function\s+syncGameTimerRuntime\s*\(/g)||[]).length!==0)throw new Error('Game timer runtime function still inline');
 if((html.match(/function\s+snapshotForUndo\s*\(/g)||[]).length!==0)throw new Error('Undo snapshot function still inline');
 if((html.match(/function\s+endBattle\s*\(/g)||[]).length!==0)throw new Error('Battle end function still inline');
