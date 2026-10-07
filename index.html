@@ -702,7 +702,7 @@ body{overflow-x:hidden}
 <script src="js/state/stratagem-state.js"></script>
 <script src="js/state/game-timer-state.js"></script>
 <script src="js/state/phase-cp-state.js"></script>
-<script src="js/state/objective-control-history-state.js"></script><script src="js/state/objective-control-sources-state.js"></script><script src="js/state/secondary-round-ledger-state.js"></script><script src="js/state/score-ledger-state.js"></script><script src="js/state/secondary-score-state.js"></script><script src="js/state/score-calculation-state.js"></script><script src="js/state/primary-round-score-state.js"></script><script src="js/state/primary-round-score-cap-state.js"></script><script src="js/state/primary-scoring-vp-state.js"></script><script src="js/state/primary-scoring-is-per-state.js"></script><script src="js/state/primary-scoring-max-state.js"></script><script src="js/state/primary-objective-condition-text-state.js"></script><script src="js/state/primary-scoring-objective-count-state.js"></script><script src="js/state/primary-scoring-objective-amount-state.js"></script><script src="js/state/primary-scoring-effective-max-state.js"></script><script src="js/state/primary-scoring-exclusive-group-state.js"></script><script src="js/state/primary-scoring-original-index-state.js"></script><script src="js/state/primary-objective-condition-short-label-state.js"></script>
+<script src="js/state/objective-control-history-state.js"></script><script src="js/state/objective-control-sources-state.js"></script><script src="js/state/secondary-round-ledger-state.js"></script><script src="js/state/score-ledger-state.js"></script><script src="js/state/secondary-score-state.js"></script><script src="js/state/score-calculation-state.js"></script><script src="js/state/primary-round-score-state.js"></script><script src="js/state/primary-round-score-cap-state.js"></script><script src="js/state/primary-scoring-vp-state.js"></script><script src="js/state/primary-scoring-is-per-state.js"></script><script src="js/state/primary-scoring-max-state.js"></script><script src="js/state/primary-objective-condition-text-state.js"></script><script src="js/state/primary-objective-qualifying-list-state.js"></script><script src="js/state/primary-scoring-objective-count-state.js"></script><script src="js/state/primary-scoring-objective-amount-state.js"></script><script src="js/state/primary-scoring-effective-max-state.js"></script><script src="js/state/primary-scoring-exclusive-group-state.js"></script><script src="js/state/primary-scoring-original-index-state.js"></script><script src="js/state/primary-objective-condition-short-label-state.js"></script>
 <script src="js/data/bsdata-parser.js"></script><script>
 const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;
 const {createReserveStateController}=window.OnoForgeReserveState;
@@ -759,6 +759,15 @@ const {primaryScoringMax}=primaryScoringMaxStateController;
 const {createPrimaryObjectiveConditionTextStateController}=window.OnoForgePrimaryObjectiveConditionTextState;
 const primaryObjectiveConditionTextStateController=createPrimaryObjectiveConditionTextStateController();
 const {primaryObjectiveConditionText}=primaryObjectiveConditionTextStateController;
+const {createPrimaryObjectiveQualifyingListStateController}=window.OnoForgePrimaryObjectiveQualifyingListState;
+const primaryObjectiveQualifyingListStateController=createPrimaryObjectiveQualifyingListStateController({
+  getPrimaryObjectiveConditionText:primaryObjectiveConditionText,
+  objectiveCountsForSide,
+  objectiveIsInTerritory,
+  objectiveDeploymentZone,
+  objectiveTurnStartOwner
+});
+const {primaryObjectiveQualifyingList}=primaryObjectiveQualifyingListStateController;
 const {createPrimaryScoringObjectiveCountStateController}=window.OnoForgePrimaryScoringObjectiveCountState;
 const primaryScoringObjectiveCountStateController=createPrimaryScoringObjectiveCountStateController({
   getPrimaryObjectiveConditionText:(row)=>primaryObjectiveConditionText(row),
@@ -1540,24 +1549,6 @@ function primaryScoringRowsForRound(mission){
 function objectiveCountsForSide(side){
   const player=side==='opp'?'opp':'my';
   return Object.keys(state.objectives||{}).map(objectiveStateRecord).filter(o=>o.owner===player);
-}
-function primaryObjectiveQualifyingList(side,row){
-  const text=primaryObjectiveConditionText(row);
-  const owned=objectiveCountsForSide(side);
-  const excludeHome=/excluding home|exclude home|excl\. home/.test(text);
-  const central=/\bcentral objectives?\b/.test(text);
-  const expansion=/\bexpansion objectives?\b/.test(text);
-  const enemyTerritory=/enemy territory|enemy's territory/.test(text);
-  const deploymentZone=/deployment zone/.test(text);
-  const changed=/did not control at the start of the turn|not controlled at the start of the turn|did not control at start of turn/.test(text);
-  return owned.filter(o=>
-    (!excludeHome||o.type!=='home') &&
-    (!central||o.type==='central') &&
-    (!expansion||o.type==='expansion') &&
-    (!enemyTerritory||objectiveIsInTerritory(o.name,side)) &&
-    (!deploymentZone||objectiveDeploymentZone(o.name)===(side==='opp'?'opp':'my')) &&
-    (!changed||objectiveTurnStartOwner(o.name)!==side)
-  );
 }
 function primaryObjectiveConditionStatus(side,row){
   const text=primaryObjectiveConditionText(row);
