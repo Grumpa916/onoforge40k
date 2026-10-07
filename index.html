@@ -700,6 +700,7 @@ body{overflow-x:hidden}
 <script src="js/state/objective-metadata-state.js"></script>
 <script src="js/state/transport-state.js"></script>
 <script src="js/state/stratagem-state.js"></script>
+<script src="js/state/game-timer-state.js"></script>
 <script src="js/data/bsdata-parser.js"></script><script>
 const {battlefieldDistanceBetween,formatSavedListDate,unitListCategory,unitListCategoryName,sortUnitList,wargearCostLabel,secondaryRowInputId,secondaryRowNeedsAmount}=window.OnoForgePureUtils;
 const {createReserveStateController}=window.OnoForgeReserveState;
@@ -718,6 +719,9 @@ const {createTransportStateController}=window.OnoForgeTransportState;
 const transportStateController=createTransportStateController({getState:()=>state,entry,get,snapshotForUndo,event,save,render,unitDisplayName});
 const {ensureTransportEmbarkations,transportEntry,isUnitEmbarked,transportPassengers,clearTransportEmbarkation,setTransportEmbarkation}=transportStateController;
 const {createStratagemStateController}=window.OnoForgeStratagemState;
+const {createGameTimerStateController}=window.OnoForgeGameTimerState;
+const gameTimerStateController=createGameTimerStateController({getState:()=>state});
+const {ensureGameTimer,gameTimerElapsed,turnElapsedMs,finalizeCurrentTurnTime,switchTurnClock}=gameTimerStateController;
 const stratagemStateController=createStratagemStateController({getState:()=>state});
 const {ensureStratagemState,stratagemUseHistory,stratagemUsedThisPhase,resetStratagemPhaseUses,stratagemUsedThisBattle,armyStratagemDetachment}=stratagemStateController;
 const {collectBSDataObjects,bsUnitFromEntry}=window.OnoForgeBSDataParser;
@@ -4736,36 +4740,6 @@ function setup(){
 }
 
 let gameTimerInterval=null;
-function ensureGameTimer(){
-  if(!state.gameTimer || typeof state.gameTimer!=='object'){
-    state.gameTimer={elapsedMs:0,running:false,paused:false,startedAt:0,pausedAt:0,finishedAt:0,turnMyMs:0,turnOppMs:0,turnStartedGameMs:0,turnPaused:false};
-  }
-  return state.gameTimer;
-}
-function gameTimerElapsed(){
-  const t=ensureGameTimer();
-  if(!t.running)return Math.max(0,Number(t.elapsedMs)||0);
-  return Math.max(0,(Number(t.elapsedMs)||0)+(Date.now()-(Number(t.startedAt)||Date.now())));
-}
-
-function turnElapsedMs(side){
-  const t=ensureGameTimer();
-  const key=side==='opp'?'turnOppMs':'turnMyMs';
-  const saved=Math.max(0,Number(t[key])||0);
-  if(t.turnPaused)return saved;
-  if(state.currentTurn!==side)return saved;
-  return saved+Math.max(0,gameTimerElapsed()-(Number(t.turnStartedGameMs)||0));
-}
-function finalizeCurrentTurnTime(){
-  const t=ensureGameTimer();
-  if(t.turnPaused)return;
-  const side=state.currentTurn==='opp'?'opp':'my';
-  const key=side==='opp'?'turnOppMs':'turnMyMs';
-  const now=gameTimerElapsed();
-  const delta=Math.max(0,now-(Number(t.turnStartedGameMs)||0));
-  t[key]=Math.max(0,Number(t[key])||0)+delta;
-  t.turnStartedGameMs=now;
-}
 function toggleTurnPause(){
   if(!battleMutationAllowed('timer changes'))return;
   const t=ensureGameTimer();
@@ -4791,14 +4765,7 @@ function toggleTurnPause(){
   save();
   render();
 }
-function switchTurnClock(next){
-  const t=ensureGameTimer();
-  if(!t.turnPaused){
-    finalizeCurrentTurnTime();
-    t.turnStartedGameMs=gameTimerElapsed();
-  }
-  state.currentTurn=next==='opp'?'opp':'my';
-}
+
 function formatGameTime(ms){
   const total=Math.max(0,Math.floor(Number(ms)||0)/1000);
   const h=Math.floor(total/3600);
