@@ -75,3 +75,4 @@ function tacticalMovementTrackerHtml(){
   return Object.freeze({ensureOpponentTurnCaptureState,setOpponentTurnCapture,setOpponentChargeTarget,tacticalOpponentWeaponChoices,tacticalOpenOpponentCombatResolution,recordOpponentChargeResult,tacticalMovementTrackerHtml});
 }
 window.OnoForgeOpponentTurnCaptureState=Object.freeze({createOpponentTurnCaptureStateController});
+}
