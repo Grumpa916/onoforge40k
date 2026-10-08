@@ -196,3 +196,4 @@ function tacticalAdvisorV1(attackerEntryUid,options={}){
   const side='my',atkEntry=entry(side,attackerEntryUid)||mathRosterEntry(side);
 }
 window.OnoForgeTacticalAdvisorRenderState=Object.freeze({createTacticalAdvisorRenderStateController});
+}
