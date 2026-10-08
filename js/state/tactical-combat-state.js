@@ -75,6 +75,38 @@ function tacticalFightOrderState(entry){
     stepEligible:f.fightsFirst?'fightsFirst':effectiveEligible?'remaining':'ineligible',
     availableNow:effectiveEligible&&!selected&&(phase.step==='unknown'||phase.step===(f.fightsFirst?'fightsFirst':'remaining'))};
 }
+function tacticalFightCandidates(side='my',step=null){
+  const s=side==='opp'?'opp':'my';
+  const phase=tacticalFightPhaseState();
+  const wanted=['fightsFirst','remaining'].includes(step)?step:(['fightsFirst','remaining'].includes(phase.step)?phase.step:'unknown');
+  const nextSide=phase.nextSide==='opp'?'opp':'my';
+  const rows=(Array.isArray(state[s])?state[s]:[])
+    .filter(e=>e&&!e.attachedTo&&!tacticalUnitState(s,e)?.destroyed)
+    .map(e=>{
+      const order=tacticalFightOrderState(e);
+      const resolved=tacticalFightResolvedForSide(e.uid,s);
+      const eligible=order.effectiveEligible===true;
+      const fightsFirst=order.fightsFirst===true;
+      const selected=order.selected===true||resolved;
+      const stepEligible=wanted==='fightsFirst'?eligible&&fightsFirst:wanted==='remaining'?eligible:true;
+      const available=stepEligible&&!selected;
+      const targets=(Array.isArray(s==='my'?state.opp:state.my)?(s==='my'?state.opp:state.my):[])
+        .filter(t=>t&&!t.attachedTo&&!tacticalUnitState(s==='my'?'opp':'my',t)?.destroyed)
+        .filter(t=>tacticalCombatPairState(s,s==='my'?'opp':'my',e.uid,t.uid).engagement==='engaged')
+        .map(t=>({uid:t.uid,name:unitDisplayNameSafe(s==='my'?'opp':'my',t)}));
+      let status='unavailable',reason='Not eligible to fight';
+      if(resolved||selected){status='resolved';reason='Already selected/resolved this Fight phase';}
+      else if(wanted==='fightsFirst'&&!fightsFirst&&eligible){status='remaining';reason='Eligible, but not a Fights First unit';}
+      else if(available){status=phase.nextSide===s?'ready':'available';reason=targets.length?'Eligible to fight':'Eligible, but no confirmed engaged target';}
+      else if(!eligible&&order.chargeMade){status='needs-context';reason='Charge recorded; engagement/Overrun state still needs confirmation';}
+      return {uid:e.uid,name:unitDisplayNameSafe(s,e),side:s,eligible,fightsFirst,chargeMade:order.chargeMade===true,engaged:order.engaged===true,overrunEligible:order.overrunEligible===true,selected:!!selected,resolved,step:wanted,status,reason,turnReady:status==='ready',targets};
+    });
+  return rows;
+}
+function unitDisplayNameSafe(side,e){
+  const u=get(e?.unitId);
+  return String(u?.name||e?.name||e?.unitId||'Unknown unit');
+}
 function tacticalPairKey(attackerUid,targetUid){return String(attackerUid||'')+'>'+String(targetUid||'')}
 function tacticalDistanceBandFromInches(value){
   const d=Number(value);
@@ -652,6 +684,6 @@ function tacticalTargetLegality(attackerEntry,targetEntry,phase,attackerSide='my
   }
   return {status:'notRequired',known:true,canTarget:true,reasons,context:ctx};
 }
-  return Object.freeze({tacticalFightPhaseState,setTacticalFightPhase,tacticalFightUnitState,setTacticalFightUnitState,tacticalFightOrderState,tacticalPairKey,tacticalDistanceBandFromInches,battlefieldTerrainContextBetweenUnits,tacticalCombatPairState,tacticalPairState,setTacticalPairField,clearTacticalPair,tacticalAdvisorActionState,tacticalUnitMovementTypeLegacy,tacticalUnitMovementType,tacticalUnitAdvancedState,setTacticalUnitAction,recordTacticalChargeResult,setTacticalUnitAdvanced,tacticalFightResolvedForSide,tacticalPhaseActionAvailable,tacticalWeaponUseKey,tacticalWeaponCanonicalEntryUid,tacticalWeaponUseState,tacticalWeaponHasRule,tacticalWeaponBattleUseCount,tacticalWeaponAvailable,setTacticalWeaponUsed,tacticalWeaponShootingMode,tacticalWeaponEventEntryMatches,tacticalWeaponModelUseEvents,tacticalWeaponModelWeaponInstanceCount,tacticalWeaponModelUseCount,tacticalWeaponModelAvailable,tacticalWeaponModelAlreadyUsed,tacticalWeaponModelModeConflict,tacticalWeaponPhaseUseCount,tacticalWeaponAvailableForPhase,tacticalUnitIsEngaged,tacticalUnitIsMonsterVehicle,tacticalUnitHasKeyword,tacticalUnitCanFly,tacticalUnitHasFightsFirst,tacticalUnitFightState,tacticalWeaponIsCloseQuarters,tacticalWeaponIsBlast,tacticalWeaponIsAssault,tacticalWeaponIsIndirect,closeQuartersForTarget,tacticalUnitIsEngagedAny,tacticalWeaponPhaseEligible,tacticalWeaponRange,tacticalWeaponAbilityText,tacticalLoneOperativeRange,tacticalTargetIsAttached,tacticalRapidFireValue,tacticalMeltaValue,tacticalHalfRangeState,tacticalRapidFireState,tacticalMeltaState,engineHalfRangeActive,tacticalRapidFireThreats,tacticalMeltaThreats,tacticalTargetLegality});
+  return Object.freeze({tacticalFightPhaseState,setTacticalFightPhase,tacticalFightUnitState,setTacticalFightUnitState,tacticalFightOrderState,tacticalPairKey,tacticalDistanceBandFromInches,battlefieldTerrainContextBetweenUnits,tacticalCombatPairState,tacticalPairState,setTacticalPairField,clearTacticalPair,tacticalAdvisorActionState,tacticalUnitMovementTypeLegacy,tacticalUnitMovementType,tacticalUnitAdvancedState,setTacticalUnitAction,recordTacticalChargeResult,setTacticalUnitAdvanced,tacticalFightResolvedForSide,tacticalFightCandidates,tacticalPhaseActionAvailable,tacticalWeaponUseKey,tacticalWeaponCanonicalEntryUid,tacticalWeaponUseState,tacticalWeaponHasRule,tacticalWeaponBattleUseCount,tacticalWeaponAvailable,setTacticalWeaponUsed,tacticalWeaponShootingMode,tacticalWeaponEventEntryMatches,tacticalWeaponModelUseEvents,tacticalWeaponModelWeaponInstanceCount,tacticalWeaponModelUseCount,tacticalWeaponModelAvailable,tacticalWeaponModelAlreadyUsed,tacticalWeaponModelModeConflict,tacticalWeaponPhaseUseCount,tacticalWeaponAvailableForPhase,tacticalUnitIsEngaged,tacticalUnitIsMonsterVehicle,tacticalUnitHasKeyword,tacticalUnitCanFly,tacticalUnitHasFightsFirst,tacticalUnitFightState,tacticalWeaponIsCloseQuarters,tacticalWeaponIsBlast,tacticalWeaponIsAssault,tacticalWeaponIsIndirect,closeQuartersForTarget,tacticalUnitIsEngagedAny,tacticalWeaponPhaseEligible,tacticalWeaponRange,tacticalWeaponAbilityText,tacticalLoneOperativeRange,tacticalTargetIsAttached,tacticalRapidFireValue,tacticalMeltaValue,tacticalHalfRangeState,tacticalRapidFireState,tacticalMeltaState,engineHalfRangeActive,tacticalRapidFireThreats,tacticalMeltaThreats,tacticalTargetLegality});
 }
 window.OnoForgeTacticalCombatState=Object.freeze({createTacticalCombatStateController});
