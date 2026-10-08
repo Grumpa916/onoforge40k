@@ -1,4 +1,4 @@
-function createTacticalContextHtmlBodyStateController({getState,tacticalAdvisorAttackerEntry,tacticalUnitState,ensureTacticalState,entry,getTacticalRenderBundle,tacticalAdvisorActionState,tacticalUnitMovementType,esc,unitDisplayName,tacticalLegalityForUnit,tacticalFightPhaseState,tacticalFightResolvedForSide,tacticalCombatFightWeapons,tacticalFightUnitState}){
+function createTacticalContextHtmlBodyStateController({getState,tacticalAdvisorAttackerEntry,tacticalUnitState,ensureTacticalState,entry,getTacticalRenderBundle,tacticalAdvisorActionState,tacticalUnitMovementType,esc,unitDisplayName,tacticalLegalityForUnit,tacticalFightPhaseState,tacticalFightResolvedForSide,tacticalCombatFightWeapons,tacticalFightUnitState,tacticalFightCandidates}){
   function tacticalContextHtmlBody(){
     const state=getState();
       const ae=tacticalAdvisorAttackerEntry();
@@ -19,6 +19,7 @@ function createTacticalContextHtmlBodyStateController({getState,tacticalAdvisorA
       let phaseSpecific='';
       if(phase==='Movement'){
         phaseSpecific=
+          fightCandidatesHtml+
           '<div class="grid2" style="margin-top:8px">'+
           '<div class="field"><label>Movement decision</label><select onchange="setTacticalUnitAction(\''+ae.uid+'\',\'movement\',this.value)"><option value="unknown" '+(movementType==='unknown'?'selected':'')+'>Unknown</option><option value="remained" '+(movementType==='remained'?'selected':'')+'>Remain Stationary</option><option value="normal" '+(movementType==='normal'?'selected':'')+'>Normal Move</option><option value="advance" '+(movementType==='advance'?'selected':'')+'>Advance</option><option value="fallback" '+(movementType==='fallback'?'selected':'')+'>Fall Back</option></select></div>'+
           '<div class="field"><label>Set up this turn?</label><select onchange="setTacticalUnitAction(\''+ae.uid+'\',\'setUpThisTurn\',this.value)"><option value="" '+(actions.setUpThisTurn===null?'selected':'')+'>Unknown</option><option value="false" '+(actions.setUpThisTurn===false?'selected':'')+'>No</option><option value="true" '+(actions.setUpThisTurn===true?'selected':'')+'>Yes</option></select></div>'+
@@ -29,6 +30,19 @@ function createTacticalContextHtmlBodyStateController({getState,tacticalAdvisorA
         const targetLabel=te?unitDisplayName('opp',te):'Select the enemy unit actually fought above';
         const friendlyResolved=tacticalFightResolvedForSide(ae.uid,'my');
         const enemyResolved=te?tacticalFightResolvedForSide(te.uid,'opp'):false;
+        const friendlyCandidates=tacticalFightCandidates('my'),enemyCandidates=tacticalFightCandidates('opp');
+        const candidateRow=(x,side)=>{
+          const badge=x.status==='ready'?'READY':x.status==='available'?'AVAILABLE':x.status==='remaining'?'REMAINING':x.status==='resolved'?'RESOLVED':x.status==='needs-context'?'NEEDS CONTEXT':'INELIGIBLE';
+          const targets=(x.targets||[]).map(t=>esc(t.name)).join(', ');
+          const selectAction=side==='my'
+            ?"ensureTacticalState().selectedAttackerUid='"+esc(x.uid)+"';save();render()"
+            :"ensureTacticalState().selectedTargetUid='"+esc(x.uid)+"';save();render()";
+          return '<div class="status" style="margin-top:6px;padding:7px 9px"><div class="split"><div><b>'+esc(x.name)+'</b><div class="tiny">'+esc(x.reason)+(targets?' • Engaged with: '+targets:'')+'</div></div><span class="pill">'+badge+'</span></div>'+
+            ((x.status==='ready'||x.status==='available')?'<button type="button" class="btn" style="margin-top:6px;width:100%" onclick="'+selectAction+'">Select '+(side==='my'?'fighter':'target')+'</button>':'')+'</div>';
+        };
+        const fightCandidatesHtml='<div class="status" style="margin-top:8px"><div class="split"><b>Fight Candidates</b><span class="tiny">Step: '+esc(fs.step==='unknown'?'Not set':fs.step==='fightsFirst'?'Fights First':'Remaining Combats')+' • Next: '+esc(fs.nextSide==='my'?state.myName:state.oppName)+'</span></div>'+
+          '<div class="grid2" style="margin-top:7px"><div><div class="muted small">'+esc(state.myName)+'</div>'+((friendlyCandidates||[]).filter(x=>x.step!=='remaining'||x.status!=='remaining').map(x=>candidateRow(x,'my')).join('')||'<div class="tiny">No current candidates.</div>')+'</div>'+
+          '<div><div class="muted small">'+esc(state.oppName)+'</div>'+((enemyCandidates||[]).filter(x=>x.step!=='remaining'||x.status!=='remaining').map(x=>candidateRow(x,'opp')).join('')||'<div class="tiny">No current candidates.</div>')+'</div></div></div>';
         const friendlyWeapons=te?tacticalCombatFightWeapons('my','opp',ae,te):[];
         const enemyWeapons=te?tacticalCombatFightWeapons('opp','my',te,ae):[];
         const fFu=tacticalFightUnitState(ae.uid),eFu=te?tacticalFightUnitState(te.uid):null;
