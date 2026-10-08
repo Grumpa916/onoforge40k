@@ -19,7 +19,6 @@ function createTacticalContextHtmlBodyStateController({getState,tacticalAdvisorA
       let phaseSpecific='';
       if(phase==='Movement'){
         phaseSpecific=
-          fightCandidatesHtml+
           '<div class="grid2" style="margin-top:8px">'+
           '<div class="field"><label>Movement decision</label><select onchange="setTacticalUnitAction(\''+ae.uid+'\',\'movement\',this.value)"><option value="unknown" '+(movementType==='unknown'?'selected':'')+'>Unknown</option><option value="remained" '+(movementType==='remained'?'selected':'')+'>Remain Stationary</option><option value="normal" '+(movementType==='normal'?'selected':'')+'>Normal Move</option><option value="advance" '+(movementType==='advance'?'selected':'')+'>Advance</option><option value="fallback" '+(movementType==='fallback'?'selected':'')+'>Fall Back</option></select></div>'+
           '<div class="field"><label>Set up this turn?</label><select onchange="setTacticalUnitAction(\''+ae.uid+'\',\'setUpThisTurn\',this.value)"><option value="" '+(actions.setUpThisTurn===null?'selected':'')+'>Unknown</option><option value="false" '+(actions.setUpThisTurn===false?'selected':'')+'>No</option><option value="true" '+(actions.setUpThisTurn===true?'selected':'')+'>Yes</option></select></div>'+
